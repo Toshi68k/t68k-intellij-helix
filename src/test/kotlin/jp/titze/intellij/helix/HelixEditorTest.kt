@@ -721,4 +721,109 @@ class HelixEditorTest : BasePlatformTestCase() {
         myFixture.type('\b')
         assertEquals(text, editor.document.text)
     }
+
+    fun testPasteMultipleLinesCopiedWithXPastesBelowLineAtColumnZero() {
+        val initialText = "line 1\nline 2\nline 3\nline 4\nline 5"
+        myFixture.configureByText("test.txt", initialText)
+        val editor = myFixture.editor
+        val caret = editor.caretModel.primaryCaret
+
+        // Move to line 2 ("line 2")
+        caret.moveToOffset(editor.document.getLineStartOffset(1))
+        // Select 2 lines with x (line 2 and line 3)
+        HelixKeyHandler.handleKey('x', editor)
+        HelixKeyHandler.handleKey('x', editor)
+        assertEquals("line 2\nline 3\n", caret.selectedText)
+
+        // Yank with y
+        HelixKeyHandler.handleKey('y', editor)
+
+        // Now move somewhere in the middle of line 5 ("line 5", say offset at column 3)
+        caret.removeSelection()
+        val line4Start = editor.document.getLineStartOffset(4) // line 5 (0-indexed line 4)
+        caret.moveToOffset(line4Start + 3) // in middle of "line 5"
+
+        // Paste with p
+        HelixKeyHandler.handleKey('p', editor)
+
+        val expectedText = "line 1\nline 2\nline 3\nline 4\nline 5\nline 2\nline 3"
+        assertEquals(expectedText, editor.document.text)
+        // Caret should be at the start of the first pasted line (column 0)
+        val pastedLineStart = editor.document.getLineStartOffset(5)
+        assertEquals(pastedLineStart, caret.offset)
+    }
+
+    fun testPasteMultipleLinesCopiedWithXPastesBelowMiddleOfFile() {
+        val initialText = "alpha\nbeta\ngamma\ndelta"
+        myFixture.configureByText("test.txt", initialText)
+        val editor = myFixture.editor
+        val caret = editor.caretModel.primaryCaret
+
+        // Select line 1 ("alpha") and line 2 ("beta") with x
+        caret.moveToOffset(0)
+        HelixKeyHandler.handleKey('x', editor)
+        HelixKeyHandler.handleKey('x', editor)
+        assertEquals("alpha\nbeta\n", caret.selectedText)
+        HelixKeyHandler.handleKey('y', editor)
+
+        // Move to middle of line "gamma" (line index 2, col 3)
+        caret.removeSelection()
+        val gammaStart = editor.document.getLineStartOffset(2)
+        caret.moveToOffset(gammaStart + 3)
+
+        // Press p
+        HelixKeyHandler.handleKey('p', editor)
+
+        val expected = "alpha\nbeta\ngamma\nalpha\nbeta\ndelta"
+        assertEquals(expected, editor.document.text)
+        assertEquals(editor.document.getLineStartOffset(3), caret.offset)
+    }
+
+    fun testPasteMultipleLinesBeforeWithP() {
+        val initialText = "line 1\nline 2\nline 3"
+        myFixture.configureByText("test.txt", initialText)
+        val editor = myFixture.editor
+        val caret = editor.caretModel.primaryCaret
+
+        // Select line 1 and 2
+        caret.moveToOffset(0)
+        HelixKeyHandler.handleKey('x', editor)
+        HelixKeyHandler.handleKey('x', editor)
+        HelixKeyHandler.handleKey('y', editor)
+
+        // Move into middle of line 3 (index 2)
+        caret.removeSelection()
+        val line3Start = editor.document.getLineStartOffset(2)
+        caret.moveToOffset(line3Start + 3)
+
+        // Press P (paste before)
+        HelixKeyHandler.handleKey('P', editor)
+
+        val expected = "line 1\nline 2\nline 1\nline 2\nline 3"
+        assertEquals(expected, editor.document.text)
+        assertEquals(line3Start, caret.offset)
+    }
+
+    fun testPasteSingleLineCopiedWithXPastesBelowLine() {
+        val initialText = "first\nsecond\nthird"
+        myFixture.configureByText("test.txt", initialText)
+        val editor = myFixture.editor
+        val caret = editor.caretModel.primaryCaret
+
+        // Select single line "first" with x
+        caret.moveToOffset(2)
+        HelixKeyHandler.handleKey('x', editor)
+        assertEquals("first\n", caret.selectedText)
+        HelixKeyHandler.handleKey('y', editor)
+
+        // Move to column 3 of "second"
+        caret.removeSelection()
+        caret.moveToOffset(editor.document.getLineStartOffset(1) + 3)
+        HelixKeyHandler.handleKey('p', editor)
+
+        val expected = "first\nsecond\nfirst\nthird"
+        assertEquals(expected, editor.document.text)
+        assertEquals(editor.document.getLineStartOffset(2), caret.offset)
+    }
 }
+

@@ -19,9 +19,17 @@ object HelixActions {
             val carets = editor.caretModel.allCarets.sortedByDescending { it.selectionStart }
             val yankPieces = mutableListOf<String>()
 
+            val doc = editor.document
             for (caret in carets) {
                 if (caret.hasSelection()) {
-                    val text = caret.selectedText ?: ""
+                    var text = caret.selectedText ?: ""
+                    val startLine = doc.getLineNumber(caret.selectionStart)
+                    val endLine = doc.getLineNumber((caret.selectionEnd - 1).coerceAtLeast(0))
+                    val isWholeLines = caret.selectionStart == doc.getLineStartOffset(startLine) &&
+                            caret.selectionEnd == (if (endLine + 1 < doc.lineCount) doc.getLineStartOffset(endLine + 1) else doc.getLineEndOffset(endLine))
+                    if (isWholeLines && !text.endsWith("\n")) {
+                        text += "\n"
+                    }
                     yankPieces.add(text)
                     val start = caret.selectionStart
                     val end = caret.selectionEnd
@@ -54,10 +62,19 @@ object HelixActions {
     fun yankSelection(editor: Editor) {
         val state = HelixStateManager.getOrCreate(editor)
         val pieces = mutableListOf<String>()
+        val doc = editor.document
 
         editor.caretModel.runForEachCaret { caret ->
             if (caret.hasSelection()) {
-                pieces.add(caret.selectedText ?: "")
+                var text = caret.selectedText ?: ""
+                val startLine = doc.getLineNumber(caret.selectionStart)
+                val endLine = doc.getLineNumber((caret.selectionEnd - 1).coerceAtLeast(0))
+                val isWholeLines = caret.selectionStart == doc.getLineStartOffset(startLine) &&
+                        caret.selectionEnd == (if (endLine + 1 < doc.lineCount) doc.getLineStartOffset(endLine + 1) else doc.getLineEndOffset(endLine))
+                if (isWholeLines && !text.endsWith("\n")) {
+                    text += "\n"
+                }
+                pieces.add(text)
             } else {
                 val offset = caret.offset
                 if (offset < editor.document.textLength) {
@@ -75,20 +92,72 @@ object HelixActions {
 
     fun paste(editor: Editor, after: Boolean = true) {
         val project = editor.project
-        val textToPaste = getClipboard() ?: return
+        val rawClipboard = getClipboard() ?: return
+        val textToPaste = rawClipboard.replace("\r\n", "\n").replace("\r", "\n")
+        val isLinewise = textToPaste.endsWith("\n") || textToPaste.contains("\n")
+        val doc = editor.document
 
         WriteCommandAction.runWriteCommandAction(project) {
             val carets = editor.caretModel.allCarets.sortedByDescending { it.offset }
             for (caret in carets) {
-                val offset = if (after) {
-                    (caret.selectionEnd).coerceAtMost(editor.document.textLength)
+                if (isLinewise) {
+                    val hasSel = caret.hasSelection()
+                    val selStart = caret.selectionStart
+                    val selEnd = caret.selectionEnd
+
+                    val curLine = if (hasSel && caret.offset in selStart..selEnd) {
+                        if (after) {
+                            doc.getLineNumber((selEnd - 1).coerceAtLeast(0))
+                        } else {
+                            doc.getLineNumber(selStart)
+                        }
+                    } else {
+                        doc.getLineNumber(caret.offset.coerceIn(0, doc.textLength))
+                    }
+
+                    if (after) {
+                        if (doc.textLength == 0) {
+                            val content = if (textToPaste.endsWith("\n")) textToPaste else textToPaste + "\n"
+                            doc.insertString(0, content)
+                            caret.removeSelection()
+                            caret.moveToOffset(0)
+                        } else if (curLine < doc.lineCount - 1) {
+                            val insertOffset = doc.getLineStartOffset(curLine + 1)
+                            val content = if (textToPaste.endsWith("\n")) textToPaste else textToPaste + "\n"
+                            doc.insertString(insertOffset, content)
+                            caret.removeSelection()
+                            caret.moveToOffset(insertOffset)
+                        } else {
+                            val lineEndOffset = doc.getLineEndOffset(curLine)
+                            val cleanText = textToPaste.removeSuffix("\n")
+                            val content = "\n" + cleanText
+                            doc.insertString(lineEndOffset, content)
+                            caret.removeSelection()
+                            caret.moveToOffset(lineEndOffset + 1)
+                        }
+                    } else {
+                        val insertOffset = doc.getLineStartOffset(curLine)
+                        val content = if (textToPaste.endsWith("\n")) textToPaste else textToPaste + "\n"
+                        doc.insertString(insertOffset, content)
+                        caret.removeSelection()
+                        caret.moveToOffset(insertOffset)
+                    }
                 } else {
-                    caret.selectionStart
+                    val offset = if (after) {
+                        if (caret.hasSelection()) {
+                            (caret.selectionEnd).coerceAtMost(doc.textLength)
+                        } else {
+                            val lineEnd = doc.getLineEndOffset(doc.getLineNumber(caret.offset))
+                            (caret.offset + 1).coerceAtMost(lineEnd)
+                        }
+                    } else {
+                        caret.selectionStart
+                    }
+                    doc.insertString(offset, textToPaste)
+                    val newOffset = offset + textToPaste.length
+                    caret.removeSelection()
+                    caret.moveToOffset(newOffset)
                 }
-                editor.document.insertString(offset, textToPaste)
-                val newOffset = offset + textToPaste.length
-                caret.removeSelection()
-                caret.moveToOffset(newOffset)
             }
         }
     }
