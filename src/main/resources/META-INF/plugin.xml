@@ -1,0 +1,75 @@
+<idea-plugin>
+    <id>jp.titze.intellij.helix</id>
+    <name>Helix Keymap</name>
+    <vendor url="https://titze.jp">Thorsten Titze</vendor>
+
+    <description><![CDATA[
+        A modal editing plugin for IntelliJ IDEA implementing the Helix selection-first paradigm.
+        Features:
+        <ul>
+            <li>Per-editor modal state: Normal, Insert, Select modes with block/line cursor integration.</li>
+            <li>Selection-first motions: w, b, e, ge, x, %, h, j, k, l, gh, gl, gg.</li>
+            <li>Direct selection actions: d (delete), c (change), y (yank), p / P (paste), ;, Alt+;, ,.</li>
+            <li>Full native multi-caret support.</li>
+            <li>Deep IntelliJ IDE ActionManager integration:
+                <ul>
+                    <li>g menu: gd, gy, gr, gh, gl, ge, gg</li>
+                    <li>space menu: space+f (SearchEverywhere), space+b (RecentFiles), space+s (Structure), space+S (Symbols), space+a (Intentions/Quick-fixes), space+d (Diagnostics), space+r (Rename)</li>
+                    <li>[d / ]d: Error jumps</li>
+                    <li>Alt+o / Alt+i: Structural AST selection expansion and shrinking</li>
+                    <li>Alt+n: Multi-caret select next occurrence</li>
+                    <li>Ctrl+c: Toggle line comment</li>
+                    <li>K: Quick documentation hover</li>
+                    <li>=: Reformat code</li>
+                    <li>u / U: Native undo / redo</li>
+                </ul>
+            </li>
+            <li>Lightweight Helix command bar: :w, :q, :wq, :wa, :qa.</li>
+            <li>Status bar mode indicator showing active mode and pending key chords.</li>
+        </ul>
+    ]]></description>
+
+    <depends>com.intellij.modules.platform</depends>
+
+    <extensions defaultExtensionNs="com.intellij">
+        <editorFactoryListener implementation="jp.titze.intellij.helix.editor.HelixEditorListener"/>
+        <statusBarWidgetFactory implementation="jp.titze.intellij.helix.ui.HelixStatusBarWidgetFactory" id="jp.titze.intellij.helix.status"/>
+    </extensions>
+
+    <actions>
+        <action id="jp.titze.intellij.helix.escape"
+                class="jp.titze.intellij.helix.editor.HelixEscapeAction"
+                text="Helix Escape"
+                description="Return to Normal mode">
+            <keyboard-shortcut keymap="$default" first-keystroke="ESCAPE"/>
+        </action>
+
+        <action id="jp.titze.intellij.helix.expandSelection"
+                class="jp.titze.intellij.helix.editor.HelixExpandSelectionAction"
+                text="Helix Expand Selection"
+                description="Expand structural selection (Tree-sitter / PSI)">
+            <keyboard-shortcut keymap="$default" first-keystroke="alt O"/>
+        </action>
+
+        <action id="jp.titze.intellij.helix.shrinkSelection"
+                class="jp.titze.intellij.helix.editor.HelixShrinkSelectionAction"
+                text="Helix Shrink Selection"
+                description="Shrink structural selection (Tree-sitter / PSI)">
+            <keyboard-shortcut keymap="$default" first-keystroke="alt I"/>
+        </action>
+
+        <action id="jp.titze.intellij.helix.selectNextOccurrence"
+                class="jp.titze.intellij.helix.editor.HelixSelectNextOccurrenceAction"
+                text="Helix Select Next Occurrence"
+                description="Select next occurrence of current selection">
+            <keyboard-shortcut keymap="$default" first-keystroke="alt N"/>
+        </action>
+
+        <action id="jp.titze.intellij.helix.commentLine"
+                class="jp.titze.intellij.helix.editor.HelixCommentLineAction"
+                text="Helix Comment Line"
+                description="Toggle line comment">
+            <keyboard-shortcut keymap="$default" first-keystroke="control C"/>
+        </action>
+    </actions>
+</idea-plugin>
