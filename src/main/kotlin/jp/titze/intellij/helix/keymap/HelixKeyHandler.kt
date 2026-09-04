@@ -46,7 +46,7 @@ object HelixKeyHandler {
                 HelixWhichKeyPopup.show(editor, charTyped.toString())
                 return true
             }
-            'f', 't', 'F', 'T' -> {
+            'f', 't', 'F', 'T', 'r' -> {
                 state.appendKey(charTyped)
                 return true
             }
@@ -71,6 +71,11 @@ object HelixKeyHandler {
         HelixWhichKeyPopup.hide()
         val count = state.takeCount()
         when (prefix) {
+            "r" -> {
+                state.clearPendingSequence()
+                HelixActions.replaceChar(editor, ch, count ?: 1)
+                return true
+            }
             "f", "t", "F", "T" -> {
                 state.clearPendingSequence()
                 return HelixMotions.findCharMotion(editor, prefix[0], ch, count ?: 1)
@@ -248,6 +253,7 @@ object HelixKeyHandler {
             'y' -> HelixActions.yankSelection(editor)
             'p' -> HelixActions.paste(editor, after = true)
             'P' -> HelixActions.paste(editor, after = false)
+            'R' -> HelixActions.replaceWithClipboard(editor)
             'J' -> HelixActions.joinLines(editor, count)
 
             // Insert transitions

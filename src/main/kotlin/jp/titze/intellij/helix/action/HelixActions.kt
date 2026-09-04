@@ -191,6 +191,66 @@ object HelixActions {
         }
     }
 
+    fun replaceChar(editor: Editor, replacement: Char, count: Int = 1) {
+        val project = editor.project
+        val doc = editor.document
+        if (doc.textLength == 0) return
+
+        val state = HelixStateManager.getOrCreate(editor)
+        val isSelect = state.mode == HelixMode.SELECT
+
+        WriteCommandAction.runWriteCommandAction(project) {
+            val carets = editor.caretModel.allCarets.sortedByDescending {
+                if (it.hasSelection()) it.selectionStart else it.offset
+            }
+
+            for (caret in carets) {
+                if (caret.hasSelection()) {
+                    val start = caret.selectionStart
+                    val end = caret.selectionEnd
+                    val selectedText = doc.charsSequence.subSequence(start, end)
+                    val sb = StringBuilder(selectedText.length)
+                    for (i in 0 until selectedText.length) {
+                        val c = selectedText[i]
+                        if ((c == '\n' || c == '\r') && replacement != '\n' && replacement != '\r') {
+                            sb.append(c)
+                        } else {
+                            sb.append(replacement)
+                        }
+                    }
+                    val replacedString = sb.toString()
+                    doc.replaceString(start, end, replacedString)
+                    caret.setSelection(start, start + replacedString.length)
+                    caret.moveToOffset(start)
+                } else {
+                    val offset = caret.offset
+                    if (offset < doc.textLength) {
+                        val lineNum = doc.getLineNumber(offset)
+                        val lineEnd = doc.getLineEndOffset(lineNum)
+                        val replaceCount = if (doc.charsSequence[offset] == '\n' || doc.charsSequence[offset] == '\r') {
+                            1
+                        } else {
+                            count.coerceAtLeast(1).coerceAtMost((lineEnd - offset).coerceAtLeast(1))
+                        }
+                        val sb = StringBuilder(replaceCount)
+                        repeat(replaceCount) {
+                            sb.append(replacement)
+                        }
+                        val replacedString = sb.toString()
+                        val replaceEnd = (offset + replaceCount).coerceAtMost(doc.textLength)
+                        doc.replaceString(offset, replaceEnd, replacedString)
+                        if (isSelect) {
+                            caret.setSelection(offset, offset + replacedString.length)
+                        } else {
+                            caret.removeSelection()
+                        }
+                        caret.moveToOffset(offset)
+                    }
+                }
+            }
+        }
+    }
+
     fun joinLines(editor: Editor, count: Int = 1) {
         val project = editor.project
         val doc = editor.document
