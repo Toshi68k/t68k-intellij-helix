@@ -825,5 +825,155 @@ class HelixEditorTest : BasePlatformTestCase() {
         assertEquals(expected, editor.document.text)
         assertEquals(editor.document.getLineStartOffset(2), caret.offset)
     }
+
+    fun testNormalModeFindTillChar() {
+        val initialText = "val total = 100"
+        myFixture.configureByText("test.txt", initialText)
+        val editor = myFixture.editor
+        val caret = editor.caretModel.primaryCaret
+        caret.moveToOffset(0)
+
+        HelixKeyHandler.handleKey('t', editor)
+        HelixKeyHandler.handleKey('t', editor)
+
+        // 't' matches 't' in "total" at index 4 -> target offset is 4 (before 't')
+        assertEquals(4, caret.offset)
+        assertEquals("val ", caret.selectedText)
+    }
+
+    fun testNormalModeFindToChar() {
+        val initialText = "val total = 100"
+        myFixture.configureByText("test.txt", initialText)
+        val editor = myFixture.editor
+        val caret = editor.caretModel.primaryCaret
+        caret.moveToOffset(0)
+
+        HelixKeyHandler.handleKey('f', editor)
+        HelixKeyHandler.handleKey('t', editor)
+
+        // 'f' matches 't' at index 4 -> target offset is 5 (inclusive of 't')
+        assertEquals(5, caret.offset)
+        assertEquals("val t", caret.selectedText)
+    }
+
+    fun testSelectModeFindTillCharExtendsSelection() {
+        val initialText = "hello world from helix"
+        myFixture.configureByText("test.txt", initialText)
+        val editor = myFixture.editor
+        val caret = editor.caretModel.primaryCaret
+        caret.moveToOffset(0)
+
+        // Enter SELECT mode
+        HelixKeyHandler.handleKey('v', editor)
+        // Move word to "world"
+        HelixKeyHandler.handleKey('w', editor)
+        assertEquals(6, caret.offset)
+        assertEquals("hello ", caret.selectedText)
+
+        // Till 'h' in "helix" (index 17)
+        HelixKeyHandler.handleKey('t', editor)
+        HelixKeyHandler.handleKey('h', editor)
+
+        assertEquals(17, caret.offset)
+        assertEquals("hello world from ", caret.selectedText)
+    }
+
+    fun testSelectModeFindTillEnterSelectsLineEnd() {
+        val initialText = "first line\nsecond line"
+        myFixture.configureByText("test.txt", initialText)
+        val editor = myFixture.editor
+        val caret = editor.caretModel.primaryCaret
+        caret.moveToOffset(0)
+
+        jp.titze.intellij.helix.editor.HelixEditorActionHandler.install()
+
+        // Enter SELECT mode
+        HelixKeyHandler.handleKey('v', editor)
+        // Till Enter (\n)
+        HelixKeyHandler.handleKey('t', editor)
+        myFixture.type('\n')
+
+        // Target should be index 10 (just before \n)
+        assertEquals(10, caret.offset)
+        assertEquals("first line", caret.selectedText)
+    }
+
+    fun testSelectModeFindToEnterIncludesNewline() {
+        val initialText = "first line\nsecond line"
+        myFixture.configureByText("test.txt", initialText)
+        val editor = myFixture.editor
+        val caret = editor.caretModel.primaryCaret
+        caret.moveToOffset(0)
+
+        jp.titze.intellij.helix.editor.HelixEditorActionHandler.install()
+
+        // Enter SELECT mode
+        HelixKeyHandler.handleKey('v', editor)
+        // Find to Enter (\n)
+        HelixKeyHandler.handleKey('f', editor)
+        myFixture.type('\n')
+
+        // Target should be index 11 (after \n)
+        assertEquals(11, caret.offset)
+        assertEquals("first line\n", caret.selectedText)
+    }
+
+    fun testBackwardFindCharMotions() {
+        val initialText = "apple banana cherry"
+        myFixture.configureByText("test.txt", initialText)
+        val editor = myFixture.editor
+        val caret = editor.caretModel.primaryCaret
+
+        // Move to end of "cherry" (offset 19)
+        caret.moveToOffset(19)
+
+        // Find backwards to 'b' (index 6)
+        HelixKeyHandler.handleKey('F', editor)
+        HelixKeyHandler.handleKey('b', editor)
+
+        assertEquals(6, caret.offset)
+        assertEquals("banana cherry", caret.selectedText)
+
+        // Clear selection and test T (till prev char)
+        caret.removeSelection()
+        caret.moveToOffset(19)
+
+        HelixKeyHandler.handleKey('T', editor)
+        HelixKeyHandler.handleKey('b', editor)
+
+        assertEquals(7, caret.offset)
+        assertEquals("anana cherry", caret.selectedText)
+    }
+
+    fun testFindCharCountPrefix() {
+        val initialText = "abc abc abc"
+        myFixture.configureByText("test.txt", initialText)
+        val editor = myFixture.editor
+        val caret = editor.caretModel.primaryCaret
+        caret.moveToOffset(0)
+
+        // 2nd occurrence of 'b' (at index 5)
+        HelixKeyHandler.handleKey('2', editor)
+        HelixKeyHandler.handleKey('t', editor)
+        HelixKeyHandler.handleKey('b', editor)
+
+        assertEquals(5, caret.offset)
+        assertEquals("abc a", caret.selectedText)
+    }
+
+    fun testPendingFindCancelledByBackspace() {
+        val initialText = "testing find motion"
+        myFixture.configureByText("test.txt", initialText)
+        val editor = myFixture.editor
+        val state = HelixStateManager.getOrCreate(editor)
+        jp.titze.intellij.helix.editor.HelixEditorActionHandler.install()
+
+        HelixKeyHandler.handleKey('t', editor)
+        assertEquals("t", state.pendingSequence)
+
+        myFixture.type('\b')
+        assertEquals("", state.pendingSequence)
+        assertEquals(initialText, editor.document.text)
+    }
 }
 

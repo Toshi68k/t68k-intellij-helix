@@ -35,6 +35,10 @@ A complete modal editing plugin for JetBrains IDEs implementing the [Helix](http
 
 | Key | Description |
 |-----|-------------|
+| `f<char>` | Move to next occurrence of `<char>` (inclusive, searches across lines) |
+| `t<char>` | Move till next occurrence of `<char>` (exclusive, stops before `<char>`, supports `<Enter>`) |
+| `F<char>` | Move to previous occurrence of `<char>` (backward, inclusive) |
+| `T<char>` | Move till previous occurrence of `<char>` (backward, exclusive, stops after `<char>`) |
 | `w` | Advance to the start of the next word |
 | `b` | Move backward to the start of the previous word |
 | `e` | Advance to the end of the current/next word |

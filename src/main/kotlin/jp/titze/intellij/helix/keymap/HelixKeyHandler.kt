@@ -46,6 +46,10 @@ object HelixKeyHandler {
                 HelixWhichKeyPopup.show(editor, charTyped.toString())
                 return true
             }
+            'f', 't', 'F', 'T' -> {
+                state.appendKey(charTyped)
+                return true
+            }
             ':' -> {
                 state.clearCount()
                 HelixWhichKeyPopup.hide()
@@ -67,6 +71,10 @@ object HelixKeyHandler {
         HelixWhichKeyPopup.hide()
         val count = state.takeCount()
         when (prefix) {
+            "f", "t", "F", "T" -> {
+                state.clearPendingSequence()
+                return HelixMotions.findCharMotion(editor, prefix[0], ch, count ?: 1)
+            }
             "g" -> {
                 state.clearPendingSequence()
                 return handleGMenu(ch, editor, count)

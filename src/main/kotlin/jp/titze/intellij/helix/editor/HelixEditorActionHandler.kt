@@ -6,6 +6,7 @@ import com.intellij.openapi.editor.Caret
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.actionSystem.EditorActionHandler
 import com.intellij.openapi.editor.actionSystem.EditorActionManager
+import jp.titze.intellij.helix.keymap.HelixKeyHandler
 import jp.titze.intellij.helix.motion.HelixMotions
 import jp.titze.intellij.helix.state.HelixStateManager
 
@@ -29,11 +30,17 @@ class HelixEditorActionHandler(
         // Non-insertable mode: do NOT modify buffer text
         when (actionId) {
             IdeActions.ACTION_EDITOR_BACKSPACE -> {
-                if (state.hasCount) {
+                if (state.pendingSequence.isNotEmpty()) {
+                    state.clearPendingSequence()
+                } else if (state.hasCount) {
                     state.removeLastCountDigit()
                 }
             }
             IdeActions.ACTION_EDITOR_ENTER -> {
+                if (state.pendingSequence in listOf("f", "t", "F", "T")) {
+                    HelixKeyHandler.handleKey('\n', editor)
+                    return
+                }
                 // In Helix, <ret> collapses selection and resets multi-caret
                 HelixMotions.collapseSelection(editor)
                 HelixMotions.keepOnlyPrimaryCaret(editor)
@@ -53,7 +60,7 @@ class HelixEditorActionHandler(
         }
 
         return when (actionId) {
-            IdeActions.ACTION_EDITOR_BACKSPACE -> state.hasCount
+            IdeActions.ACTION_EDITOR_BACKSPACE -> state.hasCount || state.pendingSequence.isNotEmpty()
             IdeActions.ACTION_EDITOR_ENTER -> true
             IdeActions.ACTION_EDITOR_DELETE -> false
             else -> false
