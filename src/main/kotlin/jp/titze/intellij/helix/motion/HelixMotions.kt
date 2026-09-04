@@ -408,6 +408,8 @@ object HelixMotions {
             val anchor = if (isSelect && caret.hasSelection()) caret.leadSelectionOffset else caret.offset
             applyMotion(caret, anchor, textLen, isSelect)
         }
+
+        editor.scrollingModel.scrollToCaret(ScrollType.MAKE_VISIBLE)
     }
 
     /**
