@@ -339,4 +339,198 @@ class HelixEditorTest : BasePlatformTestCase() {
         assertEquals("", state.pendingSequence)
         assertEquals("hello (world)", editor.document.text)
     }
+
+    fun testTextObjectWordInsideAndAround() {
+        myFixture.configureByText("test.txt", "hello world")
+        val editor = myFixture.editor
+        val caret = editor.caretModel.primaryCaret
+        val state = HelixStateManager.getOrCreate(editor)
+
+        // Caret on 'e' in "hello"
+        caret.moveToOffset(1)
+
+        // Test miw (select inside word)
+        HelixKeyHandler.handleKey('m', editor)
+        assertEquals("m", state.pendingSequence)
+        HelixKeyHandler.handleKey('i', editor)
+        assertEquals("mi", state.pendingSequence)
+        HelixKeyHandler.handleKey('w', editor)
+        assertEquals("", state.pendingSequence)
+        assertTrue(caret.hasSelection())
+        assertEquals("hello", caret.selectedText)
+
+        // Clear selection
+        caret.removeSelection()
+        caret.moveToOffset(1)
+
+        // Test maw (select around word - should include trailing space)
+        HelixKeyHandler.handleKey('m', editor)
+        HelixKeyHandler.handleKey('a', editor)
+        HelixKeyHandler.handleKey('w', editor)
+        assertEquals("", state.pendingSequence)
+        assertTrue(caret.hasSelection())
+        assertEquals("hello ", caret.selectedText)
+
+        // Test maw on last word of line (should include leading space)
+        caret.removeSelection()
+        caret.moveToOffset(8) // in "world"
+        HelixKeyHandler.handleKey('m', editor)
+        HelixKeyHandler.handleKey('a', editor)
+        HelixKeyHandler.handleKey('w', editor)
+        assertEquals(" world", caret.selectedText)
+    }
+
+    fun testTextObjectWordDeleteAndChange() {
+        myFixture.configureByText("test.txt", "first second third")
+        val editor = myFixture.editor
+        val caret = editor.caretModel.primaryCaret
+
+        caret.moveToOffset(0) // on 'first'
+        // maw then d
+        HelixKeyHandler.handleKey('m', editor)
+        HelixKeyHandler.handleKey('a', editor)
+        HelixKeyHandler.handleKey('w', editor)
+        assertEquals("first ", caret.selectedText)
+
+        HelixKeyHandler.handleKey('d', editor)
+        assertEquals("second third", editor.document.text)
+
+        // miw then c
+        caret.moveToOffset(2) // in "second"
+        HelixKeyHandler.handleKey('m', editor)
+        HelixKeyHandler.handleKey('i', editor)
+        HelixKeyHandler.handleKey('w', editor)
+        assertEquals("second", caret.selectedText)
+
+        HelixKeyHandler.handleKey('c', editor)
+        assertEquals(" third", editor.document.text)
+        assertEquals(HelixMode.INSERT, HelixStateManager.getOrCreate(editor).mode)
+    }
+
+    fun testTextObjectBigWord() {
+        myFixture.configureByText("test.txt", "foo.bar(123) next")
+        val editor = myFixture.editor
+        val caret = editor.caretModel.primaryCaret
+        caret.moveToOffset(4) // on '.'
+
+        // miW selects full non-whitespace token
+        HelixKeyHandler.handleKey('m', editor)
+        HelixKeyHandler.handleKey('i', editor)
+        HelixKeyHandler.handleKey('W', editor)
+        assertEquals("foo.bar(123)", caret.selectedText)
+
+        // maW selects full token + trailing whitespace
+        caret.removeSelection()
+        caret.moveToOffset(4)
+        HelixKeyHandler.handleKey('m', editor)
+        HelixKeyHandler.handleKey('a', editor)
+        HelixKeyHandler.handleKey('W', editor)
+        assertEquals("foo.bar(123) ", caret.selectedText)
+    }
+
+    fun testTextObjectParagraph() {
+        val text = "line1\nline2\n\nline3\nline4\n"
+        myFixture.configureByText("test.txt", text)
+        val editor = myFixture.editor
+        val caret = editor.caretModel.primaryCaret
+        caret.moveToOffset(2) // on "line1"
+
+        // mip: select lines of first paragraph
+        HelixKeyHandler.handleKey('m', editor)
+        HelixKeyHandler.handleKey('i', editor)
+        HelixKeyHandler.handleKey('p', editor)
+        assertEquals("line1\nline2", caret.selectedText)
+
+        // map: select lines + trailing blank line
+        caret.removeSelection()
+        caret.moveToOffset(2)
+        HelixKeyHandler.handleKey('m', editor)
+        HelixKeyHandler.handleKey('a', editor)
+        HelixKeyHandler.handleKey('p', editor)
+        assertEquals("line1\nline2\n\n", caret.selectedText)
+    }
+
+    fun testTextObjectPairsAndClosest() {
+        myFixture.configureByText("test.txt", "val result = (calculate(\"param\"))")
+        val editor = myFixture.editor
+        val caret = editor.caretModel.primaryCaret
+        caret.moveToOffset(26) // inside "param"
+
+        // mi": inside quotes
+        HelixKeyHandler.handleKey('m', editor)
+        HelixKeyHandler.handleKey('i', editor)
+        HelixKeyHandler.handleKey('"', editor)
+        assertEquals("param", caret.selectedText)
+
+        // ma": around quotes
+        HelixKeyHandler.handleKey('m', editor)
+        HelixKeyHandler.handleKey('a', editor)
+        HelixKeyHandler.handleKey('"', editor)
+        assertEquals("\"param\"", caret.selectedText)
+
+        // mim: closest enclosing pair (the quotes)
+        HelixKeyHandler.handleKey('m', editor)
+        HelixKeyHandler.handleKey('i', editor)
+        HelixKeyHandler.handleKey('m', editor)
+        assertEquals("param", caret.selectedText)
+
+        // Move to calculate(
+        caret.removeSelection()
+        caret.moveToOffset(15) // on "calculate"
+        // mi(: inside outer parens
+        HelixKeyHandler.handleKey('m', editor)
+        HelixKeyHandler.handleKey('i', editor)
+        HelixKeyHandler.handleKey('(', editor)
+        assertEquals("calculate(\"param\")", caret.selectedText)
+
+        // ma(: around outer parens
+        HelixKeyHandler.handleKey('m', editor)
+        HelixKeyHandler.handleKey('a', editor)
+        HelixKeyHandler.handleKey('(', editor)
+        assertEquals("(calculate(\"param\"))", caret.selectedText)
+    }
+
+    fun testTextObjectArgument() {
+        myFixture.configureByText("test.txt", "call(first, second, third)")
+        val editor = myFixture.editor
+        val caret = editor.caretModel.primaryCaret
+        caret.moveToOffset(14) // inside "second"
+
+        // mia: select inside argument
+        HelixKeyHandler.handleKey('m', editor)
+        HelixKeyHandler.handleKey('i', editor)
+        HelixKeyHandler.handleKey('a', editor)
+        assertEquals("second", caret.selectedText)
+
+        // maa: select around argument (including comma and space)
+        HelixKeyHandler.handleKey('m', editor)
+        HelixKeyHandler.handleKey('a', editor)
+        HelixKeyHandler.handleKey('a', editor)
+        assertEquals("second, ", caret.selectedText)
+    }
+
+    fun testTextObjectMultiCaret() {
+        val text = "foo alpha bar\nbaz beta qux\n"
+        myFixture.configureByText("test.txt", text)
+        val editor = myFixture.editor
+        val caretModel = editor.caretModel
+
+        val primary = caretModel.primaryCaret
+        primary.moveToOffset(text.indexOf("alpha") + 1)
+
+        val secondary = caretModel.addCaret(editor.offsetToVisualPosition(text.indexOf("beta") + 1))
+        assertNotNull(secondary)
+
+        // maw across both carets
+        HelixKeyHandler.handleKey('m', editor)
+        HelixKeyHandler.handleKey('a', editor)
+        HelixKeyHandler.handleKey('w', editor)
+
+        assertEquals("alpha ", primary.selectedText)
+        assertEquals("beta ", secondary?.selectedText)
+
+        // Delete selection across both carets
+        HelixKeyHandler.handleKey('d', editor)
+        assertEquals("foo bar\nbaz qux\n", editor.document.text)
+    }
 }

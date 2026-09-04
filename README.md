@@ -80,7 +80,7 @@ A complete modal editing plugin for JetBrains IDEs implementing the [Helix](http
 
 ### Surround & Match Mode (`m` menu)
 
-Built-in surround functionality inspired by [vim-sandwich](https://github.com/machakann/vim-sandwich) and matching [Helix Surround](https://docs.helix-editor.com/surround.html):
+Built-in surround and textobject functionality matching [Helix Surround](https://docs.helix-editor.com/surround.html) and [Helix Textobjects](https://docs.helix-editor.com/textobjects.html):
 
 | Key | Action | Description |
 |-----|--------|-------------|
@@ -88,6 +88,19 @@ Built-in surround functionality inspired by [vim-sandwich](https://github.com/ma
 | `mr<from><to>` | `surround_replace` | Replace closest enclosing surround pair `<from>` with `<to>` |
 | `md<char>` | `surround_delete` | Delete closest enclosing surround pair `<char>` |
 | `mm` | `match_bracket` | Jump to matching bracket (`EditorMatchBracket`) |
+| `ma<object>` | `select_textobject_around` | Select **around** the textobject (e.g. `maw`, `maW`, `map`, `ma(`, `mam`, `maa`) |
+| `mi<object>` | `select_textobject_inside` | Select **inside** the textobject (e.g. `miw`, `miW`, `mip`, `mi(`, `mim`, `mia`) |
+
+#### Textobjects Supported
+- **`w`** &rarr; Word (`miw` selects inner word; `maw` selects word + trailing or leading whitespace)
+- **`W`** &rarr; WORD (`miW` selects non-whitespace token; `maW` selects token + whitespace)
+- **`p`** &rarr; Paragraph (`mip` selects paragraph lines; `map` includes blank lines)
+- **Delimiters**: `(`, `[`, `{`, `<`, `"`, `'`, `` ` `` (e.g. `mi(` selects inside parens; `ma(` includes parens)
+- **`m`** &rarr; Closest enclosing pair / quote (`mim` inside closest pair; `mam` around closest pair)
+- **`a`** &rarr; Argument / parameter (`mia` inside parameter; `maa` includes delimiter/comma)
+- **`f`** &rarr; Function / method (PSI-aware; falls back to enclosing `{...}`)
+- **`t`** &rarr; Type / class (PSI-aware; falls back to enclosing `{...}`)
+- **`c`** &rarr; Comment (PSI-aware comment node or line comment)
 
 #### Supported Delimiters & Aliases
 - **Pairs**: `()` (alias `b` or `p`), `[]` (alias `r`), `{}` (alias `B` or `c`), `<>` (alias `a`)

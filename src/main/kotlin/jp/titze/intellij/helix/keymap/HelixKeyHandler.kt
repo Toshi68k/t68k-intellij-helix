@@ -4,6 +4,7 @@ import com.intellij.openapi.editor.Editor
 import jp.titze.intellij.helix.action.HelixActionDelegate
 import jp.titze.intellij.helix.action.HelixActions
 import jp.titze.intellij.helix.action.HelixSurroundActions
+import jp.titze.intellij.helix.action.HelixTextObjectActions
 import jp.titze.intellij.helix.command.HelixCommandPopup
 import jp.titze.intellij.helix.motion.HelixMotions
 import jp.titze.intellij.helix.state.HelixEditorState
@@ -78,6 +79,14 @@ object HelixKeyHandler {
                 state.appendKey(ch)
                 return true
             }
+            "ma" -> {
+                state.clearPendingSequence()
+                return HelixTextObjectActions.selectTextObject(editor, inside = false, objectChar = ch)
+            }
+            "mi" -> {
+                state.clearPendingSequence()
+                return HelixTextObjectActions.selectTextObject(editor, inside = true, objectChar = ch)
+            }
             else -> {
                 if (prefix.startsWith("mr") && prefix.length == 3) {
                     val fromChar = prefix[2]
@@ -92,7 +101,7 @@ object HelixKeyHandler {
 
     private fun handleMatchMenu(ch: Char, editor: Editor, state: HelixEditorState): Boolean {
         when (ch) {
-            's', 'd', 'r' -> {
+            's', 'd', 'r', 'a', 'i' -> {
                 state.appendKey(ch)
                 return true
             }

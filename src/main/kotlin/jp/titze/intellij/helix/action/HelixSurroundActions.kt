@@ -24,6 +24,11 @@ object HelixSurroundActions {
                 .mapNotNull { findEnclosingPair(document, caret, it) }
             return candidates.minByOrNull { it.second - it.first }
         }
+        if (delim == 'm') {
+            val candidates = listOf('(', '[', '{', '<', '"', '\'', '`')
+                .mapNotNull { findEnclosingPair(document, caret, it) }
+            return candidates.minByOrNull { it.second - it.first }
+        }
 
         val (open, close) = resolvePair(delim)
         return if (open != close) {
@@ -43,11 +48,12 @@ object HelixSurroundActions {
         val len = text.length
         if (len == 0) return null
 
-        val selStart = if (caret.hasSelection()) caret.selectionStart else caret.offset
-        val selEnd = if (caret.hasSelection()) caret.selectionEnd else (caret.offset + 1).coerceAtMost(len)
+        val hasActiveSelection = caret.hasSelection() && caret.offset in caret.selectionStart..caret.selectionEnd
+        val selStart = if (hasActiveSelection) caret.selectionStart else caret.offset
+        val selEnd = if (hasActiveSelection) caret.selectionEnd else (caret.offset + 1).coerceAtMost(len)
 
         // Check if the selection itself is bounded by open and close
-        if (caret.hasSelection() && selStart < selEnd) {
+        if (hasActiveSelection && selStart < selEnd) {
             if (text[selStart] == open && text[selEnd - 1] == close) {
                 if (isBalanced(text, selStart, selEnd - 1, open, close)) {
                     return Pair(selStart, selEnd - 1)
@@ -157,11 +163,12 @@ object HelixSurroundActions {
         val len = text.length
         if (len == 0) return null
 
-        val selStart = if (caret.hasSelection()) caret.selectionStart else caret.offset
-        val selEnd = if (caret.hasSelection()) caret.selectionEnd else (caret.offset + 1).coerceAtMost(len)
+        val hasActiveSelection = caret.hasSelection() && caret.offset in caret.selectionStart..caret.selectionEnd
+        val selStart = if (hasActiveSelection) caret.selectionStart else caret.offset
+        val selEnd = if (hasActiveSelection) caret.selectionEnd else (caret.offset + 1).coerceAtMost(len)
 
         // Check if selection itself starts and ends with delim
-        if (caret.hasSelection() && selStart < selEnd - 1) {
+        if (hasActiveSelection && selStart < selEnd - 1) {
             if (text[selStart] == delim && text[selEnd - 1] == delim) {
                 return Pair(selStart, selEnd - 1)
             }
