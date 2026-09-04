@@ -50,6 +50,10 @@ A complete modal editing plugin for JetBrains IDEs implementing the [Helix](http
 | `gl` | Move to line end |
 | `gg` | Move to the top of the buffer |
 | `ge` *(in `g` menu)* | Move to the end of the buffer |
+| `Ctrl+f` / `PageDown` | Move page down |
+| `Ctrl+b` / `PageUp` | Move page up |
+| `Ctrl+d` | Move half page down |
+| `Ctrl+u` | Move half page up |
 
 ### Selection Manipulation
 

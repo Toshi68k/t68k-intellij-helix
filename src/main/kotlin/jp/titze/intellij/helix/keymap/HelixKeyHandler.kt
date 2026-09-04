@@ -246,6 +246,10 @@ object HelixKeyHandler {
             }
             ';' -> HelixMotions.collapseSelection(editor)
             ',' -> HelixMotions.keepOnlyPrimaryCaret(editor)
+            '\u0006' -> HelixMotions.pageDown(editor, count)
+            '\u0002' -> HelixMotions.pageUp(editor, count)
+            '\u0004' -> HelixMotions.halfPageDown(editor, count)
+            '\u0015' -> HelixMotions.halfPageUp(editor, count)
 
             // Actions
             'd' -> HelixActions.deleteSelection(editor)

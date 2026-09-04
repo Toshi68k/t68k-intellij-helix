@@ -288,6 +288,54 @@ object HelixMotions {
         }
     }
 
+    fun getPageSize(editor: Editor): Int {
+        val visibleHeight = editor.scrollingModel.visibleArea.height
+        val lineHeight = editor.lineHeight
+        return if (visibleHeight > 0 && lineHeight > 0) {
+            (visibleHeight / lineHeight).coerceAtLeast(1)
+        } else {
+            25
+        }
+    }
+
+    /**
+     * Ctrl-f / PageDown: Move page down
+     */
+    fun pageDown(editor: Editor, count: Int = 1) {
+        val lines = getPageSize(editor) * count.coerceAtLeast(1)
+        moveDown(editor, lines)
+        editor.scrollingModel.scrollToCaret(ScrollType.RELATIVE)
+    }
+
+    /**
+     * Ctrl-b / PageUp: Move page up
+     */
+    fun pageUp(editor: Editor, count: Int = 1) {
+        val lines = getPageSize(editor) * count.coerceAtLeast(1)
+        moveUp(editor, lines)
+        editor.scrollingModel.scrollToCaret(ScrollType.RELATIVE)
+    }
+
+    /**
+     * Ctrl-d: Move half page down
+     */
+    fun halfPageDown(editor: Editor, count: Int = 1) {
+        val half = (getPageSize(editor) / 2).coerceAtLeast(1)
+        val lines = half * count.coerceAtLeast(1)
+        moveDown(editor, lines)
+        editor.scrollingModel.scrollToCaret(ScrollType.RELATIVE)
+    }
+
+    /**
+     * Ctrl-u: Move half page up
+     */
+    fun halfPageUp(editor: Editor, count: Int = 1) {
+        val half = (getPageSize(editor) / 2).coerceAtLeast(1)
+        val lines = half * count.coerceAtLeast(1)
+        moveUp(editor, lines)
+        editor.scrollingModel.scrollToCaret(ScrollType.RELATIVE)
+    }
+
     /**
      * gh: Move to line start (first non-blank character)
      */

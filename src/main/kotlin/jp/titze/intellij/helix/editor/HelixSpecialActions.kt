@@ -121,3 +121,83 @@ class HelixCommandPaletteAction : AnAction() {
         return ActionUpdateThread.BGT
     }
 }
+
+class HelixPageDownAction : AnAction() {
+    override fun actionPerformed(e: AnActionEvent) {
+        val editor = e.getData(CommonDataKeys.EDITOR) ?: return
+        val state = HelixStateManager.getOrCreate(editor)
+        if (state.mode.isInsertable) return
+        val count = state.takeCount() ?: 1
+        HelixMotions.pageDown(editor, count)
+    }
+
+    override fun update(e: AnActionEvent) {
+        val editor = e.getData(CommonDataKeys.EDITOR)
+        val state = editor?.let { HelixStateManager.getOrCreate(it) }
+        e.presentation.isEnabled = editor != null && state != null && !state.mode.isInsertable
+    }
+
+    override fun getActionUpdateThread(): ActionUpdateThread {
+        return ActionUpdateThread.BGT
+    }
+}
+
+class HelixPageUpAction : AnAction() {
+    override fun actionPerformed(e: AnActionEvent) {
+        val editor = e.getData(CommonDataKeys.EDITOR) ?: return
+        val state = HelixStateManager.getOrCreate(editor)
+        if (state.mode.isInsertable) return
+        val count = state.takeCount() ?: 1
+        HelixMotions.pageUp(editor, count)
+    }
+
+    override fun update(e: AnActionEvent) {
+        val editor = e.getData(CommonDataKeys.EDITOR)
+        val state = editor?.let { HelixStateManager.getOrCreate(it) }
+        e.presentation.isEnabled = editor != null && state != null && !state.mode.isInsertable
+    }
+
+    override fun getActionUpdateThread(): ActionUpdateThread {
+        return ActionUpdateThread.BGT
+    }
+}
+
+class HelixHalfPageDownAction : AnAction() {
+    override fun actionPerformed(e: AnActionEvent) {
+        val editor = e.getData(CommonDataKeys.EDITOR) ?: return
+        val state = HelixStateManager.getOrCreate(editor)
+        if (state.mode.isInsertable) return
+        val count = state.takeCount() ?: 1
+        HelixMotions.halfPageDown(editor, count)
+    }
+
+    override fun update(e: AnActionEvent) {
+        val editor = e.getData(CommonDataKeys.EDITOR)
+        val state = editor?.let { HelixStateManager.getOrCreate(it) }
+        e.presentation.isEnabled = editor != null && state != null && !state.mode.isInsertable
+    }
+
+    override fun getActionUpdateThread(): ActionUpdateThread {
+        return ActionUpdateThread.BGT
+    }
+}
+
+class HelixHalfPageUpAction : AnAction() {
+    override fun actionPerformed(e: AnActionEvent) {
+        val editor = e.getData(CommonDataKeys.EDITOR) ?: return
+        val state = HelixStateManager.getOrCreate(editor)
+        if (state.mode.isInsertable) return
+        val count = state.takeCount() ?: 1
+        HelixMotions.halfPageUp(editor, count)
+    }
+
+    override fun update(e: AnActionEvent) {
+        val editor = e.getData(CommonDataKeys.EDITOR)
+        val state = editor?.let { HelixStateManager.getOrCreate(it) }
+        e.presentation.isEnabled = editor != null && state != null && !state.mode.isInsertable
+    }
+
+    override fun getActionUpdateThread(): ActionUpdateThread {
+        return ActionUpdateThread.BGT
+    }
+}

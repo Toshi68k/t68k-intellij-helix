@@ -1199,5 +1199,245 @@ class HelixEditorTest : BasePlatformTestCase() {
         assertEquals("hello new_universe end", editor.document.text)
         assertEquals("new_universe", caret.selectedText)
     }
+
+    fun testPageDownAndPageUpNormalMode() {
+        val lines = (1..100).joinToString("\n") { "line $it" }
+        myFixture.configureByText("test.txt", lines)
+        val editor = myFixture.editor
+        val caret = editor.caretModel.primaryCaret
+        caret.moveToOffset(0)
+
+        val pageSize = HelixMotions.getPageSize(editor)
+
+        HelixMotions.pageDown(editor)
+        assertEquals(pageSize, editor.document.getLineNumber(caret.offset))
+        assertFalse(caret.hasSelection())
+
+        HelixMotions.pageUp(editor)
+        assertEquals(0, editor.document.getLineNumber(caret.offset))
+        assertFalse(caret.hasSelection())
+    }
+
+    fun testHalfPageDownAndHalfPageUpNormalMode() {
+        val lines = (1..100).joinToString("\n") { "line $it" }
+        myFixture.configureByText("test.txt", lines)
+        val editor = myFixture.editor
+        val caret = editor.caretModel.primaryCaret
+        caret.moveToOffset(0)
+
+        val halfPage = (HelixMotions.getPageSize(editor) / 2).coerceAtLeast(1)
+
+        HelixMotions.halfPageDown(editor)
+        assertEquals(halfPage, editor.document.getLineNumber(caret.offset))
+        assertFalse(caret.hasSelection())
+
+        HelixMotions.halfPageUp(editor)
+        assertEquals(0, editor.document.getLineNumber(caret.offset))
+        assertFalse(caret.hasSelection())
+    }
+
+    fun testPageMotionsInSelectModeExtendsSelection() {
+        val lines = (1..100).joinToString("\n") { "line $it" }
+        myFixture.configureByText("test.txt", lines)
+        val editor = myFixture.editor
+        val caret = editor.caretModel.primaryCaret
+        caret.moveToOffset(0)
+
+        HelixKeyHandler.handleKey('v', editor)
+        assertEquals(HelixMode.SELECT, HelixStateManager.getOrCreate(editor).mode)
+
+        val halfPage = (HelixMotions.getPageSize(editor) / 2).coerceAtLeast(1)
+        HelixMotions.halfPageDown(editor)
+
+        assertEquals(halfPage, editor.document.getLineNumber(caret.offset))
+        assertTrue(caret.hasSelection())
+        assertEquals(0, caret.selectionStart)
+        assertEquals(caret.offset, caret.selectionEnd)
+    }
+
+    fun testPageMotionsWithCountPrefix() {
+        val lines = (1..100).joinToString("\n") { "line $it" }
+        myFixture.configureByText("test.txt", lines)
+        val editor = myFixture.editor
+        val caret = editor.caretModel.primaryCaret
+        caret.moveToOffset(0)
+
+        val halfPage = (HelixMotions.getPageSize(editor) / 2).coerceAtLeast(1)
+
+        // Type '2' then Ctrl-D ('\u0004')
+        HelixKeyHandler.handleKey('2', editor)
+        HelixKeyHandler.handleKey('\u0004', editor)
+
+        assertEquals(halfPage * 2, editor.document.getLineNumber(caret.offset))
+    }
+
+    fun testPageMotionsViaActions() {
+        val lines = (1..100).joinToString("\n") { "line $it" }
+        myFixture.configureByText("test.txt", lines)
+        val editor = myFixture.editor
+        val caret = editor.caretModel.primaryCaret
+        caret.moveToOffset(0)
+
+        val dataContext = com.intellij.ide.DataManager.getInstance().getDataContext(editor.contentComponent)
+        val pageDownAction = jp.titze.intellij.helix.editor.HelixPageDownAction()
+        val event = com.intellij.openapi.actionSystem.AnActionEvent.createFromAnAction(
+            pageDownAction,
+            null,
+            com.intellij.openapi.actionSystem.ActionPlaces.KEYBOARD_SHORTCUT,
+            dataContext
+        )
+
+        pageDownAction.update(event)
+        assertTrue(event.presentation.isEnabled)
+
+        pageDownAction.actionPerformed(event)
+        val pageSize = HelixMotions.getPageSize(editor)
+        assertEquals(pageSize, editor.document.getLineNumber(caret.offset))
+
+        val halfPageUpAction = jp.titze.intellij.helix.editor.HelixHalfPageUpAction()
+        val halfUpEvent = com.intellij.openapi.actionSystem.AnActionEvent.createFromAnAction(
+            halfPageUpAction,
+            null,
+            com.intellij.openapi.actionSystem.ActionPlaces.KEYBOARD_SHORTCUT,
+            dataContext
+        )
+        halfPageUpAction.actionPerformed(halfUpEvent)
+        val halfPage = (pageSize / 2).coerceAtLeast(1)
+        assertEquals(pageSize - halfPage, editor.document.getLineNumber(caret.offset))
+    }
+
+    fun testPageMotionsClampedAtDocumentBounds() {
+        val lines = (1..10).joinToString("\n") { "line $it" }
+        myFixture.configureByText("test.txt", lines)
+        val editor = myFixture.editor
+        val caret = editor.caretModel.primaryCaret
+        caret.moveToOffset(0)
+
+        // page down when file has only 10 lines (pageSize=25) -> clamps to last line (index 9)
+        HelixMotions.pageDown(editor)
+        assertEquals(9, editor.document.getLineNumber(caret.offset))
+
+        // page up from last line -> clamps to line 0
+        HelixMotions.pageUp(editor)
+        assertEquals(0, editor.document.getLineNumber(caret.offset))
+    }
+
+    fun testHelixEventDispatcherCtrlFAndCtrlB() {
+        val lines = (1..100).joinToString("\n") { "line $it" }
+        myFixture.configureByText("test.txt", lines)
+        val editor = myFixture.editor
+        val caret = editor.caretModel.primaryCaret
+        caret.moveToOffset(0)
+
+        val dispatcher = jp.titze.intellij.helix.editor.HelixEventDispatcher()
+        val ctrlF = java.awt.event.KeyEvent(
+            editor.contentComponent,
+            java.awt.event.KeyEvent.KEY_PRESSED,
+            System.currentTimeMillis(),
+            java.awt.event.InputEvent.CTRL_DOWN_MASK,
+            java.awt.event.KeyEvent.VK_F,
+            java.awt.event.KeyEvent.CHAR_UNDEFINED
+        )
+
+        val handled = dispatcher.dispatch(ctrlF)
+        assertTrue(handled)
+        assertTrue(ctrlF.isConsumed)
+
+        val pageSize = HelixMotions.getPageSize(editor)
+        assertEquals(pageSize, editor.document.getLineNumber(caret.offset))
+
+        val ctrlB = java.awt.event.KeyEvent(
+            editor.contentComponent,
+            java.awt.event.KeyEvent.KEY_PRESSED,
+            System.currentTimeMillis(),
+            java.awt.event.InputEvent.CTRL_DOWN_MASK,
+            java.awt.event.KeyEvent.VK_B,
+            java.awt.event.KeyEvent.CHAR_UNDEFINED
+        )
+
+        val handledB = dispatcher.dispatch(ctrlB)
+        assertTrue(handledB)
+        assertTrue(ctrlB.isConsumed)
+        assertEquals(0, editor.document.getLineNumber(caret.offset))
+    }
+
+    fun testHelixEventDispatcherCtrlDAndCtrlU() {
+        val lines = (1..100).joinToString("\n") { "line $it" }
+        myFixture.configureByText("test.txt", lines)
+        val editor = myFixture.editor
+        val caret = editor.caretModel.primaryCaret
+        caret.moveToOffset(0)
+
+        val dispatcher = jp.titze.intellij.helix.editor.HelixEventDispatcher()
+        val ctrlD = java.awt.event.KeyEvent(
+            editor.contentComponent,
+            java.awt.event.KeyEvent.KEY_PRESSED,
+            System.currentTimeMillis(),
+            java.awt.event.InputEvent.CTRL_DOWN_MASK,
+            java.awt.event.KeyEvent.VK_D,
+            java.awt.event.KeyEvent.CHAR_UNDEFINED
+        )
+
+        assertTrue(dispatcher.dispatch(ctrlD))
+        assertTrue(ctrlD.isConsumed)
+
+        val halfPage = (HelixMotions.getPageSize(editor) / 2).coerceAtLeast(1)
+        assertEquals(halfPage, editor.document.getLineNumber(caret.offset))
+
+        val ctrlU = java.awt.event.KeyEvent(
+            editor.contentComponent,
+            java.awt.event.KeyEvent.KEY_PRESSED,
+            System.currentTimeMillis(),
+            java.awt.event.InputEvent.CTRL_DOWN_MASK,
+            java.awt.event.KeyEvent.VK_U,
+            java.awt.event.KeyEvent.CHAR_UNDEFINED
+        )
+
+        assertTrue(dispatcher.dispatch(ctrlU))
+        assertTrue(ctrlU.isConsumed)
+        assertEquals(0, editor.document.getLineNumber(caret.offset))
+    }
+
+    fun testHelixEventDispatcherIgnoredInInsertMode() {
+        val lines = (1..100).joinToString("\n") { "line $it" }
+        myFixture.configureByText("test.txt", lines)
+        val editor = myFixture.editor
+        HelixActions.enterInsert(editor)
+
+        val dispatcher = jp.titze.intellij.helix.editor.HelixEventDispatcher()
+        val ctrlF = java.awt.event.KeyEvent(
+            editor.contentComponent,
+            java.awt.event.KeyEvent.KEY_PRESSED,
+            System.currentTimeMillis(),
+            java.awt.event.InputEvent.CTRL_DOWN_MASK,
+            java.awt.event.KeyEvent.VK_F,
+            java.awt.event.KeyEvent.CHAR_UNDEFINED
+        )
+
+        assertFalse(dispatcher.dispatch(ctrlF))
+        assertFalse(ctrlF.isConsumed)
+    }
+
+    fun testHelixEventDispatcherWithCount() {
+        val lines = (1..100).joinToString("\n") { "line $it" }
+        myFixture.configureByText("test.txt", lines)
+        val editor = myFixture.editor
+        val state = HelixStateManager.getOrCreate(editor)
+        state.appendCountDigit('2')
+
+        val dispatcher = jp.titze.intellij.helix.editor.HelixEventDispatcher()
+        val ctrlD = java.awt.event.KeyEvent(
+            editor.contentComponent,
+            java.awt.event.KeyEvent.KEY_PRESSED,
+            System.currentTimeMillis(),
+            java.awt.event.InputEvent.CTRL_DOWN_MASK,
+            java.awt.event.KeyEvent.VK_D,
+            java.awt.event.KeyEvent.CHAR_UNDEFINED
+        )
+
+        assertTrue(dispatcher.dispatch(ctrlD))
+        val halfPage = (HelixMotions.getPageSize(editor) / 2).coerceAtLeast(1)
+        assertEquals(halfPage * 2, editor.document.getLineNumber(editor.caretModel.offset))
+    }
 }
 
