@@ -11,13 +11,16 @@ import jp.titze.intellij.helix.state.HelixStateManager
 class HelixTypedActionHandler(private val originalHandler: TypedActionHandler?) : TypedActionHandler {
 
     override fun execute(editor: Editor, charTyped: Char, dataContext: DataContext) {
+        if (editor.isOneLineMode || editor.isViewer) {
+            originalHandler?.execute(editor, charTyped, dataContext)
+            return
+        }
+
         val state = HelixStateManager.getOrCreate(editor)
 
-        if (state.mode != HelixMode.INSERT) {
-            val handled = HelixKeyHandler.handleKey(charTyped, editor)
-            if (handled) {
-                return
-            }
+        if (!state.mode.isInsertable) {
+            HelixKeyHandler.handleKey(charTyped, editor)
+            return
         }
 
         originalHandler?.execute(editor, charTyped, dataContext)

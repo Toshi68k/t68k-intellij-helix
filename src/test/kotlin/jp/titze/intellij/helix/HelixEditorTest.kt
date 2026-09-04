@@ -594,4 +594,131 @@ class HelixEditorTest : BasePlatformTestCase() {
         // Execute command directly
         jp.titze.intellij.helix.command.HelixCommandPopup.executeCommand("format", editor)
     }
+
+    fun test100ggJumpsToLine100() {
+        val lines = (1..150).joinToString("\n") { "line $it" }
+        myFixture.configureByText("test.txt", lines)
+        val editor = myFixture.editor
+        val state = HelixStateManager.getOrCreate(editor)
+
+        // Type 1, 0, 0, g, g
+        HelixKeyHandler.handleKey('1', editor)
+        assertEquals(1, state.count)
+        HelixKeyHandler.handleKey('0', editor)
+        assertEquals(10, state.count)
+        HelixKeyHandler.handleKey('0', editor)
+        assertEquals(100, state.count)
+
+        HelixKeyHandler.handleKey('g', editor)
+        assertEquals("g", state.pendingSequence)
+        HelixKeyHandler.handleKey('g', editor)
+        assertEquals("", state.pendingSequence)
+        assertNull(state.count)
+
+        val caret = editor.caretModel.primaryCaret
+        val currentLineNumber = editor.document.getLineNumber(caret.offset)
+        // 0-based line index for line 100 is 99
+        assertEquals(99, currentLineNumber)
+        val expectedOffset = editor.document.getLineStartOffset(99)
+        assertEquals(expectedOffset, caret.offset)
+    }
+
+    fun test100ggWithSpaceJumpsToLine100() {
+        val lines = (1..150).joinToString("\n") { "line $it" }
+        myFixture.configureByText("test.txt", lines)
+        val editor = myFixture.editor
+
+        // Type 1, 0, 0, ' ', g, g
+        HelixKeyHandler.handleKey('1', editor)
+        HelixKeyHandler.handleKey('0', editor)
+        HelixKeyHandler.handleKey('0', editor)
+        HelixKeyHandler.handleKey(' ', editor)
+        HelixKeyHandler.handleKey('g', editor)
+        HelixKeyHandler.handleKey('g', editor)
+
+        val caret = editor.caretModel.primaryCaret
+        assertEquals(99, editor.document.getLineNumber(caret.offset))
+    }
+
+    fun testCountWithCapitalGJumpsToLine() {
+        val lines = (1..100).joinToString("\n") { "line $it" }
+        myFixture.configureByText("test.txt", lines)
+        val editor = myFixture.editor
+
+        HelixKeyHandler.handleKey('5', editor)
+        HelixKeyHandler.handleKey('0', editor)
+        HelixKeyHandler.handleKey('G', editor)
+
+        val caret = editor.caretModel.primaryCaret
+        assertEquals(49, editor.document.getLineNumber(caret.offset))
+    }
+
+    fun testCountMotions() {
+        val lines = (1..20).joinToString("\n") { "line $it" }
+        myFixture.configureByText("test.txt", lines)
+        val editor = myFixture.editor
+        val caret = editor.caretModel.primaryCaret
+        caret.moveToOffset(0)
+
+        // 5j moves down 5 lines
+        HelixKeyHandler.handleKey('5', editor)
+        HelixKeyHandler.handleKey('j', editor)
+        assertEquals(5, editor.document.getLineNumber(caret.offset))
+
+        // 3k moves up 3 lines
+        HelixKeyHandler.handleKey('3', editor)
+        HelixKeyHandler.handleKey('k', editor)
+        assertEquals(2, editor.document.getLineNumber(caret.offset))
+    }
+
+    fun testNormalModeTypingDoesNotEdit() {
+        val text = "hello world"
+        myFixture.configureByText("test.txt", text)
+        val editor = myFixture.editor
+        jp.titze.intellij.helix.editor.HelixTypedActionHandler.install()
+
+        // Type keys in normal mode via fixture (which goes through TypedActionHandler)
+        myFixture.type('z')
+        myFixture.type('q')
+        myFixture.type('1')
+        myFixture.type('2')
+        assertEquals(text, editor.document.text)
+    }
+
+    fun testInsertModeAllowsEditing() {
+        myFixture.configureByText("test.txt", "hello")
+        val editor = myFixture.editor
+        jp.titze.intellij.helix.editor.HelixTypedActionHandler.install()
+
+        // Press 'i' to enter insert mode
+        HelixKeyHandler.handleKey('i', editor)
+        assertEquals(HelixMode.INSERT, HelixStateManager.getOrCreate(editor).mode)
+
+        myFixture.type('!')
+        assertEquals("!hello", editor.document.text)
+    }
+
+    fun testNormalModeBackspaceRemovesCountDigitWithoutEditingText() {
+        val text = "some code text"
+        myFixture.configureByText("test.txt", text)
+        val editor = myFixture.editor
+        val state = HelixStateManager.getOrCreate(editor)
+        jp.titze.intellij.helix.editor.HelixEditorActionHandler.install()
+
+        HelixKeyHandler.handleKey('1', editor)
+        HelixKeyHandler.handleKey('0', editor)
+        assertEquals(10, state.count)
+
+        myFixture.type('\b') // backspace
+        assertEquals(1, state.count)
+        assertEquals(text, editor.document.text)
+
+        myFixture.type('\b') // backspace
+        assertNull(state.count)
+        assertEquals(text, editor.document.text)
+
+        // Another backspace when count is empty should still not delete document text
+        myFixture.type('\b')
+        assertEquals(text, editor.document.text)
+    }
 }

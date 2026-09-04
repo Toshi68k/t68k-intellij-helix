@@ -18,8 +18,9 @@ class HelixEscapeAction : AnAction() {
         val state = HelixStateManager.getOrCreate(editor)
 
         HelixWhichKeyPopup.hide()
-        if (state.pendingSequence.isNotEmpty()) {
+        if (state.pendingSequence.isNotEmpty() || state.hasCount) {
             state.clearPendingSequence()
+            state.clearCount()
             return
         }
 

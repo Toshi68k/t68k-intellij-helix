@@ -9,6 +9,7 @@ class HelixEditorListener : EditorFactoryListener {
     override fun editorCreated(event: EditorFactoryEvent) {
         val editor = event.editor
         HelixTypedActionHandler.install()
+        HelixEditorActionHandler.install()
         HelixStateManager.getOrCreate(editor)
     }
 }

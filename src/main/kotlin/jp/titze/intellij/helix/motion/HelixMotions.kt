@@ -3,6 +3,7 @@ package jp.titze.intellij.helix.motion
 import com.intellij.openapi.editor.Caret
 import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.Editor
+import com.intellij.openapi.editor.ScrollType
 import jp.titze.intellij.helix.state.HelixMode
 import jp.titze.intellij.helix.state.HelixStateManager
 
@@ -177,34 +178,36 @@ object HelixMotions {
     }
 
     /**
-     * x: Select line, or extend selection by one more line
+     * x: Select line, or extend selection by one or more lines
      */
-    fun selectLine(editor: Editor) {
+    fun selectLine(editor: Editor, count: Int = 1) {
         val doc = editor.document
         if (doc.textLength == 0) return
 
         runForEachCaret(editor) { caret ->
-            val hasSel = caret.hasSelection()
-            val selStart = caret.selectionStart
-            val selEnd = caret.selectionEnd
+            repeat(count.coerceAtLeast(1)) {
+                val hasSel = caret.hasSelection()
+                val selStart = caret.selectionStart
+                val selEnd = caret.selectionEnd
 
-            val startLine = doc.getLineNumber(selStart)
-            val endLine = doc.getLineNumber(if (hasSel && selEnd > selStart) (selEnd - 1).coerceAtLeast(0) else selStart)
+                val startLine = doc.getLineNumber(selStart)
+                val endLine = doc.getLineNumber(if (hasSel && selEnd > selStart) (selEnd - 1).coerceAtLeast(0) else selStart)
 
-            val lineStartOffset = doc.getLineStartOffset(startLine)
-            val lineEndOffset = getLineEndWithNewline(doc, endLine)
+                val lineStartOffset = doc.getLineStartOffset(startLine)
+                val lineEndOffset = getLineEndWithNewline(doc, endLine)
 
-            if (hasSel && selStart == lineStartOffset && selEnd == lineEndOffset) {
-                // Already selects whole line(s) -> extend down 1 line
-                val nextLine = (endLine + 1).coerceAtMost(doc.lineCount - 1)
-                val newEndOffset = getLineEndWithNewline(doc, nextLine)
-                caret.setSelection(selStart, newEndOffset)
-                caret.moveToOffset(newEndOffset)
-            } else {
-                // Select current line(s)
-                val fullEndOffset = getLineEndWithNewline(doc, endLine)
-                caret.setSelection(lineStartOffset, fullEndOffset)
-                caret.moveToOffset(fullEndOffset)
+                if (hasSel && selStart == lineStartOffset && selEnd == lineEndOffset) {
+                    // Already selects whole line(s) -> extend down 1 line
+                    val nextLine = (endLine + 1).coerceAtMost(doc.lineCount - 1)
+                    val newEndOffset = getLineEndWithNewline(doc, nextLine)
+                    caret.setSelection(selStart, newEndOffset)
+                    caret.moveToOffset(newEndOffset)
+                } else {
+                    // Select current line(s)
+                    val fullEndOffset = getLineEndWithNewline(doc, endLine)
+                    caret.setSelection(lineStartOffset, fullEndOffset)
+                    caret.moveToOffset(fullEndOffset)
+                }
             }
         }
     }
@@ -322,15 +325,28 @@ object HelixMotions {
     }
 
     /**
-     * gg: Move to top of document
+     * gg: Move to top of document, or to line number if count is specified (1-based)
      */
-    fun moveFileStart(editor: Editor) {
+    fun moveFileStart(editor: Editor, count: Int? = null) {
         val state = HelixStateManager.getOrCreate(editor)
         val isSelect = state.mode == HelixMode.SELECT
+        val doc = editor.document
+        val lineCount = doc.lineCount
+        if (doc.textLength == 0 || lineCount == 0) return
+
+        val targetOffset = if (count != null && count > 0) {
+            val targetLine = (count - 1).coerceIn(0, (lineCount - 1).coerceAtLeast(0))
+            doc.getLineStartOffset(targetLine)
+        } else {
+            0
+        }
+
         runForEachCaret(editor) { caret ->
             val anchor = if (isSelect && caret.hasSelection()) caret.leadSelectionOffset else caret.offset
-            applyMotion(caret, anchor, 0, isSelect)
+            applyMotion(caret, anchor, targetOffset, isSelect)
         }
+
+        editor.scrollingModel.scrollToCaret(ScrollType.MAKE_VISIBLE)
     }
 
     /**

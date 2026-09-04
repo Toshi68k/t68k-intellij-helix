@@ -17,7 +17,7 @@ object HelixKeyHandler {
     fun handleKey(charTyped: Char, editor: Editor): Boolean {
         val state = HelixStateManager.getOrCreate(editor)
 
-        if (state.mode == HelixMode.INSERT) {
+        if (state.mode.isInsertable) {
             return false // Let standard editor typing handle it
         }
 
@@ -28,6 +28,17 @@ object HelixKeyHandler {
             return handlePendingSequence(seq, charTyped, editor, state)
         }
 
+        // Accumulate count digits when no prefix is pending
+        if (charTyped in '1'..'9' || (charTyped == '0' && state.hasCount)) {
+            state.appendCountDigit(charTyped)
+            return true
+        }
+
+        // If count was entered, allow optional space separator (e.g. "100 gg")
+        if (charTyped == ' ' && state.hasCount) {
+            return true
+        }
+
         // Check if character starts a multi-key sequence
         when (charTyped) {
             'g', ' ', '[', ']', 'm' -> {
@@ -36,6 +47,7 @@ object HelixKeyHandler {
                 return true
             }
             ':' -> {
+                state.clearCount()
                 HelixWhichKeyPopup.hide()
                 HelixCommandPopup.show(editor)
                 return true
@@ -53,10 +65,11 @@ object HelixKeyHandler {
         state: HelixEditorState
     ): Boolean {
         HelixWhichKeyPopup.hide()
+        val count = state.takeCount()
         when (prefix) {
             "g" -> {
                 state.clearPendingSequence()
-                return handleGMenu(ch, editor)
+                return handleGMenu(ch, editor, count)
             }
             " " -> {
                 state.clearPendingSequence()
@@ -120,7 +133,7 @@ object HelixKeyHandler {
         }
     }
 
-    private fun handleGMenu(ch: Char, editor: Editor): Boolean {
+    private fun handleGMenu(ch: Char, editor: Editor, count: Int? = null): Boolean {
         return when (ch) {
             'd' -> HelixActionDelegate.executeAction("GotoDeclaration", editor)
             'y' -> HelixActionDelegate.executeAction("GotoTypeDeclaration", editor)
@@ -138,7 +151,7 @@ object HelixKeyHandler {
                 true
             }
             'g' -> {
-                HelixMotions.moveFileStart(editor)
+                HelixMotions.moveFileStart(editor, count)
                 true
             }
             else -> false
@@ -197,17 +210,27 @@ object HelixKeyHandler {
     }
 
     private fun handleSingleKey(ch: Char, editor: Editor, state: HelixEditorState): Boolean {
+        val rawCount = state.takeCount()
+        val count = rawCount ?: 1
+
         when (ch) {
             // Motions
-            'w' -> HelixMotions.moveNextWordStart(editor)
-            'b' -> HelixMotions.movePrevWordStart(editor)
-            'e' -> HelixMotions.moveWordEnd(editor)
-            'x' -> HelixMotions.selectLine(editor)
+            'w' -> HelixMotions.moveNextWordStart(editor, count)
+            'b' -> HelixMotions.movePrevWordStart(editor, count)
+            'e' -> HelixMotions.moveWordEnd(editor, count)
+            'x' -> HelixMotions.selectLine(editor, count)
             '%' -> HelixMotions.selectAll(editor)
-            'h' -> HelixMotions.moveLeft(editor)
-            'j' -> HelixMotions.moveDown(editor)
-            'k' -> HelixMotions.moveUp(editor)
-            'l' -> HelixMotions.moveRight(editor)
+            'h' -> HelixMotions.moveLeft(editor, count)
+            'j' -> HelixMotions.moveDown(editor, count)
+            'k' -> HelixMotions.moveUp(editor, count)
+            'l' -> HelixMotions.moveRight(editor, count)
+            'G' -> {
+                if (rawCount != null) {
+                    HelixMotions.moveFileStart(editor, rawCount)
+                } else {
+                    HelixMotions.moveFileEnd(editor)
+                }
+            }
             ';' -> HelixMotions.collapseSelection(editor)
             ',' -> HelixMotions.keepOnlyPrimaryCaret(editor)
 
@@ -234,8 +257,8 @@ object HelixKeyHandler {
 
             // Mode & History & IDE
             'v' -> HelixActions.toggleSelectMode(editor)
-            'u' -> HelixActionDelegate.executeAction("\$Undo", editor)
-            'U' -> HelixActionDelegate.executeAction("\$Redo", editor)
+            'u' -> repeat(count) { HelixActionDelegate.executeAction("\$Undo", editor) }
+            'U' -> repeat(count) { HelixActionDelegate.executeAction("\$Redo", editor) }
             'K' -> HelixActionDelegate.executeAction("QuickJavaDoc", editor)
             '=' -> HelixActionDelegate.executeAction("ReformatCode", editor)
             '>' -> HelixActionDelegate.executeAction("EditorIndentSelection", editor)

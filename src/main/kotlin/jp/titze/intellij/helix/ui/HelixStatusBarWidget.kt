@@ -66,9 +66,11 @@ class HelixStatusBarWidget(private val project: Project) : StatusBarWidget, Stat
 
     override fun getText(): String {
         val state = currentState ?: return ""
+        val count = state.count
+        val countStr = if (count != null) " $count" else ""
         val seq = state.pendingSequence
         val prefix = if (seq.isNotEmpty()) " $seq-" else ""
-        return "${state.mode.shortCode}$prefix"
+        return "${state.mode.shortCode}$countStr$prefix"
     }
 
     override fun getAlignment(): Float = 0.5f

@@ -7,6 +7,7 @@ class HelixEditorState(val editor: Editor) {
         private set
 
     private val pendingBuffer = StringBuilder()
+    private val countBuffer = StringBuilder()
     private val listeners = mutableListOf<(HelixEditorState) -> Unit>()
 
     var yankRegister: String? = null
@@ -15,10 +16,17 @@ class HelixEditorState(val editor: Editor) {
     val pendingSequence: String
         get() = pendingBuffer.toString()
 
+    val count: Int?
+        get() = countBuffer.toString().toIntOrNull()
+
+    val hasCount: Boolean
+        get() = countBuffer.isNotEmpty()
+
     fun setMode(newMode: HelixMode) {
         if (mode != newMode) {
             mode = newMode
             clearPendingSequence()
+            clearCount()
             notifyListeners()
         }
     }
@@ -31,6 +39,31 @@ class HelixEditorState(val editor: Editor) {
     fun clearPendingSequence() {
         if (pendingBuffer.isNotEmpty()) {
             pendingBuffer.clear()
+            notifyListeners()
+        }
+    }
+
+    fun appendCountDigit(digit: Char) {
+        countBuffer.append(digit)
+        notifyListeners()
+    }
+
+    fun removeLastCountDigit() {
+        if (countBuffer.isNotEmpty()) {
+            countBuffer.deleteCharAt(countBuffer.length - 1)
+            notifyListeners()
+        }
+    }
+
+    fun takeCount(): Int? {
+        val currentCount = count
+        clearCount()
+        return currentCount
+    }
+
+    fun clearCount() {
+        if (countBuffer.isNotEmpty()) {
+            countBuffer.clear()
             notifyListeners()
         }
     }
