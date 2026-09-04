@@ -1439,5 +1439,19 @@ class HelixEditorTest : BasePlatformTestCase() {
         val halfPage = (HelixMotions.getPageSize(editor) / 2).coerceAtLeast(1)
         assertEquals(halfPage * 2, editor.document.getLineNumber(editor.caretModel.offset))
     }
+
+    fun testMoveFileEndViaGe() {
+        val lines = (1..200).joinToString("\n") { "line $it" }
+        myFixture.configureByText("test.txt", lines)
+        val editor = myFixture.editor
+        val caret = editor.caretModel.primaryCaret
+        caret.moveToOffset(0)
+
+        HelixKeyHandler.handleKey('g', editor)
+        HelixKeyHandler.handleKey('e', editor)
+
+        assertEquals(lines.length, caret.offset)
+        assertEquals(199, editor.document.getLineNumber(caret.offset))
+    }
 }
 
