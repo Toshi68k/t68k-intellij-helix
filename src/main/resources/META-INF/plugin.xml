@@ -20,6 +20,8 @@
                     <li>Alt+o / Alt+i: Structural AST selection expansion and shrinking</li>
                     <li>Alt+n: Multi-caret select next occurrence</li>
                     <li>Ctrl+c: Toggle line comment</li>
+                    <li>Ctrl+f / Ctrl+b (PageDown / PageUp): Page down / up</li>
+                    <li>Ctrl+d / Ctrl+u: Half page down / up</li>
                     <li>K: Quick documentation hover</li>
                     <li>=: Reformat code</li>
                     <li>u / U: Native undo / redo</li>
@@ -71,6 +73,51 @@
                 text="Helix Comment Line"
                 description="Toggle line comment">
             <keyboard-shortcut keymap="$default" first-keystroke="control C"/>
+            <keyboard-shortcut keymap="Mac OS X" first-keystroke="control C"/>
+            <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="control C"/>
+            <keyboard-shortcut keymap="macOS" first-keystroke="control C"/>
+        </action>
+
+        <action id="jp.titze.intellij.helix.pageDown"
+                class="jp.titze.intellij.helix.editor.HelixPageDownAction"
+                text="Helix Page Down"
+                description="Scroll and move page down">
+            <keyboard-shortcut keymap="$default" first-keystroke="control F"/>
+            <keyboard-shortcut keymap="Mac OS X" first-keystroke="control F"/>
+            <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="control F"/>
+            <keyboard-shortcut keymap="macOS" first-keystroke="control F"/>
+            <keyboard-shortcut keymap="$default" first-keystroke="PAGE_DOWN"/>
+        </action>
+
+        <action id="jp.titze.intellij.helix.pageUp"
+                class="jp.titze.intellij.helix.editor.HelixPageUpAction"
+                text="Helix Page Up"
+                description="Scroll and move page up">
+            <keyboard-shortcut keymap="$default" first-keystroke="control B"/>
+            <keyboard-shortcut keymap="Mac OS X" first-keystroke="control B"/>
+            <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="control B"/>
+            <keyboard-shortcut keymap="macOS" first-keystroke="control B"/>
+            <keyboard-shortcut keymap="$default" first-keystroke="PAGE_UP"/>
+        </action>
+
+        <action id="jp.titze.intellij.helix.halfPageDown"
+                class="jp.titze.intellij.helix.editor.HelixHalfPageDownAction"
+                text="Helix Half Page Down"
+                description="Scroll and move half page down">
+            <keyboard-shortcut keymap="$default" first-keystroke="control D"/>
+            <keyboard-shortcut keymap="Mac OS X" first-keystroke="control D"/>
+            <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="control D"/>
+            <keyboard-shortcut keymap="macOS" first-keystroke="control D"/>
+        </action>
+
+        <action id="jp.titze.intellij.helix.halfPageUp"
+                class="jp.titze.intellij.helix.editor.HelixHalfPageUpAction"
+                text="Helix Half Page Up"
+                description="Scroll and move half page up">
+            <keyboard-shortcut keymap="$default" first-keystroke="control U"/>
+            <keyboard-shortcut keymap="Mac OS X" first-keystroke="control U"/>
+            <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="control U"/>
+            <keyboard-shortcut keymap="macOS" first-keystroke="control U"/>
         </action>
     </actions>
 </idea-plugin>
