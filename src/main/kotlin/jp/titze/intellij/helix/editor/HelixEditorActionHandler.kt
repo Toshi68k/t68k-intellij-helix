@@ -37,7 +37,7 @@ class HelixEditorActionHandler(
                 }
             }
             IdeActions.ACTION_EDITOR_ENTER -> {
-                if (state.pendingSequence in listOf("f", "t", "F", "T")) {
+                if (state.pendingSequence in listOf("f", "t", "F", "T", "r")) {
                     HelixKeyHandler.handleKey('\n', editor)
                     return
                 }

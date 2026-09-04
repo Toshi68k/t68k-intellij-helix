@@ -1062,5 +1062,142 @@ class HelixEditorTest : BasePlatformTestCase() {
         assertEquals(HelixMode.SELECT, HelixStateManager.getOrCreate(editor).mode)
         assertEquals("hello world", caret.selectedText)
     }
+
+    fun testReplaceCharNormalMode() {
+        val initialText = "hello world"
+        myFixture.configureByText("test.txt", initialText)
+        val editor = myFixture.editor
+        val caret = editor.caretModel.primaryCaret
+        caret.moveToOffset(6) // on 'w'
+
+        val state = HelixStateManager.getOrCreate(editor)
+        HelixKeyHandler.handleKey('r', editor)
+        assertEquals("r", state.pendingSequence)
+
+        HelixKeyHandler.handleKey('W', editor)
+        assertEquals("", state.pendingSequence)
+        assertEquals("hello World", editor.document.text)
+        assertEquals(6, caret.offset)
+        assertFalse(caret.hasSelection())
+    }
+
+    fun testReplaceCharWithCount() {
+        val initialText = "hello world"
+        myFixture.configureByText("test.txt", initialText)
+        val editor = myFixture.editor
+        val caret = editor.caretModel.primaryCaret
+        caret.moveToOffset(0)
+
+        HelixKeyHandler.handleKey('3', editor)
+        HelixKeyHandler.handleKey('r', editor)
+        HelixKeyHandler.handleKey('z', editor)
+
+        assertEquals("zzzlo world", editor.document.text)
+        assertEquals(0, caret.offset)
+        assertFalse(caret.hasSelection())
+    }
+
+    fun testReplaceCharSelectionPreservesNewlines() {
+        val initialText = "abc\ndef\n"
+        myFixture.configureByText("test.txt", initialText)
+        val editor = myFixture.editor
+        val caret = editor.caretModel.primaryCaret
+        caret.setSelection(0, 7) // "abc\ndef"
+
+        HelixKeyHandler.handleKey('r', editor)
+        HelixKeyHandler.handleKey('x', editor)
+
+        assertEquals("xxx\nxxx\n", editor.document.text)
+        assertEquals("xxx\nxxx", caret.selectedText)
+        assertEquals(0, caret.offset)
+    }
+
+    fun testReplaceCharWithEnter() {
+        val initialText = "hello world"
+        myFixture.configureByText("test.txt", initialText)
+        val editor = myFixture.editor
+        val caret = editor.caretModel.primaryCaret
+        caret.moveToOffset(5) // space
+
+        jp.titze.intellij.helix.editor.HelixEditorActionHandler.install()
+
+        HelixKeyHandler.handleKey('r', editor)
+        assertEquals("r", HelixStateManager.getOrCreate(editor).pendingSequence)
+
+        myFixture.type('\n')
+
+        assertEquals("hello\nworld", editor.document.text)
+        assertEquals(5, caret.offset)
+    }
+
+    fun testReplaceCharMultiCaret() {
+        val initialText = "foo bar baz"
+        myFixture.configureByText("test.txt", initialText)
+        val editor = myFixture.editor
+        editor.caretModel.primaryCaret.moveToOffset(0) // 'f'
+        editor.caretModel.addCaret(editor.offsetToVisualPosition(4), false) // 'b' in bar
+        editor.caretModel.addCaret(editor.offsetToVisualPosition(8), false) // 'b' in baz
+
+        HelixKeyHandler.handleKey('r', editor)
+        HelixKeyHandler.handleKey('X', editor)
+
+        assertEquals("Xoo Xar Xaz", editor.document.text)
+    }
+
+    fun testPendingReplaceCancelledByBackspace() {
+        val initialText = "cancel test"
+        myFixture.configureByText("test.txt", initialText)
+        val editor = myFixture.editor
+        val state = HelixStateManager.getOrCreate(editor)
+        jp.titze.intellij.helix.editor.HelixEditorActionHandler.install()
+
+        HelixKeyHandler.handleKey('r', editor)
+        assertEquals("r", state.pendingSequence)
+
+        myFixture.type('\b')
+        assertEquals("", state.pendingSequence)
+        assertEquals(initialText, editor.document.text)
+    }
+
+    fun testPendingReplaceCancelledByEscape() {
+        val initialText = "cancel test"
+        myFixture.configureByText("test.txt", initialText)
+        val editor = myFixture.editor
+        val state = HelixStateManager.getOrCreate(editor)
+
+        HelixKeyHandler.handleKey('r', editor)
+        assertEquals("r", state.pendingSequence)
+
+        val escapeAction = jp.titze.intellij.helix.editor.HelixEscapeAction()
+        val dataContext = com.intellij.ide.DataManager.getInstance().getDataContext(editor.contentComponent)
+        val event = com.intellij.openapi.actionSystem.AnActionEvent.createFromAnAction(
+            escapeAction,
+            null,
+            com.intellij.openapi.actionSystem.ActionPlaces.KEYBOARD_SHORTCUT,
+            dataContext
+        )
+        escapeAction.actionPerformed(event)
+
+        assertEquals("", state.pendingSequence)
+        assertEquals(initialText, editor.document.text)
+    }
+
+    fun testSingleKeyReplaceWithClipboard() {
+        val initialText = "hello old_world end"
+        myFixture.configureByText("test.txt", initialText)
+        val editor = myFixture.editor
+        val caret = editor.caretModel.primaryCaret
+        caret.moveToOffset(6)
+        caret.setSelection(6, 15) // select "old_world"
+
+        com.intellij.openapi.ide.CopyPasteManager.getInstance().setContents(
+            java.awt.datatransfer.StringSelection("new_universe")
+        )
+
+        HelixKeyHandler.handleKey('R', editor)
+
+        assertEquals("hello new_universe end", editor.document.text)
+        assertEquals("new_universe", caret.selectedText)
+    }
 }
 

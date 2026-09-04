@@ -69,6 +69,8 @@ A complete modal editing plugin for JetBrains IDEs implementing the [Helix](http
 | `y` | Yank (copy) active selection to clipboard |
 | `p` | Paste clipboard after selection / caret |
 | `P` | Paste clipboard before selection / caret |
+| `r<char>` | Replace each selected character (or character under cursor) with `<char>` |
+| `R` | Replace selection (or character under cursor) with clipboard / yanked text |
 | `J` | Join lines inside selection, or join current line with line below |
 | `i` | Enter `Insert` mode at start of selection |
 | `a` | Enter `Insert` mode after caret / selection |
