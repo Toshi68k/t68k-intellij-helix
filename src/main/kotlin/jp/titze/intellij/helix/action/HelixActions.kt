@@ -93,6 +93,35 @@ object HelixActions {
         }
     }
 
+    fun replaceWithClipboard(editor: Editor) {
+        val project = editor.project
+        val textToPaste = getClipboard() ?: return
+
+        WriteCommandAction.runWriteCommandAction(project) {
+            val carets = editor.caretModel.allCarets.sortedByDescending { it.offset }
+            for (caret in carets) {
+                if (caret.hasSelection()) {
+                    val start = caret.selectionStart
+                    val end = caret.selectionEnd
+                    editor.document.replaceString(start, end, textToPaste)
+                    caret.setSelection(start, start + textToPaste.length)
+                    caret.moveToOffset(start)
+                } else {
+                    val offset = caret.offset
+                    if (offset < editor.document.textLength) {
+                        editor.document.replaceString(offset, offset + 1, textToPaste)
+                        caret.setSelection(offset, offset + textToPaste.length)
+                        caret.moveToOffset(offset)
+                    } else {
+                        editor.document.insertString(offset, textToPaste)
+                        caret.setSelection(offset, offset + textToPaste.length)
+                        caret.moveToOffset(offset)
+                    }
+                }
+            }
+        }
+    }
+
     fun enterInsert(editor: Editor) {
         editor.caretModel.runForEachCaret { it.removeSelection() }
         HelixStateManager.getOrCreate(editor).setMode(HelixMode.INSERT)

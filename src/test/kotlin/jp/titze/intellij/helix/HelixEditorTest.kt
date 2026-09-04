@@ -533,4 +533,65 @@ class HelixEditorTest : BasePlatformTestCase() {
         HelixKeyHandler.handleKey('d', editor)
         assertEquals("foo bar\nbaz qux\n", editor.document.text)
     }
+
+    fun testSpaceMenuChords() {
+        myFixture.configureByText("test.txt", "sample text for space testing")
+        val editor = myFixture.editor
+        val state = HelixStateManager.getOrCreate(editor)
+
+        // Press ' ' begins chord
+        HelixKeyHandler.handleKey(' ', editor)
+        assertEquals(" ", state.pendingSequence)
+
+        // Second key clears chord and executes handler
+        HelixKeyHandler.handleKey('y', editor)
+        assertTrue(state.pendingSequence.isEmpty())
+    }
+
+    fun testSpaceReplaceWithClipboard() {
+        myFixture.configureByText("test.txt", "hello old_world end")
+        val editor = myFixture.editor
+        val caret = editor.caretModel.primaryCaret
+        caret.moveToOffset(6) // on 'o' in old_world
+        caret.setSelection(6, 15) // select "old_world"
+
+        com.intellij.openapi.ide.CopyPasteManager.getInstance().setContents(
+            java.awt.datatransfer.StringSelection("new_universe")
+        )
+
+        // Trigger space R
+        HelixKeyHandler.handleKey(' ', editor)
+        HelixKeyHandler.handleKey('R', editor)
+
+        assertEquals("hello new_universe end", editor.document.text)
+        assertEquals("new_universe", caret.selectedText)
+    }
+
+    fun testWhichKeyChordsSequenceReset() {
+        myFixture.configureByText("test.txt", "sample")
+        val editor = myFixture.editor
+        val state = HelixStateManager.getOrCreate(editor)
+
+        HelixKeyHandler.handleKey('g', editor)
+        assertEquals("g", state.pendingSequence)
+
+        HelixKeyHandler.handleKey('h', editor) // move line start
+        assertTrue(state.pendingSequence.isEmpty())
+    }
+
+    fun testHelixCommandPopupMatchingAndExecution() {
+        myFixture.configureByText("test.txt", "line 1\nline 2")
+        val editor = myFixture.editor
+
+        // Verify command item matching
+        val writeCmd = jp.titze.intellij.helix.command.HelixCommandPopup.COMMANDS.first { it.name == "write" }
+        assertTrue(writeCmd.matches("w"))
+        assertTrue(writeCmd.matches("write"))
+        assertFalse(writeCmd.matches("unknown_xyz"))
+
+        // Verify colon triggering HelixCommandPopup.show in tests without throwing
+        HelixKeyHandler.handleKey(':', editor)
+        // Execute command directly
+        jp.titze.intellij.helix.command.HelixCommandPopup.executeCommand("format", editor)
+    }
 }

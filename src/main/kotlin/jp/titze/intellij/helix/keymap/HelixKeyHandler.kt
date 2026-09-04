@@ -10,6 +10,7 @@ import jp.titze.intellij.helix.motion.HelixMotions
 import jp.titze.intellij.helix.state.HelixEditorState
 import jp.titze.intellij.helix.state.HelixMode
 import jp.titze.intellij.helix.state.HelixStateManager
+import jp.titze.intellij.helix.ui.HelixWhichKeyPopup
 
 object HelixKeyHandler {
 
@@ -31,9 +32,11 @@ object HelixKeyHandler {
         when (charTyped) {
             'g', ' ', '[', ']', 'm' -> {
                 state.appendKey(charTyped)
+                HelixWhichKeyPopup.show(editor, charTyped.toString())
                 return true
             }
             ':' -> {
+                HelixWhichKeyPopup.hide()
                 HelixCommandPopup.show(editor)
                 return true
             }
@@ -49,6 +52,7 @@ object HelixKeyHandler {
         editor: Editor,
         state: HelixEditorState
     ): Boolean {
+        HelixWhichKeyPopup.hide()
         when (prefix) {
             "g" -> {
                 state.clearPendingSequence()
@@ -143,12 +147,15 @@ object HelixKeyHandler {
 
     private fun handleSpaceMenu(ch: Char, editor: Editor): Boolean {
         return when (ch) {
-            'f' -> HelixActionDelegate.executeAction("SearchEverywhere", editor)
+            'f' -> HelixActionDelegate.executeAction("GotoFile", editor) || HelixActionDelegate.executeAction("SearchEverywhere", editor)
             'b' -> HelixActionDelegate.executeAction("RecentFiles", editor)
+            '/' -> HelixActionDelegate.executeAction("FindInPath", editor)
+            'j' -> HelixActionDelegate.executeAction("RecentLocations", editor)
             's' -> HelixActionDelegate.executeAction("FileStructurePopup", editor)
             'S' -> HelixActionDelegate.executeAction("GotoSymbol", editor)
-            'a' -> HelixActionDelegate.executeAction("ShowIntentionActions", editor)
             'd' -> HelixActionDelegate.executeAction("ShowErrorDescription", editor)
+            'D' -> HelixActionDelegate.executeAction("ActivateProblemsViewToolWindow", editor)
+            'a' -> HelixActionDelegate.executeAction("ShowIntentionActions", editor)
             'r' -> HelixActionDelegate.executeAction("RenameElement", editor)
             'w' -> HelixActionDelegate.executeAction("SaveAll", editor)
             'y' -> {
@@ -163,6 +170,12 @@ object HelixKeyHandler {
                 HelixActions.paste(editor, after = false)
                 true
             }
+            'R' -> {
+                HelixActions.replaceWithClipboard(editor)
+                true
+            }
+            'k' -> HelixActionDelegate.executeAction("QuickJavaDoc", editor)
+            '?' -> HelixActionDelegate.executeAction("GotoAction", editor)
             else -> false
         }
     }

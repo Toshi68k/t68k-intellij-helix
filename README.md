@@ -119,16 +119,33 @@ Built-in surround and textobject functionality matching [Helix Surround](https:/
 - `ge` &rarr; Goto end of buffer
 - `gg` &rarr; Goto start of buffer
 
-#### Pickers & Diagnostics (`space` menu)
-- `space + f` &rarr; `SearchEverywhere` (File search)
-- `space + b` &rarr; `RecentFiles` (Buffer switcher)
-- `space + s` &rarr; `FileStructurePopup` (Document symbols)
-- `space + S` &rarr; `GotoSymbol` (Workspace symbols)
-- `space + a` &rarr; `ShowIntentionActions` (Quick-fixes & intentions)
-- `space + d` &rarr; `ShowErrorDescription` (Diagnostic tooltip under caret)
-- `space + r` &rarr; `RenameElement` (Native refactor rename)
-- `space + w` &rarr; `SaveAll`
-- `space + y` / `space + p` &rarr; System clipboard yank / paste
+#### Interactive Which-Key Floating Menu
+Whenever a chord prefix key (<kbd>Space</kbd>, `g`, `m`, `[`, or `]`) is pressed in Normal mode, an interactive, non-intrusive **Which-Key popup** appears in authentic Helix cyan:
+- **Zero latency**: Muscle memory stays instant—typing the follow-up key immediately executes the command without waiting.
+- **Visual discoverability**: Pausing on <kbd>Space</kbd> reveals all available pickers and actions.
+- **Single-key & click dispatch**: Pressing any highlighted key or clicking any option directly executes the action.
+- **Cancelable**: Pressing <kbd>Esc</kbd> or clicking outside dismisses the menu and restores `Normal` mode.
+
+#### Pickers & Space Menu (`space`)
+| Key | Action | Description |
+|-----|--------|-------------|
+| `space + f` | `GotoFile` / `SearchEverywhere` | Dedicated fuzzy file picker |
+| `space + b` | `RecentFiles` | Open buffer / tab switcher |
+| `space + /` | `FindInPath` | Live project-wide text search (live grep) with preview |
+| `space + j` | `RecentLocations` | Visual jumplist picker with recent edits and code diffs |
+| `space + s` | `FileStructurePopup` | Document symbols / outline picker |
+| `space + S` | `GotoSymbol` | Workspace-wide symbol picker across AST |
+| `space + d` | `ShowErrorDescription` | Diagnostic error inspection under caret |
+| `space + D` | `ActivateProblemsViewToolWindow` | Workspace diagnostics (IntelliJ Problems panel) |
+| `space + a` | `ShowIntentionActions` | Code actions & quick-fixes (Alt+Enter) |
+| `space + r` | `RenameElement` | Refactor rename symbol |
+| `space + w` | `SaveAll` | Save all modified buffers |
+| `space + y` | `yank_main_selection` | Yank active selection to system clipboard |
+| `space + p` | `paste_clipboard_after` | Paste system clipboard after cursor / selection |
+| `space + P` | `paste_clipboard_before` | Paste system clipboard before cursor / selection |
+| `space + R` | `replace_with_clipboard` | Replace current selections with system clipboard |
+| `space + k` | `QuickJavaDoc` | Hover documentation popup |
+| `space + ?` | `GotoAction` | Action / command palette picker |
 
 #### Diagnostics Navigation
 - `[d` &rarr; `GotoPreviousError`
@@ -142,16 +159,20 @@ Built-in surround and textobject functionality matching [Helix Surround](https:/
 - `Ctrl+c` &rarr; Toggle line comment (`CommentByLineComment`)
 - `K` &rarr; Quick documentation hover (`QuickJavaDoc`)
 
-#### Command Palette (`:`)
-Press `:` in Normal mode to open the command palette:
-- `:w` &rarr; Save all files (`SaveAll`)
-- `:q` &rarr; Close active tab (`CloseContent`)
+#### Command Picker (`:`)
+Press `:` in Normal mode to open the interactive **Helix Command Picker**, styled with the signature cyan prompt (`:`), live fuzzy suggestions, and keyboard navigation (<kbd>↑</kbd>/<kbd>↓</kbd>, <kbd>Tab</kbd> to complete, <kbd>Enter</kbd> to execute):
+- `:w` / `:write` &rarr; Save all files (`SaveAll`)
+- `:q` / `:quit` &rarr; Close active tab (`CloseContent`)
 - `:wq` / `:x` &rarr; Save all and close active tab
-- `:wa` &rarr; Save all files
+- `:wa` &rarr; Save all modified buffers (`SaveAll`)
 - `:qa` &rarr; Close all editors (`CloseAllEditors`)
-- `:vsp` &rarr; Split editor vertically
-- `:sp` &rarr; Split editor horizontally
-- `:format` &rarr; Reformat code
+- `:vsp` / `:vsplit` &rarr; Split editor vertically
+- `:sp` / `:hsplit` &rarr; Split editor horizontally
+- `:format` &rarr; Reformat code (`ReformatCode`)
+- `:reload` / `:e!` &rarr; Reload file from disk (`SynchronizeCurrentFile`)
+- `:open` &rarr; Open fuzzy file picker (`GotoFile`)
+- `:buffer` / `:b` &rarr; Open buffer switcher (`RecentFiles`)
+- `:find` &rarr; Find in project files (`FindInPath`)
 
 ---
 

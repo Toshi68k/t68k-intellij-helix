@@ -10,12 +10,14 @@ import jp.titze.intellij.helix.command.HelixCommandPopup
 import jp.titze.intellij.helix.motion.HelixMotions
 import jp.titze.intellij.helix.state.HelixMode
 import jp.titze.intellij.helix.state.HelixStateManager
+import jp.titze.intellij.helix.ui.HelixWhichKeyPopup
 
 class HelixEscapeAction : AnAction() {
     override fun actionPerformed(e: AnActionEvent) {
         val editor = e.getData(CommonDataKeys.EDITOR) ?: return
         val state = HelixStateManager.getOrCreate(editor)
 
+        HelixWhichKeyPopup.hide()
         if (state.pendingSequence.isNotEmpty()) {
             state.clearPendingSequence()
             return
