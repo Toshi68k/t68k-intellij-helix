@@ -78,6 +78,23 @@ A complete modal editing plugin for JetBrains IDEs implementing the [Helix](http
 | `~` | Toggle case of selection (`ToggleCase`) |
 | `Escape` | Return to `Normal` mode / clear pending chords |
 
+### Surround & Match Mode (`m` menu)
+
+Built-in surround functionality inspired by [vim-sandwich](https://github.com/machakann/vim-sandwich) and matching [Helix Surround](https://docs.helix-editor.com/surround.html):
+
+| Key | Action | Description |
+|-----|--------|-------------|
+| `ms<char>` | `surround_add` | Surround active selection (or single character under cursor) with delimiter `<char>` |
+| `mr<from><to>` | `surround_replace` | Replace closest enclosing surround pair `<from>` with `<to>` |
+| `md<char>` | `surround_delete` | Delete closest enclosing surround pair `<char>` |
+| `mm` | `match_bracket` | Jump to matching bracket (`EditorMatchBracket`) |
+
+#### Supported Delimiters & Aliases
+- **Pairs**: `()` (alias `b` or `p`), `[]` (alias `r`), `{}` (alias `B` or `c`), `<>` (alias `a`)
+- **Quotes**: `"` (double quote), `'` (single quote), `` ` `` (backtick), or `q` (any quote)
+- **Arbitrary Characters**: Any arbitrary delimiter such as `*` (e.g. `*bold*`), `_`, `~`, `/`, etc.
+- **Multi-Caret**: Works seamlessly across all active carets simultaneously.
+
 ### Deep IntelliJ IDE Integrations
 
 #### Navigation (`g` menu)

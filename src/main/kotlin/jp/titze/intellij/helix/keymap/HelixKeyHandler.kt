@@ -3,6 +3,7 @@ package jp.titze.intellij.helix.keymap
 import com.intellij.openapi.editor.Editor
 import jp.titze.intellij.helix.action.HelixActionDelegate
 import jp.titze.intellij.helix.action.HelixActions
+import jp.titze.intellij.helix.action.HelixSurroundActions
 import jp.titze.intellij.helix.command.HelixCommandPopup
 import jp.titze.intellij.helix.motion.HelixMotions
 import jp.titze.intellij.helix.state.HelixEditorState
@@ -27,7 +28,7 @@ object HelixKeyHandler {
 
         // Check if character starts a multi-key sequence
         when (charTyped) {
-            'g', ' ', '[', ']' -> {
+            'g', ' ', '[', ']', 'm' -> {
                 state.appendKey(charTyped)
                 return true
             }
@@ -47,16 +48,63 @@ object HelixKeyHandler {
         editor: Editor,
         state: HelixEditorState
     ): Boolean {
-        state.clearPendingSequence()
-
         when (prefix) {
-            "g" -> return handleGMenu(ch, editor)
-            " " -> return handleSpaceMenu(ch, editor)
-            "[" -> return handleBracketOpen(ch, editor)
-            "]" -> return handleBracketClose(ch, editor)
+            "g" -> {
+                state.clearPendingSequence()
+                return handleGMenu(ch, editor)
+            }
+            " " -> {
+                state.clearPendingSequence()
+                return handleSpaceMenu(ch, editor)
+            }
+            "[" -> {
+                state.clearPendingSequence()
+                return handleBracketOpen(ch, editor)
+            }
+            "]" -> {
+                state.clearPendingSequence()
+                return handleBracketClose(ch, editor)
+            }
+            "m" -> return handleMatchMenu(ch, editor, state)
+            "ms" -> {
+                state.clearPendingSequence()
+                return HelixSurroundActions.surroundAdd(editor, ch)
+            }
+            "md" -> {
+                state.clearPendingSequence()
+                return HelixSurroundActions.surroundDelete(editor, ch)
+            }
+            "mr" -> {
+                state.appendKey(ch)
+                return true
+            }
+            else -> {
+                if (prefix.startsWith("mr") && prefix.length == 3) {
+                    val fromChar = prefix[2]
+                    state.clearPendingSequence()
+                    return HelixSurroundActions.surroundReplace(editor, fromChar, ch)
+                }
+                state.clearPendingSequence()
+                return false
+            }
         }
+    }
 
-        return true
+    private fun handleMatchMenu(ch: Char, editor: Editor, state: HelixEditorState): Boolean {
+        when (ch) {
+            's', 'd', 'r' -> {
+                state.appendKey(ch)
+                return true
+            }
+            'm' -> {
+                state.clearPendingSequence()
+                return HelixActionDelegate.executeAction("EditorMatchBracket", editor)
+            }
+            else -> {
+                state.clearPendingSequence()
+                return false
+            }
+        }
     }
 
     private fun handleGMenu(ch: Char, editor: Editor): Boolean {

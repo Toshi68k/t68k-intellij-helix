@@ -10,6 +10,7 @@
             <li>Per-editor modal state: Normal, Insert, Select modes with block/line cursor integration.</li>
             <li>Selection-first motions: w, b, e, ge, x, %, h, j, k, l, gh, gl, gg.</li>
             <li>Direct selection actions: d (delete), c (change), y (yank), p / P (paste), ;, Alt+;, ,.</li>
+            <li>Surround functionality (Match mode): ms (add surround), mr (replace surround), md (delete surround), mm (match bracket jump).</li>
             <li>Full native multi-caret support.</li>
             <li>Deep IntelliJ IDE ActionManager integration:
                 <ul>

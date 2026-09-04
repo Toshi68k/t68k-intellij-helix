@@ -16,6 +16,11 @@ class HelixEscapeAction : AnAction() {
         val editor = e.getData(CommonDataKeys.EDITOR) ?: return
         val state = HelixStateManager.getOrCreate(editor)
 
+        if (state.pendingSequence.isNotEmpty()) {
+            state.clearPendingSequence()
+            return
+        }
+
         when (state.mode) {
             HelixMode.INSERT -> {
                 HelixActions.enterNormalMode(editor)
@@ -25,11 +30,7 @@ class HelixEscapeAction : AnAction() {
                 HelixActions.enterNormalMode(editor)
             }
             HelixMode.NORMAL -> {
-                if (state.pendingSequence.isNotEmpty()) {
-                    state.clearPendingSequence()
-                } else {
-                    HelixMotions.collapseSelection(editor)
-                }
+                HelixMotions.collapseSelection(editor)
             }
         }
     }

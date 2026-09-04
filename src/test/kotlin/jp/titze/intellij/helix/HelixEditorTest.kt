@@ -145,4 +145,198 @@ class HelixEditorTest : BasePlatformTestCase() {
         assertEquals("", state.pendingSequence)
         assertEquals(0, editor.caretModel.primaryCaret.offset)
     }
+
+    fun testSurroundAddWithSelection() {
+        myFixture.configureByText("test.txt", "hello world")
+        val editor = myFixture.editor
+        val caret = editor.caretModel.primaryCaret
+
+        // Select "world" (offsets 6 to 11)
+        caret.setSelection(6, 11)
+
+        val state = HelixStateManager.getOrCreate(editor)
+        assertTrue(HelixKeyHandler.handleKey('m', editor))
+        assertEquals("m", state.pendingSequence)
+
+        assertTrue(HelixKeyHandler.handleKey('s', editor))
+        assertEquals("ms", state.pendingSequence)
+
+        assertTrue(HelixKeyHandler.handleKey('(', editor))
+        assertEquals("", state.pendingSequence)
+
+        assertEquals("hello (world)", editor.document.text)
+        assertEquals("(world)", caret.selectedText)
+    }
+
+    fun testSurroundAddQuotes() {
+        myFixture.configureByText("test.txt", "hello world")
+        val editor = myFixture.editor
+        val caret = editor.caretModel.primaryCaret
+
+        caret.setSelection(6, 11)
+
+        HelixKeyHandler.handleKey('m', editor)
+        HelixKeyHandler.handleKey('s', editor)
+        HelixKeyHandler.handleKey('"', editor)
+
+        assertEquals("hello \"world\"", editor.document.text)
+        assertEquals("\"world\"", caret.selectedText)
+    }
+
+    fun testSurroundDeleteParentheses() {
+        myFixture.configureByText("test.txt", "hello (world) test")
+        val editor = myFixture.editor
+        val caret = editor.caretModel.primaryCaret
+        caret.moveToOffset(9) // inside "world"
+
+        val state = HelixStateManager.getOrCreate(editor)
+        HelixKeyHandler.handleKey('m', editor)
+        assertEquals("m", state.pendingSequence)
+
+        HelixKeyHandler.handleKey('d', editor)
+        assertEquals("md", state.pendingSequence)
+
+        HelixKeyHandler.handleKey('(', editor)
+        assertEquals("", state.pendingSequence)
+
+        assertEquals("hello world test", editor.document.text)
+    }
+
+    fun testSurroundDeleteQuotes() {
+        myFixture.configureByText("test.txt", "val s = \"hello world\"")
+        val editor = myFixture.editor
+        val caret = editor.caretModel.primaryCaret
+        caret.moveToOffset(12) // inside "hello world"
+
+        HelixKeyHandler.handleKey('m', editor)
+        HelixKeyHandler.handleKey('d', editor)
+        HelixKeyHandler.handleKey('"', editor)
+
+        assertEquals("val s = hello world", editor.document.text)
+    }
+
+    fun testSurroundDeleteWithAlias() {
+        myFixture.configureByText("test.txt", "hello (world) test")
+        val editor = myFixture.editor
+        val caret = editor.caretModel.primaryCaret
+        caret.moveToOffset(9)
+
+        // 'b' is alias for ()
+        HelixKeyHandler.handleKey('m', editor)
+        HelixKeyHandler.handleKey('d', editor)
+        HelixKeyHandler.handleKey('b', editor)
+
+        assertEquals("hello world test", editor.document.text)
+    }
+
+    fun testSurroundReplaceParenthesesToBrackets() {
+        myFixture.configureByText("test.txt", "hello (world) test")
+        val editor = myFixture.editor
+        val caret = editor.caretModel.primaryCaret
+        caret.moveToOffset(9)
+
+        val state = HelixStateManager.getOrCreate(editor)
+        HelixKeyHandler.handleKey('m', editor)
+        assertEquals("m", state.pendingSequence)
+
+        HelixKeyHandler.handleKey('r', editor)
+        assertEquals("mr", state.pendingSequence)
+
+        HelixKeyHandler.handleKey('(', editor)
+        assertEquals("mr(", state.pendingSequence)
+
+        HelixKeyHandler.handleKey('[', editor)
+        assertEquals("", state.pendingSequence)
+
+        assertEquals("hello [world] test", editor.document.text)
+    }
+
+    fun testSurroundReplaceQuotesToCurlyBraces() {
+        myFixture.configureByText("test.txt", "val s = \"hello\"")
+        val editor = myFixture.editor
+        val caret = editor.caretModel.primaryCaret
+        caret.moveToOffset(11)
+
+        HelixKeyHandler.handleKey('m', editor)
+        HelixKeyHandler.handleKey('r', editor)
+        HelixKeyHandler.handleKey('"', editor)
+        HelixKeyHandler.handleKey('{', editor)
+
+        assertEquals("val s = {hello}", editor.document.text)
+    }
+
+    fun testSurroundNestedParentheses() {
+        myFixture.configureByText("test.txt", "val res = ((a + b) * c)")
+        val editor = myFixture.editor
+        val caret = editor.caretModel.primaryCaret
+        caret.moveToOffset(13) // inside "a + b"
+
+        // Delete inner parentheses
+        HelixKeyHandler.handleKey('m', editor)
+        HelixKeyHandler.handleKey('d', editor)
+        HelixKeyHandler.handleKey('(', editor)
+        assertEquals("val res = (a + b * c)", editor.document.text)
+
+        // Delete outer parentheses
+        HelixKeyHandler.handleKey('m', editor)
+        HelixKeyHandler.handleKey('d', editor)
+        HelixKeyHandler.handleKey('(', editor)
+        assertEquals("val res = a + b * c", editor.document.text)
+    }
+
+    fun testSurroundMultiCaret() {
+        val text = "(foo) and (bar)"
+        myFixture.configureByText("test.txt", text)
+        val editor = myFixture.editor
+        val caretModel = editor.caretModel
+
+        val primary = caretModel.primaryCaret
+        primary.moveToOffset(text.indexOf("foo"))
+
+        val secondary = caretModel.addCaret(editor.offsetToVisualPosition(text.indexOf("bar")))
+        assertNotNull(secondary)
+
+        // Replace '(' with '[' for both carets
+        HelixKeyHandler.handleKey('m', editor)
+        HelixKeyHandler.handleKey('r', editor)
+        HelixKeyHandler.handleKey('(', editor)
+        HelixKeyHandler.handleKey('[', editor)
+
+        assertEquals("[foo] and [bar]", editor.document.text)
+
+        // Delete '[' for both carets
+        HelixKeyHandler.handleKey('m', editor)
+        HelixKeyHandler.handleKey('d', editor)
+        HelixKeyHandler.handleKey('[', editor)
+
+        assertEquals("foo and bar", editor.document.text)
+    }
+
+    fun testSurroundAddWithoutSelection() {
+        myFixture.configureByText("test.txt", "hello world")
+        val editor = myFixture.editor
+        val caret = editor.caretModel.primaryCaret
+        caret.moveToOffset(0) // on 'h'
+
+        HelixKeyHandler.handleKey('m', editor)
+        HelixKeyHandler.handleKey('s', editor)
+        HelixKeyHandler.handleKey('(', editor)
+
+        assertEquals("(h)ello world", editor.document.text)
+    }
+
+    fun testSurroundEscapeCancelsPending() {
+        myFixture.configureByText("test.txt", "hello (world)")
+        val editor = myFixture.editor
+        val state = HelixStateManager.getOrCreate(editor)
+
+        HelixKeyHandler.handleKey('m', editor)
+        HelixKeyHandler.handleKey('r', editor)
+        HelixKeyHandler.handleKey('(', editor)
+        assertEquals("mr(", state.pendingSequence)
+
+        myFixture.testAction(jp.titze.intellij.helix.editor.HelixEscapeAction())
+        assertEquals("", state.pendingSequence)
+        assertEquals("hello (world)", editor.document.text)
+    }
 }
