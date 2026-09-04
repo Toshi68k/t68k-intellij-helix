@@ -975,5 +975,92 @@ class HelixEditorTest : BasePlatformTestCase() {
         assertEquals("", state.pendingSequence)
         assertEquals(initialText, editor.document.text)
     }
+
+    fun testJoinTwoLinesNormalMode() {
+        val initialText = "hello\nworld\nnext"
+        myFixture.configureByText("test.txt", initialText)
+        val editor = myFixture.editor
+        val caret = editor.caretModel.primaryCaret
+        caret.moveToOffset(2)
+
+        HelixKeyHandler.handleKey('J', editor)
+
+        assertEquals("hello world\nnext", editor.document.text)
+        assertEquals(5, caret.offset)
+        assertFalse(caret.hasSelection())
+    }
+
+    fun testJoinLinesTrimsWhitespaceAndIndentation() {
+        val initialText = "val x = 10   \n    + 20"
+        myFixture.configureByText("test.txt", initialText)
+        val editor = myFixture.editor
+        val caret = editor.caretModel.primaryCaret
+        caret.moveToOffset(0)
+
+        HelixKeyHandler.handleKey('J', editor)
+
+        assertEquals("val x = 10 + 20", editor.document.text)
+        assertEquals(10, caret.offset)
+    }
+
+    fun testJoinLinesWithCount() {
+        val initialText = "line 1\nline 2\nline 3\nline 4"
+        myFixture.configureByText("test.txt", initialText)
+        val editor = myFixture.editor
+        val caret = editor.caretModel.primaryCaret
+        caret.moveToOffset(0)
+
+        // 2J joins current line with next 2 lines (3 lines total)
+        HelixKeyHandler.handleKey('2', editor)
+        HelixKeyHandler.handleKey('J', editor)
+
+        assertEquals("line 1 line 2 line 3\nline 4", editor.document.text)
+    }
+
+    fun testJoinLinesWithMultilineSelection() {
+        val initialText = "line 1\nline 2\nline 3\nline 4"
+        myFixture.configureByText("test.txt", initialText)
+        val editor = myFixture.editor
+        val caret = editor.caretModel.primaryCaret
+        caret.moveToOffset(0)
+
+        // Select line 1 and extend to line 2 with x
+        HelixKeyHandler.handleKey('x', editor)
+        HelixKeyHandler.handleKey('x', editor)
+        assertEquals("line 1\nline 2\n", caret.selectedText)
+
+        HelixKeyHandler.handleKey('J', editor)
+
+        assertEquals("line 1 line 2\nline 3\nline 4", editor.document.text)
+    }
+
+    fun testJoinLinesOnLastLineDoesNothing() {
+        val initialText = "first line\nsecond line"
+        myFixture.configureByText("test.txt", initialText)
+        val editor = myFixture.editor
+        val caret = editor.caretModel.primaryCaret
+        caret.moveToOffset(editor.document.getLineStartOffset(1))
+
+        HelixKeyHandler.handleKey('J', editor)
+
+        assertEquals(initialText, editor.document.text)
+    }
+
+    fun testJoinLinesInSelectModeKeepsSelection() {
+        val initialText = "hello\nworld\nfoo"
+        myFixture.configureByText("test.txt", initialText)
+        val editor = myFixture.editor
+        val caret = editor.caretModel.primaryCaret
+        caret.moveToOffset(0)
+
+        HelixKeyHandler.handleKey('v', editor)
+        HelixKeyHandler.handleKey('j', editor)
+
+        HelixKeyHandler.handleKey('J', editor)
+
+        assertEquals("hello world\nfoo", editor.document.text)
+        assertEquals(HelixMode.SELECT, HelixStateManager.getOrCreate(editor).mode)
+        assertEquals("hello world", caret.selectedText)
+    }
 }
 

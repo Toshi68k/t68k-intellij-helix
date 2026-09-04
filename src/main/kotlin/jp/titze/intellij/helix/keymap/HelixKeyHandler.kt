@@ -248,6 +248,7 @@ object HelixKeyHandler {
             'y' -> HelixActions.yankSelection(editor)
             'p' -> HelixActions.paste(editor, after = true)
             'P' -> HelixActions.paste(editor, after = false)
+            'J' -> HelixActions.joinLines(editor, count)
 
             // Insert transitions
             'i' -> HelixActions.enterInsert(editor)

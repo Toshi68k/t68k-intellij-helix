@@ -191,6 +191,92 @@ object HelixActions {
         }
     }
 
+    fun joinLines(editor: Editor, count: Int = 1) {
+        val project = editor.project
+        val doc = editor.document
+        if (doc.lineCount <= 1) return
+
+        val state = HelixStateManager.getOrCreate(editor)
+
+        WriteCommandAction.runWriteCommandAction(project) {
+            val carets = editor.caretModel.allCarets.sortedByDescending { it.selectionStart }
+            val processedLines = mutableSetOf<Int>()
+
+            for (caret in carets) {
+                val selStart = caret.selectionStart
+                val selEnd = caret.selectionEnd
+                val startLine = doc.getLineNumber(selStart)
+                val endLine = if (selEnd > selStart) {
+                    doc.getLineNumber((selEnd - 1).coerceAtLeast(0))
+                } else {
+                    startLine
+                }
+
+                val targetEndLine = if (startLine < endLine) {
+                    endLine
+                } else {
+                    (startLine + count.coerceAtLeast(1)).coerceAtMost(doc.lineCount - 1)
+                }
+
+                if (targetEndLine <= startLine) {
+                    continue
+                }
+
+                if (!processedLines.add(startLine)) {
+                    continue
+                }
+
+                val replaceStart = doc.getLineStartOffset(startLine)
+                val replaceEnd = doc.getLineEndOffset(targetEndLine)
+
+                val sb = StringBuilder()
+                var joinOffsetInResult = -1
+
+                for (lineIdx in startLine..targetEndLine) {
+                    val lineStart = doc.getLineStartOffset(lineIdx)
+                    val lineEnd = doc.getLineEndOffset(lineIdx)
+                    val lineText = doc.getText(TextRange(lineStart, lineEnd))
+
+                    if (lineIdx == startLine) {
+                        val trimmedTrailing = lineText.trimEnd(' ', '\t', '\r')
+                        sb.append(trimmedTrailing)
+                        if (trimmedTrailing.isNotEmpty()) {
+                            joinOffsetInResult = sb.length
+                        }
+                    } else {
+                        val trimmed = lineText.trim(' ', '\t', '\r')
+                        if (trimmed.isNotEmpty()) {
+                            if (sb.isNotEmpty()) {
+                                if (joinOffsetInResult == -1) {
+                                    joinOffsetInResult = sb.length
+                                }
+                                sb.append(' ')
+                            }
+                            sb.append(trimmed)
+                        }
+                    }
+                }
+
+                val replacement = sb.toString()
+                doc.replaceString(replaceStart, replaceEnd, replacement)
+
+                val targetOffset = if (joinOffsetInResult != -1) {
+                    (replaceStart + joinOffsetInResult).coerceAtMost(replaceStart + replacement.length)
+                } else {
+                    replaceStart
+                }
+
+                if (state.mode == HelixMode.SELECT) {
+                    caret.setSelection(replaceStart, replaceStart + replacement.length)
+                    caret.moveToOffset(replaceStart + replacement.length)
+                } else {
+                    caret.removeSelection()
+                    caret.moveToOffset(targetOffset)
+                }
+            }
+        }
+    }
+
     fun enterInsert(editor: Editor) {
         editor.caretModel.runForEachCaret { it.removeSelection() }
         HelixStateManager.getOrCreate(editor).setMode(HelixMode.INSERT)
