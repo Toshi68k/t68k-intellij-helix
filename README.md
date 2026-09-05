@@ -168,10 +168,21 @@ Whenever a chord prefix key (<kbd>Space</kbd>, `g`, `m`, `[`, or `]`) is pressed
 | `space + k` | `QuickJavaDoc` | Hover documentation popup |
 | `space + ?` | `GotoAction` | Action / command palette picker |
 
-#### Diagnostics Navigation
-- `[d` &rarr; `GotoPreviousError`
-- `]d` &rarr; `GotoNextError`
-- `[b` / `]b` &rarr; Previous / Next editor tab
+#### Unimpaired Navigation (`[` / `]`)
+| Forward (`]`) | Backward (`[`) | Helix Command | Description |
+| :--- | :--- | :--- | :--- |
+| `]f` | `[f` | `goto_next_function` / `goto_prev_function` | Next / previous function or method |
+| `]c` | `[c` | `goto_next_comment` / `goto_prev_comment` | Next / previous comment |
+| `]t` | `[t` | `goto_next_class` / `goto_prev_class` | Next / previous class or type |
+| `]a` | `[a` | `goto_next_parameter` / `goto_prev_parameter` | Next / previous parameter |
+| `]T` | `[T` | `goto_next_test` / `goto_prev_test` | Next / previous test method |
+| `]p` | `[p` | `goto_next_paragraph` / `goto_prev_paragraph` | Next / previous paragraph (blank line) |
+| `]g` | `[g` | `goto_next_change` / `goto_prev_change` | Next / previous VCS change marker |
+| `]G` | `[G` | `goto_last_change` / `goto_first_change` | Last / first VCS change marker |
+| `]d` | `[d` | `goto_next_diag` / `goto_prev_diag` | Next / previous diagnostic error |
+| `]D` | `[D` | `goto_last_diag` / `goto_first_diag` | Last / first diagnostic error |
+| `]Space` | `[Space` | `add_newline_below` / `add_newline_above` | Add empty line below / above |
+| `]b` | `[b` | `goto_next_buffer` / `goto_prev_buffer` | Next / previous editor tab |
 
 #### Code AST & Inspection
 - `Alt+o` &rarr; Expand structural selection via PSI hierarchy (`SelectWordAtCaret`)

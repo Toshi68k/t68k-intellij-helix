@@ -2135,5 +2135,121 @@ class HelixEditorTest : BasePlatformTestCase() {
 
         HelixWhichKeyPopup.show(editor, "m")
         HelixWhichKeyPopup.hide()
+
+        HelixWhichKeyPopup.show(editor, "[")
+        HelixWhichKeyPopup.hide()
+
+        HelixWhichKeyPopup.show(editor, "]")
+        HelixWhichKeyPopup.hide()
+    }
+
+    fun testParagraphNavigationForwardAndBackward() {
+        val text = "p1 line 1\np1 line 2\n\np2 line 1\np2 line 2\n\np3 line 1\n"
+        myFixture.configureByText("test.txt", text)
+        val editor = myFixture.editor
+        val doc = editor.document
+        val caret = editor.caretModel.primaryCaret
+
+        caret.moveToOffset(0)
+
+        // Move to next paragraph (blank line between p1 and p2)
+        HelixKeyHandler.handleKey(']', editor).shouldBeTrue()
+        HelixKeyHandler.handleKey('p', editor).shouldBeTrue()
+        val blankLine1 = doc.getLineStartOffset(2)
+        caret.offset shouldBe blankLine1
+
+        // Move to next paragraph (blank line between p2 and p3)
+        HelixKeyHandler.handleKey(']', editor).shouldBeTrue()
+        HelixKeyHandler.handleKey('p', editor).shouldBeTrue()
+        val blankLine2 = doc.getLineStartOffset(5)
+        caret.offset shouldBe blankLine2
+
+        // Move backward to previous paragraph
+        HelixKeyHandler.handleKey('[', editor).shouldBeTrue()
+        HelixKeyHandler.handleKey('p', editor).shouldBeTrue()
+        caret.offset shouldBe blankLine1
+    }
+
+    fun testAddNewlineAboveAndBelow() {
+        val text = "line 1\nline 2\n"
+        myFixture.configureByText("test.txt", text)
+        val editor = myFixture.editor
+        val doc = editor.document
+        val caret = editor.caretModel.primaryCaret
+
+        caret.moveToOffset(2) // in "line 1"
+
+        // Add newline below: ] Space
+        HelixKeyHandler.handleKey(']', editor).shouldBeTrue()
+        HelixKeyHandler.handleKey(' ', editor).shouldBeTrue()
+
+        doc.text shouldBe "line 1\n\nline 2\n"
+        doc.getLineNumber(caret.offset) shouldBe 0
+
+        // Add newline above: [ Space
+        HelixKeyHandler.handleKey('[', editor).shouldBeTrue()
+        HelixKeyHandler.handleKey(' ', editor).shouldBeTrue()
+
+        doc.text shouldBe "\nline 1\n\nline 2\n"
+        doc.getLineNumber(caret.offset) shouldBe 1
+    }
+
+    fun testCommentNavigation() {
+        val text = "val a = 1\n// first comment\nval b = 2\n// second comment\n"
+        myFixture.configureByText("test.txt", text)
+        val editor = myFixture.editor
+        val caret = editor.caretModel.primaryCaret
+
+        caret.moveToOffset(0)
+
+        // Jump to first comment
+        HelixKeyHandler.handleKey(']', editor).shouldBeTrue()
+        HelixKeyHandler.handleKey('c', editor).shouldBeTrue()
+        caret.offset shouldBe text.indexOf("// first comment")
+
+        // Jump to second comment
+        HelixKeyHandler.handleKey(']', editor).shouldBeTrue()
+        HelixKeyHandler.handleKey('c', editor).shouldBeTrue()
+        caret.offset shouldBe text.indexOf("// second comment")
+
+        // Jump back to first comment
+        HelixKeyHandler.handleKey('[', editor).shouldBeTrue()
+        HelixKeyHandler.handleKey('c', editor).shouldBeTrue()
+        caret.offset shouldBe text.indexOf("// first comment")
+    }
+
+    fun testFunctionAndClassNavigation() {
+        val text = "class Foo {\n    fun bar() {}\n    fun baz() {}\n}\nclass Second {\n}\n"
+        myFixture.configureByText("test.kt", text)
+        val editor = myFixture.editor
+        val caret = editor.caretModel.primaryCaret
+
+        caret.moveToOffset(0)
+
+        // Jump forward to first function
+        HelixKeyHandler.handleKey(']', editor).shouldBeTrue()
+        HelixKeyHandler.handleKey('f', editor).shouldBeTrue()
+        caret.offset shouldBe text.indexOf("fun bar")
+
+        // Jump forward to second function
+        HelixKeyHandler.handleKey(']', editor).shouldBeTrue()
+        HelixKeyHandler.handleKey('f', editor).shouldBeTrue()
+        caret.offset shouldBe text.indexOf("fun baz")
+
+        // Jump backward to first function
+        HelixKeyHandler.handleKey('[', editor).shouldBeTrue()
+        HelixKeyHandler.handleKey('f', editor).shouldBeTrue()
+        caret.offset shouldBe text.indexOf("fun bar")
+
+        // Jump forward to next class
+        HelixKeyHandler.handleKey(']', editor).shouldBeTrue()
+        HelixKeyHandler.handleKey('t', editor).shouldBeTrue()
+        caret.offset shouldBe text.indexOf("class Second")
+
+        // Jump backward to first class
+        HelixKeyHandler.handleKey('[', editor).shouldBeTrue()
+        HelixKeyHandler.handleKey('t', editor).shouldBeTrue()
+        caret.offset shouldBe text.indexOf("class Foo")
     }
 }
+

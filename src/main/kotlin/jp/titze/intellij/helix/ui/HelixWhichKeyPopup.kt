@@ -78,11 +78,31 @@ object HelixWhichKeyPopup {
 
     private val bracketOpenItems = listOf(
         WhichKeyItem("d", "goto_prev_diag", "GotoPreviousError"),
+        WhichKeyItem("D", "goto_first_diag", "First error"),
+        WhichKeyItem("f", "goto_prev_function", "MethodUp"),
+        WhichKeyItem("t", "goto_prev_class", "Previous class/type"),
+        WhichKeyItem("a", "goto_prev_parameter", "Previous argument"),
+        WhichKeyItem("c", "goto_prev_comment", "Previous comment"),
+        WhichKeyItem("T", "goto_prev_test", "Previous test"),
+        WhichKeyItem("p", "goto_prev_paragraph", "Previous paragraph"),
+        WhichKeyItem("g", "goto_prev_change", "VcsShowPrevChangeMarker"),
+        WhichKeyItem("G", "goto_first_change", "First change"),
+        WhichKeyItem("Space", "add_newline_above", "Blank line above"),
         WhichKeyItem("b", "goto_prev_buffer", "PreviousTab")
     )
 
     private val bracketCloseItems = listOf(
         WhichKeyItem("d", "goto_next_diag", "GotoNextError"),
+        WhichKeyItem("D", "goto_last_diag", "Last error"),
+        WhichKeyItem("f", "goto_next_function", "MethodDown"),
+        WhichKeyItem("t", "goto_next_class", "Next class/type"),
+        WhichKeyItem("a", "goto_next_parameter", "Next argument"),
+        WhichKeyItem("c", "goto_next_comment", "Next comment"),
+        WhichKeyItem("T", "goto_next_test", "Next test"),
+        WhichKeyItem("p", "goto_next_paragraph", "Next paragraph"),
+        WhichKeyItem("g", "goto_next_change", "VcsShowNextChangeMarker"),
+        WhichKeyItem("G", "goto_last_change", "Last change"),
+        WhichKeyItem("Space", "add_newline_below", "Blank line below"),
         WhichKeyItem("b", "goto_next_buffer", "NextTab")
     )
 
@@ -114,8 +134,8 @@ object HelixWhichKeyPopup {
             " " -> "SPACE: Pickers & Actions" to spaceItems
             "g" -> "GOTO (g): Navigation" to gotoItems
             "m" -> "MATCH (m): Surround & Textobjects" to matchItems
-            "[" -> "JUMP BACK ([): Diagnostics & Tabs" to bracketOpenItems
-            "]" -> "JUMP FORWARD (]): Diagnostics & Tabs" to bracketCloseItems
+            "[" -> "JUMP BACK ([): Unimpaired" to bracketOpenItems
+            "]" -> "JUMP FORWARD (]): Unimpaired" to bracketCloseItems
             else -> return
         }
 

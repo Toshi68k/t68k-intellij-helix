@@ -1,9 +1,15 @@
 package jp.titze.intellij.helix.motion
 
+import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.editor.Caret
 import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.ScrollType
+import com.intellij.psi.PsiComment
+import com.intellij.psi.PsiDocumentManager
+import com.intellij.psi.PsiElement
+import com.intellij.psi.PsiFile
+import jp.titze.intellij.helix.action.HelixActionDelegate
 import jp.titze.intellij.helix.state.HelixMode
 import jp.titze.intellij.helix.state.HelixStateManager
 
@@ -776,5 +782,359 @@ object HelixMotions {
             }
             else -> return null
         }
+    }
+
+    // -------------------------------------------------------------------------
+    // Unimpaired ([ and ]) Motions
+    // -------------------------------------------------------------------------
+
+    /**
+     * [p / ]p: Move to previous/next paragraph boundary (empty line)
+     */
+    fun moveParagraph(editor: Editor, forward: Boolean, count: Int = 1) {
+        val doc = editor.document
+        val textLen = doc.textLength
+        if (textLen == 0) return
+
+        val state = HelixStateManager.getOrCreate(editor)
+        val isSelect = state.mode == HelixMode.SELECT
+
+        runForEachCaret(editor) { caret ->
+            val anchor = if (isSelect && caret.hasSelection()) caret.leadSelectionOffset else caret.offset
+            var curLine = doc.getLineNumber(caret.offset)
+            val lineCount = doc.lineCount
+
+            repeat(count.coerceAtLeast(1)) {
+                if (forward) {
+                    if (curLine < lineCount - 1) {
+                        if (!isLineBlank(doc, curLine)) {
+                            while (curLine < lineCount - 1 && !isLineBlank(doc, curLine)) {
+                                curLine++
+                            }
+                        } else {
+                            while (curLine < lineCount - 1 && isLineBlank(doc, curLine)) {
+                                curLine++
+                            }
+                            while (curLine < lineCount - 1 && !isLineBlank(doc, curLine)) {
+                                curLine++
+                            }
+                        }
+                    }
+                } else {
+                    if (curLine > 0) {
+                        if (!isLineBlank(doc, curLine)) {
+                            while (curLine > 0 && !isLineBlank(doc, curLine)) {
+                                curLine--
+                            }
+                        } else {
+                            while (curLine > 0 && isLineBlank(doc, curLine)) {
+                                curLine--
+                            }
+                            while (curLine > 0 && !isLineBlank(doc, curLine)) {
+                                curLine--
+                            }
+                        }
+                    }
+                }
+            }
+
+            val targetOffset = doc.getLineStartOffset(curLine.coerceIn(0, lineCount - 1))
+            applyMotion(caret, anchor, targetOffset, isSelect)
+        }
+        editor.scrollingModel.scrollToCaret(ScrollType.MAKE_VISIBLE)
+    }
+
+    private fun isLineBlank(doc: Document, line: Int): Boolean {
+        if (line < 0 || line >= doc.lineCount) return true
+        val start = doc.getLineStartOffset(line)
+        val end = doc.getLineEndOffset(line)
+        val chars = doc.charsSequence
+        for (i in start until end) {
+            if (!chars[i].isWhitespace()) return false
+        }
+        return true
+    }
+
+    /**
+     * [Space / ]Space: Add empty line above/below without entering insert mode
+     */
+    fun addNewline(editor: Editor, below: Boolean, count: Int = 1) {
+        val project = editor.project
+        val doc = editor.document
+        val totalCount = count.coerceAtLeast(1)
+
+        WriteCommandAction.runWriteCommandAction(project) {
+            val carets = editor.caretModel.allCarets.sortedByDescending { it.offset }
+            val addedText = "\n".repeat(totalCount)
+            for (caret in carets) {
+                val line = doc.getLineNumber(caret.offset)
+                if (below) {
+                    val lineEnd = doc.getLineEndOffset(line)
+                    doc.insertString(lineEnd, "\n" + "\n".repeat(totalCount - 1))
+                } else {
+                    val lineStart = doc.getLineStartOffset(line)
+                    doc.insertString(lineStart, addedText)
+                }
+            }
+        }
+    }
+
+    /**
+     * [c / ]c: Move to previous/next comment
+     */
+    fun moveComment(editor: Editor, forward: Boolean, count: Int = 1): Boolean {
+        val project = editor.project
+        val doc = editor.document
+        var offsets = emptyList<Int>()
+
+        if (project != null) {
+            val psiFile = PsiDocumentManager.getInstance(project).getPsiFile(doc)
+            if (psiFile != null) {
+                offsets = collectMatchingOffsets(psiFile) { elem ->
+                    elem is PsiComment || elem.javaClass.simpleName.contains("Comment", ignoreCase = true)
+                }
+            }
+        }
+
+        if (offsets.isEmpty()) {
+            offsets = findLineCommentOffsets(doc)
+        }
+
+        return navigateToOffset(editor, offsets, forward, count)
+    }
+
+    /**
+     * [f / ]f: Move to previous/next function or method
+     */
+    fun moveFunction(editor: Editor, forward: Boolean, count: Int = 1): Boolean {
+        val project = editor.project
+        val doc = editor.document
+        var offsets = emptyList<Int>()
+
+        if (project != null) {
+            val psiFile = PsiDocumentManager.getInstance(project).getPsiFile(doc)
+            if (psiFile != null) {
+                offsets = collectMatchingOffsets(psiFile) { elem ->
+                    val name = elem.javaClass.simpleName
+                    (name.contains("Method", ignoreCase = true) || name.contains("Function", ignoreCase = true)) &&
+                        !name.contains("Call", ignoreCase = true) &&
+                        !name.contains("Expr", ignoreCase = true) &&
+                        !name.contains("Reference", ignoreCase = true)
+                }
+            }
+        }
+
+        val moved = navigateToOffset(editor, offsets, forward, count)
+        if (!moved) {
+            val action = if (forward) "MethodDown" else "MethodUp"
+            repeat(count.coerceAtLeast(1)) {
+                HelixActionDelegate.executeAction(action, editor)
+            }
+            return true
+        }
+        return true
+    }
+
+    /**
+     * [t / ]t: Move to previous/next class or type
+     */
+    fun moveType(editor: Editor, forward: Boolean, count: Int = 1): Boolean {
+        val project = editor.project
+        val doc = editor.document
+        var offsets = emptyList<Int>()
+
+        if (project != null) {
+            val psiFile = PsiDocumentManager.getInstance(project).getPsiFile(doc)
+            if (psiFile != null) {
+                offsets = collectMatchingOffsets(psiFile) { elem ->
+                    val name = elem.javaClass.simpleName
+                    (name.contains("Class", ignoreCase = true) ||
+                        name.contains("Interface", ignoreCase = true) ||
+                        name.contains("Struct", ignoreCase = true) ||
+                        name.contains("Trait", ignoreCase = true) ||
+                        name.contains("Enum", ignoreCase = true) ||
+                        name.contains("Record", ignoreCase = true)) &&
+                        !name.contains("Access", ignoreCase = true) &&
+                        !name.contains("Expr", ignoreCase = true) &&
+                        !name.contains("Reference", ignoreCase = true) &&
+                        !name.contains("TypeElement", ignoreCase = true)
+                }
+            }
+        }
+
+        return navigateToOffset(editor, offsets, forward, count)
+    }
+
+    /**
+     * [a / ]a: Move to previous/next parameter
+     */
+    fun moveParameter(editor: Editor, forward: Boolean, count: Int = 1): Boolean {
+        val project = editor.project
+        val doc = editor.document
+        var offsets = emptyList<Int>()
+
+        if (project != null) {
+            val psiFile = PsiDocumentManager.getInstance(project).getPsiFile(doc)
+            if (psiFile != null) {
+                offsets = collectMatchingOffsets(psiFile) { elem ->
+                    val name = elem.javaClass.simpleName
+                    name.contains("Parameter", ignoreCase = true) &&
+                        !name.contains("List", ignoreCase = true)
+                }
+            }
+        }
+
+        return navigateToOffset(editor, offsets, forward, count)
+    }
+
+    /**
+     * [T / ]T: Move to previous/next test method
+     */
+    fun moveTest(editor: Editor, forward: Boolean, count: Int = 1): Boolean {
+        val project = editor.project
+        val doc = editor.document
+        var offsets = emptyList<Int>()
+
+        if (project != null) {
+            val psiFile = PsiDocumentManager.getInstance(project).getPsiFile(doc)
+            if (psiFile != null) {
+                offsets = collectMatchingOffsets(psiFile) { elem ->
+                    val name = elem.javaClass.simpleName
+                    val isMethodOrFunc = (name.contains("Method", ignoreCase = true) || name.contains("Function", ignoreCase = true)) &&
+                        !name.contains("Call", ignoreCase = true) &&
+                        !name.contains("Expr", ignoreCase = true)
+                    if (isMethodOrFunc) {
+                        val text = elem.text
+                        text.contains("@Test") ||
+                            text.contains("fun test", ignoreCase = true) ||
+                            text.contains("def test", ignoreCase = true) ||
+                            text.contains("void test", ignoreCase = true)
+                    } else false
+                }
+            }
+        }
+
+        val moved = navigateToOffset(editor, offsets, forward, count)
+        if (!moved) {
+            HelixActionDelegate.executeAction("GotoTest", editor)
+        }
+        return true
+    }
+
+    /**
+     * [d / ]d / [D / ]D: Diagnostic error navigation
+     */
+    fun moveDiagnostic(editor: Editor, forward: Boolean, count: Int = 1, toEnd: Boolean = false): Boolean {
+        if (toEnd) {
+            if (forward) {
+                editor.caretModel.primaryCaret.moveToOffset(editor.document.textLength)
+                HelixActionDelegate.executeAction("GotoPreviousError", editor)
+            } else {
+                editor.caretModel.primaryCaret.moveToOffset(0)
+                HelixActionDelegate.executeAction("GotoNextError", editor)
+            }
+        } else {
+            val action = if (forward) "GotoNextError" else "GotoPreviousError"
+            repeat(count.coerceAtLeast(1)) {
+                HelixActionDelegate.executeAction(action, editor)
+            }
+        }
+        return true
+    }
+
+    /**
+     * [g / ]g / [G / ]G: VCS change marker navigation
+     */
+    fun moveChange(editor: Editor, forward: Boolean, count: Int = 1, toEnd: Boolean = false): Boolean {
+        if (toEnd) {
+            if (forward) {
+                if (!HelixActionDelegate.executeAction("VcsShowLastChangeMarker", editor)) {
+                    editor.caretModel.primaryCaret.moveToOffset(editor.document.textLength)
+                    HelixActionDelegate.executeAction("VcsShowPrevChangeMarker", editor)
+                }
+            } else {
+                if (!HelixActionDelegate.executeAction("VcsShowFirstChangeMarker", editor)) {
+                    editor.caretModel.primaryCaret.moveToOffset(0)
+                    HelixActionDelegate.executeAction("VcsShowNextChangeMarker", editor)
+                }
+            }
+        } else {
+            val action = if (forward) "VcsShowNextChangeMarker" else "VcsShowPrevChangeMarker"
+            repeat(count.coerceAtLeast(1)) {
+                HelixActionDelegate.executeAction(action, editor)
+            }
+        }
+        return true
+    }
+
+    private fun collectMatchingOffsets(psiFile: PsiFile, predicate: (PsiElement) -> Boolean): List<Int> {
+        val result = mutableListOf<Int>()
+        fun dfs(element: PsiElement) {
+            var child = element.firstChild
+            while (child != null) {
+                if (predicate(child)) {
+                    result.add(child.textRange.startOffset)
+                }
+                dfs(child)
+                child = child.nextSibling
+            }
+        }
+        dfs(psiFile)
+        return result.distinct().sorted()
+    }
+
+    private fun findLineCommentOffsets(doc: Document): List<Int> {
+        val prefixes = listOf("//", "/*", "#", "--", "<!--")
+        val offsets = mutableListOf<Int>()
+        for (line in 0 until doc.lineCount) {
+            val start = doc.getLineStartOffset(line)
+            val end = doc.getLineEndOffset(line)
+            val text = doc.charsSequence.subSequence(start, end).toString()
+            for (prefix in prefixes) {
+                val idx = text.indexOf(prefix)
+                if (idx >= 0) {
+                    offsets.add(start + idx)
+                    break
+                }
+            }
+        }
+        return offsets
+    }
+
+    private fun navigateToOffset(
+        editor: Editor,
+        offsets: List<Int>,
+        forward: Boolean,
+        count: Int
+    ): Boolean {
+        if (offsets.isEmpty()) return false
+        val state = HelixStateManager.getOrCreate(editor)
+        val isSelect = state.mode == HelixMode.SELECT
+        var anyMoved = false
+
+        runForEachCaret(editor) { caret ->
+            val curOffset = caret.offset
+            val anchor = if (isSelect && caret.hasSelection()) caret.leadSelectionOffset else curOffset
+
+            val targetOffset = if (forward) {
+                val candidates = offsets.filter { it > curOffset }
+                val idx = (count - 1).coerceAtMost(candidates.size - 1)
+                if (candidates.isNotEmpty()) candidates[idx] else null
+            } else {
+                val candidates = offsets.filter { it < curOffset }.reversed()
+                val idx = (count - 1).coerceAtMost(candidates.size - 1)
+                if (candidates.isNotEmpty()) candidates[idx] else null
+            }
+
+            if (targetOffset != null) {
+                applyMotion(caret, anchor, targetOffset, isSelect)
+                anyMoved = true
+            }
+        }
+
+        if (anyMoved) {
+            editor.scrollingModel.scrollToCaret(ScrollType.MAKE_VISIBLE)
+        }
+        return anyMoved
     }
 }
