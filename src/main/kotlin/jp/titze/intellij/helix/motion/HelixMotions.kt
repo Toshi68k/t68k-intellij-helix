@@ -927,9 +927,14 @@ object HelixMotions {
                         name.contains("Struct", ignoreCase = true) ||
                         name.contains("Trait", ignoreCase = true) ||
                         name.contains("Enum", ignoreCase = true) ||
-                        name.contains("Record", ignoreCase = true))
+                        name.contains("Record", ignoreCase = true) ||
+                        name.contains("Object", ignoreCase = true) ||
+                        name.contains("TypeAlias", ignoreCase = true))
 
                     isTypeCandidate &&
+                        !name.contains("Literal", ignoreCase = true) &&
+                        !name.contains("Destruct", ignoreCase = true) &&
+                        !name.contains("Component", ignoreCase = true) &&
                         !name.contains("Body", ignoreCase = true) &&
                         !name.contains("Initializer", ignoreCase = true) &&
                         !name.contains("List", ignoreCase = true) &&
@@ -940,7 +945,10 @@ object HelixMotions {
                         !name.contains("TypeElement", ignoreCase = true) &&
                         !name.contains("Parameter", ignoreCase = true) &&
                         !name.contains("Constant", ignoreCase = true) &&
-                        !name.contains("Entry", ignoreCase = true)
+                        !name.contains("Entry", ignoreCase = true) &&
+                        !name.contains("Argument", ignoreCase = true) &&
+                        !name.contains("Statement", ignoreCase = true) &&
+                        !name.contains("Block", ignoreCase = true)
                 }
             }
         }
@@ -1095,7 +1103,7 @@ object HelixMotions {
     }
 
     private fun findClassRangesRegex(doc: Document): List<TextRange> {
-        val regex = Regex("""^\s*(?:(?:public|private|protected|internal|abstract|final|open|data|sealed|value)\s+)*(?:class|interface|struct|trait|enum(?:\s+class)?|record)\s+([A-Za-z0-9_]+)""", RegexOption.MULTILINE)
+        val regex = Regex("""^\s*(?:(?:public|private|protected|internal|abstract|final|open|data|sealed|value)\s+)*(?:class|interface|struct|trait|enum(?:\s+class)?|record|object|typealias)\s+([A-Za-z0-9_]+)""", RegexOption.MULTILINE)
         val text = doc.charsSequence
         return regex.findAll(text).map { match ->
             val start = match.range.first
@@ -1120,17 +1128,13 @@ object HelixMotions {
             val curOffset = caret.offset
 
             val targetRange = if (forward) {
-                val candidates = if (caret.hasSelection()) {
-                    val refOffset = maxOf(curOffset, caret.selectionEnd)
-                    ranges.filter { it.startOffset >= refOffset }
-                } else {
-                    ranges.filter { it.startOffset >= curOffset && it.endOffset > curOffset }
-                }
+                val refOffset = if (caret.hasSelection()) maxOf(curOffset, caret.selectionEnd) else curOffset
+                val candidates = ranges.filter { it.startOffset >= refOffset }
                 val idx = (count - 1).coerceAtMost(candidates.size - 1)
                 if (candidates.isNotEmpty()) candidates[idx] else null
             } else {
                 val refOffset = if (caret.hasSelection()) minOf(curOffset, caret.selectionStart) else curOffset
-                val candidates = ranges.filter { it.endOffset <= refOffset }.sortedByDescending { it.startOffset }
+                val candidates = ranges.filter { it.startOffset < refOffset }.sortedByDescending { it.startOffset }
                 val idx = (count - 1).coerceAtMost(candidates.size - 1)
                 if (candidates.isNotEmpty()) candidates[idx] else null
             }
