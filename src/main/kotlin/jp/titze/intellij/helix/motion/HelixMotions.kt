@@ -61,6 +61,7 @@ object HelixMotions {
                 applyMotion(caret, anchor, offset, isSelect)
             }
         }
+        editor.scrollingModel.scrollToCaret(ScrollType.MAKE_VISIBLE)
     }
 
     /**
@@ -97,6 +98,7 @@ object HelixMotions {
                 applyMotion(caret, anchor, offset, isSelect)
             }
         }
+        editor.scrollingModel.scrollToCaret(ScrollType.MAKE_VISIBLE)
     }
 
     /**
@@ -137,6 +139,7 @@ object HelixMotions {
                 applyMotion(caret, anchor, offset, isSelect)
             }
         }
+        editor.scrollingModel.scrollToCaret(ScrollType.MAKE_VISIBLE)
     }
 
     /**
@@ -175,6 +178,7 @@ object HelixMotions {
                 applyMotion(caret, anchor, offset, isSelect)
             }
         }
+        editor.scrollingModel.scrollToCaret(ScrollType.MAKE_VISIBLE)
     }
 
     /**
@@ -210,6 +214,7 @@ object HelixMotions {
                 }
             }
         }
+        editor.scrollingModel.scrollToCaret(ScrollType.MAKE_VISIBLE)
     }
 
     private fun getLineEndWithNewline(doc: Document, line: Int): Int {
@@ -230,6 +235,7 @@ object HelixMotions {
         val caret = editor.caretModel.primaryCaret
         caret.setSelection(0, textLen)
         caret.moveToOffset(textLen)
+        editor.scrollingModel.scrollToCaret(ScrollType.MAKE_VISIBLE)
     }
 
     /**
@@ -243,6 +249,7 @@ object HelixMotions {
             val newOffset = (caret.offset - count).coerceAtLeast(0)
             applyMotion(caret, anchor, newOffset, isSelect)
         }
+        editor.scrollingModel.scrollToCaret(ScrollType.MAKE_VISIBLE)
     }
 
     fun moveRight(editor: Editor, count: Int = 1) {
@@ -254,6 +261,7 @@ object HelixMotions {
             val newOffset = (caret.offset + count).coerceAtMost(maxLen)
             applyMotion(caret, anchor, newOffset, isSelect)
         }
+        editor.scrollingModel.scrollToCaret(ScrollType.MAKE_VISIBLE)
     }
 
     fun moveUp(editor: Editor, count: Int = 1) {
@@ -270,6 +278,7 @@ object HelixMotions {
             val newOffset = (targetLineStart + curCol).coerceAtMost(targetLineEnd)
             applyMotion(caret, anchor, newOffset, isSelect)
         }
+        editor.scrollingModel.scrollToCaret(ScrollType.MAKE_VISIBLE)
     }
 
     fun moveDown(editor: Editor, count: Int = 1) {
@@ -286,6 +295,7 @@ object HelixMotions {
             val newOffset = (targetLineStart + curCol).coerceAtMost(targetLineEnd)
             applyMotion(caret, anchor, newOffset, isSelect)
         }
+        editor.scrollingModel.scrollToCaret(ScrollType.MAKE_VISIBLE)
     }
 
     fun getPageSize(editor: Editor): Int {
@@ -355,6 +365,7 @@ object HelixMotions {
             }
             applyMotion(caret, anchor, target, isSelect)
         }
+        editor.scrollingModel.scrollToCaret(ScrollType.MAKE_VISIBLE)
     }
 
     /**
@@ -370,6 +381,7 @@ object HelixMotions {
             val lineEnd = doc.getLineEndOffset(line)
             applyMotion(caret, anchor, lineEnd, isSelect)
         }
+        editor.scrollingModel.scrollToCaret(ScrollType.MAKE_VISIBLE)
     }
 
     /**
@@ -421,6 +433,7 @@ object HelixMotions {
             caret.removeSelection()
             caret.moveToOffset(offset)
         }
+        editor.scrollingModel.scrollToCaret(ScrollType.MAKE_VISIBLE)
     }
 
     /**
@@ -435,6 +448,7 @@ object HelixMotions {
                 caret.setSelection(cursor, anchor)
             }
         }
+        editor.scrollingModel.scrollToCaret(ScrollType.MAKE_VISIBLE)
     }
 
     /**
@@ -442,6 +456,7 @@ object HelixMotions {
      */
     fun keepOnlyPrimaryCaret(editor: Editor) {
         editor.caretModel.removeSecondaryCarets()
+        editor.scrollingModel.scrollToCaret(ScrollType.MAKE_VISIBLE)
     }
 
     /**

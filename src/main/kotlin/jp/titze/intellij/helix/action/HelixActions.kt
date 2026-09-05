@@ -370,6 +370,7 @@ object HelixActions {
             caret.removeSelection()
             caret.moveToOffset(target)
         }
+        editor.scrollingModel.scrollToCaret(com.intellij.openapi.editor.ScrollType.MAKE_VISIBLE)
         HelixStateManager.getOrCreate(editor).setMode(HelixMode.INSERT)
     }
 
@@ -381,6 +382,7 @@ object HelixActions {
             caret.removeSelection()
             caret.moveToOffset(lineEnd)
         }
+        editor.scrollingModel.scrollToCaret(com.intellij.openapi.editor.ScrollType.MAKE_VISIBLE)
         HelixStateManager.getOrCreate(editor).setMode(HelixMode.INSERT)
     }
 
