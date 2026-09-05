@@ -55,6 +55,13 @@
                 text="Helix Escape"
                 description="Return to Normal mode">
             <keyboard-shortcut keymap="$default" first-keystroke="ESCAPE"/>
+            <keyboard-shortcut keymap="Mac OS X" first-keystroke="ESCAPE"/>
+            <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="ESCAPE"/>
+            <keyboard-shortcut keymap="macOS" first-keystroke="ESCAPE"/>
+            <keyboard-shortcut keymap="$default" first-keystroke="control OPEN_BRACKET"/>
+            <keyboard-shortcut keymap="Mac OS X" first-keystroke="control OPEN_BRACKET"/>
+            <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="control OPEN_BRACKET"/>
+            <keyboard-shortcut keymap="macOS" first-keystroke="control OPEN_BRACKET"/>
         </action>
 
         <action id="jp.titze.intellij.helix.expandSelection"

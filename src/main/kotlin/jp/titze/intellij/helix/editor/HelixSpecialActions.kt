@@ -16,30 +16,7 @@ import jp.titze.intellij.helix.ui.HelixWhichKeyPopup
 class HelixEscapeAction : AnAction() {
     override fun actionPerformed(e: AnActionEvent) {
         val editor = e.getData(CommonDataKeys.EDITOR) ?: return
-        val state = HelixStateManager.getOrCreate(editor)
-
-        HelixWhichKeyPopup.hide()
-        if (HelixPromptBar.cancelActivePrompt(editor)) {
-            return
-        }
-        if (state.pendingSequence.isNotEmpty() || state.hasCount) {
-            state.clearPendingSequence()
-            state.clearCount()
-            return
-        }
-
-        when (state.mode) {
-            HelixMode.INSERT -> {
-                HelixActions.enterNormalMode(editor)
-                HelixMotions.collapseSelection(editor)
-            }
-            HelixMode.SELECT -> {
-                HelixActions.enterNormalMode(editor)
-            }
-            HelixMode.NORMAL -> {
-                HelixMotions.collapseSelection(editor)
-            }
-        }
+        HelixEscapeHandler.handleEscape(editor)
     }
 
     override fun update(e: AnActionEvent) {

@@ -26,7 +26,7 @@ object HelixMotions {
     }
 
     /**
-     * w: Move forward to start of next word
+     * w: Move forward to start of next word (selects word in Normal mode, extends in Select mode)
      */
     fun moveNextWordStart(editor: Editor, count: Int = 1) {
         val doc = editor.document
@@ -38,11 +38,11 @@ object HelixMotions {
         val isSelect = state.mode == HelixMode.SELECT
 
         runForEachCaret(editor) { caret ->
-            repeat(count) {
-                val currentOffset = caret.offset
-                val anchor = if (isSelect && caret.hasSelection()) caret.leadSelectionOffset else currentOffset
-                var offset = currentOffset
+            val startOffset = caret.offset
+            val anchor = if (isSelect && caret.hasSelection()) caret.leadSelectionOffset else startOffset
+            var offset = startOffset
 
+            repeat(count) {
                 if (offset < textLen) {
                     val initialType = getCharType(text[offset])
                     if (initialType != CharType.WHITESPACE) {
@@ -56,16 +56,16 @@ object HelixMotions {
                         offset++
                     }
                 }
-
-                offset = offset.coerceIn(0, textLen)
-                applyMotion(caret, anchor, offset, isSelect)
             }
+
+            offset = offset.coerceIn(0, textLen)
+            applySelectingMotion(caret, anchor, offset)
         }
         editor.scrollingModel.scrollToCaret(ScrollType.MAKE_VISIBLE)
     }
 
     /**
-     * b: Move backward to start of previous word
+     * b: Move backward to start of previous word (selects word in Normal mode, extends in Select mode)
      */
     fun movePrevWordStart(editor: Editor, count: Int = 1) {
         val doc = editor.document
@@ -77,11 +77,11 @@ object HelixMotions {
         val isSelect = state.mode == HelixMode.SELECT
 
         runForEachCaret(editor) { caret ->
-            repeat(count) {
-                val currentOffset = caret.offset
-                val anchor = if (isSelect && caret.hasSelection()) caret.leadSelectionOffset else currentOffset
-                var offset = currentOffset
+            val startOffset = caret.offset
+            val anchor = if (isSelect && caret.hasSelection()) caret.leadSelectionOffset else startOffset
+            var offset = startOffset
 
+            repeat(count) {
                 if (offset > 0) {
                     offset--
                     // Skip whitespace backwards
@@ -93,16 +93,16 @@ object HelixMotions {
                         offset--
                     }
                 }
-
-                offset = offset.coerceIn(0, textLen)
-                applyMotion(caret, anchor, offset, isSelect)
             }
+
+            offset = offset.coerceIn(0, textLen)
+            applySelectingMotion(caret, anchor, offset)
         }
         editor.scrollingModel.scrollToCaret(ScrollType.MAKE_VISIBLE)
     }
 
     /**
-     * e: Move forward to end of current/next word
+     * e: Move forward to end of current/next word (selects in Normal mode, extends in Select mode)
      */
     fun moveWordEnd(editor: Editor, count: Int = 1) {
         val doc = editor.document
@@ -114,11 +114,11 @@ object HelixMotions {
         val isSelect = state.mode == HelixMode.SELECT
 
         runForEachCaret(editor) { caret ->
-            repeat(count) {
-                val currentOffset = caret.offset
-                val anchor = if (isSelect && caret.hasSelection()) caret.leadSelectionOffset else currentOffset
-                var offset = currentOffset
+            val startOffset = caret.offset
+            val anchor = if (isSelect && caret.hasSelection()) caret.leadSelectionOffset else startOffset
+            var offset = startOffset
 
+            repeat(count) {
                 if (offset < textLen) {
                     offset++
                     // Skip whitespace
@@ -134,16 +134,16 @@ object HelixMotions {
                         if (offset < textLen) offset++
                     }
                 }
-
-                offset = offset.coerceIn(0, textLen)
-                applyMotion(caret, anchor, offset, isSelect)
             }
+
+            offset = offset.coerceIn(0, textLen)
+            applySelectingMotion(caret, anchor, offset)
         }
         editor.scrollingModel.scrollToCaret(ScrollType.MAKE_VISIBLE)
     }
 
     /**
-     * ge: Move backward to end of previous word
+     * ge: Move backward to end of previous word (selects in Normal mode, extends in Select mode)
      */
     fun movePrevWordEnd(editor: Editor, count: Int = 1) {
         val doc = editor.document
@@ -155,11 +155,11 @@ object HelixMotions {
         val isSelect = state.mode == HelixMode.SELECT
 
         runForEachCaret(editor) { caret ->
-            repeat(count) {
-                val currentOffset = caret.offset
-                val anchor = if (isSelect && caret.hasSelection()) caret.leadSelectionOffset else currentOffset
-                var offset = currentOffset
+            val startOffset = caret.offset
+            val anchor = if (isSelect && caret.hasSelection()) caret.leadSelectionOffset else startOffset
+            var offset = startOffset
 
+            repeat(count) {
                 if (offset > 0) {
                     offset--
                     val initialType = getCharType(text[offset])
@@ -173,10 +173,10 @@ object HelixMotions {
                     }
                     if (offset < textLen) offset++
                 }
-
-                offset = offset.coerceIn(0, textLen)
-                applyMotion(caret, anchor, offset, isSelect)
             }
+
+            offset = offset.coerceIn(0, textLen)
+            applySelectingMotion(caret, anchor, offset)
         }
         editor.scrollingModel.scrollToCaret(ScrollType.MAKE_VISIBLE)
     }
@@ -665,6 +665,15 @@ object HelixMotions {
     private fun applyMotion(caret: Caret, anchor: Int, targetOffset: Int, isSelect: Boolean) {
         caret.moveToOffset(targetOffset)
         if (isSelect) {
+            caret.setSelection(anchor, targetOffset)
+        } else {
+            caret.removeSelection()
+        }
+    }
+
+    private fun applySelectingMotion(caret: Caret, anchor: Int, targetOffset: Int) {
+        caret.moveToOffset(targetOffset)
+        if (anchor != targetOffset) {
             caret.setSelection(anchor, targetOffset)
         } else {
             caret.removeSelection()
