@@ -123,7 +123,7 @@ object HelixCommandPopup {
             JBUI.Borders.empty(10, 12)
         )
         mainPanel.background = UIUtil.getPanelBackground()
-        mainPanel.preferredSize = Dimension(420, 260)
+        mainPanel.preferredSize = Dimension(500, 260)
 
         // Top prompt panel
         val promptPanel = JPanel(BorderLayout(8, 0))
