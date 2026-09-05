@@ -36,74 +36,87 @@ data class WhichKeyItem(
 object HelixWhichKeyPopup {
     private var activePopup: JBPopup? = null
 
+    // Theme-adaptive colors matching the modern keycap design
+    private val CARD_BG = JBColor(Color(0xFA, 0xFA, 0xFC), Color(0x15, 0x16, 0x22))
+    private val CARD_BORDER = JBColor(Color(0xD8, 0xDC, 0xEA), Color(0x2B, 0x2E, 0x46))
+    private val DIVIDER_COLOR = JBColor(Color(0xEA, 0xED, 0xF5), Color(0x23, 0x26, 0x3A))
+    private val TITLE_COLOR = JBColor(Color(0x43, 0x38, 0xCA), Color(0xA5, 0xB4, 0xFC))
+    private val CANCEL_COLOR = JBColor(Color(0x8A, 0x90, 0xA2), Color(0x64, 0x6C, 0x8E))
+    private val KEYCAP_BG = JBColor(Color(0xEE, 0xF2, 0xFC), Color(0x23, 0x26, 0x3E))
+    private val KEYCAP_BORDER = JBColor(Color(0xCF, 0xD7, 0xEE), Color(0x38, 0x3D, 0x62))
+    private val KEYCAP_FG = JBColor(Color(0x3B, 0x47, 0x90), Color(0xA5, 0xB4, 0xFC))
+    private val ITEM_TEXT_COLOR = JBColor(Color(0x22, 0x24, 0x30), Color(0xDF, 0xE2, 0xEE))
+    private val ITEM_DESC_COLOR = JBColor(Color(0x8E, 0x94, 0xA8), Color(0x6A, 0x72, 0x94))
+    private val HOVER_BG = JBColor(Color(0xF0, 0xF3, 0xFA), Color(0x20, 0x23, 0x38))
+
     private val spaceItems = listOf(
-        WhichKeyItem("f", "file_picker", "GotoFile"),
-        WhichKeyItem("b", "buffer_picker", "RecentFiles"),
-        WhichKeyItem("/", "global_search", "FindInPath"),
-        WhichKeyItem("s", "symbol_picker", "Structure"),
-        WhichKeyItem("S", "workspace_symbol_picker", "GotoSymbol"),
-        WhichKeyItem("d", "diagnostics_picker", "ShowError"),
-        WhichKeyItem("D", "workspace_diagnostics", "Problems"),
-        WhichKeyItem("j", "jumplist_picker", "RecentLocations"),
-        WhichKeyItem("a", "code_action", "Intentions"),
-        WhichKeyItem("r", "rename_symbol", "RenameElement"),
-        WhichKeyItem("w", "save", "SaveAll"),
-        WhichKeyItem("y", "yank_main_selection", "Clipboard"),
-        WhichKeyItem("p", "paste_clipboard_after"),
-        WhichKeyItem("P", "paste_clipboard_before"),
-        WhichKeyItem("R", "replace_with_clipboard"),
-        WhichKeyItem("k", "hover", "QuickJavaDoc"),
-        WhichKeyItem("?", "command_palette", "GotoAction")
+        WhichKeyItem("b", "Buffer / Tab picker", "RecentFiles"),
+        WhichKeyItem("f", "File picker", "GotoFile"),
+        WhichKeyItem("/", "Global search", "FindInPath"),
+        WhichKeyItem("s", "Symbol picker", "Structure"),
+        WhichKeyItem("S", "Workspace symbol picker", "GotoSymbol"),
+        WhichKeyItem("d", "Diagnostics picker", "ShowError"),
+        WhichKeyItem("D", "Workspace diagnostics", "Problems"),
+        WhichKeyItem("j", "Jumplist picker", "RecentLocations"),
+        WhichKeyItem("a", "Code action", "Intentions"),
+        WhichKeyItem("r", "Rename symbol", "RenameElement"),
+        WhichKeyItem("w", "Save", "SaveAll"),
+        WhichKeyItem("y", "Yank main selection", "Clipboard"),
+        WhichKeyItem("p", "Paste clipboard after"),
+        WhichKeyItem("P", "Paste clipboard before"),
+        WhichKeyItem("R", "Replace with clipboard"),
+        WhichKeyItem("k", "Hover / Documentation", "QuickJavaDoc"),
+        WhichKeyItem("?", "Command palette", "GotoAction")
     )
 
     private val gotoItems = listOf(
-        WhichKeyItem("d", "goto_definition", "GotoDeclaration"),
-        WhichKeyItem("y", "goto_type_definition", "GotoTypeDeclaration"),
-        WhichKeyItem("r", "goto_reference", "FindUsages"),
-        WhichKeyItem("h", "goto_line_start"),
-        WhichKeyItem("l", "goto_line_end"),
-        WhichKeyItem("s", "goto_first_nonwhitespace"),
-        WhichKeyItem("g", "goto_file_start", "line <count>"),
-        WhichKeyItem("e", "goto_file_end")
+        WhichKeyItem("d", "Goto definition", "GotoDeclaration"),
+        WhichKeyItem("y", "Goto type definition", "GotoTypeDeclaration"),
+        WhichKeyItem("r", "Goto reference", "FindUsages"),
+        WhichKeyItem("h", "Goto line start"),
+        WhichKeyItem("l", "Goto line end"),
+        WhichKeyItem("s", "Goto first non-whitespace"),
+        WhichKeyItem("g", "Goto line / file start", "line <count>"),
+        WhichKeyItem("e", "Goto file end")
     )
 
     private val matchItems = listOf(
-        WhichKeyItem("s", "surround_add", "ms<char>"),
-        WhichKeyItem("r", "surround_replace", "mr<from><to>"),
-        WhichKeyItem("d", "surround_delete", "md<char>"),
-        WhichKeyItem("m", "match_bracket", "Jump to matching bracket"),
-        WhichKeyItem("a", "select_around_textobject", "ma<obj>"),
-        WhichKeyItem("i", "select_inside_textobject", "mi<obj>")
+        WhichKeyItem("s", "Surround add", "ms<char>"),
+        WhichKeyItem("r", "Surround replace", "mr<from><to>"),
+        WhichKeyItem("d", "Surround delete", "md<char>"),
+        WhichKeyItem("m", "Match bracket", "Jump to matching bracket"),
+        WhichKeyItem("a", "Select around textobject", "ma<obj>"),
+        WhichKeyItem("i", "Select inside textobject", "mi<obj>")
     )
 
     private val bracketOpenItems = listOf(
-        WhichKeyItem("d", "goto_prev_diag", "GotoPreviousError"),
-        WhichKeyItem("D", "goto_first_diag", "First error"),
-        WhichKeyItem("f", "goto_prev_function", "MethodUp"),
-        WhichKeyItem("t", "goto_prev_class", "Previous class/type"),
-        WhichKeyItem("a", "goto_prev_parameter", "Previous argument"),
-        WhichKeyItem("c", "goto_prev_comment", "Previous comment"),
-        WhichKeyItem("T", "goto_prev_test", "Previous test"),
-        WhichKeyItem("p", "goto_prev_paragraph", "Previous paragraph"),
-        WhichKeyItem("g", "goto_prev_change", "VcsShowPrevChangeMarker"),
-        WhichKeyItem("G", "goto_first_change", "First change"),
-        WhichKeyItem("Space", "add_newline_above", "Blank line above"),
-        WhichKeyItem("b", "goto_prev_buffer", "PreviousTab")
+        WhichKeyItem("d", "Previous diagnostic", "GotoPreviousError"),
+        WhichKeyItem("D", "First diagnostic", "First error"),
+        WhichKeyItem("f", "Previous function", "MethodUp"),
+        WhichKeyItem("t", "Previous class", "Previous class/type"),
+        WhichKeyItem("a", "Previous parameter", "Previous argument"),
+        WhichKeyItem("c", "Previous comment", "Previous comment"),
+        WhichKeyItem("T", "Previous test", "Previous test"),
+        WhichKeyItem("p", "Previous paragraph", "Previous paragraph"),
+        WhichKeyItem("g", "Previous change", "VcsShowPrevChangeMarker"),
+        WhichKeyItem("G", "First change", "First change"),
+        WhichKeyItem("Space", "Add newline above", "Blank line above"),
+        WhichKeyItem("b", "Previous buffer / tab", "PreviousTab")
     )
 
     private val bracketCloseItems = listOf(
-        WhichKeyItem("d", "goto_next_diag", "GotoNextError"),
-        WhichKeyItem("D", "goto_last_diag", "Last error"),
-        WhichKeyItem("f", "goto_next_function", "MethodDown"),
-        WhichKeyItem("t", "goto_next_class", "Next class/type"),
-        WhichKeyItem("a", "goto_next_parameter", "Next argument"),
-        WhichKeyItem("c", "goto_next_comment", "Next comment"),
-        WhichKeyItem("T", "goto_next_test", "Next test"),
-        WhichKeyItem("p", "goto_next_paragraph", "Next paragraph"),
-        WhichKeyItem("g", "goto_next_change", "VcsShowNextChangeMarker"),
-        WhichKeyItem("G", "goto_last_change", "Last change"),
-        WhichKeyItem("Space", "add_newline_below", "Blank line below"),
-        WhichKeyItem("b", "goto_next_buffer", "NextTab")
+        WhichKeyItem("d", "Next diagnostic", "GotoNextError"),
+        WhichKeyItem("D", "Last diagnostic", "Last error"),
+        WhichKeyItem("f", "Next function", "MethodDown"),
+        WhichKeyItem("t", "Next class", "Next class/type"),
+        WhichKeyItem("a", "Next parameter", "Next argument"),
+        WhichKeyItem("c", "Next comment", "Next comment"),
+        WhichKeyItem("T", "Next test", "Next test"),
+        WhichKeyItem("p", "Next paragraph", "Next paragraph"),
+        WhichKeyItem("g", "Next change", "VcsShowNextChangeMarker"),
+        WhichKeyItem("G", "Last change", "Last change"),
+        WhichKeyItem("Space", "Add newline below", "Blank line below"),
+        WhichKeyItem("b", "Next buffer / tab", "NextTab")
     )
 
     fun hide() {
@@ -131,21 +144,30 @@ object HelixWhichKeyPopup {
         hide()
 
         val (title, items) = when (prefix) {
-            " " -> "SPACE: Pickers & Actions" to spaceItems
-            "g" -> "GOTO (g): Navigation" to gotoItems
-            "m" -> "MATCH (m): Surround & Textobjects" to matchItems
-            "[" -> "JUMP BACK ([): Unimpaired" to bracketOpenItems
-            "]" -> "JUMP FORWARD (]): Unimpaired" to bracketCloseItems
+            " " -> "SPACE MENU" to spaceItems
+            "g" -> "GOTO MENU" to gotoItems
+            "m" -> "MATCH MENU" to matchItems
+            "[" -> "JUMP BACK MENU" to bracketOpenItems
+            "]" -> "JUMP FORWARD MENU" to bracketCloseItems
             else -> return
         }
 
-        val panel = createWhichKeyPanel(title, items, editor)
+        val component = editor.component
+        val visibleRect = component.visibleRect
+        val viewWidth = if (visibleRect.width > 0) visibleRect.width else component.width
+        val viewHeight = if (visibleRect.height > 0) visibleRect.height else component.height
+
+        val maxAvailableHeight = if (viewHeight > 0) viewHeight - JBUI.scale(40) else 600
+        val panel = createWhichKeyPanel(title, items, editor, maxAvailableHeight)
+
         val popup = JBPopupFactory.getInstance()
             .createComponentPopupBuilder(panel, panel)
             .setRequestFocus(true)
             .setFocusable(true)
             .setCancelOnClickOutside(true)
             .setCancelKeyEnabled(false)
+            .setShowBorder(false)
+            .setShowShadow(true)
             .createPopup()
 
         activePopup = popup
@@ -157,11 +179,6 @@ object HelixWhichKeyPopup {
                 }
             }
         })
-
-        val component = editor.component
-        val visibleRect = component.visibleRect
-        val viewWidth = if (visibleRect.width > 0) visibleRect.width else component.width
-        val viewHeight = if (visibleRect.height > 0) visibleRect.height else component.height
 
         if (component.isShowing && viewWidth > 0 && viewHeight > 0) {
             val prefSize = panel.preferredSize
@@ -199,67 +216,70 @@ object HelixWhichKeyPopup {
         return Point(x, y)
     }
 
-    private fun createWhichKeyPanel(title: String, items: List<WhichKeyItem>, editor: Editor): JPanel {
-        val mainPanel = JPanel(BorderLayout(0, 8))
-        mainPanel.border = BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(JBColor(Color(0x03, 0xC7, 0xD3, 140), Color(0x03, 0xC7, 0xD3, 140)), 1),
-            JBUI.Borders.empty(10, 14)
-        )
-        mainPanel.background = UIUtil.getPanelBackground()
+    private fun createWhichKeyPanel(
+        title: String,
+        items: List<WhichKeyItem>,
+        editor: Editor,
+        maxHeight: Int = 600
+    ): JPanel {
+        val mainPanel = RoundedCardPanel(BorderLayout())
         mainPanel.isFocusable = true
 
-        // Header
-        val headerPanel = JPanel(BorderLayout())
+        // Header: "SPACE MENU" on left, "ESC TO CANCEL" on right
+        val headerPanel = JPanel(BorderLayout(JBUI.scale(12), 0))
         headerPanel.isOpaque = false
+        headerPanel.border = BorderFactory.createCompoundBorder(
+            BorderFactory.createMatteBorder(0, 0, 1, 0, DIVIDER_COLOR),
+            JBUI.Borders.empty(12, 14, 10, 14)
+        )
+
         val titleLabel = JBLabel(title)
-        titleLabel.font = JBUI.Fonts.label().asBold()
-        titleLabel.foreground = JBColor(Color(0x03, 0xC7, 0xD3), Color(0x03, 0xC7, 0xD3))
+        titleLabel.font = JBUI.Fonts.label().deriveFont(Font.BOLD, JBUI.scaleFontSize(11.5f).toFloat())
+        titleLabel.foreground = TITLE_COLOR
         headerPanel.add(titleLabel, BorderLayout.WEST)
+
+        val cancelLabel = JBLabel("ESC TO CANCEL")
+        cancelLabel.font = JBUI.Fonts.label().deriveFont(Font.BOLD, JBUI.scaleFontSize(9.5f).toFloat())
+        cancelLabel.foreground = CANCEL_COLOR
+        headerPanel.add(cancelLabel, BorderLayout.EAST)
+
         mainPanel.add(headerPanel, BorderLayout.NORTH)
 
-        // Grid of items: 2 columns if > 4 items, else 1 column
-        val columns = if (items.size > 4) 2 else 1
-        val rows = (items.size + columns - 1) / columns
-        val gridPanel = JPanel(GridLayout(rows, columns, 16, 4))
-        gridPanel.isOpaque = false
+        // Items list
+        val itemsPanel = JPanel()
+        itemsPanel.layout = javax.swing.BoxLayout(itemsPanel, javax.swing.BoxLayout.Y_AXIS)
+        itemsPanel.isOpaque = false
+        itemsPanel.border = JBUI.Borders.empty(6, 6, 8, 6)
 
         for (item in items) {
-            val itemPanel = JPanel(BorderLayout(8, 0))
-            itemPanel.isOpaque = false
-            itemPanel.cursor = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
-
-            val keyBadge = JBLabel(item.key)
-            keyBadge.font = Font(Font.MONOSPACED, Font.BOLD, JBUI.scaleFontSize(12f))
-            keyBadge.foreground = JBColor(Color(0x03, 0xC7, 0xD3), Color(0x03, 0xC7, 0xD3))
-            keyBadge.border = BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(JBColor(Color(0x03, 0xC7, 0xD3, 120), Color(0x03, 0xC7, 0xD3, 120)), 1),
-                JBUI.Borders.empty(1, 5)
-            )
-
-            val text = if (item.description.isNotEmpty()) "${item.label} (${item.description})" else item.label
-            val descLabel = JBLabel(text)
-            descLabel.font = JBUI.Fonts.smallFont()
-
-            itemPanel.add(keyBadge, BorderLayout.WEST)
-            itemPanel.add(descLabel, BorderLayout.CENTER)
-
-            itemPanel.addMouseListener(object : MouseAdapter() {
-                override fun mouseClicked(e: MouseEvent) {
-                    hide()
-                    HelixKeyHandler.handleKey(item.key[0], editor)
-                }
-            })
-
-            gridPanel.add(itemPanel)
+            val row = WhichKeyRow(item) {
+                hide()
+                val triggerChar = if (item.key.equals("Space", ignoreCase = true)) ' ' else item.key[0]
+                HelixKeyHandler.handleKey(triggerChar, editor)
+            }
+            itemsPanel.add(row)
+            itemsPanel.add(javax.swing.Box.createVerticalStrut(JBUI.scale(2)))
         }
-        mainPanel.add(gridPanel, BorderLayout.CENTER)
 
-        // Footer hint
-        val footerLabel = JBLabel("Press key to execute | Esc to dismiss")
-        footerLabel.font = JBUI.Fonts.miniFont()
-        footerLabel.foreground = UIUtil.getContextHelpForeground()
-        footerLabel.border = JBUI.Borders.emptyTop(4)
-        mainPanel.add(footerLabel, BorderLayout.SOUTH)
+        val scrollPane = com.intellij.ui.components.JBScrollPane(itemsPanel)
+        scrollPane.border = JBUI.Borders.empty()
+        scrollPane.isOpaque = false
+        scrollPane.viewport.isOpaque = false
+        scrollPane.horizontalScrollBarPolicy = javax.swing.ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER
+
+        val prefItemsHeight = itemsPanel.preferredSize.height
+        val headerHeight = headerPanel.preferredSize.height
+        val totalPreferredHeight = prefItemsHeight + headerHeight + JBUI.scale(10)
+
+        if (totalPreferredHeight > maxHeight) {
+            val boundedScrollHeight = maxHeight - headerHeight - JBUI.scale(10)
+            scrollPane.preferredSize = java.awt.Dimension(
+                itemsPanel.preferredSize.width,
+                boundedScrollHeight.coerceAtLeast(JBUI.scale(150))
+            )
+        }
+
+        mainPanel.add(scrollPane, BorderLayout.CENTER)
 
         mainPanel.addKeyListener(object : KeyAdapter() {
             override fun keyPressed(e: KeyEvent) {
@@ -282,5 +302,119 @@ object HelixWhichKeyPopup {
         })
 
         return mainPanel
+    }
+
+    private class RoundedCardPanel(layout: java.awt.LayoutManager) : JPanel(layout) {
+        init {
+            isOpaque = false
+        }
+
+        override fun getPreferredSize(): java.awt.Dimension {
+            val pref = super.getPreferredSize()
+            return java.awt.Dimension(maxOf(pref.width, JBUI.scale(290)), pref.height)
+        }
+
+        override fun paintComponent(g: java.awt.Graphics) {
+            val g2 = g.create() as java.awt.Graphics2D
+            g2.setRenderingHint(java.awt.RenderingHints.KEY_ANTIALIASING, java.awt.RenderingHints.VALUE_ANTIALIAS_ON)
+            val arc = JBUI.scale(12)
+            g2.color = CARD_BG
+            g2.fillRoundRect(0, 0, width, height, arc, arc)
+            g2.color = CARD_BORDER
+            g2.drawRoundRect(0, 0, width - 1, height - 1, arc, arc)
+            g2.dispose()
+            super.paintComponent(g)
+        }
+    }
+
+    private class KeycapBadge(key: String) : JPanel(BorderLayout()) {
+        init {
+            isOpaque = false
+            val label = JBLabel(key, javax.swing.SwingConstants.CENTER)
+            label.font = Font(Font.MONOSPACED, Font.BOLD, JBUI.scaleFontSize(11.5f))
+            label.foreground = KEYCAP_FG
+            add(label, BorderLayout.CENTER)
+            border = JBUI.Borders.empty(1, 5)
+        }
+
+        override fun getPreferredSize(): java.awt.Dimension {
+            val pref = super.getPreferredSize()
+            val minWidth = JBUI.scale(22)
+            val h = JBUI.scale(22)
+            return java.awt.Dimension(maxOf(pref.width, minWidth), h)
+        }
+
+        override fun paintComponent(g: java.awt.Graphics) {
+            val g2 = g.create() as java.awt.Graphics2D
+            g2.setRenderingHint(java.awt.RenderingHints.KEY_ANTIALIASING, java.awt.RenderingHints.VALUE_ANTIALIAS_ON)
+            val arc = JBUI.scale(6)
+            g2.color = KEYCAP_BG
+            g2.fillRoundRect(0, 0, width, height, arc, arc)
+            g2.color = KEYCAP_BORDER
+            g2.drawRoundRect(0, 0, width - 1, height - 1, arc, arc)
+            g2.dispose()
+            super.paintComponent(g)
+        }
+    }
+
+    private class WhichKeyRow(
+        val item: WhichKeyItem,
+        val onClick: () -> Unit
+    ) : JPanel(BorderLayout(JBUI.scale(10), 0)) {
+        private var isHovered = false
+
+        init {
+            isOpaque = false
+            cursor = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
+            border = JBUI.Borders.empty(4, 8)
+
+            val badge = KeycapBadge(item.key)
+            add(badge, BorderLayout.WEST)
+
+            val textPanel = JPanel(BorderLayout())
+            textPanel.isOpaque = false
+
+            val label = JBLabel(item.label)
+            label.font = JBUI.Fonts.label().deriveFont(Font.PLAIN, JBUI.scaleFontSize(12.5f).toFloat())
+            label.foreground = ITEM_TEXT_COLOR
+            textPanel.add(label, BorderLayout.WEST)
+
+            if (item.description.isNotEmpty() && item.description != item.label) {
+                val desc = JBLabel(item.description)
+                desc.font = JBUI.Fonts.smallFont()
+                desc.foreground = ITEM_DESC_COLOR
+                desc.border = JBUI.Borders.emptyLeft(8)
+                textPanel.add(desc, BorderLayout.EAST)
+            }
+
+            add(textPanel, BorderLayout.CENTER)
+
+            addMouseListener(object : MouseAdapter() {
+                override fun mouseEntered(e: MouseEvent) {
+                    isHovered = true
+                    repaint()
+                }
+
+                override fun mouseExited(e: MouseEvent) {
+                    isHovered = false
+                    repaint()
+                }
+
+                override fun mouseClicked(e: MouseEvent) {
+                    onClick()
+                }
+            })
+        }
+
+        override fun paintComponent(g: java.awt.Graphics) {
+            if (isHovered) {
+                val g2 = g.create() as java.awt.Graphics2D
+                g2.setRenderingHint(java.awt.RenderingHints.KEY_ANTIALIASING, java.awt.RenderingHints.VALUE_ANTIALIAS_ON)
+                g2.color = HOVER_BG
+                g2.fillRoundRect(0, 0, width, height, JBUI.scale(6), JBUI.scale(6))
+                g2.dispose()
+            }
+            super.paintComponent(g)
+        }
     }
 }

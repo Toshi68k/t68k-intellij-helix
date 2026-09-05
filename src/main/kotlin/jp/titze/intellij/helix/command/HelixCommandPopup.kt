@@ -16,8 +16,12 @@ import jp.titze.intellij.helix.settings.HelixSettings
 import java.awt.BorderLayout
 import java.awt.Color
 import java.awt.Component
+import java.awt.Cursor
 import java.awt.Dimension
 import java.awt.Font
+import java.awt.Graphics
+import java.awt.Graphics2D
+import java.awt.RenderingHints
 import java.awt.event.KeyAdapter
 import java.awt.event.KeyEvent
 import java.awt.event.MouseAdapter
@@ -53,6 +57,19 @@ data class HelixCommandItem(
 
 object HelixCommandPopup {
 
+    private val CARD_BG = JBColor(Color(0xFA, 0xFA, 0xFC), Color(0x15, 0x16, 0x22))
+    private val CARD_BORDER = JBColor(Color(0xD8, 0xDC, 0xEA), Color(0x2B, 0x2E, 0x46))
+    private val DIVIDER_COLOR = JBColor(Color(0xEA, 0xED, 0xF5), Color(0x23, 0x26, 0x3A))
+    private val TITLE_COLOR = JBColor(Color(0x43, 0x38, 0xCA), Color(0xA5, 0xB4, 0xFC))
+    private val CANCEL_COLOR = JBColor(Color(0x8A, 0x90, 0xA2), Color(0x64, 0x6C, 0x8E))
+    private val KEYCAP_BG = JBColor(Color(0xEE, 0xF2, 0xFC), Color(0x23, 0x26, 0x3E))
+    private val KEYCAP_BORDER = JBColor(Color(0xCF, 0xD7, 0xEE), Color(0x38, 0x3D, 0x62))
+    private val KEYCAP_FG = JBColor(Color(0x3B, 0x47, 0x90), Color(0xA5, 0xB4, 0xFC))
+    private val ITEM_TEXT_COLOR = JBColor(Color(0x22, 0x24, 0x30), Color(0xDF, 0xE2, 0xEE))
+    private val ITEM_DESC_COLOR = JBColor(Color(0x8E, 0x94, 0xA8), Color(0x6A, 0x72, 0x94))
+    private val HOVER_BG = JBColor(Color(0xF0, 0xF3, 0xFA), Color(0x20, 0x23, 0x38))
+    private val INPUT_BG = JBColor(Color(0xF0, 0xF3, 0xFA), Color(0x1B, 0x1D, 0x2E))
+
     val COMMANDS = listOf(
         HelixCommandItem("write", listOf("w"), "Save all modified files") { editor ->
             HelixActionDelegate.executeAction("SaveAll", editor)
@@ -60,17 +77,18 @@ object HelixCommandPopup {
         HelixCommandItem("quit", listOf("q"), "Close active editor tab") { editor ->
             HelixActionDelegate.executeAction("CloseContent", editor)
         },
-        HelixCommandItem("wq", listOf("x"), "Save all and close active tab") { editor ->
+        HelixCommandItem("write-quit", listOf("wq", "x"), "Save all and close tab") { editor ->
             HelixActionDelegate.executeAction("SaveAll", editor)
-            ApplicationManager.getApplication().invokeLater {
-                HelixActionDelegate.executeAction("CloseContent", editor)
-            }
+            HelixActionDelegate.executeAction("CloseContent", editor)
         },
-        HelixCommandItem("wa", emptyList(), "Save all modified buffers") { editor ->
+        HelixCommandItem("write-all", listOf("wa"), "Save all modified files") { editor ->
             HelixActionDelegate.executeAction("SaveAll", editor)
         },
-        HelixCommandItem("qa", emptyList(), "Close all editor tabs") { editor ->
+        HelixCommandItem("quit-all", listOf("qa"), "Close all editor tabs") { editor ->
             HelixActionDelegate.executeAction("CloseAllEditors", editor)
+        },
+        HelixCommandItem("cquit", listOf("cq"), "Close active editor tab") { editor ->
+            HelixActionDelegate.executeAction("CloseContent", editor)
         },
         HelixCommandItem("vsplit", listOf("vsp"), "Split editor vertically") { editor ->
             HelixActionDelegate.executeAction("SplitVertically", editor)
@@ -78,25 +96,26 @@ object HelixCommandPopup {
         HelixCommandItem("hsplit", listOf("sp"), "Split editor horizontally") { editor ->
             HelixActionDelegate.executeAction("SplitHorizontally", editor)
         },
-        HelixCommandItem("format", emptyList(), "Reformat code") { editor ->
+        HelixCommandItem("format", emptyList(), "Format buffer using IDE code formatter") { editor ->
             HelixActionDelegate.executeAction("ReformatCode", editor)
         },
-        HelixCommandItem("reload", listOf("e!"), "Reload / synchronize file from disk") { editor ->
-            HelixActionDelegate.executeAction("SynchronizeCurrentFile", editor)
+        HelixCommandItem("earlier", emptyList(), "Undo earlier changes") { editor ->
+            HelixActionDelegate.executeAction("\$Undo", editor)
         },
-        HelixCommandItem("open", emptyList(), "Open file picker") { editor ->
-            HelixActionDelegate.executeAction("GotoFile", editor) || HelixActionDelegate.executeAction("SearchEverywhere", editor)
+        HelixCommandItem("later", emptyList(), "Redo later changes") { editor ->
+            HelixActionDelegate.executeAction("\$Redo", editor)
         },
-        HelixCommandItem("buffer", listOf("b"), "Open buffer switcher") { editor ->
-            HelixActionDelegate.executeAction("RecentFiles", editor)
+        HelixCommandItem("reload", emptyList(), "Synchronize / reload buffer from disk") { editor ->
+            HelixActionDelegate.executeAction("Synchronize", editor)
         },
-        HelixCommandItem("find", emptyList(), "Find in project files") { editor ->
-            HelixActionDelegate.executeAction("FindInPath", editor)
+        HelixCommandItem("config-reload", emptyList(), "Reload Helix configuration") { _ ->
         },
-        HelixCommandItem("toggle-search-ui", listOf("search-ui"), "Toggle between Stock Helix inline bar and Popup search UI") { _ ->
-            val current = HelixSettings.instance.searchUiMode
-            val next = if (current == HelixSearchUiMode.STOCK_HELIX) HelixSearchUiMode.POPUP else HelixSearchUiMode.STOCK_HELIX
-            HelixSettings.instance.searchUiMode = next
+        HelixCommandItem("toggle-search-ui", emptyList(), "Toggle search UI (Stock Helix / Popup)") { _ ->
+            HelixSettings.instance.searchUiMode = if (HelixSettings.instance.searchUiMode == HelixSearchUiMode.STOCK_HELIX) {
+                HelixSearchUiMode.POPUP
+            } else {
+                HelixSearchUiMode.STOCK_HELIX
+            }
         },
         HelixCommandItem("set-search-ui-stock", emptyList(), "Set search UI to Stock Helix inline bar") { _ ->
             HelixSettings.instance.searchUiMode = HelixSearchUiMode.STOCK_HELIX
@@ -106,45 +125,105 @@ object HelixCommandPopup {
         }
     )
 
+    private class RoundedCardPanel(layout: java.awt.LayoutManager) : JPanel(layout) {
+        init { isOpaque = false }
+        override fun paintComponent(g: Graphics) {
+            val g2 = g.create() as Graphics2D
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
+            g2.color = CARD_BG
+            g2.fillRoundRect(0, 0, width, height, JBUI.scale(12), JBUI.scale(12))
+            g2.color = CARD_BORDER
+            g2.drawRoundRect(0, 0, width - 1, height - 1, JBUI.scale(12), JBUI.scale(12))
+            g2.dispose()
+        }
+    }
+
+    private class InputBoxPanel(layout: java.awt.LayoutManager) : JPanel(layout) {
+        init { isOpaque = false }
+        override fun paintComponent(g: Graphics) {
+            val g2 = g.create() as Graphics2D
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
+            g2.color = INPUT_BG
+            g2.fillRoundRect(0, 0, width, height, JBUI.scale(6), JBUI.scale(6))
+            g2.dispose()
+        }
+    }
+
+    private class KeycapBadge(text: String) : JPanel(BorderLayout()) {
+        init {
+            isOpaque = false
+            add(JBLabel(text).apply {
+                font = Font(Font.MONOSPACED, Font.BOLD, JBUI.scaleFontSize(11f))
+                foreground = KEYCAP_FG
+                border = JBUI.Borders.empty(2, 6)
+            })
+        }
+        override fun paintComponent(g: Graphics) {
+            val g2 = g.create() as Graphics2D
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
+            g2.color = KEYCAP_BG
+            g2.fillRoundRect(0, 0, width, height, JBUI.scale(4), JBUI.scale(4))
+            g2.color = KEYCAP_BORDER
+            g2.drawRoundRect(0, 0, width - 1, height - 1, JBUI.scale(4), JBUI.scale(4))
+            g2.dispose()
+        }
+    }
+
     fun show(editor: Editor) {
         val app = ApplicationManager.getApplication()
-        if (app != null && (app.isUnitTestMode || app.isHeadlessEnvironment)) {
-            return
-        }
-
+        if (app != null && (app.isUnitTestMode || app.isHeadlessEnvironment)) return
         if (app != null && !app.isDispatchThread) {
             SwingUtilities.invokeLater { show(editor) }
             return
         }
 
-        val mainPanel = JPanel(BorderLayout(0, 8))
-        mainPanel.border = BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(JBColor(Color(0x03, 0xC7, 0xD3, 140), Color(0x03, 0xC7, 0xD3, 140)), 1),
-            JBUI.Borders.empty(10, 12)
-        )
-        mainPanel.background = UIUtil.getPanelBackground()
-        mainPanel.preferredSize = Dimension(500, 260)
+        val mainPanel = RoundedCardPanel(BorderLayout())
+        mainPanel.preferredSize = Dimension(JBUI.scale(520), JBUI.scale(300))
 
-        // Top prompt panel
-        val promptPanel = JPanel(BorderLayout(8, 0))
-        promptPanel.isOpaque = false
+        val northPanel = JPanel(BorderLayout())
+        northPanel.isOpaque = false
 
-        val promptBadge = JBLabel(" : ")
-        promptBadge.font = Font(Font.MONOSPACED, Font.BOLD, JBUI.scaleFontSize(13f))
-        promptBadge.foreground = JBColor(Color(0x03, 0xC7, 0xD3), Color(0x03, 0xC7, 0xD3))
-        promptBadge.border = BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(JBColor(Color(0x03, 0xC7, 0xD3, 120), Color(0x03, 0xC7, 0xD3, 120)), 1),
-            JBUI.Borders.empty(1, 4)
+        val headerPanel = JPanel(BorderLayout(JBUI.scale(12), 0))
+        headerPanel.isOpaque = false
+        headerPanel.border = BorderFactory.createCompoundBorder(
+            BorderFactory.createMatteBorder(0, 0, 1, 0, DIVIDER_COLOR),
+            JBUI.Borders.empty(12, 14, 10, 14)
         )
-        promptPanel.add(promptBadge, BorderLayout.WEST)
+
+        val titleLabel = JBLabel("COMMAND PALETTE")
+        titleLabel.font = JBUI.Fonts.label().deriveFont(Font.BOLD, JBUI.scaleFontSize(11.5f).toFloat())
+        titleLabel.foreground = TITLE_COLOR
+        headerPanel.add(titleLabel, BorderLayout.WEST)
+
+        val cancelLabel = JBLabel("ESC TO CANCEL")
+        cancelLabel.font = JBUI.Fonts.label().deriveFont(Font.BOLD, JBUI.scaleFontSize(9.5f).toFloat())
+        cancelLabel.foreground = CANCEL_COLOR
+        headerPanel.add(cancelLabel, BorderLayout.EAST)
+        northPanel.add(headerPanel, BorderLayout.NORTH)
+
+        val inputContainer = JPanel(BorderLayout())
+        inputContainer.isOpaque = false
+        inputContainer.border = JBUI.Borders.empty(8, 12, 6, 12)
+
+        val inputPanel = InputBoxPanel(BorderLayout(JBUI.scale(8), 0))
+        inputPanel.border = JBUI.Borders.empty(4, 6)
+
+        val promptBadge = KeycapBadge(":")
+        inputPanel.add(promptBadge, BorderLayout.WEST)
 
         val textField = JBTextField()
+        textField.isOpaque = false
+        textField.border = JBUI.Borders.empty(0, 4)
         textField.font = Font(Font.MONOSPACED, Font.PLAIN, JBUI.scaleFontSize(13f))
+        textField.foreground = ITEM_TEXT_COLOR
+        textField.caretColor = TITLE_COLOR
         textField.emptyText.text = "type command (w, q, wq, vsp, sp, format, ...)"
-        promptPanel.add(textField, BorderLayout.CENTER)
-        mainPanel.add(promptPanel, BorderLayout.NORTH)
+        inputPanel.add(textField, BorderLayout.CENTER)
+        inputContainer.add(inputPanel, BorderLayout.CENTER)
+        northPanel.add(inputContainer, BorderLayout.CENTER)
 
-        // Command suggestion list
+        mainPanel.add(northPanel, BorderLayout.NORTH)
+
         val listModel = DefaultListModel<HelixCommandItem>()
         COMMANDS.forEach { listModel.addElement(it) }
 
@@ -152,20 +231,42 @@ object HelixCommandPopup {
         list.selectionMode = ListSelectionModel.SINGLE_SELECTION
         list.selectedIndex = 0
         list.isOpaque = false
+        list.cursor = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
         list.cellRenderer = object : ListCellRenderer<HelixCommandItem> {
-            private val cmdFont = Font(Font.MONOSPACED, Font.BOLD, JBUI.scaleFontSize(11f))
-            private val cmdLabel = JBLabel().apply {
-                font = cmdFont
+            private val cellPanel = object : JPanel(BorderLayout(JBUI.scale(10), 0)) {
+                var isSelectedRow = false
+                init {
+                    isOpaque = false
+                    border = JBUI.Borders.empty(4, 8)
+                }
+                override fun paintComponent(g: Graphics) {
+                    if (isSelectedRow) {
+                        val g2 = g.create() as Graphics2D
+                        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
+                        g2.color = HOVER_BG
+                        g2.fillRoundRect(0, 0, width, height, JBUI.scale(6), JBUI.scale(6))
+                        g2.dispose()
+                    }
+                    super.paintComponent(g)
+                }
             }
+
+            private val badgeHolder = JPanel(BorderLayout()).apply { isOpaque = false }
+            private val textPanel = JPanel(BorderLayout(JBUI.scale(6), 0)).apply { isOpaque = false }
             private val descLabel = JBLabel().apply {
-                font = JBUI.Fonts.miniFont()
-                foreground = UIUtil.getContextHelpForeground()
+                font = JBUI.Fonts.label().deriveFont(Font.PLAIN, JBUI.scaleFontSize(12.5f).toFloat())
+                foreground = ITEM_TEXT_COLOR
             }
-            private val panel = JPanel(BorderLayout(8, 0)).apply {
-                border = JBUI.Borders.empty(3, 6)
-                accessibleContext.accessibleName = "Helix Command Suggestion"
-                add(cmdLabel, BorderLayout.WEST)
-                add(descLabel, BorderLayout.CENTER)
+            private val aliasLabel = JBLabel().apply {
+                font = JBUI.Fonts.smallFont()
+                foreground = ITEM_DESC_COLOR
+            }
+
+            init {
+                cellPanel.add(badgeHolder, BorderLayout.WEST)
+                textPanel.add(descLabel, BorderLayout.WEST)
+                textPanel.add(aliasLabel, BorderLayout.EAST)
+                cellPanel.add(textPanel, BorderLayout.CENTER)
             }
 
             override fun getListCellRendererComponent(
@@ -175,35 +276,40 @@ object HelixCommandPopup {
                 isSelected: Boolean,
                 cellHasFocus: Boolean
             ): Component {
-                cmdLabel.text = value?.displayCommand ?: ""
+                cellPanel.isSelectedRow = isSelected
+                badgeHolder.removeAll()
+                val cmdName = value?.name ?: ""
+                badgeHolder.add(KeycapBadge(":$cmdName"), BorderLayout.CENTER)
+
                 descLabel.text = value?.description ?: ""
-
-                if (isSelected) {
-                    panel.isOpaque = true
-                    panel.background = JBColor(Color(0x03, 0xC7, 0xD3, 45), Color(0x03, 0xC7, 0xD3, 45))
-                    cmdLabel.foreground = JBColor(Color(0x03, 0xC7, 0xD3), Color(0x03, 0xC7, 0xD3))
+                aliasLabel.text = if (value != null && value.aliases.isNotEmpty()) {
+                    "alias: :${value.aliases.joinToString(", :")}"
                 } else {
-                    panel.isOpaque = false
-                    cmdLabel.foreground = UIUtil.getLabelForeground()
+                    ""
                 }
-
-                panel.accessibleContext.accessibleName = value?.let { "${it.displayCommand}: ${it.description}" } ?: ""
-                return panel
+                cellPanel.accessibleContext.accessibleName = value?.let { "${it.displayCommand}: ${it.description}" } ?: ""
+                return cellPanel
             }
         }
 
         val scrollPane = JBScrollPane(list)
-        scrollPane.border = JBUI.Borders.empty()
+        scrollPane.border = JBUI.Borders.empty(0, 6)
         scrollPane.isOpaque = false
         scrollPane.viewport.isOpaque = false
+        scrollPane.horizontalScrollBarPolicy = javax.swing.ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER
         mainPanel.add(scrollPane, BorderLayout.CENTER)
 
-        // Footer hint
+        val footerPanel = JPanel(BorderLayout())
+        footerPanel.isOpaque = false
+        footerPanel.border = BorderFactory.createCompoundBorder(
+            BorderFactory.createMatteBorder(1, 0, 0, 0, DIVIDER_COLOR),
+            JBUI.Borders.empty(8, 14, 10, 14)
+        )
         val footerLabel = JBLabel("Enter: run | Tab: complete | ↑/↓: select | Esc: cancel")
-        footerLabel.font = JBUI.Fonts.miniFont()
-        footerLabel.foreground = UIUtil.getContextHelpForeground()
-        footerLabel.border = JBUI.Borders.emptyTop(4)
-        mainPanel.add(footerLabel, BorderLayout.SOUTH)
+        footerLabel.font = JBUI.Fonts.label().deriveFont(Font.BOLD, JBUI.scaleFontSize(9.5f).toFloat())
+        footerLabel.foreground = CANCEL_COLOR
+        footerPanel.add(footerLabel, BorderLayout.WEST)
+        mainPanel.add(footerPanel, BorderLayout.SOUTH)
 
         val popup = JBPopupFactory.getInstance()
             .createComponentPopupBuilder(mainPanel, textField)
@@ -211,6 +317,8 @@ object HelixCommandPopup {
             .setFocusable(true)
             .setCancelOnClickOutside(true)
             .setCancelKeyEnabled(false)
+            .setShowBorder(false)
+            .setShowShadow(true)
             .createPopup()
 
         fun updateFilter() {
