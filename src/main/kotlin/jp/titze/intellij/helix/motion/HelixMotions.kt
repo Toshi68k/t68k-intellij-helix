@@ -5,6 +5,7 @@ import com.intellij.openapi.editor.Caret
 import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.ScrollType
+import com.intellij.openapi.util.TextRange
 import com.intellij.psi.PsiComment
 import com.intellij.psi.PsiDocumentManager
 import com.intellij.psi.PsiElement
@@ -841,51 +842,56 @@ object HelixMotions {
     }
 
     /**
-     * [c / ]c: Move to previous/next comment
+     * [c / ]c: Move to previous/next comment (selects comment block)
      */
     fun moveComment(editor: Editor, forward: Boolean, count: Int = 1): Boolean {
         val project = editor.project
         val doc = editor.document
-        var offsets = emptyList<Int>()
+        var ranges = emptyList<TextRange>()
 
         if (project != null) {
             val psiFile = PsiDocumentManager.getInstance(project).getPsiFile(doc)
             if (psiFile != null) {
-                offsets = collectMatchingOffsets(psiFile) { elem ->
+                ranges = collectMatchingRanges(psiFile) { elem ->
                     elem is PsiComment || elem.javaClass.simpleName.contains("Comment", ignoreCase = true)
                 }
             }
         }
 
-        if (offsets.isEmpty()) {
-            offsets = findLineCommentOffsets(doc)
+        if (ranges.isEmpty()) {
+            ranges = findLineCommentRanges(doc)
         }
 
-        return navigateToOffset(editor, offsets, forward, count)
+        return navigateToRange(editor, ranges, forward, count)
     }
 
     /**
-     * [f / ]f: Move to previous/next function or method
+     * [f / ]f: Move to previous/next function or method (selects function block)
      */
     fun moveFunction(editor: Editor, forward: Boolean, count: Int = 1): Boolean {
         val project = editor.project
         val doc = editor.document
-        var offsets = emptyList<Int>()
+        var ranges = emptyList<TextRange>()
 
         if (project != null) {
             val psiFile = PsiDocumentManager.getInstance(project).getPsiFile(doc)
             if (psiFile != null) {
-                offsets = collectMatchingOffsets(psiFile) { elem ->
+                ranges = collectMatchingRanges(psiFile) { elem ->
                     val name = elem.javaClass.simpleName
-                    (name.contains("Method", ignoreCase = true) || name.contains("Function", ignoreCase = true)) &&
+                    val isFuncCandidate = name.contains("Method", ignoreCase = true) || name.contains("Function", ignoreCase = true)
+                    isFuncCandidate &&
+                        !name.contains("Body", ignoreCase = true) &&
                         !name.contains("Call", ignoreCase = true) &&
                         !name.contains("Expr", ignoreCase = true) &&
-                        !name.contains("Reference", ignoreCase = true)
+                        !name.contains("Reference", ignoreCase = true) &&
+                        !name.contains("List", ignoreCase = true) &&
+                        !name.contains("Parameter", ignoreCase = true) &&
+                        !name.contains("Type", ignoreCase = true)
                 }
             }
         }
 
-        val moved = navigateToOffset(editor, offsets, forward, count)
+        val moved = navigateToRange(editor, ranges, forward, count)
         if (!moved) {
             val action = if (forward) "MethodDown" else "MethodUp"
             repeat(count.coerceAtLeast(1)) {
@@ -897,73 +903,89 @@ object HelixMotions {
     }
 
     /**
-     * [t / ]t: Move to previous/next class or type
+     * [t / ]t: Move to previous/next class or type (selects class block)
      */
     fun moveType(editor: Editor, forward: Boolean, count: Int = 1): Boolean {
         val project = editor.project
         val doc = editor.document
-        var offsets = emptyList<Int>()
+        var ranges = emptyList<TextRange>()
 
         if (project != null) {
             val psiFile = PsiDocumentManager.getInstance(project).getPsiFile(doc)
             if (psiFile != null) {
-                offsets = collectMatchingOffsets(psiFile) { elem ->
+                ranges = collectMatchingRanges(psiFile) { elem ->
                     val name = elem.javaClass.simpleName
-                    (name.contains("Class", ignoreCase = true) ||
+                    val isTypeCandidate = (name.contains("Class", ignoreCase = true) ||
                         name.contains("Interface", ignoreCase = true) ||
                         name.contains("Struct", ignoreCase = true) ||
                         name.contains("Trait", ignoreCase = true) ||
                         name.contains("Enum", ignoreCase = true) ||
-                        name.contains("Record", ignoreCase = true)) &&
+                        name.contains("Record", ignoreCase = true))
+
+                    isTypeCandidate &&
+                        !name.contains("Body", ignoreCase = true) &&
+                        !name.contains("Initializer", ignoreCase = true) &&
+                        !name.contains("List", ignoreCase = true) &&
+                        !name.contains("Header", ignoreCase = true) &&
                         !name.contains("Access", ignoreCase = true) &&
                         !name.contains("Expr", ignoreCase = true) &&
                         !name.contains("Reference", ignoreCase = true) &&
-                        !name.contains("TypeElement", ignoreCase = true)
+                        !name.contains("TypeElement", ignoreCase = true) &&
+                        !name.contains("Parameter", ignoreCase = true) &&
+                        !name.contains("Constant", ignoreCase = true) &&
+                        !name.contains("Entry", ignoreCase = true)
                 }
             }
         }
 
-        return navigateToOffset(editor, offsets, forward, count)
+        if (ranges.isEmpty()) {
+            ranges = findClassRangesRegex(doc)
+        }
+
+        return navigateToRange(editor, ranges, forward, count)
     }
 
     /**
-     * [a / ]a: Move to previous/next parameter
+     * [a / ]a: Move to previous/next parameter (selects parameter block)
      */
     fun moveParameter(editor: Editor, forward: Boolean, count: Int = 1): Boolean {
         val project = editor.project
         val doc = editor.document
-        var offsets = emptyList<Int>()
+        var ranges = emptyList<TextRange>()
 
         if (project != null) {
             val psiFile = PsiDocumentManager.getInstance(project).getPsiFile(doc)
             if (psiFile != null) {
-                offsets = collectMatchingOffsets(psiFile) { elem ->
+                ranges = collectMatchingRanges(psiFile) { elem ->
                     val name = elem.javaClass.simpleName
                     name.contains("Parameter", ignoreCase = true) &&
-                        !name.contains("List", ignoreCase = true)
+                        !name.contains("List", ignoreCase = true) &&
+                        !name.contains("Type", ignoreCase = true)
                 }
             }
         }
 
-        return navigateToOffset(editor, offsets, forward, count)
+        return navigateToRange(editor, ranges, forward, count)
     }
 
     /**
-     * [T / ]T: Move to previous/next test method
+     * [T / ]T: Move to previous/next test method (selects test block)
      */
     fun moveTest(editor: Editor, forward: Boolean, count: Int = 1): Boolean {
         val project = editor.project
         val doc = editor.document
-        var offsets = emptyList<Int>()
+        var ranges = emptyList<TextRange>()
 
         if (project != null) {
             val psiFile = PsiDocumentManager.getInstance(project).getPsiFile(doc)
             if (psiFile != null) {
-                offsets = collectMatchingOffsets(psiFile) { elem ->
+                ranges = collectMatchingRanges(psiFile) { elem ->
                     val name = elem.javaClass.simpleName
                     val isMethodOrFunc = (name.contains("Method", ignoreCase = true) || name.contains("Function", ignoreCase = true)) &&
+                        !name.contains("Body", ignoreCase = true) &&
                         !name.contains("Call", ignoreCase = true) &&
-                        !name.contains("Expr", ignoreCase = true)
+                        !name.contains("Expr", ignoreCase = true) &&
+                        !name.contains("List", ignoreCase = true)
                     if (isMethodOrFunc) {
                         val text = elem.text
                         text.contains("@Test") ||
@@ -975,7 +997,7 @@ object HelixMotions {
             }
         }
 
-        val moved = navigateToOffset(editor, offsets, forward, count)
+        val moved = navigateToRange(editor, ranges, forward, count)
         if (!moved) {
             HelixActionDelegate.executeAction("GotoTest", editor)
         }
@@ -1028,25 +1050,28 @@ object HelixMotions {
         return true
     }
 
-    private fun collectMatchingOffsets(psiFile: PsiFile, predicate: (PsiElement) -> Boolean): List<Int> {
-        val result = mutableListOf<Int>()
+    private fun collectMatchingRanges(psiFile: PsiFile, predicate: (PsiElement) -> Boolean): List<TextRange> {
+        val result = mutableListOf<TextRange>()
         fun dfs(element: PsiElement) {
             var child = element.firstChild
             while (child != null) {
                 if (predicate(child)) {
-                    result.add(child.textRange.startOffset)
+                    val range = child.textRange
+                    if (range != null && range.length > 0) {
+                        result.add(range)
+                    }
                 }
                 dfs(child)
                 child = child.nextSibling
             }
         }
         dfs(psiFile)
-        return result.distinct().sorted()
+        return result.distinctBy { it.startOffset to it.endOffset }.sortedBy { it.startOffset }
     }
 
-    private fun findLineCommentOffsets(doc: Document): List<Int> {
+    private fun findLineCommentRanges(doc: Document): List<TextRange> {
         val prefixes = listOf("//", "/*", "#", "--", "<!--")
-        val offsets = mutableListOf<Int>()
+        val ranges = mutableListOf<TextRange>()
         for (line in 0 until doc.lineCount) {
             val start = doc.getLineStartOffset(line)
             val end = doc.getLineEndOffset(line)
@@ -1054,41 +1079,61 @@ object HelixMotions {
             for (prefix in prefixes) {
                 val idx = text.indexOf(prefix)
                 if (idx >= 0) {
-                    offsets.add(start + idx)
+                    ranges.add(TextRange(start + idx, end))
                     break
                 }
             }
         }
-        return offsets
+        return ranges
     }
 
-    private fun navigateToOffset(
+    private fun findClassRangesRegex(doc: Document): List<TextRange> {
+        val regex = Regex("""^\s*(?:(?:public|private|protected|internal|abstract|final|open|data|sealed|value)\s+)*(?:class|interface|struct|trait|enum(?:\s+class)?|record)\s+([A-Za-z0-9_]+)""", RegexOption.MULTILINE)
+        val text = doc.charsSequence
+        return regex.findAll(text).map { match ->
+            val start = match.range.first
+            val line = doc.getLineNumber(start)
+            val lineEnd = doc.getLineEndOffset(line)
+            TextRange(start, lineEnd)
+        }.toList()
+    }
+
+    private fun navigateToRange(
         editor: Editor,
-        offsets: List<Int>,
+        ranges: List<TextRange>,
         forward: Boolean,
         count: Int
     ): Boolean {
-        if (offsets.isEmpty()) return false
+        if (ranges.isEmpty()) return false
         val state = HelixStateManager.getOrCreate(editor)
         val isSelect = state.mode == HelixMode.SELECT
         var anyMoved = false
 
         runForEachCaret(editor) { caret ->
             val curOffset = caret.offset
-            val anchor = if (isSelect && caret.hasSelection()) caret.leadSelectionOffset else curOffset
 
-            val targetOffset = if (forward) {
-                val candidates = offsets.filter { it > curOffset }
+            val targetRange = if (forward) {
+                val refOffset = if (caret.hasSelection()) maxOf(curOffset, caret.selectionEnd) else curOffset
+                val candidates = ranges.filter { it.startOffset > refOffset }
                 val idx = (count - 1).coerceAtMost(candidates.size - 1)
                 if (candidates.isNotEmpty()) candidates[idx] else null
             } else {
-                val candidates = offsets.filter { it < curOffset }.reversed()
+                val refOffset = if (caret.hasSelection()) minOf(curOffset, caret.selectionStart) else curOffset
+                val candidates = ranges.filter { it.startOffset < refOffset }.sortedByDescending { it.startOffset }
                 val idx = (count - 1).coerceAtMost(candidates.size - 1)
                 if (candidates.isNotEmpty()) candidates[idx] else null
             }
 
-            if (targetOffset != null) {
-                applyMotion(caret, anchor, targetOffset, isSelect)
+            if (targetRange != null) {
+                if (isSelect) {
+                    val anchor = if (caret.hasSelection()) caret.leadSelectionOffset else curOffset
+                    val targetOffset = if (forward) targetRange.endOffset else targetRange.startOffset
+                    caret.moveToOffset(targetOffset)
+                    caret.setSelection(anchor, targetOffset)
+                } else {
+                    caret.moveToOffset(targetRange.startOffset)
+                    caret.setSelection(targetRange.startOffset, targetRange.endOffset)
+                }
                 anyMoved = true
             }
         }
