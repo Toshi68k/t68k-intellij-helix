@@ -46,7 +46,8 @@ A complete modal editing plugin for JetBrains IDEs implementing the [Helix](http
 | `x` | Select current line (including newline); pressing `x` again extends to the next line |
 | `%` | Select entire buffer |
 | `h` / `j` / `k` / `l` | Move left / down / up / right (mode-aware selection update) |
-| `gh` | Move to line start (first non-whitespace character) |
+| `gh` | Move to line start (actual first character) |
+| `gs` | Move to first non-whitespace character of line |
 | `gl` | Move to line end |
 | `gg` | Move to the top of the buffer |
 | `ge` *(in `g` menu)* | Move to the end of the buffer |
@@ -133,7 +134,8 @@ Built-in surround and textobject functionality matching [Helix Surround](https:/
 - `gd` &rarr; `GotoDeclaration` / `GotoImplementation`
 - `gy` &rarr; `GotoTypeDeclaration`
 - `gr` &rarr; `FindUsages`
-- `gh` &rarr; Line start
+- `gh` &rarr; Line start (first character)
+- `gs` &rarr; First non-whitespace character
 - `gl` &rarr; Line end
 - `ge` &rarr; Goto end of buffer
 - `gg` &rarr; Goto start of buffer

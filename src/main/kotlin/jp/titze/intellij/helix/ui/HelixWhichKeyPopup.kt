@@ -62,6 +62,7 @@ object HelixWhichKeyPopup {
         WhichKeyItem("r", "goto_reference", "FindUsages"),
         WhichKeyItem("h", "goto_line_start"),
         WhichKeyItem("l", "goto_line_end"),
+        WhichKeyItem("s", "goto_first_nonwhitespace"),
         WhichKeyItem("g", "goto_file_start", "line <count>"),
         WhichKeyItem("e", "goto_file_end")
     )
