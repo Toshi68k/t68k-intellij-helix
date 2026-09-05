@@ -1,5 +1,6 @@
 package jp.titze.intellij.helix.action
 
+import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.editor.Caret
 import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.Editor
@@ -319,24 +320,30 @@ object HelixTextObjectActions {
         val project = editor.project
         val doc = editor.document
         if (project != null) {
-            val psiFile = PsiDocumentManager.getInstance(project).getPsiFile(doc)
-            if (psiFile != null) {
-                val element = psiFile.findElementAt(caret.offset.coerceIn(0, (doc.textLength - 1).coerceAtLeast(0)))
-                val comment = PsiTreeUtil.getParentOfType(element, PsiComment::class.java, false)
-                if (comment != null) {
-                    val range = comment.textRange
-                    if (!inside) {
-                        return Pair(range.startOffset, range.endOffset)
+            val psiPair = try {
+                runReadAction {
+                    val psiFile = PsiDocumentManager.getInstance(project).getPsiFile(doc) ?: return@runReadAction null
+                    val element = psiFile.findElementAt(caret.offset.coerceIn(0, (doc.textLength - 1).coerceAtLeast(0)))
+                    val comment = PsiTreeUtil.getParentOfType(element, PsiComment::class.java, false)
+                    if (comment != null) {
+                        val range = comment.textRange
+                        if (!inside) {
+                            return@runReadAction Pair(range.startOffset, range.endOffset)
+                        }
+                        val text = comment.text
+                        val trimmedStart = text.indexOfFirst { it != '/' && it != '*' && it != '#' && !it.isWhitespace() }
+                        val trimmedEnd = text.indexOfLast { it != '/' && it != '*' && !it.isWhitespace() }
+                        if (trimmedStart in 0..trimmedEnd) {
+                            return@runReadAction Pair(range.startOffset + trimmedStart, range.startOffset + trimmedEnd + 1)
+                        }
+                        return@runReadAction Pair(range.startOffset, range.endOffset)
                     }
-                    val text = comment.text
-                    val trimmedStart = text.indexOfFirst { it != '/' && it != '*' && it != '#' && !it.isWhitespace() }
-                    val trimmedEnd = text.indexOfLast { it != '/' && it != '*' && !it.isWhitespace() }
-                    if (trimmedStart in 0..trimmedEnd) {
-                        return Pair(range.startOffset + trimmedStart, range.startOffset + trimmedEnd + 1)
-                    }
-                    return Pair(range.startOffset, range.endOffset)
+                    null
                 }
+            } catch (_: Throwable) {
+                null
             }
+            if (psiPair != null) return psiPair
         }
 
         // Fallback: line comment detection on current line
@@ -366,28 +373,34 @@ object HelixTextObjectActions {
         val doc = editor.document
 
         if (project != null) {
-            val psiFile = PsiDocumentManager.getInstance(project).getPsiFile(doc)
-            if (psiFile != null) {
-                var elem: PsiElement? = psiFile.findElementAt(caret.offset.coerceIn(0, (doc.textLength - 1).coerceAtLeast(0)))
-                while (elem != null && elem !is com.intellij.psi.PsiFile) {
-                    val typeName = elem.javaClass.simpleName
-                    if (typeName.contains("Method", ignoreCase = true) ||
-                        typeName.contains("Function", ignoreCase = true)
-                    ) {
-                        val fullRange = elem.textRange
-                        if (!inside) {
-                            return Pair(fullRange.startOffset, fullRange.endOffset)
+            val psiPair = try {
+                runReadAction {
+                    val psiFile = PsiDocumentManager.getInstance(project).getPsiFile(doc) ?: return@runReadAction null
+                    var elem: PsiElement? = psiFile.findElementAt(caret.offset.coerceIn(0, (doc.textLength - 1).coerceAtLeast(0)))
+                    while (elem != null && elem !is com.intellij.psi.PsiFile) {
+                        val typeName = elem.javaClass.simpleName
+                        if (typeName.contains("Method", ignoreCase = true) ||
+                            typeName.contains("Function", ignoreCase = true)
+                        ) {
+                            val fullRange = elem.textRange
+                            if (!inside) {
+                                return@runReadAction Pair(fullRange.startOffset, fullRange.endOffset)
+                            }
+                            // For inside function, find body enclosed in { ... }
+                            val bodyPair = findEnclosingBracketsInElement(doc, elem, '{', '}')
+                            if (bodyPair != null) {
+                                return@runReadAction bodyPair
+                            }
+                            return@runReadAction Pair(fullRange.startOffset, fullRange.endOffset)
                         }
-                        // For inside function, find body enclosed in { ... }
-                        val bodyPair = findEnclosingBracketsInElement(doc, elem, '{', '}')
-                        if (bodyPair != null) {
-                            return bodyPair
-                        }
-                        return Pair(fullRange.startOffset, fullRange.endOffset)
+                        elem = elem.parent
                     }
-                    elem = elem.parent
+                    null
                 }
+            } catch (_: Throwable) {
+                null
             }
+            if (psiPair != null) return psiPair
         }
 
         // Fallback to closest enclosing { ... }
@@ -402,28 +415,34 @@ object HelixTextObjectActions {
         val doc = editor.document
 
         if (project != null) {
-            val psiFile = PsiDocumentManager.getInstance(project).getPsiFile(doc)
-            if (psiFile != null) {
-                var elem: PsiElement? = psiFile.findElementAt(caret.offset.coerceIn(0, (doc.textLength - 1).coerceAtLeast(0)))
-                while (elem != null && elem !is com.intellij.psi.PsiFile) {
-                    val typeName = elem.javaClass.simpleName
-                    if (typeName.contains("Class", ignoreCase = true) ||
-                        typeName.contains("Interface", ignoreCase = true) ||
-                        typeName.contains("Struct", ignoreCase = true)
-                    ) {
-                        val fullRange = elem.textRange
-                        if (!inside) {
-                            return Pair(fullRange.startOffset, fullRange.endOffset)
+            val psiPair = try {
+                runReadAction {
+                    val psiFile = PsiDocumentManager.getInstance(project).getPsiFile(doc) ?: return@runReadAction null
+                    var elem: PsiElement? = psiFile.findElementAt(caret.offset.coerceIn(0, (doc.textLength - 1).coerceAtLeast(0)))
+                    while (elem != null && elem !is com.intellij.psi.PsiFile) {
+                        val typeName = elem.javaClass.simpleName
+                        if (typeName.contains("Class", ignoreCase = true) ||
+                            typeName.contains("Interface", ignoreCase = true) ||
+                            typeName.contains("Struct", ignoreCase = true)
+                        ) {
+                            val fullRange = elem.textRange
+                            if (!inside) {
+                                return@runReadAction Pair(fullRange.startOffset, fullRange.endOffset)
+                            }
+                            val bodyPair = findEnclosingBracketsInElement(doc, elem, '{', '}')
+                            if (bodyPair != null) {
+                                return@runReadAction bodyPair
+                            }
+                            return@runReadAction Pair(fullRange.startOffset, fullRange.endOffset)
                         }
-                        val bodyPair = findEnclosingBracketsInElement(doc, elem, '{', '}')
-                        if (bodyPair != null) {
-                            return bodyPair
-                        }
-                        return Pair(fullRange.startOffset, fullRange.endOffset)
+                        elem = elem.parent
                     }
-                    elem = elem.parent
+                    null
                 }
+            } catch (_: Throwable) {
+                null
             }
+            if (psiPair != null) return psiPair
         }
 
         return findDelimitedPairRange(doc, caret, inside, '{')

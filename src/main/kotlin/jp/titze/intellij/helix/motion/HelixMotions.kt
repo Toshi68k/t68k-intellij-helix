@@ -2,6 +2,7 @@ package jp.titze.intellij.helix.motion
 
 import com.intellij.ide.DataManager
 import com.intellij.openapi.actionSystem.ActionManager
+import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.editor.Caret
 import com.intellij.openapi.editor.Document
@@ -849,21 +850,12 @@ object HelixMotions {
      * [c / ]c: Move to previous/next comment (selects comment block)
      */
     fun moveComment(editor: Editor, forward: Boolean, count: Int = 1): Boolean {
-        val project = editor.project
-        val doc = editor.document
-        var ranges = emptyList<TextRange>()
-
-        if (project != null) {
-            val psiFile = PsiDocumentManager.getInstance(project).getPsiFile(doc)
-            if (psiFile != null) {
-                ranges = collectMatchingRanges(psiFile) { elem ->
-                    elem is PsiComment || elem.javaClass.simpleName.contains("Comment", ignoreCase = true)
-                }
-            }
+        var ranges = getMatchingRangesFromPsi(editor) { elem ->
+            elem is PsiComment || elem.javaClass.simpleName.contains("Comment", ignoreCase = true)
         }
 
         if (ranges.isEmpty()) {
-            ranges = findLineCommentRanges(doc)
+            ranges = findLineCommentRanges(editor.document)
         }
 
         return navigateToRange(editor, ranges, forward, count)
@@ -873,33 +865,24 @@ object HelixMotions {
      * [f / ]f: Move to previous/next function or method (selects function block)
      */
     fun moveFunction(editor: Editor, forward: Boolean, count: Int = 1): Boolean {
-        val project = editor.project
-        val doc = editor.document
-        var ranges = emptyList<TextRange>()
-
-        if (project != null) {
-            val psiFile = PsiDocumentManager.getInstance(project).getPsiFile(doc)
-            if (psiFile != null) {
-                ranges = collectMatchingRanges(psiFile) { elem ->
-                    val name = elem.javaClass.simpleName
-                    val isFuncCandidate = name.contains("Method", ignoreCase = true) ||
-                        name.contains("Function", ignoreCase = true) ||
-                        name.contains("Constructor", ignoreCase = true)
-                    isFuncCandidate &&
-                        !name.contains("Literal", ignoreCase = true) &&
-                        !name.contains("Lambda", ignoreCase = true) &&
-                        !name.contains("Body", ignoreCase = true) &&
-                        !name.contains("Call", ignoreCase = true) &&
-                        !name.contains("Expr", ignoreCase = true) &&
-                        !name.contains("Reference", ignoreCase = true) &&
-                        !name.contains("List", ignoreCase = true) &&
-                        !name.contains("Parameter", ignoreCase = true) &&
-                        !name.contains("Type", ignoreCase = true) &&
-                        !name.contains("Argument", ignoreCase = true) &&
-                        !name.contains("Block", ignoreCase = true) &&
-                        !name.contains("Statement", ignoreCase = true)
-                }
-            }
+        val ranges = getMatchingRangesFromPsi(editor) { elem ->
+            val name = elem.javaClass.simpleName
+            val isFuncCandidate = name.contains("Method", ignoreCase = true) ||
+                name.contains("Function", ignoreCase = true) ||
+                name.contains("Constructor", ignoreCase = true)
+            isFuncCandidate &&
+                !name.contains("Literal", ignoreCase = true) &&
+                !name.contains("Lambda", ignoreCase = true) &&
+                !name.contains("Body", ignoreCase = true) &&
+                !name.contains("Call", ignoreCase = true) &&
+                !name.contains("Expr", ignoreCase = true) &&
+                !name.contains("Reference", ignoreCase = true) &&
+                !name.contains("List", ignoreCase = true) &&
+                !name.contains("Parameter", ignoreCase = true) &&
+                !name.contains("Type", ignoreCase = true) &&
+                !name.contains("Argument", ignoreCase = true) &&
+                !name.contains("Block", ignoreCase = true) &&
+                !name.contains("Statement", ignoreCase = true)
         }
 
         val moved = navigateToRange(editor, ranges, forward, count)
@@ -917,48 +900,39 @@ object HelixMotions {
      * [t / ]t: Move to previous/next class or type (selects class block)
      */
     fun moveType(editor: Editor, forward: Boolean, count: Int = 1): Boolean {
-        val project = editor.project
-        val doc = editor.document
-        var ranges = emptyList<TextRange>()
+        var ranges = getMatchingRangesFromPsi(editor) { elem ->
+            val name = elem.javaClass.simpleName
+            val isTypeCandidate = (name.contains("Class", ignoreCase = true) ||
+                name.contains("Interface", ignoreCase = true) ||
+                name.contains("Struct", ignoreCase = true) ||
+                name.contains("Trait", ignoreCase = true) ||
+                name.contains("Enum", ignoreCase = true) ||
+                name.contains("Record", ignoreCase = true) ||
+                name.contains("Object", ignoreCase = true) ||
+                name.contains("TypeAlias", ignoreCase = true))
 
-        if (project != null) {
-            val psiFile = PsiDocumentManager.getInstance(project).getPsiFile(doc)
-            if (psiFile != null) {
-                ranges = collectMatchingRanges(psiFile) { elem ->
-                    val name = elem.javaClass.simpleName
-                    val isTypeCandidate = (name.contains("Class", ignoreCase = true) ||
-                        name.contains("Interface", ignoreCase = true) ||
-                        name.contains("Struct", ignoreCase = true) ||
-                        name.contains("Trait", ignoreCase = true) ||
-                        name.contains("Enum", ignoreCase = true) ||
-                        name.contains("Record", ignoreCase = true) ||
-                        name.contains("Object", ignoreCase = true) ||
-                        name.contains("TypeAlias", ignoreCase = true))
-
-                    isTypeCandidate &&
-                        !name.contains("Literal", ignoreCase = true) &&
-                        !name.contains("Destruct", ignoreCase = true) &&
-                        !name.contains("Component", ignoreCase = true) &&
-                        !name.contains("Body", ignoreCase = true) &&
-                        !name.contains("Initializer", ignoreCase = true) &&
-                        !name.contains("List", ignoreCase = true) &&
-                        !name.contains("Header", ignoreCase = true) &&
-                        !name.contains("Access", ignoreCase = true) &&
-                        !name.contains("Expr", ignoreCase = true) &&
-                        !name.contains("Reference", ignoreCase = true) &&
-                        !name.contains("TypeElement", ignoreCase = true) &&
-                        !name.contains("Parameter", ignoreCase = true) &&
-                        !name.contains("Constant", ignoreCase = true) &&
-                        !name.contains("Entry", ignoreCase = true) &&
-                        !name.contains("Argument", ignoreCase = true) &&
-                        !name.contains("Statement", ignoreCase = true) &&
-                        !name.contains("Block", ignoreCase = true)
-                }
-            }
+            isTypeCandidate &&
+                !name.contains("Literal", ignoreCase = true) &&
+                !name.contains("Destruct", ignoreCase = true) &&
+                !name.contains("Component", ignoreCase = true) &&
+                !name.contains("Body", ignoreCase = true) &&
+                !name.contains("Initializer", ignoreCase = true) &&
+                !name.contains("List", ignoreCase = true) &&
+                !name.contains("Header", ignoreCase = true) &&
+                !name.contains("Access", ignoreCase = true) &&
+                !name.contains("Expr", ignoreCase = true) &&
+                !name.contains("Reference", ignoreCase = true) &&
+                !name.contains("TypeElement", ignoreCase = true) &&
+                !name.contains("Parameter", ignoreCase = true) &&
+                !name.contains("Constant", ignoreCase = true) &&
+                !name.contains("Entry", ignoreCase = true) &&
+                !name.contains("Argument", ignoreCase = true) &&
+                !name.contains("Statement", ignoreCase = true) &&
+                !name.contains("Block", ignoreCase = true)
         }
 
         if (ranges.isEmpty()) {
-            ranges = findClassRangesRegex(doc)
+            ranges = findClassRangesRegex(editor.document)
         }
 
         return navigateToRange(editor, ranges, forward, count)
@@ -968,20 +942,11 @@ object HelixMotions {
      * [a / ]a: Move to previous/next parameter (selects parameter block)
      */
     fun moveParameter(editor: Editor, forward: Boolean, count: Int = 1): Boolean {
-        val project = editor.project
-        val doc = editor.document
-        var ranges = emptyList<TextRange>()
-
-        if (project != null) {
-            val psiFile = PsiDocumentManager.getInstance(project).getPsiFile(doc)
-            if (psiFile != null) {
-                ranges = collectMatchingRanges(psiFile) { elem ->
-                    val name = elem.javaClass.simpleName
-                    name.contains("Parameter", ignoreCase = true) &&
-                        !name.contains("List", ignoreCase = true) &&
-                        !name.contains("Type", ignoreCase = true)
-                }
-            }
+        val ranges = getMatchingRangesFromPsi(editor) { elem ->
+            val name = elem.javaClass.simpleName
+            name.contains("Parameter", ignoreCase = true) &&
+                !name.contains("List", ignoreCase = true) &&
+                !name.contains("Type", ignoreCase = true)
         }
 
         return navigateToRange(editor, ranges, forward, count)
@@ -991,29 +956,20 @@ object HelixMotions {
      * [T / ]T: Move to previous/next test method (selects test block)
      */
     fun moveTest(editor: Editor, forward: Boolean, count: Int = 1): Boolean {
-        val project = editor.project
-        val doc = editor.document
-        var ranges = emptyList<TextRange>()
-
-        if (project != null) {
-            val psiFile = PsiDocumentManager.getInstance(project).getPsiFile(doc)
-            if (psiFile != null) {
-                ranges = collectMatchingRanges(psiFile) { elem ->
-                    val name = elem.javaClass.simpleName
-                    val isMethodOrFunc = (name.contains("Method", ignoreCase = true) || name.contains("Function", ignoreCase = true)) &&
-                        !name.contains("Body", ignoreCase = true) &&
-                        !name.contains("Call", ignoreCase = true) &&
-                        !name.contains("Expr", ignoreCase = true) &&
-                        !name.contains("List", ignoreCase = true)
-                    if (isMethodOrFunc) {
-                        val text = elem.text
-                        text.contains("@Test") ||
-                            text.contains("fun test", ignoreCase = true) ||
-                            text.contains("def test", ignoreCase = true) ||
-                            text.contains("void test", ignoreCase = true)
-                    } else false
-                }
-            }
+        val ranges = getMatchingRangesFromPsi(editor) { elem ->
+            val name = elem.javaClass.simpleName
+            val isMethodOrFunc = (name.contains("Method", ignoreCase = true) || name.contains("Function", ignoreCase = true)) &&
+                !name.contains("Body", ignoreCase = true) &&
+                !name.contains("Call", ignoreCase = true) &&
+                !name.contains("Expr", ignoreCase = true) &&
+                !name.contains("List", ignoreCase = true)
+            if (isMethodOrFunc) {
+                val text = elem.text
+                text.contains("@Test") ||
+                    text.contains("fun test", ignoreCase = true) ||
+                    text.contains("def test", ignoreCase = true) ||
+                    text.contains("void test", ignoreCase = true)
+            } else false
         }
 
         val moved = navigateToRange(editor, ranges, forward, count)
@@ -1067,6 +1023,22 @@ object HelixMotions {
             }
         }
         return true
+    }
+
+    private fun getMatchingRangesFromPsi(
+        editor: Editor,
+        predicate: (PsiElement) -> Boolean
+    ): List<TextRange> {
+        val project = editor.project ?: return emptyList()
+        val doc = editor.document
+        return try {
+            runReadAction {
+                val psiFile = PsiDocumentManager.getInstance(project).getPsiFile(doc) ?: return@runReadAction emptyList()
+                collectMatchingRanges(psiFile, predicate)
+            }
+        } catch (_: Throwable) {
+            emptyList()
+        }
     }
 
     private fun collectMatchingRanges(psiFile: PsiFile, predicate: (PsiElement) -> Boolean): List<TextRange> {
@@ -1189,7 +1161,12 @@ object HelixMotions {
 
                 if (action != null) {
                     val beforeOffset = caret.offset
-                    action.handler.execute(editor, caret, dataContext)
+                    try {
+                        runReadAction {
+                            action.handler.execute(editor, caret, dataContext)
+                        }
+                    } catch (_: Throwable) {
+                    }
                     if (caret.offset != beforeOffset) {
                         targetOffset = caret.offset
                     }
