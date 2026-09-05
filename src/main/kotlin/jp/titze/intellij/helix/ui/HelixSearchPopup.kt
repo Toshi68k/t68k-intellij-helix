@@ -7,7 +7,6 @@ import com.intellij.ui.JBColor
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBTextField
 import com.intellij.util.ui.JBUI
-import com.intellij.util.ui.UIUtil
 import jp.titze.intellij.helix.action.HelixActions
 import java.awt.BorderLayout
 import java.awt.Color
@@ -15,6 +14,7 @@ import java.awt.Dimension
 import java.awt.Font
 import java.awt.Graphics
 import java.awt.Graphics2D
+import java.awt.GridBagLayout
 import java.awt.RenderingHints
 import java.awt.event.FocusAdapter
 import java.awt.event.FocusEvent
@@ -68,20 +68,30 @@ object HelixSearchPopup {
     }
 
     private class KeycapBadge(
-        val keyText: String,
+        keyText: String,
         private val minWidth: Int = 22,
-        private val height: Int = 22
+        private val height: Int = 22,
+        fontSize: Float = 11.5f
     ) : JPanel(BorderLayout()) {
         private val label = JBLabel(keyText, SwingConstants.CENTER)
 
         init {
             isOpaque = false
-            label.font = Font(Font.MONOSPACED, Font.BOLD, JBUI.scaleFontSize(11.5f))
+            label.font = Font(Font.MONOSPACED, Font.BOLD, JBUI.scaleFontSize(fontSize))
             label.foreground = KEYCAP_FG
             add(label, BorderLayout.CENTER)
-            border = JBUI.Borders.empty(0, 6)
-            preferredSize = Dimension(JBUI.scale(minWidth), JBUI.scale(height))
+            border = JBUI.Borders.empty(0, 5, 2, 5)
         }
+
+        override fun getPreferredSize(): Dimension {
+            val pref = super.getPreferredSize()
+            val w = maxOf(pref.width, JBUI.scale(minWidth))
+            val h = maxOf(pref.height, JBUI.scale(height))
+            return Dimension(w, h)
+        }
+
+        override fun getMinimumSize(): Dimension = preferredSize
+        override fun getMaximumSize(): Dimension = preferredSize
 
         override fun paintComponent(g: Graphics) {
             val g2 = g.create() as Graphics2D
@@ -160,8 +170,12 @@ object HelixSearchPopup {
 
         // 2. Input Box
         val inputBox = InputBoxPanel()
-        val badge = KeycapBadge(if (backward) "?" else "/", minWidth = 24, height = 24)
-        inputBox.add(badge, BorderLayout.WEST)
+        val badge = KeycapBadge(if (backward) "?" else "/", minWidth = 24, height = 24, fontSize = 12f)
+        val badgeWrapper = JPanel(GridBagLayout()).apply {
+            isOpaque = false
+            add(badge)
+        }
+        inputBox.add(badgeWrapper, BorderLayout.WEST)
 
         val textField = JBTextField()
         textField.font = Font(Font.MONOSPACED, Font.PLAIN, JBUI.scaleFontSize(13f))
@@ -199,7 +213,7 @@ object HelixSearchPopup {
             val p = JPanel()
             p.isOpaque = false
             p.layout = BoxLayout(p, BoxLayout.X_AXIS)
-            val kb = KeycapBadge(key, minWidth = 18, height = 18)
+            val kb = KeycapBadge(key, minWidth = 20, height = 20, fontSize = 10.5f)
             val d = JBLabel(" $desc")
             d.font = Font(Font.SANS_SERIF, Font.PLAIN, JBUI.scaleFontSize(10.5f))
             d.foreground = HINT_FG
@@ -208,9 +222,9 @@ object HelixSearchPopup {
             return p
         }
 
-        shortcutsHint.add(createKeyHint("↵", "Search"))
+        shortcutsHint.add(createKeyHint("Enter", "Search"))
         shortcutsHint.add(Box.createHorizontalStrut(JBUI.scale(10)))
-        shortcutsHint.add(createKeyHint("esc", "Cancel"))
+        shortcutsHint.add(createKeyHint("Esc", "Cancel"))
         footerRow.add(shortcutsHint, BorderLayout.EAST)
 
         // Assemble Content Panel
