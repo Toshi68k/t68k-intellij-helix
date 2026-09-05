@@ -7,6 +7,7 @@ import com.intellij.openapi.ui.popup.JBPopupFactory
 import com.intellij.openapi.ui.popup.JBPopupListener
 import com.intellij.openapi.ui.popup.LightweightWindowEvent
 import com.intellij.ui.JBColor
+import com.intellij.ui.awt.RelativePoint
 import com.intellij.ui.components.JBLabel
 import com.intellij.util.ui.JBUI
 import com.intellij.util.ui.UIUtil
@@ -17,6 +18,7 @@ import java.awt.Color
 import java.awt.Cursor
 import java.awt.Font
 import java.awt.GridLayout
+import java.awt.Point
 import java.awt.event.KeyAdapter
 import java.awt.event.KeyEvent
 import java.awt.event.MouseAdapter
@@ -135,12 +137,45 @@ object HelixWhichKeyPopup {
             }
         })
 
-        val project = editor.project
-        if (project != null) {
-            popup.showCenteredInCurrentWindow(project)
+        val component = editor.component
+        val visibleRect = component.visibleRect
+        val viewWidth = if (visibleRect.width > 0) visibleRect.width else component.width
+        val viewHeight = if (visibleRect.height > 0) visibleRect.height else component.height
+
+        if (component.isShowing && viewWidth > 0 && viewHeight > 0) {
+            val prefSize = panel.preferredSize
+            val pos = calculatePopupPosition(
+                viewWidth = viewWidth,
+                viewHeight = viewHeight,
+                prefWidth = prefSize.width,
+                prefHeight = prefSize.height,
+                visibleX = visibleRect.x,
+                visibleY = visibleRect.y
+            )
+            popup.show(RelativePoint(component, pos))
         } else {
-            popup.showInBestPositionFor(editor)
+            val project = editor.project
+            if (project != null) {
+                popup.showCenteredInCurrentWindow(project)
+            } else {
+                popup.showInBestPositionFor(editor)
+            }
         }
+    }
+
+    internal fun calculatePopupPosition(
+        viewWidth: Int,
+        viewHeight: Int,
+        prefWidth: Int,
+        prefHeight: Int,
+        visibleX: Int = 0,
+        visibleY: Int = 0,
+        marginX: Int = JBUI.scale(20),
+        marginY: Int = JBUI.scale(20)
+    ): Point {
+        val x = visibleX + (viewWidth - prefWidth - marginX).coerceAtLeast(0)
+        val y = visibleY + (viewHeight - prefHeight - marginY).coerceAtLeast(0)
+        return Point(x, y)
     }
 
     private fun createWhichKeyPanel(title: String, items: List<WhichKeyItem>, editor: Editor): JPanel {
@@ -173,7 +208,7 @@ object HelixWhichKeyPopup {
             itemPanel.cursor = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
 
             val keyBadge = JBLabel(item.key)
-            keyBadge.font = Font(Font.MONOSPACED, Font.BOLD, JBUI.scaleFontSize(12f).toInt())
+            keyBadge.font = Font(Font.MONOSPACED, Font.BOLD, JBUI.scaleFontSize(12f))
             keyBadge.foreground = JBColor(Color(0x03, 0xC7, 0xD3), Color(0x03, 0xC7, 0xD3))
             keyBadge.border = BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(JBColor(Color(0x03, 0xC7, 0xD3, 120), Color(0x03, 0xC7, 0xD3, 120)), 1),

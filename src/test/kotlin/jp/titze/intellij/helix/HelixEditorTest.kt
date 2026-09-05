@@ -18,6 +18,7 @@ import jp.titze.intellij.helix.state.HelixMode
 import jp.titze.intellij.helix.state.HelixStateManager
 import jp.titze.intellij.helix.ui.HelixPromptBar
 import jp.titze.intellij.helix.ui.HelixPromptType
+import jp.titze.intellij.helix.ui.HelixWhichKeyPopup
 
 class HelixEditorTest : BasePlatformTestCase() {
 
@@ -1998,7 +1999,7 @@ class HelixEditorTest : BasePlatformTestCase() {
 
         // Add a secondary caret on the second line
         editor.caretModel.primaryCaret.moveToOffset(8)
-        val secondCaret = editor.caretModel.addCaret(editor.offsetToVisualPosition(doc.getLineStartOffset(1) + 7))
+        val secondCaret = editor.caretModel.addCaret(editor.offsetToVisualPosition(doc.getLineStartOffset(1) + 7), false)
         secondCaret.shouldNotBeNull()
 
         editor.caretModel.caretCount shouldBe 2
@@ -2012,5 +2013,64 @@ class HelixEditorTest : BasePlatformTestCase() {
         HelixMotions.moveLineEnd(editor)
         editor.caretModel.primaryCaret.offset shouldBe doc.getLineEndOffset(0)
         secondCaret.offset shouldBe doc.getLineEndOffset(1)
+    }
+
+    fun testHelixWhichKeyPopupPositionCalculation() {
+        // Normal dimensions: 1000x800 viewport, 300x200 popup, margin 20
+        val pos = HelixWhichKeyPopup.calculatePopupPosition(
+            viewWidth = 1000,
+            viewHeight = 800,
+            prefWidth = 300,
+            prefHeight = 200,
+            visibleX = 0,
+            visibleY = 0,
+            marginX = 20,
+            marginY = 20
+        )
+        pos.x shouldBe 680 // 1000 - 300 - 20
+        pos.y shouldBe 580 // 800 - 200 - 20
+
+        // With viewport offset: visibleX = 50, visibleY = 100
+        val posWithOffset = HelixWhichKeyPopup.calculatePopupPosition(
+            viewWidth = 1000,
+            viewHeight = 800,
+            prefWidth = 300,
+            prefHeight = 200,
+            visibleX = 50,
+            visibleY = 100,
+            marginX = 20,
+            marginY = 20
+        )
+        posWithOffset.x shouldBe 730 // 50 + 680
+        posWithOffset.y shouldBe 680 // 100 + 580
+
+        // Very small viewport (smaller than popup) clamps to 0 offset
+        val posClamped = HelixWhichKeyPopup.calculatePopupPosition(
+            viewWidth = 200,
+            viewHeight = 150,
+            prefWidth = 300,
+            prefHeight = 200,
+            visibleX = 0,
+            visibleY = 0,
+            marginX = 20,
+            marginY = 20
+        )
+        posClamped.x shouldBe 0
+        posClamped.y shouldBe 0
+    }
+
+    fun testHelixWhichKeyPopupTriggerAndHide() {
+        myFixture.configureByText("test.txt", "line 1\nline 2\n")
+        val editor = myFixture.editor
+
+        // Typing space or g should trigger which-key show safely without throwing
+        HelixWhichKeyPopup.show(editor, " ")
+        HelixWhichKeyPopup.hide()
+
+        HelixWhichKeyPopup.show(editor, "g")
+        HelixWhichKeyPopup.hide()
+
+        HelixWhichKeyPopup.show(editor, "m")
+        HelixWhichKeyPopup.hide()
     }
 }
