@@ -557,6 +557,287 @@ object HelixActions {
         editor.scrollingModel.scrollToCaret(com.intellij.openapi.editor.ScrollType.MAKE_VISIBLE)
     }
 
+    data class HelixCaretSnapshot(
+        val offset: Int,
+        val selectionStart: Int,
+        val selectionEnd: Int
+    )
+
+    fun captureCarets(editor: Editor): List<HelixCaretSnapshot> {
+        return editor.caretModel.allCarets.map {
+            HelixCaretSnapshot(
+                offset = it.offset,
+                selectionStart = if (it.hasSelection()) it.selectionStart else it.offset,
+                selectionEnd = if (it.hasSelection()) it.selectionEnd else it.offset
+            )
+        }
+    }
+
+    fun restoreCarets(editor: Editor, snapshot: List<HelixCaretSnapshot>) {
+        if (snapshot.isEmpty()) return
+        val caretStates = snapshot.map {
+            com.intellij.openapi.editor.CaretState(
+                editor.offsetToLogicalPosition(it.offset),
+                editor.offsetToLogicalPosition(it.selectionStart),
+                editor.offsetToLogicalPosition(it.selectionEnd)
+            )
+        }
+        val success = try {
+            editor.caretModel.setCaretsAndSelections(caretStates)
+            true
+        } catch (e: Exception) {
+            false
+        }
+        if (!success || editor.caretModel.caretCount != snapshot.size) {
+            editor.caretModel.removeSecondaryCarets()
+            val primary = editor.caretModel.primaryCaret
+            val first = snapshot.first()
+            primary.moveToOffset(first.offset)
+            primary.setSelection(first.selectionStart, first.selectionEnd)
+            for (item in snapshot.drop(1)) {
+                val caret = editor.caretModel.addCaret(editor.offsetToVisualPosition(item.offset))
+                if (caret != null) {
+                    caret.moveToOffset(item.offset)
+                    caret.setSelection(item.selectionStart, item.selectionEnd)
+                }
+            }
+        }
+        editor.scrollingModel.scrollToCaret(com.intellij.openapi.editor.ScrollType.MAKE_VISIBLE)
+    }
+
+    fun previewSearch(
+        editor: Editor,
+        pattern: String,
+        backward: Boolean = false,
+        count: Int = 1,
+        baseSnapshot: List<HelixCaretSnapshot>
+    ): Boolean {
+        if (pattern.isEmpty()) {
+            restoreCarets(editor, baseSnapshot)
+            return false
+        }
+        val doc = editor.document
+        val text = doc.charsSequence
+        val textLen = text.length
+        if (textLen == 0) {
+            restoreCarets(editor, baseSnapshot)
+            return false
+        }
+
+        val regex = try {
+            Regex(pattern)
+        } catch (e: Exception) {
+            try {
+                Regex(Regex.escape(pattern))
+            } catch (e2: Exception) {
+                restoreCarets(editor, baseSnapshot)
+                return false
+            }
+        }
+
+        val matches = mutableListOf<Pair<Int, Int>>()
+        var currentPos = 0
+        while (currentPos < textLen) {
+            val match = regex.find(text, currentPos) ?: break
+            val start = match.range.first
+            val end = match.range.last + 1
+            if (end > start) {
+                matches.add(Pair(start, end))
+                currentPos = end
+            } else {
+                currentPos++
+            }
+        }
+
+        if (matches.isEmpty()) {
+            restoreCarets(editor, baseSnapshot)
+            return false
+        }
+
+        val newCaretRanges = mutableListOf<Pair<Int, Int>>()
+        val totalMatches = matches.size
+
+        for (caret in baseSnapshot) {
+            val targetMatch: Pair<Int, Int>
+            if (!backward) {
+                val searchFrom = if (caret.selectionEnd > caret.selectionStart) caret.selectionEnd else caret.offset
+                val baseIdx = matches.indexOfFirst { it.first >= searchFrom }
+                val firstIdx = if (baseIdx >= 0) baseIdx else 0
+                val targetIdx = (firstIdx + (count.coerceAtLeast(1) - 1)) % totalMatches
+                targetMatch = matches[targetIdx]
+            } else {
+                val searchFrom = if (caret.selectionEnd > caret.selectionStart) caret.selectionStart else caret.offset
+                val baseIdx = matches.indexOfLast { it.second <= searchFrom }
+                val firstIdx = if (baseIdx >= 0) baseIdx else (totalMatches - 1)
+                val targetIdx = Math.floorMod(firstIdx - (count.coerceAtLeast(1) - 1), totalMatches)
+                targetMatch = matches[targetIdx]
+            }
+            newCaretRanges.add(targetMatch)
+        }
+
+        applyCarets(editor, newCaretRanges.distinct().sortedBy { it.first })
+        return true
+    }
+
+    fun previewSelectRegex(
+        editor: Editor,
+        pattern: String,
+        baseSnapshot: List<HelixCaretSnapshot>
+    ): Boolean {
+        if (pattern.isEmpty()) {
+            restoreCarets(editor, baseSnapshot)
+            return false
+        }
+        val doc = editor.document
+        val text = doc.charsSequence
+        val regex = try {
+            Regex(pattern)
+        } catch (e: Exception) {
+            try {
+                Regex(Regex.escape(pattern))
+            } catch (e2: Exception) {
+                restoreCarets(editor, baseSnapshot)
+                return false
+            }
+        }
+
+        val rangesToSearch = baseSnapshot.map { caret ->
+            if (caret.selectionEnd > caret.selectionStart) {
+                Pair(caret.selectionStart, caret.selectionEnd)
+            } else {
+                val offset = caret.offset
+                Pair(offset, (offset + 1).coerceAtMost(doc.textLength))
+            }
+        }
+
+        val allMatches = mutableListOf<Pair<Int, Int>>()
+        for ((rangeStart, rangeEnd) in rangesToSearch) {
+            if (rangeStart >= rangeEnd) continue
+            val targetSub = text.subSequence(rangeStart, rangeEnd).toString()
+            var currentPos = 0
+            while (currentPos < targetSub.length) {
+                val match = regex.find(targetSub, currentPos) ?: break
+                val mStart = rangeStart + match.range.first
+                val mEnd = rangeStart + match.range.last + 1
+                if (mEnd > mStart) {
+                    allMatches.add(Pair(mStart, mEnd))
+                    currentPos = match.range.last + 1
+                } else {
+                    currentPos++
+                }
+            }
+        }
+
+        if (allMatches.isEmpty()) {
+            restoreCarets(editor, baseSnapshot)
+            return false
+        }
+
+        applyCarets(editor, allMatches.distinct().sortedBy { it.first })
+        return true
+    }
+
+    fun previewSplitRegex(
+        editor: Editor,
+        pattern: String,
+        baseSnapshot: List<HelixCaretSnapshot>
+    ): Boolean {
+        if (pattern.isEmpty()) {
+            restoreCarets(editor, baseSnapshot)
+            return false
+        }
+        val doc = editor.document
+        val text = doc.charsSequence
+        val regex = try {
+            Regex(pattern)
+        } catch (e: Exception) {
+            try {
+                Regex(Regex.escape(pattern))
+            } catch (e2: Exception) {
+                restoreCarets(editor, baseSnapshot)
+                return false
+            }
+        }
+
+        val rangesToSearch = baseSnapshot.map { caret ->
+            if (caret.selectionEnd > caret.selectionStart) {
+                Pair(caret.selectionStart, caret.selectionEnd)
+            } else {
+                val offset = caret.offset
+                Pair(offset, (offset + 1).coerceAtMost(doc.textLength))
+            }
+        }
+
+        val newSelections = mutableListOf<Pair<Int, Int>>()
+        for ((rangeStart, rangeEnd) in rangesToSearch) {
+            if (rangeStart >= rangeEnd) continue
+
+            val targetSub = text.subSequence(rangeStart, rangeEnd).toString()
+            var lastIdx = 0
+            for (match in regex.findAll(targetSub)) {
+                val segStart = rangeStart + lastIdx
+                val segEnd = rangeStart + match.range.first
+                if (segEnd > segStart) {
+                    newSelections.add(Pair(segStart, segEnd))
+                }
+                lastIdx = match.range.last + 1
+            }
+            val finalStart = rangeStart + lastIdx
+            if (rangeEnd > finalStart) {
+                newSelections.add(Pair(finalStart, rangeEnd))
+            }
+        }
+
+        if (newSelections.isEmpty()) {
+            restoreCarets(editor, baseSnapshot)
+            return false
+        }
+
+        applyCarets(editor, newSelections.distinct().sortedBy { it.first })
+        return true
+    }
+
+    fun countRegexMatchesInSnapshot(editor: Editor, pattern: String, baseSnapshot: List<HelixCaretSnapshot>): Int {
+        if (pattern.isEmpty()) return 0
+        val doc = editor.document
+        val text = doc.charsSequence
+        val regex = try {
+            Regex(pattern)
+        } catch (e: Exception) {
+            try {
+                Regex(Regex.escape(pattern))
+            } catch (e2: Exception) {
+                return 0
+            }
+        }
+
+        val rangesToSearch = baseSnapshot.map { caret ->
+            if (caret.selectionEnd > caret.selectionStart) {
+                Pair(caret.selectionStart, caret.selectionEnd)
+            } else {
+                val offset = caret.offset
+                Pair(offset, (offset + 1).coerceAtMost(doc.textLength))
+            }
+        }
+
+        var count = 0
+        for ((rangeStart, rangeEnd) in rangesToSearch) {
+            if (rangeStart >= rangeEnd) continue
+            val targetSub = text.subSequence(rangeStart, rangeEnd).toString()
+            var currentPos = 0
+            while (currentPos < targetSub.length) {
+                val match = regex.find(targetSub, currentPos) ?: break
+                if (match.range.last >= match.range.first) {
+                    count++
+                    currentPos = match.range.last + 1
+                } else {
+                    currentPos++
+                }
+            }
+        }
+        return count
+    }
+
     var lastSearchPattern: String? = null
     var lastSearchBackward: Boolean = false
 

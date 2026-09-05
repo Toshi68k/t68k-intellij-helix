@@ -11,6 +11,8 @@ import com.intellij.ui.components.JBTextField
 import com.intellij.util.ui.JBUI
 import com.intellij.util.ui.UIUtil
 import jp.titze.intellij.helix.action.HelixActionDelegate
+import jp.titze.intellij.helix.settings.HelixSearchUiMode
+import jp.titze.intellij.helix.settings.HelixSettings
 import java.awt.BorderLayout
 import java.awt.Color
 import java.awt.Component
@@ -91,6 +93,17 @@ object HelixCommandPopup {
         },
         HelixCommandItem("find", emptyList(), "Find in project files") { editor ->
             HelixActionDelegate.executeAction("FindInPath", editor)
+        },
+        HelixCommandItem("toggle-search-ui", listOf("search-ui"), "Toggle between Stock Helix inline bar and Popup search UI") { _ ->
+            val current = HelixSettings.instance.searchUiMode
+            val next = if (current == HelixSearchUiMode.STOCK_HELIX) HelixSearchUiMode.POPUP else HelixSearchUiMode.STOCK_HELIX
+            HelixSettings.instance.searchUiMode = next
+        },
+        HelixCommandItem("set-search-ui-stock", emptyList(), "Set search UI to Stock Helix inline bar") { _ ->
+            HelixSettings.instance.searchUiMode = HelixSearchUiMode.STOCK_HELIX
+        },
+        HelixCommandItem("set-search-ui-popup", emptyList(), "Set search UI to Popup dialog") { _ ->
+            HelixSettings.instance.searchUiMode = HelixSearchUiMode.POPUP
         }
     )
 
@@ -323,6 +336,17 @@ object HelixCommandPopup {
             "vsp" -> HelixActionDelegate.executeAction("SplitVertically", editor)
             "sp" -> HelixActionDelegate.executeAction("SplitHorizontally", editor)
             "format" -> HelixActionDelegate.executeAction("ReformatCode", editor)
+            "set search-ui=inline", "set search-ui=stock" -> {
+                HelixSettings.instance.searchUiMode = HelixSearchUiMode.STOCK_HELIX
+            }
+            "set search-ui=popup" -> {
+                HelixSettings.instance.searchUiMode = HelixSearchUiMode.POPUP
+            }
+            "toggle-search-ui", "search-ui" -> {
+                val current = HelixSettings.instance.searchUiMode
+                val next = if (current == HelixSearchUiMode.STOCK_HELIX) HelixSearchUiMode.POPUP else HelixSearchUiMode.STOCK_HELIX
+                HelixSettings.instance.searchUiMode = next
+            }
         }
     }
 }

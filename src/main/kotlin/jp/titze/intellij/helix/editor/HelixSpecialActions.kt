@@ -10,6 +10,7 @@ import jp.titze.intellij.helix.command.HelixCommandPopup
 import jp.titze.intellij.helix.motion.HelixMotions
 import jp.titze.intellij.helix.state.HelixMode
 import jp.titze.intellij.helix.state.HelixStateManager
+import jp.titze.intellij.helix.ui.HelixPromptBar
 import jp.titze.intellij.helix.ui.HelixWhichKeyPopup
 
 class HelixEscapeAction : AnAction() {
@@ -18,6 +19,9 @@ class HelixEscapeAction : AnAction() {
         val state = HelixStateManager.getOrCreate(editor)
 
         HelixWhichKeyPopup.hide()
+        if (HelixPromptBar.cancelActivePrompt(editor)) {
+            return
+        }
         if (state.pendingSequence.isNotEmpty() || state.hasCount) {
             state.clearPendingSequence()
             state.clearCount()

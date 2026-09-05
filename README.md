@@ -192,6 +192,18 @@ Press `:` in Normal mode to open the interactive **Helix Command Picker**, style
 - `:open` &rarr; Open fuzzy file picker (`GotoFile`)
 - `:buffer` / `:b` &rarr; Open buffer switcher (`RecentFiles`)
 - `:find` &rarr; Find in project files (`FindInPath`)
+- `:toggle-search-ui` / `:search-ui` &rarr; Toggle between Stock Helix inline bar and Popup dialog
+- `:set search-ui=inline` / `:set search-ui=stock` &rarr; Set search UI to Stock Helix inline bar
+- `:set search-ui=popup` &rarr; Set search UI to Popup dialog
+
+#### Search & Selection UI Modes
+Helix Keymap supports two switchable search and regex prompt styles:
+1. **Stock Helix Mode (Default)**: Single-line prompt bar docked at the bottom of the active editor (`search: `, `rsearch: `, `select: `, `split: `). Matches and selections update **live in the editor buffer as you type**. Pressing <kbd>Enter</kbd> confirms, while pressing <kbd>Esc</kbd> (or <kbd>Backspace</kbd> on empty query) cancels and reverts all carets and selections to their pre-search snapshot.
+2. **Popup Dialog Mode**: Centered floating dialog window with match counter badge, useful for users preferring a separate floating modal window.
+
+Switch between modes at any time:
+- In IntelliJ Settings: **Preferences / Settings &rarr; Tools &rarr; Helix Keymap**
+- In the `:` Command Picker: `:toggle-search-ui`, `:set search-ui=inline`, or `:set search-ui=popup`
 
 ---
 
