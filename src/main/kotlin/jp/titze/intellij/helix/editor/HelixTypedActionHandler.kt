@@ -2,10 +2,9 @@ package jp.titze.intellij.helix.editor
 
 import com.intellij.openapi.actionSystem.DataContext
 import com.intellij.openapi.editor.Editor
-import com.intellij.openapi.editor.actionSystem.EditorActionManager
+import com.intellij.openapi.editor.actionSystem.TypedAction
 import com.intellij.openapi.editor.actionSystem.TypedActionHandler
 import jp.titze.intellij.helix.keymap.HelixKeyHandler
-import jp.titze.intellij.helix.state.HelixMode
 import jp.titze.intellij.helix.state.HelixStateManager
 
 class HelixTypedActionHandler(private val originalHandler: TypedActionHandler?) : TypedActionHandler {
@@ -33,7 +32,7 @@ class HelixTypedActionHandler(private val originalHandler: TypedActionHandler?) 
         fun install() {
             if (installed) return
             installed = true
-            val typedAction = EditorActionManager.getInstance().typedAction
+            val typedAction = TypedAction.getInstance()
             val original = typedAction.rawHandler
             typedAction.setupRawHandler(HelixTypedActionHandler(original))
         }

@@ -149,45 +149,6 @@ object HelixMotions {
     }
 
     /**
-     * ge: Move backward to end of previous word (selects in Normal mode, extends in Select mode)
-     */
-    fun movePrevWordEnd(editor: Editor, count: Int = 1) {
-        val doc = editor.document
-        val text = doc.charsSequence
-        val textLen = doc.textLength
-        if (textLen == 0) return
-
-        val state = HelixStateManager.getOrCreate(editor)
-        val isSelect = state.mode == HelixMode.SELECT
-
-        runForEachCaret(editor) { caret ->
-            val startOffset = caret.offset
-            val anchor = if (isSelect && caret.hasSelection()) caret.leadSelectionOffset else startOffset
-            var offset = startOffset
-
-            repeat(count) {
-                if (offset > 0) {
-                    offset--
-                    val initialType = getCharType(text[offset])
-                    if (initialType != CharType.WHITESPACE) {
-                        while (offset > 0 && getCharType(text[offset]) == initialType) {
-                            offset--
-                        }
-                    }
-                    while (offset > 0 && text[offset].isWhitespace()) {
-                        offset--
-                    }
-                    if (offset < textLen) offset++
-                }
-            }
-
-            offset = offset.coerceIn(0, textLen)
-            applySelectingMotion(caret, anchor, offset)
-        }
-        editor.scrollingModel.scrollToCaret(ScrollType.MAKE_VISIBLE)
-    }
-
-    /**
      * x: Select line, or extend selection by one or more lines
      */
     fun selectLine(editor: Editor, count: Int = 1) {
@@ -559,7 +520,7 @@ object HelixMotions {
             }
         }
 
-        editor.scrollingModel.scrollToCaret(com.intellij.openapi.editor.ScrollType.MAKE_VISIBLE)
+        editor.scrollingModel.scrollToCaret(ScrollType.MAKE_VISIBLE)
     }
 
     private fun makeCaretPrimary(editor: Editor, targetCaret: Caret) {
@@ -586,7 +547,7 @@ object HelixMotions {
     fun removePrimarySelection(editor: Editor) {
         if (editor.caretModel.caretCount > 1) {
             editor.caretModel.removeCaret(editor.caretModel.primaryCaret)
-            editor.scrollingModel.scrollToCaret(com.intellij.openapi.editor.ScrollType.MAKE_VISIBLE)
+            editor.scrollingModel.scrollToCaret(ScrollType.MAKE_VISIBLE)
         }
     }
 
@@ -608,7 +569,7 @@ object HelixMotions {
 
         val targetCaret = carets[targetIndex]
         makeCaretPrimary(editor, targetCaret)
-        editor.scrollingModel.scrollToCaret(com.intellij.openapi.editor.ScrollType.MAKE_VISIBLE)
+        editor.scrollingModel.scrollToCaret(ScrollType.MAKE_VISIBLE)
     }
 
     /**
@@ -642,7 +603,7 @@ object HelixMotions {
                     val subEnd = if (line == endLine) minOf(end, lineEnd) else lineEnd
 
                     // Skip zero-width subselection at endLine if it only touched col 0 due to preceding newline
-                    if (line == endLine && subStart == subEnd && end == lineStart && endLine > startLine) {
+                    if (line == endLine && subStart == subEnd && end == lineStart) {
                         continue
                     }
 
@@ -681,7 +642,7 @@ object HelixMotions {
                 }
             }
         }
-        editor.scrollingModel.scrollToCaret(com.intellij.openapi.editor.ScrollType.MAKE_VISIBLE)
+        editor.scrollingModel.scrollToCaret(ScrollType.MAKE_VISIBLE)
     }
 
     private fun applyMotion(caret: Caret, anchor: Int, targetOffset: Int, isSelect: Boolean) {

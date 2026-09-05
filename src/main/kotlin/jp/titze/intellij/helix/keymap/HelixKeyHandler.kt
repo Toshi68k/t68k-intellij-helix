@@ -8,7 +8,6 @@ import jp.titze.intellij.helix.action.HelixTextObjectActions
 import jp.titze.intellij.helix.command.HelixCommandPopup
 import jp.titze.intellij.helix.motion.HelixMotions
 import jp.titze.intellij.helix.state.HelixEditorState
-import jp.titze.intellij.helix.state.HelixMode
 import jp.titze.intellij.helix.state.HelixStateManager
 import jp.titze.intellij.helix.ui.HelixSearchManager
 import jp.titze.intellij.helix.ui.HelixWhichKeyPopup
@@ -316,8 +315,8 @@ object HelixKeyHandler {
 
             // Mode & History & IDE
             'v' -> HelixActions.toggleSelectMode(editor)
-            'u' -> repeat(count) { HelixActionDelegate.executeAction("\$Undo", editor) }
-            'U' -> repeat(count) { HelixActionDelegate.executeAction("\$Redo", editor) }
+            'u' -> repeat(count) { HelixActionDelegate.executeAction($$"$Undo", editor) }
+            'U' -> repeat(count) { HelixActionDelegate.executeAction($$"$Redo", editor) }
             'K' -> HelixActionDelegate.executeAction("QuickJavaDoc", editor)
             '=' -> HelixActionDelegate.executeAction("ReformatCode", editor)
             '>' -> HelixActionDelegate.executeAction("EditorIndentSelection", editor)

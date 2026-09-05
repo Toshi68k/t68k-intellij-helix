@@ -47,7 +47,7 @@ object HelixSearchPopup {
 
         val badgeText = if (backward) " rsearch: " else " search: "
         val promptBadge = JBLabel(badgeText)
-        promptBadge.font = Font(Font.MONOSPACED, Font.BOLD, JBUI.scaleFontSize(13f).toInt())
+        promptBadge.font = Font(Font.MONOSPACED, Font.BOLD, JBUI.scaleFontSize(13f))
         promptBadge.foreground = JBColor(Color(0x03, 0xC7, 0xD3), Color(0x03, 0xC7, 0xD3))
         promptBadge.border = BorderFactory.createCompoundBorder(
             BorderFactory.createLineBorder(JBColor(Color(0x03, 0xC7, 0xD3, 120), Color(0x03, 0xC7, 0xD3, 120)), 1),
@@ -56,7 +56,7 @@ object HelixSearchPopup {
         promptPanel.add(promptBadge, BorderLayout.WEST)
 
         val textField = JBTextField()
-        textField.font = Font(Font.MONOSPACED, Font.PLAIN, JBUI.scaleFontSize(13f).toInt())
+        textField.font = Font(Font.MONOSPACED, Font.PLAIN, JBUI.scaleFontSize(13f))
         textField.emptyText.text = if (backward) "regex or backward search pattern" else "regex or search pattern"
         promptPanel.add(textField, BorderLayout.CENTER)
         mainPanel.add(promptPanel, BorderLayout.NORTH)

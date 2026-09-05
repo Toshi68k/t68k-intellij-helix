@@ -16,7 +16,6 @@ import jp.titze.intellij.helix.settings.HelixSettings
 import java.awt.BorderLayout
 import java.awt.Color
 import java.awt.Component
-import java.awt.Cursor
 import java.awt.Dimension
 import java.awt.Font
 import java.awt.event.KeyAdapter
@@ -24,10 +23,10 @@ import java.awt.event.KeyEvent
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
 import javax.swing.BorderFactory
-import javax.swing.DefaultListCellRenderer
 import javax.swing.DefaultListModel
 import javax.swing.JList
 import javax.swing.JPanel
+import javax.swing.ListCellRenderer
 import javax.swing.ListSelectionModel
 import javax.swing.SwingUtilities
 import javax.swing.event.DocumentEvent
@@ -124,14 +123,14 @@ object HelixCommandPopup {
             JBUI.Borders.empty(10, 12)
         )
         mainPanel.background = UIUtil.getPanelBackground()
-        mainPanel.preferredSize = Dimension(420, 260)
+        mainPanel.preferredSize = Dimension(500, 260)
 
         // Top prompt panel
         val promptPanel = JPanel(BorderLayout(8, 0))
         promptPanel.isOpaque = false
 
         val promptBadge = JBLabel(" : ")
-        promptBadge.font = Font(Font.MONOSPACED, Font.BOLD, JBUI.scaleFontSize(13f).toInt())
+        promptBadge.font = Font(Font.MONOSPACED, Font.BOLD, JBUI.scaleFontSize(13f))
         promptBadge.foreground = JBColor(Color(0x03, 0xC7, 0xD3), Color(0x03, 0xC7, 0xD3))
         promptBadge.border = BorderFactory.createCompoundBorder(
             BorderFactory.createLineBorder(JBColor(Color(0x03, 0xC7, 0xD3, 120), Color(0x03, 0xC7, 0xD3, 120)), 1),
@@ -140,7 +139,7 @@ object HelixCommandPopup {
         promptPanel.add(promptBadge, BorderLayout.WEST)
 
         val textField = JBTextField()
-        textField.font = Font(Font.MONOSPACED, Font.PLAIN, JBUI.scaleFontSize(13f).toInt())
+        textField.font = Font(Font.MONOSPACED, Font.PLAIN, JBUI.scaleFontSize(13f))
         textField.emptyText.text = "type command (w, q, wq, vsp, sp, format, ...)"
         promptPanel.add(textField, BorderLayout.CENTER)
         mainPanel.add(promptPanel, BorderLayout.NORTH)
@@ -153,38 +152,42 @@ object HelixCommandPopup {
         list.selectionMode = ListSelectionModel.SINGLE_SELECTION
         list.selectedIndex = 0
         list.isOpaque = false
-        list.cellRenderer = object : DefaultListCellRenderer() {
+        list.cellRenderer = object : ListCellRenderer<HelixCommandItem> {
+            private val cmdFont = Font(Font.MONOSPACED, Font.BOLD, JBUI.scaleFontSize(11f))
+            private val cmdLabel = JBLabel().apply {
+                font = cmdFont
+            }
+            private val descLabel = JBLabel().apply {
+                font = JBUI.Fonts.miniFont()
+                foreground = UIUtil.getContextHelpForeground()
+            }
+            private val panel = JPanel(BorderLayout(8, 0)).apply {
+                border = JBUI.Borders.empty(3, 6)
+                accessibleContext.accessibleName = "Helix Command Suggestion"
+                add(cmdLabel, BorderLayout.WEST)
+                add(descLabel, BorderLayout.CENTER)
+            }
+
             override fun getListCellRendererComponent(
-                list: JList<*>?,
-                value: Any?,
+                list: JList<out HelixCommandItem>?,
+                value: HelixCommandItem?,
                 index: Int,
                 isSelected: Boolean,
                 cellHasFocus: Boolean
             ): Component {
-                val item = value as? HelixCommandItem
-                val panel = JPanel(BorderLayout(8, 0))
-                panel.border = JBUI.Borders.empty(3, 6)
+                cmdLabel.text = value?.displayCommand ?: ""
+                descLabel.text = value?.description ?: ""
 
                 if (isSelected) {
+                    panel.isOpaque = true
                     panel.background = JBColor(Color(0x03, 0xC7, 0xD3, 45), Color(0x03, 0xC7, 0xD3, 45))
+                    cmdLabel.foreground = JBColor(Color(0x03, 0xC7, 0xD3), Color(0x03, 0xC7, 0xD3))
                 } else {
                     panel.isOpaque = false
+                    cmdLabel.foreground = UIUtil.getLabelForeground()
                 }
 
-                val cmdLabel = JBLabel(item?.displayCommand ?: "")
-                cmdLabel.font = Font(Font.MONOSPACED, Font.BOLD, JBUI.scaleFontSize(11f).toInt())
-                cmdLabel.foreground = if (isSelected) {
-                    JBColor(Color(0x03, 0xC7, 0xD3), Color(0x03, 0xC7, 0xD3))
-                } else {
-                    UIUtil.getLabelForeground()
-                }
-
-                val descLabel = JBLabel(item?.description ?: "")
-                descLabel.font = JBUI.Fonts.miniFont()
-                descLabel.foreground = UIUtil.getContextHelpForeground()
-
-                panel.add(cmdLabel, BorderLayout.WEST)
-                panel.add(descLabel, BorderLayout.CENTER)
+                panel.accessibleContext.accessibleName = value?.let { "${it.displayCommand}: ${it.description}" } ?: ""
                 return panel
             }
         }
