@@ -56,22 +56,31 @@ class HelixEditorTest : BasePlatformTestCase() {
         val caret = editor.caretModel.primaryCaret
         caret.moveToOffset(0)
 
-        // In Normal mode, motion 'w' moves to start of "world" without marking
+        // In Normal mode, motion 'w' moves to start of "world" and selects "hello "
         HelixMotions.moveNextWordStart(editor)
         caret.offset shouldBe 6
-        caret.hasSelection().shouldBeFalse()
+        caret.hasSelection().shouldBeTrue()
+        caret.selectedText shouldBe "hello "
 
-        // In Select mode ('v'), motion 'w' extends selection (marks)
-        HelixActions.toggleSelectMode(editor)
-        HelixStateManager.getOrCreate(editor).mode shouldBe HelixMode.SELECT
+        // In Normal mode, another 'w' selects the next word "world " (anchor resets to 6)
         HelixMotions.moveNextWordStart(editor)
         caret.offset shouldBe 12
         caret.hasSelection().shouldBeTrue()
         caret.selectedText shouldBe "world "
 
-        // Motion 'b' in Select mode moves back and updates selection
+        // Motion 'b' in Normal mode moves back to start of "world" and selects "world "
         HelixMotions.movePrevWordStart(editor)
         caret.offset shouldBe 6
+        caret.hasSelection().shouldBeTrue()
+        caret.selectedText shouldBe "world "
+
+        // In Select mode ('v'), motion 'b' extends selection backwards to start of "hello"
+        HelixActions.toggleSelectMode(editor)
+        HelixStateManager.getOrCreate(editor).mode shouldBe HelixMode.SELECT
+        HelixMotions.movePrevWordStart(editor)
+        caret.offset shouldBe 0
+        caret.hasSelection().shouldBeTrue()
+        caret.selectedText shouldBe "hello world "
     }
 
     fun testLineSelectionMotion() {
@@ -1193,6 +1202,33 @@ class HelixEditorTest : BasePlatformTestCase() {
 
         state.pendingSequence shouldBe ""
         editor.document.text shouldBe initialText
+    }
+
+    fun testChangeKeyEntersInsertAndEscapeReturnsToNormal() {
+        jp.titze.intellij.helix.editor.HelixEditorActionHandler.install()
+        myFixture.configureByText("test.txt", "hello world")
+        val editor = myFixture.editor
+        val state = HelixStateManager.getOrCreate(editor)
+        state.mode shouldBe HelixMode.NORMAL
+
+        // Press 'c' to change selection / character
+        HelixKeyHandler.handleKey('c', editor)
+        state.mode shouldBe HelixMode.INSERT
+        editor.document.text shouldBe "ello world"
+
+        // Escape should return to Normal mode
+        myFixture.performEditorAction(com.intellij.openapi.actionSystem.IdeActions.ACTION_EDITOR_ESCAPE)
+        state.mode shouldBe HelixMode.NORMAL
+    }
+
+    fun testEscapeHandlerReturnsToNormalFromInsert() {
+        myFixture.configureByText("test.txt", "hello world")
+        val editor = myFixture.editor
+        val state = HelixStateManager.getOrCreate(editor)
+        state.setMode(HelixMode.INSERT)
+
+        jp.titze.intellij.helix.editor.HelixEscapeHandler.handleEscape(editor)
+        state.mode shouldBe HelixMode.NORMAL
     }
 
     fun testSingleKeyReplaceWithClipboard() {

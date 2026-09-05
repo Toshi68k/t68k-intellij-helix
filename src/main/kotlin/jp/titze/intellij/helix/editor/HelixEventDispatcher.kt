@@ -23,11 +23,25 @@ class HelixEventDispatcher : IdeEventQueue.EventDispatcher {
         val editor = findFocusedEditor(e) ?: return false
         if (editor.isOneLineMode || editor.isViewer) return false
 
-        val state = HelixStateManager.getOrCreate(editor)
-        if (state.mode.isInsertable) return false
-
         val isCtrl = e.isControlDown && !e.isMetaDown && !e.isAltDown
         val isNoModifiers = !e.isControlDown && !e.isMetaDown && !e.isAltDown && !e.isShiftDown
+
+        // Escape or Ctrl+[ should always work to exit insert/select mode or cancel pending actions
+        val isEscape = (isNoModifiers && e.keyCode == KeyEvent.VK_ESCAPE) ||
+                (isCtrl && e.keyCode == KeyEvent.VK_OPEN_BRACKET)
+
+        if (isEscape) {
+            val lookup = com.intellij.codeInsight.lookup.LookupManager.getActiveLookup(editor)
+            if (lookup != null) {
+                return false // Let IntelliJ close the completion popup first
+            }
+            HelixEscapeHandler.handleEscape(editor)
+            e.consume()
+            return true
+        }
+
+        val state = HelixStateManager.getOrCreate(editor)
+        if (state.mode.isInsertable) return false
 
         val handled = when {
             isCtrl && e.keyCode == KeyEvent.VK_F -> {

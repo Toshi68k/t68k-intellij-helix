@@ -21,6 +21,16 @@ class HelixEditorActionHandler(
             return
         }
 
+        if (actionId == IdeActions.ACTION_EDITOR_ESCAPE) {
+            val lookup = com.intellij.codeInsight.lookup.LookupManager.getActiveLookup(editor)
+            if (lookup != null) {
+                originalHandler?.execute(editor, caret, dataContext)
+                return
+            }
+            HelixEscapeHandler.handleEscape(editor)
+            return
+        }
+
         val state = HelixStateManager.getOrCreate(editor)
         if (state.mode.isInsertable) {
             originalHandler?.execute(editor, caret, dataContext)
@@ -54,6 +64,10 @@ class HelixEditorActionHandler(
             return originalHandler?.isEnabled(editor, caret, dataContext) ?: true
         }
 
+        if (actionId == IdeActions.ACTION_EDITOR_ESCAPE) {
+            return true
+        }
+
         val state = HelixStateManager.getOrCreate(editor)
         if (state.mode.isInsertable) {
             return originalHandler?.isEnabled(editor, caret, dataContext) ?: true
@@ -79,7 +93,8 @@ class HelixEditorActionHandler(
             val actionsToWrap = listOf(
                 IdeActions.ACTION_EDITOR_BACKSPACE,
                 IdeActions.ACTION_EDITOR_DELETE,
-                IdeActions.ACTION_EDITOR_ENTER
+                IdeActions.ACTION_EDITOR_ENTER,
+                IdeActions.ACTION_EDITOR_ESCAPE
             )
 
             for (actionId in actionsToWrap) {
