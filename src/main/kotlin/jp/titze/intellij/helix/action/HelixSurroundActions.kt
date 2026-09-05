@@ -108,7 +108,7 @@ object HelixSurroundActions {
         return candidate
     }
 
-    private fun findMatchingClose(text: CharSequence, openIndex: Int, open: Char, close: Char): Int? {
+    fun findMatchingClose(text: CharSequence, openIndex: Int, open: Char, close: Char): Int? {
         var depth = 0
         for (i in (openIndex + 1) until text.length) {
             val c = text[i]
@@ -124,7 +124,7 @@ object HelixSurroundActions {
         return null
     }
 
-    private fun findMatchingOpen(text: CharSequence, closeIndex: Int, open: Char, close: Char): Int? {
+    fun findMatchingOpen(text: CharSequence, closeIndex: Int, open: Char, close: Char): Int? {
         var depth = 0
         for (i in (closeIndex - 1) downTo 0) {
             val c = text[i]
