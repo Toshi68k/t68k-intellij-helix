@@ -1975,7 +1975,42 @@ class HelixEditorTest : BasePlatformTestCase() {
         bar.cancelAndClose()
         bar.isVisible.shouldBeFalse()
     }
+
+    fun testMoveLineStartAndEnd() {
+        myFixture.configureByText("test.txt", "   val hello = 42\n")
+        val editor = myFixture.editor
+        val caret = editor.caretModel.primaryCaret
+        caret.moveToOffset(10)
+
+        // Move to start of line (first non-whitespace)
+        HelixMotions.moveLineStart(editor)
+        caret.offset shouldBe 3
+
+        // Move to end of line
+        HelixMotions.moveLineEnd(editor)
+        caret.offset shouldBe 17
+    }
+
+    fun testMoveLineStartAndEndMultipleCarets() {
+        myFixture.configureByText("test.txt", "   line one\n     line two\n")
+        val editor = myFixture.editor
+        val doc = editor.document
+
+        // Add a secondary caret on the second line
+        editor.caretModel.primaryCaret.moveToOffset(8)
+        val secondCaret = editor.caretModel.addCaret(editor.offsetToVisualPosition(doc.getLineStartOffset(1) + 7))
+        secondCaret.shouldNotBeNull()
+
+        editor.caretModel.caretCount shouldBe 2
+
+        // Move all carets to line start
+        HelixMotions.moveLineStart(editor)
+        editor.caretModel.primaryCaret.offset shouldBe 3
+        secondCaret.offset shouldBe doc.getLineStartOffset(1) + 5
+
+        // Move all carets to line end
+        HelixMotions.moveLineEnd(editor)
+        editor.caretModel.primaryCaret.offset shouldBe doc.getLineEndOffset(0)
+        secondCaret.offset shouldBe doc.getLineEndOffset(1)
+    }
 }
-
-
-

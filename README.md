@@ -2,7 +2,7 @@
 
 [![Version](https://img.shields.io/badge/version-0.1.0-blue.svg)](https://github.com/t68k/t68k-intellij-helix)
 [![IntelliJ Platform](https://img.shields.io/badge/IntelliJ%20Platform-2024.2+-000000.svg?logo=intellij-idea&logoColor=white)](https://plugins.jetbrains.com)
-[![Kotlin](https://img.shields.io/badge/Kotlin-2.1.0-7F52FF.svg?logo=kotlin&logoColor=white)](https://kotlinlang.org)
+[![Kotlin](https://img.shields.io/badge/Kotlin-2.3.4-7F52FF.svg?logo=kotlin&logoColor=white)](https://kotlinlang.org)
 [![JDK](https://img.shields.io/badge/Java-17%20%7C%2021+-ED8B00.svg?logo=openjdk&logoColor=white)](https://openjdk.org)
 [![Helix](https://img.shields.io/badge/Modal-Helix-03C7D3.svg)](https://helix-editor.com)
 [![License](https://img.shields.io/badge/License-Apache_2.0-green.svg)](https://www.apache.org/licenses/LICENSE-2.0)
