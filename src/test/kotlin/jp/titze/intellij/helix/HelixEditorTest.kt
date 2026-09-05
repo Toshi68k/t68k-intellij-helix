@@ -2297,6 +2297,56 @@ class HelixEditorTest : BasePlatformTestCase() {
         caret.hasSelection().shouldBeTrue()
         caret.selectedText shouldBe "fun first() {\n    val f = { x: Int -> x * 2 }\n    items.forEach { println(it) }\n}"
     }
+
+    fun testObjectAndEnclosingClassNavigation() {
+        val text = "// Header\n\nobject Singleton {\n    fun hello() {}\n}\n\nclass Other {\n    fun world() {}\n}\n"
+        myFixture.configureByText("test.kt", text)
+        val editor = myFixture.editor
+        val caret = editor.caretModel.primaryCaret
+
+        // Put cursor inside Singleton on "fun hello"
+        caret.moveToOffset(text.indexOf("fun hello"))
+
+        // [t from inside Singleton should select Singleton!
+        HelixKeyHandler.handleKey('[', editor).shouldBeTrue()
+        HelixKeyHandler.handleKey('t', editor).shouldBeTrue()
+        caret.offset shouldBe text.indexOf("object Singleton")
+        caret.hasSelection().shouldBeTrue()
+        caret.selectedText shouldBe "object Singleton {\n    fun hello() {}\n}"
+
+        // ]t from Singleton should jump to Other
+        HelixKeyHandler.handleKey(']', editor).shouldBeTrue()
+        HelixKeyHandler.handleKey('t', editor).shouldBeTrue()
+        caret.offset shouldBe text.indexOf("class Other")
+        caret.hasSelection().shouldBeTrue()
+        caret.selectedText shouldBe "class Other {\n    fun world() {}\n}"
+
+        // [t from Other should jump back to Singleton
+        HelixKeyHandler.handleKey('[', editor).shouldBeTrue()
+        HelixKeyHandler.handleKey('t', editor).shouldBeTrue()
+        caret.offset shouldBe text.indexOf("object Singleton")
+        caret.hasSelection().shouldBeTrue()
+        caret.selectedText shouldBe "object Singleton {\n    fun hello() {}\n}"
+    }
+
+    fun testDestructuringDeclarationNotMatchedAsClass() {
+        val text = "class MyProcessor {\n    fun process(rangesToSearch: List<Pair<Int, Int>>) {\n        for ((rangeStart, rangeEnd) in rangesToSearch) {\n            println(rangeStart)\n        }\n    }\n}\n"
+        myFixture.configureByText("test.kt", text)
+        val editor = myFixture.editor
+        val caret = editor.caretModel.primaryCaret
+
+        // Put cursor on the for-loop line inside the class
+        caret.moveToOffset(text.indexOf("for ((rangeStart"))
+
+        // [t should select the enclosing MyProcessor, NOT (rangeStart, rangeEnd)!
+        HelixKeyHandler.handleKey('[', editor).shouldBeTrue()
+        HelixKeyHandler.handleKey('t', editor).shouldBeTrue()
+        caret.offset shouldBe text.indexOf("class MyProcessor")
+        caret.hasSelection().shouldBeTrue()
+        caret.selectedText shouldBe text.trimEnd()
+    }
 }
+
+
 
 
