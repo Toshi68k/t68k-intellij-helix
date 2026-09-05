@@ -42,6 +42,11 @@
     <extensions defaultExtensionNs="com.intellij">
         <editorFactoryListener implementation="jp.titze.intellij.helix.editor.HelixEditorListener"/>
         <statusBarWidgetFactory implementation="jp.titze.intellij.helix.ui.HelixStatusBarWidgetFactory" id="jp.titze.intellij.helix.status"/>
+        <applicationService serviceImplementation="jp.titze.intellij.helix.settings.HelixSettings"/>
+        <applicationConfigurable parentId="tools"
+                                 instance="jp.titze.intellij.helix.settings.HelixConfigurable"
+                                 id="jp.titze.intellij.helix.settings"
+                                 displayName="Helix Keymap"/>
     </extensions>
 
     <actions>

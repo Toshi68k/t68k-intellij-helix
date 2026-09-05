@@ -4,8 +4,13 @@ import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import jp.titze.intellij.helix.action.HelixActions
 import jp.titze.intellij.helix.keymap.HelixKeyHandler
 import jp.titze.intellij.helix.motion.HelixMotions
+import jp.titze.intellij.helix.command.HelixCommandPopup
+import jp.titze.intellij.helix.settings.HelixSearchUiMode
+import jp.titze.intellij.helix.settings.HelixSettings
 import jp.titze.intellij.helix.state.HelixMode
 import jp.titze.intellij.helix.state.HelixStateManager
+import jp.titze.intellij.helix.ui.HelixPromptBar
+import jp.titze.intellij.helix.ui.HelixPromptType
 
 class HelixEditorTest : BasePlatformTestCase() {
 
@@ -1812,6 +1817,158 @@ class HelixEditorTest : BasePlatformTestCase() {
         assertEquals(0, caret.leadSelectionOffset)
         assertEquals(5, caret.offset)
     }
+
+    fun testHelixSettingsSearchUiMode() {
+        val settings = HelixSettings.instance
+        val original = settings.searchUiMode
+
+        try {
+            settings.searchUiMode = HelixSearchUiMode.STOCK_HELIX
+            assertEquals(HelixSearchUiMode.STOCK_HELIX, settings.searchUiMode)
+
+            settings.searchUiMode = HelixSearchUiMode.POPUP
+            assertEquals(HelixSearchUiMode.POPUP, settings.searchUiMode)
+        } finally {
+            settings.searchUiMode = original
+        }
+    }
+
+    fun testHelixCommandToggleSearchUi() {
+        myFixture.configureByText("test.txt", "test")
+        val editor = myFixture.editor
+        val settings = HelixSettings.instance
+        val original = settings.searchUiMode
+
+        try {
+            settings.searchUiMode = HelixSearchUiMode.STOCK_HELIX
+            HelixCommandPopup.executeCommand("toggle-search-ui", editor)
+            assertEquals(HelixSearchUiMode.POPUP, settings.searchUiMode)
+
+            HelixCommandPopup.executeCommand("toggle-search-ui", editor)
+            assertEquals(HelixSearchUiMode.STOCK_HELIX, settings.searchUiMode)
+
+            HelixCommandPopup.executeCommand("set search-ui=popup", editor)
+            assertEquals(HelixSearchUiMode.POPUP, settings.searchUiMode)
+
+            HelixCommandPopup.executeCommand("set search-ui=inline", editor)
+            assertEquals(HelixSearchUiMode.STOCK_HELIX, settings.searchUiMode)
+        } finally {
+            settings.searchUiMode = original
+        }
+    }
+
+    fun testCaretSnapshotAndRestore() {
+        myFixture.configureByText("test.txt", "alpha beta gamma delta")
+        val editor = myFixture.editor
+
+        // Set primary caret selection
+        editor.caretModel.primaryCaret.moveToOffset(5)
+        editor.caretModel.primaryCaret.setSelection(0, 5) // "alpha"
+
+        val snapshot = HelixActions.captureCarets(editor)
+        assertEquals(1, snapshot.size)
+        assertEquals(5, snapshot[0].offset)
+        assertEquals(0, snapshot[0].selectionStart)
+        assertEquals(5, snapshot[0].selectionEnd)
+
+        // Move caret elsewhere
+        editor.caretModel.primaryCaret.moveToOffset(15)
+        editor.caretModel.primaryCaret.removeSelection()
+        assertEquals(15, editor.caretModel.primaryCaret.offset)
+        assertFalse(editor.caretModel.primaryCaret.hasSelection())
+
+        // Restore snapshot
+        HelixActions.restoreCarets(editor, snapshot)
+        assertEquals(5, editor.caretModel.primaryCaret.offset)
+        assertEquals("alpha", editor.caretModel.primaryCaret.selectedText)
+    }
+
+    fun testIncrementalSearchPreviewAndCancel() {
+        val text = "apple banana apple orange apple"
+        myFixture.configureByText("test.txt", text)
+        val editor = myFixture.editor
+        val caret = editor.caretModel.primaryCaret
+        caret.moveToOffset(0)
+
+        val snapshot = HelixActions.captureCarets(editor)
+
+        // Live preview typing "banana"
+        val found = HelixActions.previewSearch(editor, "banana", backward = false, count = 1, baseSnapshot = snapshot)
+        assertTrue(found)
+        assertEquals("banana", caret.selectedText)
+        assertEquals(6, caret.selectionStart)
+        assertEquals(12, caret.selectionEnd)
+
+        // Cancel / revert (simulating Esc)
+        HelixActions.restoreCarets(editor, snapshot)
+        assertEquals(0, caret.offset)
+        assertFalse(caret.hasSelection())
+    }
+
+    fun testIncrementalSelectRegexPreviewAndCancel() {
+        val text = "val a = 123; val b = 456;"
+        myFixture.configureByText("test.txt", text)
+        val editor = myFixture.editor
+        val caret = editor.caretModel.primaryCaret
+
+        // Select full line
+        caret.setSelection(0, text.length)
+        val snapshot = HelixActions.captureCarets(editor)
+
+        // Incremental regex select \d+
+        val found = HelixActions.previewSelectRegex(editor, """\d+""", baseSnapshot = snapshot)
+        assertTrue(found)
+        assertEquals(2, editor.caretModel.caretCount)
+        val carets = editor.caretModel.allCarets.sortedBy { it.offset }
+        assertEquals("123", carets[0].selectedText)
+        assertEquals("456", carets[1].selectedText)
+
+        // Cancel / revert (simulating Esc)
+        HelixActions.restoreCarets(editor, snapshot)
+        assertEquals(1, editor.caretModel.caretCount)
+        assertEquals(text, editor.caretModel.primaryCaret.selectedText)
+    }
+
+    fun testIncrementalSplitRegexPreviewAndCancel() {
+        val text = "foo,bar,baz"
+        myFixture.configureByText("test.txt", text)
+        val editor = myFixture.editor
+        val caret = editor.caretModel.primaryCaret
+
+        // Select full text
+        caret.setSelection(0, text.length)
+        val snapshot = HelixActions.captureCarets(editor)
+
+        // Incremental split on comma
+        val found = HelixActions.previewSplitRegex(editor, ",", baseSnapshot = snapshot)
+        assertTrue(found)
+        assertEquals(3, editor.caretModel.caretCount)
+        val carets = editor.caretModel.allCarets.sortedBy { it.offset }
+        assertEquals("foo", carets[0].selectedText)
+        assertEquals("bar", carets[1].selectedText)
+        assertEquals("baz", carets[2].selectedText)
+
+        // Cancel / revert (simulating Esc)
+        HelixActions.restoreCarets(editor, snapshot)
+        assertEquals(1, editor.caretModel.caretCount)
+        assertEquals(text, editor.caretModel.primaryCaret.selectedText)
+    }
+
+    fun testPromptBarComponentCreation() {
+        myFixture.configureByText("test.txt", "hello world")
+        val editor = myFixture.editor
+
+        val bar = HelixPromptBar.getOrCreate(editor)
+        assertNotNull(bar)
+        assertSame(bar, HelixPromptBar.getOrCreate(editor))
+
+        bar.show(HelixPromptType.SEARCH)
+        assertTrue(bar.isVisible)
+
+        bar.cancelAndClose()
+        assertFalse(bar.isVisible)
+    }
 }
+
 
 
