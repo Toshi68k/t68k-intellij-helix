@@ -7,32 +7,35 @@ import com.intellij.ui.JBColor
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBTextField
 import com.intellij.util.ui.JBUI
-import com.intellij.util.ui.UIUtil
 import jp.titze.intellij.helix.action.HelixActions
 import java.awt.BorderLayout
 import java.awt.Color
 import java.awt.Dimension
 import java.awt.Font
+import java.awt.Graphics
+import java.awt.Graphics2D
+import java.awt.RenderingHints
 import java.awt.event.FocusAdapter
 import java.awt.event.FocusEvent
 import java.awt.event.KeyAdapter
 import java.awt.event.KeyEvent
 import javax.swing.BorderFactory
 import javax.swing.JPanel
+import javax.swing.SwingConstants
 import javax.swing.SwingUtilities
 import javax.swing.event.DocumentEvent
 import javax.swing.event.DocumentListener
 
 enum class HelixPromptType(val badge: String) {
-    SEARCH(" search: "),
-    RSEARCH(" rsearch: "),
-    SELECT(" select: "),
-    SPLIT(" split: ")
+    SEARCH("search"),
+    RSEARCH("rsearch"),
+    SELECT("select"),
+    SPLIT("split")
 }
 
-class HelixPromptBar(private val editor: Editor) : JPanel(BorderLayout(8, 0)) {
+class HelixPromptBar(private val editor: Editor) : JPanel(BorderLayout(JBUI.scale(8), 0)) {
 
-    private val badgeLabel = JBLabel()
+    private val badgeBadge = KeycapBadge("search")
     private val textField = JBTextField()
     private val statusLabel = JBLabel()
 
@@ -41,26 +44,54 @@ class HelixPromptBar(private val editor: Editor) : JPanel(BorderLayout(8, 0)) {
     private var baseSnapshot: List<HelixActions.HelixCaretSnapshot> = emptyList()
     private var isUpdatingPreview = false
 
+    private class KeycapBadge(keyText: String) : JPanel(BorderLayout()) {
+        private val label = JBLabel(keyText, SwingConstants.CENTER)
+
+        init {
+            isOpaque = false
+            label.font = Font(Font.MONOSPACED, Font.BOLD, JBUI.scaleFontSize(11f))
+            label.foreground = KEYCAP_FG
+            add(label, BorderLayout.CENTER)
+            border = JBUI.Borders.empty(1, 8)
+        }
+
+        fun setText(text: String) {
+            label.text = text
+            revalidate()
+            repaint()
+        }
+
+        override fun paintComponent(g: Graphics) {
+            val g2 = g.create() as Graphics2D
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
+            val arc = JBUI.scale(6)
+            g2.color = KEYCAP_BG
+            g2.fillRoundRect(0, 0, width - 1, height - 1, arc, arc)
+            g2.color = KEYCAP_BORDER
+            g2.drawRoundRect(0, 0, width - 1, height - 1, arc, arc)
+            g2.dispose()
+            super.paintComponent(g)
+        }
+    }
+
     init {
         isOpaque = true
-        background = UIUtil.getPanelBackground()
+        background = CARD_BG
         border = BorderFactory.createCompoundBorder(
-            BorderFactory.createMatteBorder(1, 0, 0, 0, JBColor(Color(0x03, 0xC7, 0xD3, 140), Color(0x03, 0xC7, 0xD3, 140))),
-            JBUI.Borders.empty(3, 8)
+            BorderFactory.createMatteBorder(1, 0, 0, 0, CARD_BORDER),
+            JBUI.Borders.empty(4, 10)
         )
-        preferredSize = Dimension(Short.MAX_VALUE.toInt(), JBUI.scale(28))
+        preferredSize = Dimension(Short.MAX_VALUE.toInt(), JBUI.scale(32))
 
-        badgeLabel.font = Font(Font.MONOSPACED, Font.BOLD, JBUI.scaleFontSize(12f))
-        badgeLabel.foreground = JBColor(Color(0x03, 0xC7, 0xD3), Color(0x03, 0xC7, 0xD3))
-        add(badgeLabel, BorderLayout.WEST)
+        add(badgeBadge, BorderLayout.WEST)
 
-        textField.font = Font(Font.MONOSPACED, Font.PLAIN, JBUI.scaleFontSize(12f))
+        textField.font = Font(Font.MONOSPACED, Font.PLAIN, JBUI.scaleFontSize(12.5f))
         textField.border = BorderFactory.createEmptyBorder()
         textField.isOpaque = false
         add(textField, BorderLayout.CENTER)
 
-        statusLabel.font = JBUI.Fonts.smallFont()
-        statusLabel.foreground = UIUtil.getContextHelpForeground()
+        statusLabel.font = Font(Font.SANS_SERIF, Font.PLAIN, JBUI.scaleFontSize(11f))
+        statusLabel.foreground = HINT_FG
         add(statusLabel, BorderLayout.EAST)
 
         textField.document.addDocumentListener(object : DocumentListener {
@@ -101,7 +132,7 @@ class HelixPromptBar(private val editor: Editor) : JPanel(BorderLayout(8, 0)) {
         currentType = type
         currentCount = count
         baseSnapshot = HelixActions.captureCarets(editor)
-        badgeLabel.text = type.badge
+        badgeBadge.setText(type.badge)
 
         isUpdatingPreview = true
         textField.text = ""
@@ -124,41 +155,46 @@ class HelixPromptBar(private val editor: Editor) : JPanel(BorderLayout(8, 0)) {
         if (query.isEmpty()) {
             HelixActions.restoreCarets(editor, baseSnapshot)
             statusLabel.text = ""
-            statusLabel.foreground = UIUtil.getContextHelpForeground()
+            statusLabel.foreground = HINT_FG
             return
         }
 
-        when (currentType) {
-            HelixPromptType.SEARCH -> {
-                HelixActions.previewSearch(editor, query, backward = false, count = currentCount, baseSnapshot = baseSnapshot)
-                val matches = HelixActions.countDocumentRegexMatches(editor, query)
-                updateStatusText(matches)
+        try {
+            when (currentType) {
+                HelixPromptType.SEARCH -> {
+                    HelixActions.previewSearch(editor, query, backward = false, count = currentCount, baseSnapshot = baseSnapshot)
+                    val matches = HelixActions.countDocumentRegexMatches(editor, query)
+                    updateStatusText(matches)
+                }
+                HelixPromptType.RSEARCH -> {
+                    HelixActions.previewSearch(editor, query, backward = true, count = currentCount, baseSnapshot = baseSnapshot)
+                    val matches = HelixActions.countDocumentRegexMatches(editor, query)
+                    updateStatusText(matches)
+                }
+                HelixPromptType.SELECT -> {
+                    HelixActions.previewSelectRegex(editor, query, baseSnapshot = baseSnapshot)
+                    val matches = HelixActions.countRegexMatchesInSnapshot(editor, query, baseSnapshot)
+                    updateStatusText(matches)
+                }
+                HelixPromptType.SPLIT -> {
+                    HelixActions.previewSplitRegex(editor, query, baseSnapshot = baseSnapshot)
+                    val matches = HelixActions.countRegexMatchesInSnapshot(editor, query, baseSnapshot)
+                    updateStatusText(matches)
+                }
             }
-            HelixPromptType.RSEARCH -> {
-                HelixActions.previewSearch(editor, query, backward = true, count = currentCount, baseSnapshot = baseSnapshot)
-                val matches = HelixActions.countDocumentRegexMatches(editor, query)
-                updateStatusText(matches)
-            }
-            HelixPromptType.SELECT -> {
-                HelixActions.previewSelectRegex(editor, query, baseSnapshot = baseSnapshot)
-                val matches = HelixActions.countRegexMatchesInSnapshot(editor, query, baseSnapshot)
-                updateStatusText(matches)
-            }
-            HelixPromptType.SPLIT -> {
-                HelixActions.previewSplitRegex(editor, query, baseSnapshot = baseSnapshot)
-                val matches = HelixActions.countRegexMatchesInSnapshot(editor, query, baseSnapshot)
-                updateStatusText(matches)
-            }
+        } catch (e: Exception) {
+            statusLabel.text = "invalid regex"
+            statusLabel.foreground = MATCH_WARN_FG
         }
     }
 
     private fun updateStatusText(matches: Int) {
         if (matches > 0) {
             statusLabel.text = "$matches match${if (matches == 1) "" else "es"}"
-            statusLabel.foreground = JBColor(Color(0x03, 0xC7, 0xD3), Color(0x03, 0xC7, 0xD3))
+            statusLabel.foreground = MATCH_SUCCESS_FG
         } else {
-            statusLabel.text = "no match"
-            statusLabel.foreground = JBColor(Color(0xE0, 0x6C, 0x75), Color(0xE0, 0x6C, 0x75))
+            statusLabel.text = "0 matches"
+            statusLabel.foreground = MATCH_WARN_FG
         }
     }
 
@@ -189,6 +225,15 @@ class HelixPromptBar(private val editor: Editor) : JPanel(BorderLayout(8, 0)) {
     }
 
     companion object {
+        private val CARD_BG = JBColor(Color(0xFA, 0xFA, 0xFC), Color(0x15, 0x16, 0x22))
+        private val CARD_BORDER = JBColor(Color(0xD8, 0xDC, 0xEA), Color(0x2B, 0x2E, 0x46))
+        private val KEYCAP_BG = JBColor(Color(0xEE, 0xF2, 0xFC), Color(0x23, 0x26, 0x3E))
+        private val KEYCAP_BORDER = JBColor(Color(0xCF, 0xD7, 0xEE), Color(0x38, 0x3D, 0x62))
+        private val KEYCAP_FG = JBColor(Color(0x3B, 0x47, 0x90), Color(0xA5, 0xB4, 0xFC))
+        private val MATCH_SUCCESS_FG = JBColor(Color(0x15, 0x80, 0x3D), Color(0x34, 0xD3, 0x99))
+        private val MATCH_WARN_FG = JBColor(Color(0xB9, 0x1C, 0x1C), Color(0xF8, 0x71, 0x71))
+        private val HINT_FG = JBColor(Color(0x8E, 0x94, 0xA8), Color(0x6A, 0x72, 0x94))
+
         private val PROMPT_BAR_KEY = Key.create<HelixPromptBar>("HelixPromptBar")
 
         fun getOrCreate(editor: Editor): HelixPromptBar {
