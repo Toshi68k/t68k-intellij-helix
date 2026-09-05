@@ -19,6 +19,11 @@
                     <li>[d / ]d: Error jumps</li>
                     <li>Alt+o / Alt+i: Structural AST selection expansion and shrinking</li>
                     <li>Alt+n: Multi-caret select next occurrence</li>
+                    <li>C / Alt+C: Multi-caret copy selection to next / previous line</li>
+                    <li>Alt+,: Remove primary selection</li>
+                    <li>( / ): Rotate main selection backward / forward</li>
+                    <li>Alt+s: Split selection on newlines</li>
+                    <li>Alt+;: Flip selection cursor and anchor</li>
                     <li>Ctrl+c: Toggle line comment</li>
                     <li>Ctrl+f / Ctrl+b (PageDown / PageUp): Page down / up</li>
                     <li>Ctrl+d / Ctrl+u: Half page down / up</li>
@@ -66,6 +71,68 @@
                 text="Helix Select Next Occurrence"
                 description="Select next occurrence of current selection">
             <keyboard-shortcut keymap="$default" first-keystroke="alt N"/>
+        </action>
+
+        <action id="jp.titze.intellij.helix.copySelectionOnNextLine"
+                class="jp.titze.intellij.helix.editor.HelixCopySelectionOnNextLineAction"
+                text="Helix Copy Selection on Next Line"
+                description="Copy selection to next line (add caret below)">
+        </action>
+
+        <action id="jp.titze.intellij.helix.copySelectionOnPrevLine"
+                class="jp.titze.intellij.helix.editor.HelixCopySelectionOnPrevLineAction"
+                text="Helix Copy Selection on Previous Line"
+                description="Copy selection to previous line (add caret above)">
+            <keyboard-shortcut keymap="$default" first-keystroke="alt shift C"/>
+            <keyboard-shortcut keymap="Mac OS X" first-keystroke="alt shift C"/>
+            <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="alt shift C"/>
+            <keyboard-shortcut keymap="macOS" first-keystroke="alt shift C"/>
+            <keyboard-shortcut keymap="$default" first-keystroke="alt C"/>
+            <keyboard-shortcut keymap="Mac OS X" first-keystroke="alt C"/>
+            <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="alt C"/>
+            <keyboard-shortcut keymap="macOS" first-keystroke="alt C"/>
+        </action>
+
+        <action id="jp.titze.intellij.helix.removePrimarySelection"
+                class="jp.titze.intellij.helix.editor.HelixRemovePrimarySelectionAction"
+                text="Helix Remove Primary Selection"
+                description="Remove primary selection">
+            <keyboard-shortcut keymap="$default" first-keystroke="alt COMMA"/>
+            <keyboard-shortcut keymap="Mac OS X" first-keystroke="alt COMMA"/>
+            <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="alt COMMA"/>
+            <keyboard-shortcut keymap="macOS" first-keystroke="alt COMMA"/>
+        </action>
+
+        <action id="jp.titze.intellij.helix.rotateSelectionsForward"
+                class="jp.titze.intellij.helix.editor.HelixRotateSelectionsForwardAction"
+                text="Helix Rotate Selections Forward"
+                description="Rotate main selection forward">
+        </action>
+
+        <action id="jp.titze.intellij.helix.rotateSelectionsBackward"
+                class="jp.titze.intellij.helix.editor.HelixRotateSelectionsBackwardAction"
+                text="Helix Rotate Selections Backward"
+                description="Rotate main selection backward">
+        </action>
+
+        <action id="jp.titze.intellij.helix.splitSelectionOnNewline"
+                class="jp.titze.intellij.helix.editor.HelixSplitSelectionOnNewlineAction"
+                text="Helix Split Selection on Newlines"
+                description="Split selection on newlines">
+            <keyboard-shortcut keymap="$default" first-keystroke="alt S"/>
+            <keyboard-shortcut keymap="Mac OS X" first-keystroke="alt S"/>
+            <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="alt S"/>
+            <keyboard-shortcut keymap="macOS" first-keystroke="alt S"/>
+        </action>
+
+        <action id="jp.titze.intellij.helix.flipSelection"
+                class="jp.titze.intellij.helix.editor.HelixFlipSelectionAction"
+                text="Helix Flip Selection Anchor and Cursor"
+                description="Flip selection anchor and cursor">
+            <keyboard-shortcut keymap="$default" first-keystroke="alt SEMICOLON"/>
+            <keyboard-shortcut keymap="Mac OS X" first-keystroke="alt SEMICOLON"/>
+            <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="alt SEMICOLON"/>
+            <keyboard-shortcut keymap="macOS" first-keystroke="alt SEMICOLON"/>
         </action>
 
         <action id="jp.titze.intellij.helix.commentLine"

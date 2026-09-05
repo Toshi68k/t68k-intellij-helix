@@ -248,6 +248,9 @@ object HelixKeyHandler {
             }
             ';' -> HelixMotions.collapseSelection(editor)
             ',' -> HelixMotions.keepOnlyPrimaryCaret(editor)
+            '(' -> HelixMotions.rotateSelections(editor, forward = false)
+            ')' -> HelixMotions.rotateSelections(editor, forward = true)
+            'C' -> HelixMotions.copySelectionOnNextLine(editor, count)
             '\u0006' -> HelixMotions.pageDown(editor, count)
             '\u0002' -> HelixMotions.pageUp(editor, count)
             '\u0004' -> HelixMotions.halfPageDown(editor, count)
