@@ -2267,5 +2267,36 @@ class HelixEditorTest : BasePlatformTestCase() {
         caret.hasSelection().shouldBeTrue()
         caret.selectedText shouldBe "class Foo {\n    fun bar() {}\n    fun baz() {}\n}"
     }
+
+    fun testFunctionNavigationWithLambdasAndBlocks() {
+        val text = "fun first() {\n    val f = { x: Int -> x * 2 }\n    items.forEach { println(it) }\n}\n\nfun second() {\n    val g = { y: Int -> y + 1 }\n}\n"
+        myFixture.configureByText("test.kt", text)
+        val editor = myFixture.editor
+        val caret = editor.caretModel.primaryCaret
+
+        caret.moveToOffset(0)
+
+        // Jump forward to first()
+        HelixKeyHandler.handleKey(']', editor).shouldBeTrue()
+        HelixKeyHandler.handleKey('f', editor).shouldBeTrue()
+        caret.offset shouldBe text.indexOf("fun first")
+        caret.hasSelection().shouldBeTrue()
+        caret.selectedText shouldBe "fun first() {\n    val f = { x: Int -> x * 2 }\n    items.forEach { println(it) }\n}"
+
+        // Jump forward to second() - must NOT select lambdas inside first()
+        HelixKeyHandler.handleKey(']', editor).shouldBeTrue()
+        HelixKeyHandler.handleKey('f', editor).shouldBeTrue()
+        caret.offset shouldBe text.indexOf("fun second")
+        caret.hasSelection().shouldBeTrue()
+        caret.selectedText shouldBe "fun second() {\n    val g = { y: Int -> y + 1 }\n}"
+
+        // Jump backward to first() - must NOT select lambdas inside second() or first()
+        HelixKeyHandler.handleKey('[', editor).shouldBeTrue()
+        HelixKeyHandler.handleKey('f', editor).shouldBeTrue()
+        caret.offset shouldBe text.indexOf("fun first")
+        caret.hasSelection().shouldBeTrue()
+        caret.selectedText shouldBe "fun first() {\n    val f = { x: Int -> x * 2 }\n    items.forEach { println(it) }\n}"
+    }
 }
+
 

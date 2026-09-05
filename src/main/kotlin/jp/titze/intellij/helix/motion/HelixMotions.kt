@@ -878,15 +878,22 @@ object HelixMotions {
             if (psiFile != null) {
                 ranges = collectMatchingRanges(psiFile) { elem ->
                     val name = elem.javaClass.simpleName
-                    val isFuncCandidate = name.contains("Method", ignoreCase = true) || name.contains("Function", ignoreCase = true)
+                    val isFuncCandidate = name.contains("Method", ignoreCase = true) ||
+                        name.contains("Function", ignoreCase = true) ||
+                        name.contains("Constructor", ignoreCase = true)
                     isFuncCandidate &&
+                        !name.contains("Literal", ignoreCase = true) &&
+                        !name.contains("Lambda", ignoreCase = true) &&
                         !name.contains("Body", ignoreCase = true) &&
                         !name.contains("Call", ignoreCase = true) &&
                         !name.contains("Expr", ignoreCase = true) &&
                         !name.contains("Reference", ignoreCase = true) &&
                         !name.contains("List", ignoreCase = true) &&
                         !name.contains("Parameter", ignoreCase = true) &&
-                        !name.contains("Type", ignoreCase = true)
+                        !name.contains("Type", ignoreCase = true) &&
+                        !name.contains("Argument", ignoreCase = true) &&
+                        !name.contains("Block", ignoreCase = true) &&
+                        !name.contains("Statement", ignoreCase = true)
                 }
             }
         }
@@ -1113,13 +1120,17 @@ object HelixMotions {
             val curOffset = caret.offset
 
             val targetRange = if (forward) {
-                val refOffset = if (caret.hasSelection()) maxOf(curOffset, caret.selectionEnd) else curOffset
-                val candidates = ranges.filter { it.startOffset > refOffset }
+                val candidates = if (caret.hasSelection()) {
+                    val refOffset = maxOf(curOffset, caret.selectionEnd)
+                    ranges.filter { it.startOffset >= refOffset }
+                } else {
+                    ranges.filter { it.startOffset >= curOffset && it.endOffset > curOffset }
+                }
                 val idx = (count - 1).coerceAtMost(candidates.size - 1)
                 if (candidates.isNotEmpty()) candidates[idx] else null
             } else {
                 val refOffset = if (caret.hasSelection()) minOf(curOffset, caret.selectionStart) else curOffset
-                val candidates = ranges.filter { it.startOffset < refOffset }.sortedByDescending { it.startOffset }
+                val candidates = ranges.filter { it.endOffset <= refOffset }.sortedByDescending { it.startOffset }
                 val idx = (count - 1).coerceAtMost(candidates.size - 1)
                 if (candidates.isNotEmpty()) candidates[idx] else null
             }
