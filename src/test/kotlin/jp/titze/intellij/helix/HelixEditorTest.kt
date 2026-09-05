@@ -2206,16 +2206,22 @@ class HelixEditorTest : BasePlatformTestCase() {
         HelixKeyHandler.handleKey(']', editor).shouldBeTrue()
         HelixKeyHandler.handleKey('c', editor).shouldBeTrue()
         caret.offset shouldBe text.indexOf("// first comment")
+        caret.hasSelection().shouldBeTrue()
+        caret.selectedText shouldBe "// first comment"
 
         // Jump to second comment
         HelixKeyHandler.handleKey(']', editor).shouldBeTrue()
         HelixKeyHandler.handleKey('c', editor).shouldBeTrue()
         caret.offset shouldBe text.indexOf("// second comment")
+        caret.hasSelection().shouldBeTrue()
+        caret.selectedText shouldBe "// second comment"
 
         // Jump back to first comment
         HelixKeyHandler.handleKey('[', editor).shouldBeTrue()
         HelixKeyHandler.handleKey('c', editor).shouldBeTrue()
         caret.offset shouldBe text.indexOf("// first comment")
+        caret.hasSelection().shouldBeTrue()
+        caret.selectedText shouldBe "// first comment"
     }
 
     fun testFunctionAndClassNavigation() {
@@ -2230,26 +2236,36 @@ class HelixEditorTest : BasePlatformTestCase() {
         HelixKeyHandler.handleKey(']', editor).shouldBeTrue()
         HelixKeyHandler.handleKey('f', editor).shouldBeTrue()
         caret.offset shouldBe text.indexOf("fun bar")
+        caret.hasSelection().shouldBeTrue()
+        caret.selectedText shouldBe "fun bar() {}"
 
         // Jump forward to second function
         HelixKeyHandler.handleKey(']', editor).shouldBeTrue()
         HelixKeyHandler.handleKey('f', editor).shouldBeTrue()
         caret.offset shouldBe text.indexOf("fun baz")
+        caret.hasSelection().shouldBeTrue()
+        caret.selectedText shouldBe "fun baz() {}"
 
         // Jump backward to first function
         HelixKeyHandler.handleKey('[', editor).shouldBeTrue()
         HelixKeyHandler.handleKey('f', editor).shouldBeTrue()
         caret.offset shouldBe text.indexOf("fun bar")
+        caret.hasSelection().shouldBeTrue()
+        caret.selectedText shouldBe "fun bar() {}"
 
         // Jump forward to next class
         HelixKeyHandler.handleKey(']', editor).shouldBeTrue()
         HelixKeyHandler.handleKey('t', editor).shouldBeTrue()
         caret.offset shouldBe text.indexOf("class Second")
+        caret.hasSelection().shouldBeTrue()
+        caret.selectedText shouldBe "class Second {\n}"
 
         // Jump backward to first class
         HelixKeyHandler.handleKey('[', editor).shouldBeTrue()
         HelixKeyHandler.handleKey('t', editor).shouldBeTrue()
         caret.offset shouldBe text.indexOf("class Foo")
+        caret.hasSelection().shouldBeTrue()
+        caret.selectedText shouldBe "class Foo {\n    fun bar() {}\n    fun baz() {}\n}"
     }
 }
 
