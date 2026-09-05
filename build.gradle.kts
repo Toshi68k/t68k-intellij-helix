@@ -22,7 +22,13 @@ dependencies {
         testFramework(TestFrameworkType.Platform)
     }
     testImplementation(kotlin("test"))
-    testImplementation("junit:junit:4.13.2")
+    testImplementation("org.junit.jupiter:junit-jupiter:6.1.3")
+    testImplementation("org.junit.vintage:junit-vintage-engine:6.1.3")
+    testImplementation("io.kotest:kotest-assertions-core:6.2.4")
+}
+
+tasks.test {
+    useJUnitPlatform()
 }
 
 intellijPlatform {
