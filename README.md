@@ -59,9 +59,17 @@ A complete modal editing plugin for JetBrains IDEs implementing the [Helix](http
 
 | Key | Description |
 |-----|-------------|
+| `C` | Copy selection to next line (duplicate selection and add caret below) |
+| `Alt+C` | Copy selection to previous line (duplicate selection and add caret above) |
 | `;` | Collapse selection to a single cursor at caret |
 | `Alt+;` | Flip selection anchor and cursor |
 | `,` | Remove secondary carets, keeping only primary caret |
+| `Alt+,` | Remove primary caret, keeping secondary carets |
+| `(` | Rotate main selection backward |
+| `)` | Rotate main selection forward |
+| `Alt+s` | Split selection on newlines |
+| `s` | Select all regex matches inside selections |
+| `S` | Split selection into subselections on regex matches |
 | `v` | Toggle between `Normal` and `Select` mode |
 
 ### Actions on Selection

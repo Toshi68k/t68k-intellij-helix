@@ -1654,6 +1654,164 @@ class HelixEditorTest : BasePlatformTestCase() {
         assertEquals(2, HelixActions.countDocumentRegexMatches(editor, """\d+"""))
         assertEquals(0, HelixActions.countDocumentRegexMatches(editor, "nonexistent"))
     }
+
+    fun testCopySelectionOnNextLineSingleCaret() {
+        val text = "hello\nworld\ntest"
+        myFixture.configureByText("test.txt", text)
+        val editor = myFixture.editor
+        val caret = editor.caretModel.primaryCaret
+        caret.moveToOffset(1) // 'e' on line 0
+
+        val handled = HelixKeyHandler.handleKey('C', editor)
+        assertTrue(handled)
+        assertEquals(2, editor.caretModel.caretCount)
+
+        val carets = editor.caretModel.allCarets.sortedBy { it.offset }
+        assertEquals(1, carets[0].offset) // 'e' on line 0
+        assertEquals(7, carets[1].offset) // 'o' on line 1 ("world")
+        assertEquals(editor.caretModel.primaryCaret, carets[1])
+    }
+
+    fun testCopySelectionOnNextLineWithSelection() {
+        val text = "val foo = 1\nval bar = 2\nval baz = 3"
+        myFixture.configureByText("test.txt", text)
+        val editor = myFixture.editor
+        val caret = editor.caretModel.primaryCaret
+        caret.moveToOffset(7)
+        caret.setSelection(4, 7) // "foo"
+
+        val handled = HelixKeyHandler.handleKey('C', editor)
+        assertTrue(handled)
+        assertEquals(2, editor.caretModel.caretCount)
+
+        val carets = editor.caretModel.allCarets.sortedBy { it.offset }
+        assertEquals("foo", carets[0].selectedText)
+        assertEquals("bar", carets[1].selectedText)
+        assertEquals(carets[1], editor.caretModel.primaryCaret)
+    }
+
+    fun testCopySelectionOnNextLineWithCount() {
+        val text = "line 0\nline 1\nline 2\nline 3"
+        myFixture.configureByText("test.txt", text)
+        val editor = myFixture.editor
+        val caret = editor.caretModel.primaryCaret
+        caret.moveToOffset(2)
+
+        HelixKeyHandler.handleKey('3', editor)
+        HelixKeyHandler.handleKey('C', editor)
+
+        assertEquals(4, editor.caretModel.caretCount)
+        val carets = editor.caretModel.allCarets.sortedBy { it.offset }
+        for (i in 0..3) {
+            val lineStart = editor.document.getLineStartOffset(i)
+            assertEquals(lineStart + 2, carets[i].offset)
+        }
+    }
+
+    fun testCopySelectionOnPrevLine() {
+        val text = "line 0\nline 1\nline 2"
+        myFixture.configureByText("test.txt", text)
+        val editor = myFixture.editor
+        val caret = editor.caretModel.primaryCaret
+        val line2Start = editor.document.getLineStartOffset(2)
+        caret.moveToOffset(line2Start + 3)
+
+        HelixMotions.copySelectionOnPrevLine(editor, 1)
+        assertEquals(2, editor.caretModel.caretCount)
+
+        val carets = editor.caretModel.allCarets.sortedBy { it.offset }
+        val line1Start = editor.document.getLineStartOffset(1)
+        assertEquals(line1Start + 3, carets[0].offset)
+        assertEquals(line2Start + 3, carets[1].offset)
+        assertEquals(carets[0], editor.caretModel.primaryCaret)
+    }
+
+    fun testRemovePrimarySelection() {
+        val text = "line 0\nline 1\nline 2"
+        myFixture.configureByText("test.txt", text)
+        val editor = myFixture.editor
+        val caret = editor.caretModel.primaryCaret
+        caret.moveToOffset(0)
+        HelixMotions.copySelectionOnNextLine(editor, 1)
+        assertEquals(2, editor.caretModel.caretCount)
+
+        HelixMotions.removePrimarySelection(editor)
+        assertEquals(1, editor.caretModel.caretCount)
+    }
+
+    fun testRotateSelectionsForwardAndBackward() {
+        val text = "line 0\nline 1\nline 2"
+        myFixture.configureByText("test.txt", text)
+        val editor = myFixture.editor
+        val caret = editor.caretModel.primaryCaret
+        caret.moveToOffset(0)
+
+        // Create 3 carets: line 0, 1, 2
+        HelixKeyHandler.handleKey('2', editor)
+        HelixKeyHandler.handleKey('C', editor)
+        assertEquals(3, editor.caretModel.caretCount)
+
+        val line0Offset = editor.document.getLineStartOffset(0)
+        val line1Offset = editor.document.getLineStartOffset(1)
+        val line2Offset = editor.document.getLineStartOffset(2)
+
+        // Currently primary is on line 2 (bottom one)
+        assertEquals(line2Offset, editor.caretModel.primaryCaret.offset)
+
+        // Rotate forward: line 2 -> line 0
+        HelixKeyHandler.handleKey(')', editor)
+        assertEquals(line0Offset, editor.caretModel.primaryCaret.offset)
+
+        // Rotate forward: line 0 -> line 1
+        HelixKeyHandler.handleKey(')', editor)
+        assertEquals(line1Offset, editor.caretModel.primaryCaret.offset)
+
+        // Rotate backward: line 1 -> line 0
+        HelixKeyHandler.handleKey('(', editor)
+        assertEquals(line0Offset, editor.caretModel.primaryCaret.offset)
+
+        // Rotate backward: line 0 -> line 2
+        HelixKeyHandler.handleKey('(', editor)
+        assertEquals(line2Offset, editor.caretModel.primaryCaret.offset)
+    }
+
+    fun testSplitSelectionOnNewlines() {
+        val text = "hello\nworld\nagain"
+        myFixture.configureByText("test.txt", text)
+        val editor = myFixture.editor
+
+        // Select all
+        HelixMotions.selectAll(editor)
+        assertEquals(text, editor.caretModel.primaryCaret.selectedText)
+
+        HelixMotions.splitSelectionOnNewlines(editor)
+        assertEquals(3, editor.caretModel.caretCount)
+
+        val carets = editor.caretModel.allCarets.sortedBy { it.offset }
+        assertEquals("hello", carets[0].selectedText)
+        assertEquals("world", carets[1].selectedText)
+        assertEquals("again", carets[2].selectedText)
+    }
+
+    fun testFlipSelection() {
+        val text = "hello world"
+        myFixture.configureByText("test.txt", text)
+        val editor = myFixture.editor
+        val caret = editor.caretModel.primaryCaret
+        caret.moveToOffset(5)
+        caret.setSelection(0, 5) // anchor 0, cursor 5
+
+        assertEquals(0, caret.leadSelectionOffset)
+        assertEquals(5, caret.offset)
+
+        HelixMotions.flipSelection(editor)
+        assertEquals(5, caret.leadSelectionOffset)
+        assertEquals(0, caret.offset)
+
+        HelixMotions.flipSelection(editor)
+        assertEquals(0, caret.leadSelectionOffset)
+        assertEquals(5, caret.offset)
+    }
 }
 
 
