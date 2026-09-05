@@ -50,11 +50,11 @@ class HelixPromptBar(private val editor: Editor) : JPanel(BorderLayout(8, 0)) {
         )
         preferredSize = Dimension(Short.MAX_VALUE.toInt(), JBUI.scale(28))
 
-        badgeLabel.font = Font(Font.MONOSPACED, Font.BOLD, JBUI.scaleFontSize(12f).toInt())
+        badgeLabel.font = Font(Font.MONOSPACED, Font.BOLD, JBUI.scaleFontSize(12f))
         badgeLabel.foreground = JBColor(Color(0x03, 0xC7, 0xD3), Color(0x03, 0xC7, 0xD3))
         add(badgeLabel, BorderLayout.WEST)
 
-        textField.font = Font(Font.MONOSPACED, Font.PLAIN, JBUI.scaleFontSize(12f).toInt())
+        textField.font = Font(Font.MONOSPACED, Font.PLAIN, JBUI.scaleFontSize(12f))
         textField.border = BorderFactory.createEmptyBorder()
         textField.isOpaque = false
         add(textField, BorderLayout.CENTER)
@@ -215,11 +215,6 @@ class HelixPromptBar(private val editor: Editor) : JPanel(BorderLayout(8, 0)) {
 
             val bar = getOrCreate(editor)
             bar.show(type, count)
-        }
-
-        fun isPromptActive(editor: Editor): Boolean {
-            val bar = editor.getUserData(PROMPT_BAR_KEY)
-            return bar != null && bar.isVisible
         }
 
         fun cancelActivePrompt(editor: Editor): Boolean {
