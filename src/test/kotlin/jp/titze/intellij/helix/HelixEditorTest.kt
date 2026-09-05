@@ -2019,8 +2019,12 @@ class HelixEditorTest : BasePlatformTestCase() {
         val caret = editor.caretModel.primaryCaret
         caret.moveToOffset(10)
 
-        // Move to start of line (first non-whitespace)
+        // Move to start of line (actual first character)
         HelixMotions.moveLineStart(editor)
+        caret.offset shouldBe 0
+
+        // Move to first non-whitespace character of line
+        HelixMotions.moveLineFirstNonWhitespace(editor)
         caret.offset shouldBe 3
 
         // Move to end of line
@@ -2040,8 +2044,13 @@ class HelixEditorTest : BasePlatformTestCase() {
 
         editor.caretModel.caretCount shouldBe 2
 
-        // Move all carets to line start
+        // Move all carets to line start (actual first character)
         HelixMotions.moveLineStart(editor)
+        editor.caretModel.primaryCaret.offset shouldBe 0
+        secondCaret.offset shouldBe doc.getLineStartOffset(1)
+
+        // Move all carets to first non-whitespace character
+        HelixMotions.moveLineFirstNonWhitespace(editor)
         editor.caretModel.primaryCaret.offset shouldBe 3
         secondCaret.offset shouldBe doc.getLineStartOffset(1) + 5
 
@@ -2049,6 +2058,24 @@ class HelixEditorTest : BasePlatformTestCase() {
         HelixMotions.moveLineEnd(editor)
         editor.caretModel.primaryCaret.offset shouldBe doc.getLineEndOffset(0)
         secondCaret.offset shouldBe doc.getLineEndOffset(1)
+    }
+
+    fun testKeyHandlerGotoLineStartAndFirstNonWhitespace() {
+        myFixture.configureByText("test.txt", "   val hello = 42\n")
+        val editor = myFixture.editor
+        val caret = editor.caretModel.primaryCaret
+
+        // Test gs: move to first non-whitespace
+        caret.moveToOffset(10)
+        HelixKeyHandler.handleKey('g', editor).shouldBeTrue()
+        HelixKeyHandler.handleKey('s', editor).shouldBeTrue()
+        caret.offset shouldBe 3
+
+        // Test gh: move to actual line start (first character)
+        caret.moveToOffset(10)
+        HelixKeyHandler.handleKey('g', editor).shouldBeTrue()
+        HelixKeyHandler.handleKey('h', editor).shouldBeTrue()
+        caret.offset shouldBe 0
     }
 
     fun testHelixWhichKeyPopupPositionCalculation() {

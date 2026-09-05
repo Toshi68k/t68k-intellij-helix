@@ -156,6 +156,10 @@ object HelixKeyHandler {
                 HelixMotions.moveLineStart(editor)
                 true
             }
+            's' -> {
+                HelixMotions.moveLineFirstNonWhitespace(editor)
+                true
+            }
             'l' -> {
                 HelixMotions.moveLineEnd(editor)
                 true

@@ -347,9 +347,25 @@ object HelixMotions {
     }
 
     /**
-     * gh: Move to line start (first non-blank character)
+     * gh: Move to line start (actual first character)
      */
     fun moveLineStart(editor: Editor) {
+        val state = HelixStateManager.getOrCreate(editor)
+        val isSelect = state.mode == HelixMode.SELECT
+        val doc = editor.document
+        runForEachCaret(editor) { caret ->
+            val anchor = if (isSelect && caret.hasSelection()) caret.leadSelectionOffset else caret.offset
+            val line = doc.getLineNumber(caret.offset)
+            val lineStart = doc.getLineStartOffset(line)
+            applyMotion(caret, anchor, lineStart, isSelect)
+        }
+        editor.scrollingModel.scrollToCaret(ScrollType.MAKE_VISIBLE)
+    }
+
+    /**
+     * gs: Move to first non-whitespace character of the line
+     */
+    fun moveLineFirstNonWhitespace(editor: Editor) {
         val state = HelixStateManager.getOrCreate(editor)
         val isSelect = state.mode == HelixMode.SELECT
         val doc = editor.document
