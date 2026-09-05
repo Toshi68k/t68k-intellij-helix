@@ -107,7 +107,7 @@ Built-in surround and textobject functionality matching [Helix Surround](https:/
 | `ms<char>` | `surround_add` | Surround active selection (or single character under cursor) with delimiter `<char>` |
 | `mr<from><to>` | `surround_replace` | Replace closest enclosing surround pair `<from>` with `<to>` |
 | `md<char>` | `surround_delete` | Delete closest enclosing surround pair `<char>` |
-| `mm` | `match_bracket` | Jump to matching bracket (`EditorMatchBracket`) |
+| `mm` | `match_bracket` | Jump to matching bracket |
 | `ma<object>` | `select_textobject_around` | Select **around** the textobject (e.g. `maw`, `maW`, `map`, `ma(`, `mam`, `maa`) |
 | `mi<object>` | `select_textobject_inside` | Select **inside** the textobject (e.g. `miw`, `miW`, `mip`, `mi(`, `mim`, `mia`) |
 

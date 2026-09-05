@@ -2345,8 +2345,110 @@ class HelixEditorTest : BasePlatformTestCase() {
         caret.hasSelection().shouldBeTrue()
         caret.selectedText shouldBe text.trimEnd()
     }
+
+    fun testMatchBracketsParentheses() {
+        val text = "val x = (1 + 2)"
+        myFixture.configureByText("test.kt", text)
+        val editor = myFixture.editor
+        val caret = editor.caretModel.primaryCaret
+        val openIdx = text.indexOf('(')
+        val closeIdx = text.indexOf(')')
+
+        caret.moveToOffset(openIdx)
+        HelixKeyHandler.handleKey('m', editor).shouldBeTrue()
+        HelixKeyHandler.handleKey('m', editor).shouldBeTrue()
+        caret.offset shouldBe closeIdx
+
+        HelixKeyHandler.handleKey('m', editor).shouldBeTrue()
+        HelixKeyHandler.handleKey('m', editor).shouldBeTrue()
+        caret.offset shouldBe openIdx
+    }
+
+    fun testMatchBracketsBraces() {
+        val text = "fun foo() { println(42) }"
+        myFixture.configureByText("test.kt", text)
+        val editor = myFixture.editor
+        val caret = editor.caretModel.primaryCaret
+        val openIdx = text.indexOf('{')
+        val closeIdx = text.indexOf('}')
+
+        caret.moveToOffset(openIdx)
+        HelixKeyHandler.handleKey('m', editor).shouldBeTrue()
+        HelixKeyHandler.handleKey('m', editor).shouldBeTrue()
+        caret.offset shouldBe closeIdx
+
+        HelixKeyHandler.handleKey('m', editor).shouldBeTrue()
+        HelixKeyHandler.handleKey('m', editor).shouldBeTrue()
+        caret.offset shouldBe openIdx
+    }
+
+    fun testMatchBracketsSquareBrackets() {
+        val text = "val list = [1, 2, 3]"
+        myFixture.configureByText("test.py", text)
+        val editor = myFixture.editor
+        val caret = editor.caretModel.primaryCaret
+        val openIdx = text.indexOf('[')
+        val closeIdx = text.indexOf(']')
+
+        caret.moveToOffset(openIdx)
+        HelixKeyHandler.handleKey('m', editor).shouldBeTrue()
+        HelixKeyHandler.handleKey('m', editor).shouldBeTrue()
+        caret.offset shouldBe closeIdx
+
+        HelixKeyHandler.handleKey('m', editor).shouldBeTrue()
+        HelixKeyHandler.handleKey('m', editor).shouldBeTrue()
+        caret.offset shouldBe openIdx
+    }
+
+    fun testMatchBracketsAngleBrackets() {
+        val text = "val map = Map<String, Int>()"
+        myFixture.configureByText("test.kt", text)
+        val editor = myFixture.editor
+        val caret = editor.caretModel.primaryCaret
+        val openIdx = text.indexOf('<')
+        val closeIdx = text.indexOf('>')
+
+        caret.moveToOffset(openIdx)
+        HelixKeyHandler.handleKey('m', editor).shouldBeTrue()
+        HelixKeyHandler.handleKey('m', editor).shouldBeTrue()
+        caret.offset shouldBe closeIdx
+
+        HelixKeyHandler.handleKey('m', editor).shouldBeTrue()
+        HelixKeyHandler.handleKey('m', editor).shouldBeTrue()
+        caret.offset shouldBe openIdx
+    }
+
+    fun testMatchBracketsInSelectMode() {
+        val text = "(hello world)"
+        myFixture.configureByText("test.txt", text)
+        val editor = myFixture.editor
+        val caret = editor.caretModel.primaryCaret
+
+        caret.moveToOffset(0)
+        HelixActions.toggleSelectMode(editor)
+
+        HelixKeyHandler.handleKey('m', editor).shouldBeTrue()
+        HelixKeyHandler.handleKey('m', editor).shouldBeTrue()
+
+        caret.offset shouldBe 12
+        caret.hasSelection().shouldBeTrue()
+        caret.selectedText shouldBe "(hello world"
+    }
+
+    fun testMatchBracketsMultiCaret() {
+        val text = "(first) + (second)"
+        myFixture.configureByText("test.txt", text)
+        val editor = myFixture.editor
+
+        val primary = editor.caretModel.primaryCaret
+        primary.moveToOffset(0) // at (first)
+        val secondCaret = editor.caretModel.addCaret(editor.offsetToVisualPosition(10)) // at (second)
+        secondCaret.shouldNotBeNull()
+
+        HelixKeyHandler.handleKey('m', editor).shouldBeTrue()
+        HelixKeyHandler.handleKey('m', editor).shouldBeTrue()
+
+        primary.offset shouldBe 6 // at closing ) of (first)
+        secondCaret.offset shouldBe 17 // at closing ) of (second)
+    }
 }
-
-
-
-

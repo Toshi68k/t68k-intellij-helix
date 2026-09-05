@@ -71,7 +71,7 @@ object HelixWhichKeyPopup {
         WhichKeyItem("s", "surround_add", "ms<char>"),
         WhichKeyItem("r", "surround_replace", "mr<from><to>"),
         WhichKeyItem("d", "surround_delete", "md<char>"),
-        WhichKeyItem("m", "match_bracket", "EditorMatchBracket"),
+        WhichKeyItem("m", "match_bracket", "Jump to matching bracket"),
         WhichKeyItem("a", "select_around_textobject", "ma<obj>"),
         WhichKeyItem("i", "select_inside_textobject", "mi<obj>")
     )

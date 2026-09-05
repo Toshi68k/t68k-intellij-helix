@@ -1,16 +1,20 @@
 package jp.titze.intellij.helix.motion
 
+import com.intellij.ide.DataManager
+import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.editor.Caret
 import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.ScrollType
+import com.intellij.openapi.editor.actionSystem.EditorAction
 import com.intellij.openapi.util.TextRange
 import com.intellij.psi.PsiComment
 import com.intellij.psi.PsiDocumentManager
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
 import jp.titze.intellij.helix.action.HelixActionDelegate
+import jp.titze.intellij.helix.action.HelixSurroundActions
 import jp.titze.intellij.helix.state.HelixMode
 import jp.titze.intellij.helix.state.HelixStateManager
 
@@ -1158,4 +1162,85 @@ object HelixMotions {
         }
         return anyMoved
     }
+
+    /**
+     * mm: Move to matching bracket (paren, brace, square bracket, angle bracket)
+     */
+    fun matchBrackets(editor: Editor, count: Int = 1): Boolean {
+        val doc = editor.document
+        val text = doc.charsSequence
+        val textLen = text.length
+        if (textLen == 0) return false
+
+        val state = HelixStateManager.getOrCreate(editor)
+        val isSelect = state.mode == HelixMode.SELECT
+
+        val action = ActionManager.getInstance().getAction("EditorMatchBrace") as? EditorAction
+        val dataContext = DataManager.getInstance().getDataContext(editor.contentComponent)
+
+        var anyMoved = false
+
+        repeat(count) {
+            runForEachCaret(editor) { caret ->
+                val curOffset = caret.offset
+                val anchor = if (isSelect && caret.hasSelection()) caret.leadSelectionOffset else curOffset
+
+                var targetOffset: Int? = null
+
+                if (action != null) {
+                    val beforeOffset = caret.offset
+                    action.handler.execute(editor, caret, dataContext)
+                    if (caret.offset != beforeOffset) {
+                        targetOffset = caret.offset
+                    }
+                }
+
+                if (targetOffset == null) {
+                    targetOffset = findMatchingBracketFallback(text, textLen, curOffset)
+                }
+
+                if (targetOffset != null && targetOffset != curOffset) {
+                    applyMotion(caret, anchor, targetOffset, isSelect)
+                    anyMoved = true
+                } else if (isSelect && targetOffset != null) {
+                    caret.setSelection(anchor, targetOffset)
+                    anyMoved = true
+                }
+            }
+        }
+
+        if (anyMoved) {
+            editor.scrollingModel.scrollToCaret(ScrollType.MAKE_VISIBLE)
+        }
+        return anyMoved
+    }
+
+    private fun findMatchingBracketFallback(text: CharSequence, textLen: Int, offset: Int): Int? {
+        val charAtOffset = if (offset in 0 until textLen) text[offset] else null
+        val match1 = findPairMatch(text, offset, charAtOffset)
+        if (match1 != null) return match1
+
+        if (offset > 0) {
+            val charBefore = text[offset - 1]
+            val match2 = findPairMatch(text, offset - 1, charBefore)
+            if (match2 != null) return match2
+        }
+
+        return null
+    }
+
+    private fun findPairMatch(text: CharSequence, index: Int, ch: Char?): Int? {
+        return when (ch) {
+            '(' -> HelixSurroundActions.findMatchingClose(text, index, '(', ')')
+            '[' -> HelixSurroundActions.findMatchingClose(text, index, '[', ']')
+            '{' -> HelixSurroundActions.findMatchingClose(text, index, '{', '}')
+            '<' -> HelixSurroundActions.findMatchingClose(text, index, '<', '>')
+            ')' -> HelixSurroundActions.findMatchingOpen(text, index, '(', ')')
+            ']' -> HelixSurroundActions.findMatchingOpen(text, index, '[', ']')
+            '}' -> HelixSurroundActions.findMatchingOpen(text, index, '{', '}')
+            '>' -> HelixSurroundActions.findMatchingOpen(text, index, '<', '>')
+            else -> null
+        }
+    }
 }
+

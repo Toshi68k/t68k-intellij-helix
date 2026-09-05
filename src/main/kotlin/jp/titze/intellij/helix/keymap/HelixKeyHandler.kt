@@ -96,7 +96,7 @@ object HelixKeyHandler {
                 state.clearPendingSequence()
                 return handleBracketClose(ch, editor, count ?: 1)
             }
-            "m" -> return handleMatchMenu(ch, editor, state)
+            "m" -> return handleMatchMenu(ch, editor, state, count)
             "ms" -> {
                 state.clearPendingSequence()
                 return HelixSurroundActions.surroundAdd(editor, ch)
@@ -129,7 +129,7 @@ object HelixKeyHandler {
         }
     }
 
-    private fun handleMatchMenu(ch: Char, editor: Editor, state: HelixEditorState): Boolean {
+    private fun handleMatchMenu(ch: Char, editor: Editor, state: HelixEditorState, count: Int? = null): Boolean {
         when (ch) {
             's', 'd', 'r', 'a', 'i' -> {
                 state.appendKey(ch)
@@ -137,7 +137,7 @@ object HelixKeyHandler {
             }
             'm' -> {
                 state.clearPendingSequence()
-                return HelixActionDelegate.executeAction("EditorMatchBracket", editor)
+                return HelixMotions.matchBrackets(editor, count ?: 1)
             }
             else -> {
                 state.clearPendingSequence()
