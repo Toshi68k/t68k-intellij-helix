@@ -91,11 +91,11 @@ object HelixKeyHandler {
             }
             "[" -> {
                 state.clearPendingSequence()
-                return handleBracketOpen(ch, editor)
+                return handleBracketOpen(ch, editor, count ?: 1)
             }
             "]" -> {
                 state.clearPendingSequence()
-                return handleBracketClose(ch, editor)
+                return handleBracketClose(ch, editor, count ?: 1)
             }
             "m" -> return handleMatchMenu(ch, editor, state)
             "ms" -> {
@@ -211,18 +211,50 @@ object HelixKeyHandler {
         }
     }
 
-    private fun handleBracketOpen(ch: Char, editor: Editor): Boolean {
+    private fun handleBracketOpen(ch: Char, editor: Editor, count: Int): Boolean {
         return when (ch) {
-            'd' -> HelixActionDelegate.executeAction("GotoPreviousError", editor)
-            'b' -> HelixActionDelegate.executeAction("PreviousTab", editor)
+            'd' -> HelixMotions.moveDiagnostic(editor, forward = false, count = count, toEnd = false)
+            'D' -> HelixMotions.moveDiagnostic(editor, forward = false, count = count, toEnd = true)
+            'b' -> repeat(count) { HelixActionDelegate.executeAction("PreviousTab", editor) }.let { true }
+            'f' -> HelixMotions.moveFunction(editor, forward = false, count = count)
+            't' -> HelixMotions.moveType(editor, forward = false, count = count)
+            'a' -> HelixMotions.moveParameter(editor, forward = false, count = count)
+            'c' -> HelixMotions.moveComment(editor, forward = false, count = count)
+            'T' -> HelixMotions.moveTest(editor, forward = false, count = count)
+            'p' -> {
+                HelixMotions.moveParagraph(editor, forward = false, count = count)
+                true
+            }
+            'g' -> HelixMotions.moveChange(editor, forward = false, count = count, toEnd = false)
+            'G' -> HelixMotions.moveChange(editor, forward = false, count = count, toEnd = true)
+            ' ' -> {
+                HelixMotions.addNewline(editor, below = false, count = count)
+                true
+            }
             else -> false
         }
     }
 
-    private fun handleBracketClose(ch: Char, editor: Editor): Boolean {
+    private fun handleBracketClose(ch: Char, editor: Editor, count: Int): Boolean {
         return when (ch) {
-            'd' -> HelixActionDelegate.executeAction("GotoNextError", editor)
-            'b' -> HelixActionDelegate.executeAction("NextTab", editor)
+            'd' -> HelixMotions.moveDiagnostic(editor, forward = true, count = count, toEnd = false)
+            'D' -> HelixMotions.moveDiagnostic(editor, forward = true, count = count, toEnd = true)
+            'b' -> repeat(count) { HelixActionDelegate.executeAction("NextTab", editor) }.let { true }
+            'f' -> HelixMotions.moveFunction(editor, forward = true, count = count)
+            't' -> HelixMotions.moveType(editor, forward = true, count = count)
+            'a' -> HelixMotions.moveParameter(editor, forward = true, count = count)
+            'c' -> HelixMotions.moveComment(editor, forward = true, count = count)
+            'T' -> HelixMotions.moveTest(editor, forward = true, count = count)
+            'p' -> {
+                HelixMotions.moveParagraph(editor, forward = true, count = count)
+                true
+            }
+            'g' -> HelixMotions.moveChange(editor, forward = true, count = count, toEnd = false)
+            'G' -> HelixMotions.moveChange(editor, forward = true, count = count, toEnd = true)
+            ' ' -> {
+                HelixMotions.addNewline(editor, below = true, count = count)
+                true
+            }
             else -> false
         }
     }
