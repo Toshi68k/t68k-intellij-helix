@@ -10,6 +10,8 @@ import jp.titze.intellij.helix.motion.HelixMotions
 import jp.titze.intellij.helix.state.HelixEditorState
 import jp.titze.intellij.helix.state.HelixMode
 import jp.titze.intellij.helix.state.HelixStateManager
+import jp.titze.intellij.helix.ui.HelixSearchPopup
+import jp.titze.intellij.helix.ui.HelixSelectRegexPopup
 import jp.titze.intellij.helix.ui.HelixWhichKeyPopup
 
 object HelixKeyHandler {
@@ -283,7 +285,13 @@ object HelixKeyHandler {
             '>' -> HelixActionDelegate.executeAction("EditorIndentSelection", editor)
             '<' -> HelixActionDelegate.executeAction("EditorUnindentSelection", editor)
             '~' -> HelixActionDelegate.executeAction("ToggleCase", editor)
-            's' -> HelixActionDelegate.executeAction("Find", editor)
+            's' -> HelixSelectRegexPopup.show(editor, isSplit = false)
+            'S' -> HelixSelectRegexPopup.show(editor, isSplit = true)
+            '/' -> HelixSearchPopup.show(editor, backward = false, count = count)
+            '?' -> HelixSearchPopup.show(editor, backward = true, count = count)
+            'n' -> HelixActions.searchNext(editor, count)
+            'N' -> HelixActions.searchPrev(editor, count)
+            '*' -> HelixActions.searchSelection(editor)
 
             else -> return false
         }

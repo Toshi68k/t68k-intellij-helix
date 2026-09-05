@@ -1453,5 +1453,207 @@ class HelixEditorTest : BasePlatformTestCase() {
         assertEquals(lines.length, caret.offset)
         assertEquals(199, editor.document.getLineNumber(caret.offset))
     }
+
+    fun testSelectRegexWholeBufferPercentS() {
+        val text = "apple banana apple orange apple grape"
+        myFixture.configureByText("test.txt", text)
+        val editor = myFixture.editor
+
+        // '%' selects entire buffer
+        HelixKeyHandler.handleKey('%', editor)
+        assertEquals(text, editor.selectionModel.selectedText)
+
+        // 's' select_regex
+        val matched = HelixActions.selectRegex(editor, "apple")
+        assertTrue(matched)
+
+        val caretModel = editor.caretModel
+        assertEquals(3, caretModel.caretCount)
+
+        val selectedTexts = caretModel.allCarets.map { it.selectedText }
+        assertEquals(listOf("apple", "apple", "apple"), selectedTexts)
+    }
+
+    fun testSelectRegexWithSubsequentDelete() {
+        val text = "foo alpha bar alpha baz alpha"
+        myFixture.configureByText("test.txt", text)
+        val editor = myFixture.editor
+
+        HelixKeyHandler.handleKey('%', editor)
+        val matched = HelixActions.selectRegex(editor, "alpha")
+        assertTrue(matched)
+
+        assertEquals(3, editor.caretModel.caretCount)
+
+        // 'd' deletes selection across all carets
+        HelixKeyHandler.handleKey('d', editor)
+        assertEquals("foo  bar  baz ", editor.document.text)
+        assertEquals(3, editor.caretModel.caretCount)
+    }
+
+    fun testSelectRegexPartialSelection() {
+        val text = "target line 1\ntarget line 2\nignore target line 3\n"
+        myFixture.configureByText("test.txt", text)
+        val editor = myFixture.editor
+
+        // Select line 1 only with 'x'
+        HelixKeyHandler.handleKey('x', editor)
+        assertEquals("target line 1\n", editor.selectionModel.selectedText)
+
+        // Select "target" inside line 1 selection
+        val matched = HelixActions.selectRegex(editor, "target")
+        assertTrue(matched)
+        assertEquals(1, editor.caretModel.caretCount)
+        assertEquals("target", editor.caretModel.primaryCaret.selectedText)
+        assertEquals(0, editor.caretModel.primaryCaret.selectionStart)
+    }
+
+    fun testSelectRegexRegexPattern() {
+        val text = "item_100, item_200, item_300, other_400"
+        myFixture.configureByText("test.txt", text)
+        val editor = myFixture.editor
+
+        HelixKeyHandler.handleKey('%', editor)
+        val matched = HelixActions.selectRegex(editor, """item_\d+""")
+        assertTrue(matched)
+
+        val carets = editor.caretModel.allCarets
+        assertEquals(3, carets.size)
+        assertEquals(listOf("item_100", "item_200", "item_300"), carets.map { it.selectedText })
+    }
+
+    fun testSelectRegexNoMatchKeepsSelection() {
+        val text = "foo bar baz"
+        myFixture.configureByText("test.txt", text)
+        val editor = myFixture.editor
+
+        HelixKeyHandler.handleKey('%', editor)
+        val matched = HelixActions.selectRegex(editor, "not_found")
+        assertFalse(matched)
+        assertEquals(1, editor.caretModel.caretCount)
+        assertEquals(text, editor.selectionModel.selectedText)
+    }
+
+    fun testCountRegexMatches() {
+        val text = "abc 123 abc 456 abc"
+        myFixture.configureByText("test.txt", text)
+        val editor = myFixture.editor
+
+        HelixKeyHandler.handleKey('%', editor)
+        assertEquals(3, HelixActions.countRegexMatches(editor, "abc"))
+        assertEquals(2, HelixActions.countRegexMatches(editor, """\d+"""))
+        assertEquals(0, HelixActions.countRegexMatches(editor, "zzz"))
+    }
+
+    fun testSplitSelection() {
+        val text = "apple,banana,orange,grape"
+        myFixture.configureByText("test.txt", text)
+        val editor = myFixture.editor
+
+        HelixKeyHandler.handleKey('%', editor)
+        val success = HelixActions.splitSelection(editor, ",")
+        assertTrue(success)
+
+        val carets = editor.caretModel.allCarets
+        assertEquals(4, carets.size)
+        assertEquals(listOf("apple", "banana", "orange", "grape"), carets.map { it.selectedText })
+    }
+
+    fun testForwardSearchAndNext() {
+        val text = "apple orange apple banana apple"
+        myFixture.configureByText("test.txt", text)
+        val editor = myFixture.editor
+        val caret = editor.caretModel.primaryCaret
+        caret.moveToOffset(0)
+
+        // Forward search for "apple"
+        val found = HelixActions.search(editor, "apple", backward = false)
+        assertTrue(found)
+        assertEquals("apple", caret.selectedText)
+        assertEquals(0, caret.selectionStart)
+        assertEquals(5, caret.selectionEnd)
+
+        // 'n' -> next match
+        HelixKeyHandler.handleKey('n', editor)
+        assertEquals("apple", caret.selectedText)
+        assertEquals(13, caret.selectionStart)
+        assertEquals(18, caret.selectionEnd)
+
+        // 'n' -> next match
+        HelixKeyHandler.handleKey('n', editor)
+        assertEquals("apple", caret.selectedText)
+        assertEquals(26, caret.selectionStart)
+        assertEquals(31, caret.selectionEnd)
+
+        // 'n' -> wrap around to first match
+        HelixKeyHandler.handleKey('n', editor)
+        assertEquals("apple", caret.selectedText)
+        assertEquals(0, caret.selectionStart)
+        assertEquals(5, caret.selectionEnd)
+
+        // 'N' -> reverse direction back to last match
+        HelixKeyHandler.handleKey('N', editor)
+        assertEquals("apple", caret.selectedText)
+        assertEquals(26, caret.selectionStart)
+        assertEquals(31, caret.selectionEnd)
+
+        // 'n' after 'N' must continue in original forward direction (wrap around to first match)
+        HelixKeyHandler.handleKey('n', editor)
+        assertEquals("apple", caret.selectedText)
+        assertEquals(0, caret.selectionStart)
+        assertEquals(5, caret.selectionEnd)
+    }
+
+    fun testBackwardSearchAndPrev() {
+        val text = "apple orange apple banana apple"
+        myFixture.configureByText("test.txt", text)
+        val editor = myFixture.editor
+        val caret = editor.caretModel.primaryCaret
+        caret.moveToOffset(text.length)
+
+        // Backward search for "apple"
+        val found = HelixActions.search(editor, "apple", backward = true)
+        assertTrue(found)
+        assertEquals("apple", caret.selectedText)
+        assertEquals(26, caret.selectionStart)
+        assertEquals(31, caret.selectionEnd)
+
+        // 'n' repeats in same direction (backward)
+        HelixKeyHandler.handleKey('n', editor)
+        assertEquals("apple", caret.selectedText)
+        assertEquals(13, caret.selectionStart)
+        assertEquals(18, caret.selectionEnd)
+
+        // 'N' reverses direction (forward)
+        HelixKeyHandler.handleKey('N', editor)
+        assertEquals("apple", caret.selectedText)
+        assertEquals(26, caret.selectionStart)
+        assertEquals(31, caret.selectionEnd)
+    }
+
+    fun testSearchWordUnderCursorAsterisk() {
+        val text = "hello world hello universe"
+        myFixture.configureByText("test.txt", text)
+        val editor = myFixture.editor
+        val caret = editor.caretModel.primaryCaret
+        caret.moveToOffset(1) // on "hello"
+
+        HelixKeyHandler.handleKey('*', editor)
+        // Moves to next occurrence of "hello"
+        assertEquals("hello", caret.selectedText)
+        assertEquals(12, caret.selectionStart)
+        assertEquals(17, caret.selectionEnd)
+    }
+
+    fun testCountDocumentRegexMatches() {
+        val text = "foo 123 foo 456 foo"
+        myFixture.configureByText("test.txt", text)
+        val editor = myFixture.editor
+
+        assertEquals(3, HelixActions.countDocumentRegexMatches(editor, "foo"))
+        assertEquals(2, HelixActions.countDocumentRegexMatches(editor, """\d+"""))
+        assertEquals(0, HelixActions.countDocumentRegexMatches(editor, "nonexistent"))
+    }
 }
+
 
