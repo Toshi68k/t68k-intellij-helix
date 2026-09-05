@@ -1,5 +1,12 @@
 package jp.titze.intellij.helix
 
+import io.kotest.matchers.shouldBe
+import io.kotest.matchers.shouldNotBe
+import io.kotest.matchers.booleans.shouldBeTrue
+import io.kotest.matchers.booleans.shouldBeFalse
+import io.kotest.matchers.nulls.shouldBeNull
+import io.kotest.matchers.nulls.shouldNotBeNull
+import io.kotest.matchers.types.shouldBeSameInstanceAs
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import jp.titze.intellij.helix.action.HelixActions
 import jp.titze.intellij.helix.keymap.HelixKeyHandler
@@ -18,8 +25,8 @@ class HelixEditorTest : BasePlatformTestCase() {
         myFixture.configureByText("test.txt", "hello world")
         val editor = myFixture.editor
         val state = HelixStateManager.getOrCreate(editor)
-        assertEquals(HelixMode.NORMAL, state.mode)
-        assertTrue(editor.settings.isBlockCursor)
+        state.mode shouldBe HelixMode.NORMAL
+        editor.settings.isBlockCursor.shouldBeTrue()
     }
 
     fun testModeTransitions() {
@@ -28,18 +35,18 @@ class HelixEditorTest : BasePlatformTestCase() {
         val state = HelixStateManager.getOrCreate(editor)
 
         HelixActions.enterInsert(editor)
-        assertEquals(HelixMode.INSERT, state.mode)
-        assertFalse(editor.settings.isBlockCursor)
+        state.mode shouldBe HelixMode.INSERT
+        editor.settings.isBlockCursor.shouldBeFalse()
 
         HelixActions.enterNormalMode(editor)
-        assertEquals(HelixMode.NORMAL, state.mode)
-        assertTrue(editor.settings.isBlockCursor)
+        state.mode shouldBe HelixMode.NORMAL
+        editor.settings.isBlockCursor.shouldBeTrue()
 
         HelixActions.toggleSelectMode(editor)
-        assertEquals(HelixMode.SELECT, state.mode)
+        state.mode shouldBe HelixMode.SELECT
 
         HelixActions.toggleSelectMode(editor)
-        assertEquals(HelixMode.NORMAL, state.mode)
+        state.mode shouldBe HelixMode.NORMAL
     }
 
     fun testWordMotions() {
@@ -50,20 +57,20 @@ class HelixEditorTest : BasePlatformTestCase() {
 
         // In Normal mode, motion 'w' moves to start of "world" without marking
         HelixMotions.moveNextWordStart(editor)
-        assertEquals(6, caret.offset)
-        assertFalse(caret.hasSelection())
+        caret.offset shouldBe 6
+        caret.hasSelection().shouldBeFalse()
 
         // In Select mode ('v'), motion 'w' extends selection (marks)
         HelixActions.toggleSelectMode(editor)
-        assertEquals(HelixMode.SELECT, HelixStateManager.getOrCreate(editor).mode)
+        HelixStateManager.getOrCreate(editor).mode shouldBe HelixMode.SELECT
         HelixMotions.moveNextWordStart(editor)
-        assertEquals(12, caret.offset)
-        assertTrue(caret.hasSelection())
-        assertEquals("world ", caret.selectedText)
+        caret.offset shouldBe 12
+        caret.hasSelection().shouldBeTrue()
+        caret.selectedText shouldBe "world "
 
         // Motion 'b' in Select mode moves back and updates selection
         HelixMotions.movePrevWordStart(editor)
-        assertEquals(6, caret.offset)
+        caret.offset shouldBe 6
     }
 
     fun testLineSelectionMotion() {
@@ -74,11 +81,11 @@ class HelixEditorTest : BasePlatformTestCase() {
 
         // First 'x' selects current line including newline
         HelixMotions.selectLine(editor)
-        assertEquals("first line\n", caret.selectedText)
+        caret.selectedText shouldBe "first line\n"
 
         // Second 'x' extends selection down to next line
         HelixMotions.selectLine(editor)
-        assertEquals("first line\nsecond line\n", caret.selectedText)
+        caret.selectedText shouldBe "first line\nsecond line\n"
     }
 
     fun testSelectAllMotion() {
@@ -86,7 +93,7 @@ class HelixEditorTest : BasePlatformTestCase() {
         myFixture.configureByText("test.txt", text)
         val editor = myFixture.editor
         HelixMotions.selectAll(editor)
-        assertEquals(text, editor.selectionModel.selectedText)
+        editor.selectionModel.selectedText shouldBe text
     }
 
     fun testDeleteAndChangeActions() {
@@ -98,17 +105,17 @@ class HelixEditorTest : BasePlatformTestCase() {
         // In Select mode, select "hello " and 'd' deletes selection
         HelixActions.toggleSelectMode(editor)
         HelixMotions.moveNextWordStart(editor)
-        assertEquals("hello ", caret.selectedText)
+        caret.selectedText shouldBe "hello "
 
         HelixActions.deleteSelection(editor, enterInsert = false)
-        assertEquals("world", editor.document.text)
-        assertEquals(HelixMode.SELECT, HelixStateManager.getOrCreate(editor).mode)
+        editor.document.text shouldBe "world"
+        HelixStateManager.getOrCreate(editor).mode shouldBe HelixMode.SELECT
 
         // Select "world" and 'c' (change) deletes and enters Insert mode
         HelixMotions.moveWordEnd(editor)
         HelixActions.deleteSelection(editor, enterInsert = true)
-        assertEquals("", editor.document.text)
-        assertEquals(HelixMode.INSERT, HelixStateManager.getOrCreate(editor).mode)
+        editor.document.text shouldBe ""
+        HelixStateManager.getOrCreate(editor).mode shouldBe HelixMode.INSERT
     }
 
 
@@ -121,12 +128,12 @@ class HelixEditorTest : BasePlatformTestCase() {
         val primary = caretModel.primaryCaret
         primary.moveToOffset(0)
         val secondary = caretModel.addCaret(editor.offsetToVisualPosition(text.indexOf("line 2")))
-        assertNotNull(secondary)
+        secondary.shouldNotBeNull()
 
         HelixMotions.selectLine(editor)
 
-        assertEquals("line 1\n", primary.selectedText)
-        assertEquals("line 2\n", secondary?.selectedText)
+        primary.selectedText shouldBe "line 1\n"
+        secondary.selectedText shouldBe "line 2\n"
     }
 
     fun testKeyHandlerDispatch() {
@@ -136,19 +143,19 @@ class HelixEditorTest : BasePlatformTestCase() {
 
         // Press 'w' in Normal mode
         val handledW = HelixKeyHandler.handleKey('w', editor)
-        assertTrue(handledW)
-        assertEquals(4, editor.caretModel.primaryCaret.offset)
+        handledW.shouldBeTrue()
+        editor.caretModel.primaryCaret.offset shouldBe 4
 
         // Press 'g' sets pending sequence
         val handledG = HelixKeyHandler.handleKey('g', editor)
-        assertTrue(handledG)
-        assertEquals("g", state.pendingSequence)
+        handledG.shouldBeTrue()
+        state.pendingSequence shouldBe "g"
 
         // Press 'g' completes 'gg'
         val handledG2 = HelixKeyHandler.handleKey('g', editor)
-        assertTrue(handledG2)
-        assertEquals("", state.pendingSequence)
-        assertEquals(0, editor.caretModel.primaryCaret.offset)
+        handledG2.shouldBeTrue()
+        state.pendingSequence shouldBe ""
+        editor.caretModel.primaryCaret.offset shouldBe 0
     }
 
     fun testSurroundAddWithSelection() {
@@ -160,17 +167,17 @@ class HelixEditorTest : BasePlatformTestCase() {
         caret.setSelection(6, 11)
 
         val state = HelixStateManager.getOrCreate(editor)
-        assertTrue(HelixKeyHandler.handleKey('m', editor))
-        assertEquals("m", state.pendingSequence)
+        HelixKeyHandler.handleKey('m', editor).shouldBeTrue()
+        state.pendingSequence shouldBe "m"
 
-        assertTrue(HelixKeyHandler.handleKey('s', editor))
-        assertEquals("ms", state.pendingSequence)
+        HelixKeyHandler.handleKey('s', editor).shouldBeTrue()
+        state.pendingSequence shouldBe "ms"
 
-        assertTrue(HelixKeyHandler.handleKey('(', editor))
-        assertEquals("", state.pendingSequence)
+        HelixKeyHandler.handleKey('(', editor).shouldBeTrue()
+        state.pendingSequence shouldBe ""
 
-        assertEquals("hello (world)", editor.document.text)
-        assertEquals("(world)", caret.selectedText)
+        editor.document.text shouldBe "hello (world)"
+        caret.selectedText shouldBe "(world)"
     }
 
     fun testSurroundAddQuotes() {
@@ -184,8 +191,8 @@ class HelixEditorTest : BasePlatformTestCase() {
         HelixKeyHandler.handleKey('s', editor)
         HelixKeyHandler.handleKey('"', editor)
 
-        assertEquals("hello \"world\"", editor.document.text)
-        assertEquals("\"world\"", caret.selectedText)
+        editor.document.text shouldBe "hello \"world\""
+        caret.selectedText shouldBe "\"world\""
     }
 
     fun testSurroundDeleteParentheses() {
@@ -196,15 +203,15 @@ class HelixEditorTest : BasePlatformTestCase() {
 
         val state = HelixStateManager.getOrCreate(editor)
         HelixKeyHandler.handleKey('m', editor)
-        assertEquals("m", state.pendingSequence)
+        state.pendingSequence shouldBe "m"
 
         HelixKeyHandler.handleKey('d', editor)
-        assertEquals("md", state.pendingSequence)
+        state.pendingSequence shouldBe "md"
 
         HelixKeyHandler.handleKey('(', editor)
-        assertEquals("", state.pendingSequence)
+        state.pendingSequence shouldBe ""
 
-        assertEquals("hello world test", editor.document.text)
+        editor.document.text shouldBe "hello world test"
     }
 
     fun testSurroundDeleteQuotes() {
@@ -217,7 +224,7 @@ class HelixEditorTest : BasePlatformTestCase() {
         HelixKeyHandler.handleKey('d', editor)
         HelixKeyHandler.handleKey('"', editor)
 
-        assertEquals("val s = hello world", editor.document.text)
+        editor.document.text shouldBe "val s = hello world"
     }
 
     fun testSurroundDeleteWithAlias() {
@@ -231,7 +238,7 @@ class HelixEditorTest : BasePlatformTestCase() {
         HelixKeyHandler.handleKey('d', editor)
         HelixKeyHandler.handleKey('b', editor)
 
-        assertEquals("hello world test", editor.document.text)
+        editor.document.text shouldBe "hello world test"
     }
 
     fun testSurroundReplaceParenthesesToBrackets() {
@@ -242,18 +249,18 @@ class HelixEditorTest : BasePlatformTestCase() {
 
         val state = HelixStateManager.getOrCreate(editor)
         HelixKeyHandler.handleKey('m', editor)
-        assertEquals("m", state.pendingSequence)
+        state.pendingSequence shouldBe "m"
 
         HelixKeyHandler.handleKey('r', editor)
-        assertEquals("mr", state.pendingSequence)
+        state.pendingSequence shouldBe "mr"
 
         HelixKeyHandler.handleKey('(', editor)
-        assertEquals("mr(", state.pendingSequence)
+        state.pendingSequence shouldBe "mr("
 
         HelixKeyHandler.handleKey('[', editor)
-        assertEquals("", state.pendingSequence)
+        state.pendingSequence shouldBe ""
 
-        assertEquals("hello [world] test", editor.document.text)
+        editor.document.text shouldBe "hello [world] test"
     }
 
     fun testSurroundReplaceQuotesToCurlyBraces() {
@@ -267,7 +274,7 @@ class HelixEditorTest : BasePlatformTestCase() {
         HelixKeyHandler.handleKey('"', editor)
         HelixKeyHandler.handleKey('{', editor)
 
-        assertEquals("val s = {hello}", editor.document.text)
+        editor.document.text shouldBe "val s = {hello}"
     }
 
     fun testSurroundNestedParentheses() {
@@ -280,13 +287,13 @@ class HelixEditorTest : BasePlatformTestCase() {
         HelixKeyHandler.handleKey('m', editor)
         HelixKeyHandler.handleKey('d', editor)
         HelixKeyHandler.handleKey('(', editor)
-        assertEquals("val res = (a + b * c)", editor.document.text)
+        editor.document.text shouldBe "val res = (a + b * c)"
 
         // Delete outer parentheses
         HelixKeyHandler.handleKey('m', editor)
         HelixKeyHandler.handleKey('d', editor)
         HelixKeyHandler.handleKey('(', editor)
-        assertEquals("val res = a + b * c", editor.document.text)
+        editor.document.text shouldBe "val res = a + b * c"
     }
 
     fun testSurroundMultiCaret() {
@@ -299,7 +306,7 @@ class HelixEditorTest : BasePlatformTestCase() {
         primary.moveToOffset(text.indexOf("foo"))
 
         val secondary = caretModel.addCaret(editor.offsetToVisualPosition(text.indexOf("bar")))
-        assertNotNull(secondary)
+        secondary.shouldNotBeNull()
 
         // Replace '(' with '[' for both carets
         HelixKeyHandler.handleKey('m', editor)
@@ -307,14 +314,14 @@ class HelixEditorTest : BasePlatformTestCase() {
         HelixKeyHandler.handleKey('(', editor)
         HelixKeyHandler.handleKey('[', editor)
 
-        assertEquals("[foo] and [bar]", editor.document.text)
+        editor.document.text shouldBe "[foo] and [bar]"
 
         // Delete '[' for both carets
         HelixKeyHandler.handleKey('m', editor)
         HelixKeyHandler.handleKey('d', editor)
         HelixKeyHandler.handleKey('[', editor)
 
-        assertEquals("foo and bar", editor.document.text)
+        editor.document.text shouldBe "foo and bar"
     }
 
     fun testSurroundAddWithoutSelection() {
@@ -327,7 +334,7 @@ class HelixEditorTest : BasePlatformTestCase() {
         HelixKeyHandler.handleKey('s', editor)
         HelixKeyHandler.handleKey('(', editor)
 
-        assertEquals("(h)ello world", editor.document.text)
+        editor.document.text shouldBe "(h)ello world"
     }
 
     fun testSurroundEscapeCancelsPending() {
@@ -338,11 +345,11 @@ class HelixEditorTest : BasePlatformTestCase() {
         HelixKeyHandler.handleKey('m', editor)
         HelixKeyHandler.handleKey('r', editor)
         HelixKeyHandler.handleKey('(', editor)
-        assertEquals("mr(", state.pendingSequence)
+        state.pendingSequence shouldBe "mr("
 
         myFixture.testAction(jp.titze.intellij.helix.editor.HelixEscapeAction())
-        assertEquals("", state.pendingSequence)
-        assertEquals("hello (world)", editor.document.text)
+        state.pendingSequence shouldBe ""
+        editor.document.text shouldBe "hello (world)"
     }
 
     fun testTextObjectWordInsideAndAround() {
@@ -356,13 +363,13 @@ class HelixEditorTest : BasePlatformTestCase() {
 
         // Test miw (select inside word)
         HelixKeyHandler.handleKey('m', editor)
-        assertEquals("m", state.pendingSequence)
+        state.pendingSequence shouldBe "m"
         HelixKeyHandler.handleKey('i', editor)
-        assertEquals("mi", state.pendingSequence)
+        state.pendingSequence shouldBe "mi"
         HelixKeyHandler.handleKey('w', editor)
-        assertEquals("", state.pendingSequence)
-        assertTrue(caret.hasSelection())
-        assertEquals("hello", caret.selectedText)
+        state.pendingSequence shouldBe ""
+        caret.hasSelection().shouldBeTrue()
+        caret.selectedText shouldBe "hello"
 
         // Clear selection
         caret.removeSelection()
@@ -372,9 +379,9 @@ class HelixEditorTest : BasePlatformTestCase() {
         HelixKeyHandler.handleKey('m', editor)
         HelixKeyHandler.handleKey('a', editor)
         HelixKeyHandler.handleKey('w', editor)
-        assertEquals("", state.pendingSequence)
-        assertTrue(caret.hasSelection())
-        assertEquals("hello ", caret.selectedText)
+        state.pendingSequence shouldBe ""
+        caret.hasSelection().shouldBeTrue()
+        caret.selectedText shouldBe "hello "
 
         // Test maw on last word of line (should include leading space)
         caret.removeSelection()
@@ -382,7 +389,7 @@ class HelixEditorTest : BasePlatformTestCase() {
         HelixKeyHandler.handleKey('m', editor)
         HelixKeyHandler.handleKey('a', editor)
         HelixKeyHandler.handleKey('w', editor)
-        assertEquals(" world", caret.selectedText)
+        caret.selectedText shouldBe " world"
     }
 
     fun testTextObjectWordDeleteAndChange() {
@@ -395,21 +402,21 @@ class HelixEditorTest : BasePlatformTestCase() {
         HelixKeyHandler.handleKey('m', editor)
         HelixKeyHandler.handleKey('a', editor)
         HelixKeyHandler.handleKey('w', editor)
-        assertEquals("first ", caret.selectedText)
+        caret.selectedText shouldBe "first "
 
         HelixKeyHandler.handleKey('d', editor)
-        assertEquals("second third", editor.document.text)
+        editor.document.text shouldBe "second third"
 
         // miw then c
         caret.moveToOffset(2) // in "second"
         HelixKeyHandler.handleKey('m', editor)
         HelixKeyHandler.handleKey('i', editor)
         HelixKeyHandler.handleKey('w', editor)
-        assertEquals("second", caret.selectedText)
+        caret.selectedText shouldBe "second"
 
         HelixKeyHandler.handleKey('c', editor)
-        assertEquals(" third", editor.document.text)
-        assertEquals(HelixMode.INSERT, HelixStateManager.getOrCreate(editor).mode)
+        editor.document.text shouldBe " third"
+        HelixStateManager.getOrCreate(editor).mode shouldBe HelixMode.INSERT
     }
 
     fun testTextObjectBigWord() {
@@ -422,7 +429,7 @@ class HelixEditorTest : BasePlatformTestCase() {
         HelixKeyHandler.handleKey('m', editor)
         HelixKeyHandler.handleKey('i', editor)
         HelixKeyHandler.handleKey('W', editor)
-        assertEquals("foo.bar(123)", caret.selectedText)
+        caret.selectedText shouldBe "foo.bar(123)"
 
         // maW selects full token + trailing whitespace
         caret.removeSelection()
@@ -430,7 +437,7 @@ class HelixEditorTest : BasePlatformTestCase() {
         HelixKeyHandler.handleKey('m', editor)
         HelixKeyHandler.handleKey('a', editor)
         HelixKeyHandler.handleKey('W', editor)
-        assertEquals("foo.bar(123) ", caret.selectedText)
+        caret.selectedText shouldBe "foo.bar(123) "
     }
 
     fun testTextObjectParagraph() {
@@ -444,7 +451,7 @@ class HelixEditorTest : BasePlatformTestCase() {
         HelixKeyHandler.handleKey('m', editor)
         HelixKeyHandler.handleKey('i', editor)
         HelixKeyHandler.handleKey('p', editor)
-        assertEquals("line1\nline2", caret.selectedText)
+        caret.selectedText shouldBe "line1\nline2"
 
         // map: select lines + trailing blank line
         caret.removeSelection()
@@ -452,7 +459,7 @@ class HelixEditorTest : BasePlatformTestCase() {
         HelixKeyHandler.handleKey('m', editor)
         HelixKeyHandler.handleKey('a', editor)
         HelixKeyHandler.handleKey('p', editor)
-        assertEquals("line1\nline2\n\n", caret.selectedText)
+        caret.selectedText shouldBe "line1\nline2\n\n"
     }
 
     fun testTextObjectPairsAndClosest() {
@@ -465,19 +472,19 @@ class HelixEditorTest : BasePlatformTestCase() {
         HelixKeyHandler.handleKey('m', editor)
         HelixKeyHandler.handleKey('i', editor)
         HelixKeyHandler.handleKey('"', editor)
-        assertEquals("param", caret.selectedText)
+        caret.selectedText shouldBe "param"
 
         // ma": around quotes
         HelixKeyHandler.handleKey('m', editor)
         HelixKeyHandler.handleKey('a', editor)
         HelixKeyHandler.handleKey('"', editor)
-        assertEquals("\"param\"", caret.selectedText)
+        caret.selectedText shouldBe "\"param\""
 
         // mim: closest enclosing pair (the quotes)
         HelixKeyHandler.handleKey('m', editor)
         HelixKeyHandler.handleKey('i', editor)
         HelixKeyHandler.handleKey('m', editor)
-        assertEquals("param", caret.selectedText)
+        caret.selectedText shouldBe "param"
 
         // Move to calculate(
         caret.removeSelection()
@@ -486,13 +493,13 @@ class HelixEditorTest : BasePlatformTestCase() {
         HelixKeyHandler.handleKey('m', editor)
         HelixKeyHandler.handleKey('i', editor)
         HelixKeyHandler.handleKey('(', editor)
-        assertEquals("calculate(\"param\")", caret.selectedText)
+        caret.selectedText shouldBe "calculate(\"param\")"
 
         // ma(: around outer parens
         HelixKeyHandler.handleKey('m', editor)
         HelixKeyHandler.handleKey('a', editor)
         HelixKeyHandler.handleKey('(', editor)
-        assertEquals("(calculate(\"param\"))", caret.selectedText)
+        caret.selectedText shouldBe "(calculate(\"param\"))"
     }
 
     fun testTextObjectArgument() {
@@ -505,13 +512,13 @@ class HelixEditorTest : BasePlatformTestCase() {
         HelixKeyHandler.handleKey('m', editor)
         HelixKeyHandler.handleKey('i', editor)
         HelixKeyHandler.handleKey('a', editor)
-        assertEquals("second", caret.selectedText)
+        caret.selectedText shouldBe "second"
 
         // maa: select around argument (including comma and space)
         HelixKeyHandler.handleKey('m', editor)
         HelixKeyHandler.handleKey('a', editor)
         HelixKeyHandler.handleKey('a', editor)
-        assertEquals("second, ", caret.selectedText)
+        caret.selectedText shouldBe "second, "
     }
 
     fun testTextObjectMultiCaret() {
@@ -524,19 +531,19 @@ class HelixEditorTest : BasePlatformTestCase() {
         primary.moveToOffset(text.indexOf("alpha") + 1)
 
         val secondary = caretModel.addCaret(editor.offsetToVisualPosition(text.indexOf("beta") + 1))
-        assertNotNull(secondary)
+        secondary.shouldNotBeNull()
 
         // maw across both carets
         HelixKeyHandler.handleKey('m', editor)
         HelixKeyHandler.handleKey('a', editor)
         HelixKeyHandler.handleKey('w', editor)
 
-        assertEquals("alpha ", primary.selectedText)
-        assertEquals("beta ", secondary?.selectedText)
+        primary.selectedText shouldBe "alpha "
+        secondary.selectedText shouldBe "beta "
 
         // Delete selection across both carets
         HelixKeyHandler.handleKey('d', editor)
-        assertEquals("foo bar\nbaz qux\n", editor.document.text)
+        editor.document.text shouldBe "foo bar\nbaz qux\n"
     }
 
     fun testSpaceMenuChords() {
@@ -546,11 +553,11 @@ class HelixEditorTest : BasePlatformTestCase() {
 
         // Press ' ' begins chord
         HelixKeyHandler.handleKey(' ', editor)
-        assertEquals(" ", state.pendingSequence)
+        state.pendingSequence shouldBe " "
 
         // Second key clears chord and executes handler
         HelixKeyHandler.handleKey('y', editor)
-        assertTrue(state.pendingSequence.isEmpty())
+        state.pendingSequence.isEmpty().shouldBeTrue()
     }
 
     fun testSpaceReplaceWithClipboard() {
@@ -568,8 +575,8 @@ class HelixEditorTest : BasePlatformTestCase() {
         HelixKeyHandler.handleKey(' ', editor)
         HelixKeyHandler.handleKey('R', editor)
 
-        assertEquals("hello new_universe end", editor.document.text)
-        assertEquals("new_universe", caret.selectedText)
+        editor.document.text shouldBe "hello new_universe end"
+        caret.selectedText shouldBe "new_universe"
     }
 
     fun testWhichKeyChordsSequenceReset() {
@@ -578,10 +585,10 @@ class HelixEditorTest : BasePlatformTestCase() {
         val state = HelixStateManager.getOrCreate(editor)
 
         HelixKeyHandler.handleKey('g', editor)
-        assertEquals("g", state.pendingSequence)
+        state.pendingSequence shouldBe "g"
 
         HelixKeyHandler.handleKey('h', editor) // move line start
-        assertTrue(state.pendingSequence.isEmpty())
+        state.pendingSequence.isEmpty().shouldBeTrue()
     }
 
     fun testHelixCommandPopupMatchingAndExecution() {
@@ -590,9 +597,9 @@ class HelixEditorTest : BasePlatformTestCase() {
 
         // Verify command item matching
         val writeCmd = jp.titze.intellij.helix.command.HelixCommandPopup.COMMANDS.first { it.name == "write" }
-        assertTrue(writeCmd.matches("w"))
-        assertTrue(writeCmd.matches("write"))
-        assertFalse(writeCmd.matches("unknown_xyz"))
+        writeCmd.matches("w").shouldBeTrue()
+        writeCmd.matches("write").shouldBeTrue()
+        writeCmd.matches("unknown_xyz").shouldBeFalse()
 
         // Verify colon triggering HelixCommandPopup.show in tests without throwing
         HelixKeyHandler.handleKey(':', editor)
@@ -608,24 +615,24 @@ class HelixEditorTest : BasePlatformTestCase() {
 
         // Type 1, 0, 0, g, g
         HelixKeyHandler.handleKey('1', editor)
-        assertEquals(1, state.count)
+        state.count shouldBe 1
         HelixKeyHandler.handleKey('0', editor)
-        assertEquals(10, state.count)
+        state.count shouldBe 10
         HelixKeyHandler.handleKey('0', editor)
-        assertEquals(100, state.count)
+        state.count shouldBe 100
 
         HelixKeyHandler.handleKey('g', editor)
-        assertEquals("g", state.pendingSequence)
+        state.pendingSequence shouldBe "g"
         HelixKeyHandler.handleKey('g', editor)
-        assertEquals("", state.pendingSequence)
-        assertNull(state.count)
+        state.pendingSequence shouldBe ""
+        state.count.shouldBeNull()
 
         val caret = editor.caretModel.primaryCaret
         val currentLineNumber = editor.document.getLineNumber(caret.offset)
         // 0-based line index for line 100 is 99
-        assertEquals(99, currentLineNumber)
+        currentLineNumber shouldBe 99
         val expectedOffset = editor.document.getLineStartOffset(99)
-        assertEquals(expectedOffset, caret.offset)
+        caret.offset shouldBe expectedOffset
     }
 
     fun test100ggWithSpaceJumpsToLine100() {
@@ -642,7 +649,7 @@ class HelixEditorTest : BasePlatformTestCase() {
         HelixKeyHandler.handleKey('g', editor)
 
         val caret = editor.caretModel.primaryCaret
-        assertEquals(99, editor.document.getLineNumber(caret.offset))
+        editor.document.getLineNumber(caret.offset) shouldBe 99
     }
 
     fun testCountWithCapitalGJumpsToLine() {
@@ -655,7 +662,7 @@ class HelixEditorTest : BasePlatformTestCase() {
         HelixKeyHandler.handleKey('G', editor)
 
         val caret = editor.caretModel.primaryCaret
-        assertEquals(49, editor.document.getLineNumber(caret.offset))
+        editor.document.getLineNumber(caret.offset) shouldBe 49
     }
 
     fun testCountMotions() {
@@ -668,12 +675,12 @@ class HelixEditorTest : BasePlatformTestCase() {
         // 5j moves down 5 lines
         HelixKeyHandler.handleKey('5', editor)
         HelixKeyHandler.handleKey('j', editor)
-        assertEquals(5, editor.document.getLineNumber(caret.offset))
+        editor.document.getLineNumber(caret.offset) shouldBe 5
 
         // 3k moves up 3 lines
         HelixKeyHandler.handleKey('3', editor)
         HelixKeyHandler.handleKey('k', editor)
-        assertEquals(2, editor.document.getLineNumber(caret.offset))
+        editor.document.getLineNumber(caret.offset) shouldBe 2
     }
 
     fun testNormalModeTypingDoesNotEdit() {
@@ -687,7 +694,7 @@ class HelixEditorTest : BasePlatformTestCase() {
         myFixture.type('q')
         myFixture.type('1')
         myFixture.type('2')
-        assertEquals(text, editor.document.text)
+        editor.document.text shouldBe text
     }
 
     fun testInsertModeAllowsEditing() {
@@ -697,10 +704,10 @@ class HelixEditorTest : BasePlatformTestCase() {
 
         // Press 'i' to enter insert mode
         HelixKeyHandler.handleKey('i', editor)
-        assertEquals(HelixMode.INSERT, HelixStateManager.getOrCreate(editor).mode)
+        HelixStateManager.getOrCreate(editor).mode shouldBe HelixMode.INSERT
 
         myFixture.type('!')
-        assertEquals("!hello", editor.document.text)
+        editor.document.text shouldBe "!hello"
     }
 
     fun testNormalModeBackspaceRemovesCountDigitWithoutEditingText() {
@@ -712,19 +719,19 @@ class HelixEditorTest : BasePlatformTestCase() {
 
         HelixKeyHandler.handleKey('1', editor)
         HelixKeyHandler.handleKey('0', editor)
-        assertEquals(10, state.count)
+        state.count shouldBe 10
 
         myFixture.type('\b') // backspace
-        assertEquals(1, state.count)
-        assertEquals(text, editor.document.text)
+        state.count shouldBe 1
+        editor.document.text shouldBe text
 
         myFixture.type('\b') // backspace
-        assertNull(state.count)
-        assertEquals(text, editor.document.text)
+        state.count.shouldBeNull()
+        editor.document.text shouldBe text
 
         // Another backspace when count is empty should still not delete document text
         myFixture.type('\b')
-        assertEquals(text, editor.document.text)
+        editor.document.text shouldBe text
     }
 
     fun testPasteMultipleLinesCopiedWithXPastesBelowLineAtColumnZero() {
@@ -738,7 +745,7 @@ class HelixEditorTest : BasePlatformTestCase() {
         // Select 2 lines with x (line 2 and line 3)
         HelixKeyHandler.handleKey('x', editor)
         HelixKeyHandler.handleKey('x', editor)
-        assertEquals("line 2\nline 3\n", caret.selectedText)
+        caret.selectedText shouldBe "line 2\nline 3\n"
 
         // Yank with y
         HelixKeyHandler.handleKey('y', editor)
@@ -752,10 +759,10 @@ class HelixEditorTest : BasePlatformTestCase() {
         HelixKeyHandler.handleKey('p', editor)
 
         val expectedText = "line 1\nline 2\nline 3\nline 4\nline 5\nline 2\nline 3"
-        assertEquals(expectedText, editor.document.text)
+        editor.document.text shouldBe expectedText
         // Caret should be at the start of the first pasted line (column 0)
         val pastedLineStart = editor.document.getLineStartOffset(5)
-        assertEquals(pastedLineStart, caret.offset)
+        caret.offset shouldBe pastedLineStart
     }
 
     fun testPasteMultipleLinesCopiedWithXPastesBelowMiddleOfFile() {
@@ -768,7 +775,7 @@ class HelixEditorTest : BasePlatformTestCase() {
         caret.moveToOffset(0)
         HelixKeyHandler.handleKey('x', editor)
         HelixKeyHandler.handleKey('x', editor)
-        assertEquals("alpha\nbeta\n", caret.selectedText)
+        caret.selectedText shouldBe "alpha\nbeta\n"
         HelixKeyHandler.handleKey('y', editor)
 
         // Move to middle of line "gamma" (line index 2, col 3)
@@ -780,8 +787,8 @@ class HelixEditorTest : BasePlatformTestCase() {
         HelixKeyHandler.handleKey('p', editor)
 
         val expected = "alpha\nbeta\ngamma\nalpha\nbeta\ndelta"
-        assertEquals(expected, editor.document.text)
-        assertEquals(editor.document.getLineStartOffset(3), caret.offset)
+        editor.document.text shouldBe expected
+        caret.offset shouldBe editor.document.getLineStartOffset(3)
     }
 
     fun testPasteMultipleLinesBeforeWithP() {
@@ -805,8 +812,8 @@ class HelixEditorTest : BasePlatformTestCase() {
         HelixKeyHandler.handleKey('P', editor)
 
         val expected = "line 1\nline 2\nline 1\nline 2\nline 3"
-        assertEquals(expected, editor.document.text)
-        assertEquals(line3Start, caret.offset)
+        editor.document.text shouldBe expected
+        caret.offset shouldBe line3Start
     }
 
     fun testPasteSingleLineCopiedWithXPastesBelowLine() {
@@ -818,7 +825,7 @@ class HelixEditorTest : BasePlatformTestCase() {
         // Select single line "first" with x
         caret.moveToOffset(2)
         HelixKeyHandler.handleKey('x', editor)
-        assertEquals("first\n", caret.selectedText)
+        caret.selectedText shouldBe "first\n"
         HelixKeyHandler.handleKey('y', editor)
 
         // Move to column 3 of "second"
@@ -827,8 +834,8 @@ class HelixEditorTest : BasePlatformTestCase() {
         HelixKeyHandler.handleKey('p', editor)
 
         val expected = "first\nsecond\nfirst\nthird"
-        assertEquals(expected, editor.document.text)
-        assertEquals(editor.document.getLineStartOffset(2), caret.offset)
+        editor.document.text shouldBe expected
+        caret.offset shouldBe editor.document.getLineStartOffset(2)
     }
 
     fun testNormalModeFindTillChar() {
@@ -842,8 +849,8 @@ class HelixEditorTest : BasePlatformTestCase() {
         HelixKeyHandler.handleKey('t', editor)
 
         // 't' matches 't' in "total" at index 4 -> target offset is 4 (before 't')
-        assertEquals(4, caret.offset)
-        assertEquals("val ", caret.selectedText)
+        caret.offset shouldBe 4
+        caret.selectedText shouldBe "val "
     }
 
     fun testNormalModeFindToChar() {
@@ -857,8 +864,8 @@ class HelixEditorTest : BasePlatformTestCase() {
         HelixKeyHandler.handleKey('t', editor)
 
         // 'f' matches 't' at index 4 -> target offset is 5 (inclusive of 't')
-        assertEquals(5, caret.offset)
-        assertEquals("val t", caret.selectedText)
+        caret.offset shouldBe 5
+        caret.selectedText shouldBe "val t"
     }
 
     fun testSelectModeFindTillCharExtendsSelection() {
@@ -872,15 +879,15 @@ class HelixEditorTest : BasePlatformTestCase() {
         HelixKeyHandler.handleKey('v', editor)
         // Move word to "world"
         HelixKeyHandler.handleKey('w', editor)
-        assertEquals(6, caret.offset)
-        assertEquals("hello ", caret.selectedText)
+        caret.offset shouldBe 6
+        caret.selectedText shouldBe "hello "
 
         // Till 'h' in "helix" (index 17)
         HelixKeyHandler.handleKey('t', editor)
         HelixKeyHandler.handleKey('h', editor)
 
-        assertEquals(17, caret.offset)
-        assertEquals("hello world from ", caret.selectedText)
+        caret.offset shouldBe 17
+        caret.selectedText shouldBe "hello world from "
     }
 
     fun testSelectModeFindTillEnterSelectsLineEnd() {
@@ -899,8 +906,8 @@ class HelixEditorTest : BasePlatformTestCase() {
         myFixture.type('\n')
 
         // Target should be index 10 (just before \n)
-        assertEquals(10, caret.offset)
-        assertEquals("first line", caret.selectedText)
+        caret.offset shouldBe 10
+        caret.selectedText shouldBe "first line"
     }
 
     fun testSelectModeFindToEnterIncludesNewline() {
@@ -919,8 +926,8 @@ class HelixEditorTest : BasePlatformTestCase() {
         myFixture.type('\n')
 
         // Target should be index 11 (after \n)
-        assertEquals(11, caret.offset)
-        assertEquals("first line\n", caret.selectedText)
+        caret.offset shouldBe 11
+        caret.selectedText shouldBe "first line\n"
     }
 
     fun testBackwardFindCharMotions() {
@@ -936,8 +943,8 @@ class HelixEditorTest : BasePlatformTestCase() {
         HelixKeyHandler.handleKey('F', editor)
         HelixKeyHandler.handleKey('b', editor)
 
-        assertEquals(6, caret.offset)
-        assertEquals("banana cherry", caret.selectedText)
+        caret.offset shouldBe 6
+        caret.selectedText shouldBe "banana cherry"
 
         // Clear selection and test T (till prev char)
         caret.removeSelection()
@@ -946,8 +953,8 @@ class HelixEditorTest : BasePlatformTestCase() {
         HelixKeyHandler.handleKey('T', editor)
         HelixKeyHandler.handleKey('b', editor)
 
-        assertEquals(7, caret.offset)
-        assertEquals("anana cherry", caret.selectedText)
+        caret.offset shouldBe 7
+        caret.selectedText shouldBe "anana cherry"
     }
 
     fun testFindCharCountPrefix() {
@@ -962,8 +969,8 @@ class HelixEditorTest : BasePlatformTestCase() {
         HelixKeyHandler.handleKey('t', editor)
         HelixKeyHandler.handleKey('b', editor)
 
-        assertEquals(5, caret.offset)
-        assertEquals("abc a", caret.selectedText)
+        caret.offset shouldBe 5
+        caret.selectedText shouldBe "abc a"
     }
 
     fun testPendingFindCancelledByBackspace() {
@@ -974,11 +981,11 @@ class HelixEditorTest : BasePlatformTestCase() {
         jp.titze.intellij.helix.editor.HelixEditorActionHandler.install()
 
         HelixKeyHandler.handleKey('t', editor)
-        assertEquals("t", state.pendingSequence)
+        state.pendingSequence shouldBe "t"
 
         myFixture.type('\b')
-        assertEquals("", state.pendingSequence)
-        assertEquals(initialText, editor.document.text)
+        state.pendingSequence shouldBe ""
+        editor.document.text shouldBe initialText
     }
 
     fun testJoinTwoLinesNormalMode() {
@@ -990,9 +997,9 @@ class HelixEditorTest : BasePlatformTestCase() {
 
         HelixKeyHandler.handleKey('J', editor)
 
-        assertEquals("hello world\nnext", editor.document.text)
-        assertEquals(5, caret.offset)
-        assertFalse(caret.hasSelection())
+        editor.document.text shouldBe "hello world\nnext"
+        caret.offset shouldBe 5
+        caret.hasSelection().shouldBeFalse()
     }
 
     fun testJoinLinesTrimsWhitespaceAndIndentation() {
@@ -1004,8 +1011,8 @@ class HelixEditorTest : BasePlatformTestCase() {
 
         HelixKeyHandler.handleKey('J', editor)
 
-        assertEquals("val x = 10 + 20", editor.document.text)
-        assertEquals(10, caret.offset)
+        editor.document.text shouldBe "val x = 10 + 20"
+        caret.offset shouldBe 10
     }
 
     fun testJoinLinesWithCount() {
@@ -1019,7 +1026,7 @@ class HelixEditorTest : BasePlatformTestCase() {
         HelixKeyHandler.handleKey('2', editor)
         HelixKeyHandler.handleKey('J', editor)
 
-        assertEquals("line 1 line 2 line 3\nline 4", editor.document.text)
+        editor.document.text shouldBe "line 1 line 2 line 3\nline 4"
     }
 
     fun testJoinLinesWithMultilineSelection() {
@@ -1032,11 +1039,11 @@ class HelixEditorTest : BasePlatformTestCase() {
         // Select line 1 and extend to line 2 with x
         HelixKeyHandler.handleKey('x', editor)
         HelixKeyHandler.handleKey('x', editor)
-        assertEquals("line 1\nline 2\n", caret.selectedText)
+        caret.selectedText shouldBe "line 1\nline 2\n"
 
         HelixKeyHandler.handleKey('J', editor)
 
-        assertEquals("line 1 line 2\nline 3\nline 4", editor.document.text)
+        editor.document.text shouldBe "line 1 line 2\nline 3\nline 4"
     }
 
     fun testJoinLinesOnLastLineDoesNothing() {
@@ -1048,7 +1055,7 @@ class HelixEditorTest : BasePlatformTestCase() {
 
         HelixKeyHandler.handleKey('J', editor)
 
-        assertEquals(initialText, editor.document.text)
+        editor.document.text shouldBe initialText
     }
 
     fun testJoinLinesInSelectModeKeepsSelection() {
@@ -1063,9 +1070,9 @@ class HelixEditorTest : BasePlatformTestCase() {
 
         HelixKeyHandler.handleKey('J', editor)
 
-        assertEquals("hello world\nfoo", editor.document.text)
-        assertEquals(HelixMode.SELECT, HelixStateManager.getOrCreate(editor).mode)
-        assertEquals("hello world", caret.selectedText)
+        editor.document.text shouldBe "hello world\nfoo"
+        HelixStateManager.getOrCreate(editor).mode shouldBe HelixMode.SELECT
+        caret.selectedText shouldBe "hello world"
     }
 
     fun testReplaceCharNormalMode() {
@@ -1077,13 +1084,13 @@ class HelixEditorTest : BasePlatformTestCase() {
 
         val state = HelixStateManager.getOrCreate(editor)
         HelixKeyHandler.handleKey('r', editor)
-        assertEquals("r", state.pendingSequence)
+        state.pendingSequence shouldBe "r"
 
         HelixKeyHandler.handleKey('W', editor)
-        assertEquals("", state.pendingSequence)
-        assertEquals("hello World", editor.document.text)
-        assertEquals(6, caret.offset)
-        assertFalse(caret.hasSelection())
+        state.pendingSequence shouldBe ""
+        editor.document.text shouldBe "hello World"
+        caret.offset shouldBe 6
+        caret.hasSelection().shouldBeFalse()
     }
 
     fun testReplaceCharWithCount() {
@@ -1097,9 +1104,9 @@ class HelixEditorTest : BasePlatformTestCase() {
         HelixKeyHandler.handleKey('r', editor)
         HelixKeyHandler.handleKey('z', editor)
 
-        assertEquals("zzzlo world", editor.document.text)
-        assertEquals(0, caret.offset)
-        assertFalse(caret.hasSelection())
+        editor.document.text shouldBe "zzzlo world"
+        caret.offset shouldBe 0
+        caret.hasSelection().shouldBeFalse()
     }
 
     fun testReplaceCharSelectionPreservesNewlines() {
@@ -1112,9 +1119,9 @@ class HelixEditorTest : BasePlatformTestCase() {
         HelixKeyHandler.handleKey('r', editor)
         HelixKeyHandler.handleKey('x', editor)
 
-        assertEquals("xxx\nxxx\n", editor.document.text)
-        assertEquals("xxx\nxxx", caret.selectedText)
-        assertEquals(0, caret.offset)
+        editor.document.text shouldBe "xxx\nxxx\n"
+        caret.selectedText shouldBe "xxx\nxxx"
+        caret.offset shouldBe 0
     }
 
     fun testReplaceCharWithEnter() {
@@ -1127,12 +1134,12 @@ class HelixEditorTest : BasePlatformTestCase() {
         jp.titze.intellij.helix.editor.HelixEditorActionHandler.install()
 
         HelixKeyHandler.handleKey('r', editor)
-        assertEquals("r", HelixStateManager.getOrCreate(editor).pendingSequence)
+        HelixStateManager.getOrCreate(editor).pendingSequence shouldBe "r"
 
         myFixture.type('\n')
 
-        assertEquals("hello\nworld", editor.document.text)
-        assertEquals(5, caret.offset)
+        editor.document.text shouldBe "hello\nworld"
+        caret.offset shouldBe 5
     }
 
     fun testReplaceCharMultiCaret() {
@@ -1146,7 +1153,7 @@ class HelixEditorTest : BasePlatformTestCase() {
         HelixKeyHandler.handleKey('r', editor)
         HelixKeyHandler.handleKey('X', editor)
 
-        assertEquals("Xoo Xar Xaz", editor.document.text)
+        editor.document.text shouldBe "Xoo Xar Xaz"
     }
 
     fun testPendingReplaceCancelledByBackspace() {
@@ -1157,11 +1164,11 @@ class HelixEditorTest : BasePlatformTestCase() {
         jp.titze.intellij.helix.editor.HelixEditorActionHandler.install()
 
         HelixKeyHandler.handleKey('r', editor)
-        assertEquals("r", state.pendingSequence)
+        state.pendingSequence shouldBe "r"
 
         myFixture.type('\b')
-        assertEquals("", state.pendingSequence)
-        assertEquals(initialText, editor.document.text)
+        state.pendingSequence shouldBe ""
+        editor.document.text shouldBe initialText
     }
 
     fun testPendingReplaceCancelledByEscape() {
@@ -1171,7 +1178,7 @@ class HelixEditorTest : BasePlatformTestCase() {
         val state = HelixStateManager.getOrCreate(editor)
 
         HelixKeyHandler.handleKey('r', editor)
-        assertEquals("r", state.pendingSequence)
+        state.pendingSequence shouldBe "r"
 
         val escapeAction = jp.titze.intellij.helix.editor.HelixEscapeAction()
         val dataContext = com.intellij.ide.DataManager.getInstance().getDataContext(editor.contentComponent)
@@ -1183,8 +1190,8 @@ class HelixEditorTest : BasePlatformTestCase() {
         )
         escapeAction.actionPerformed(event)
 
-        assertEquals("", state.pendingSequence)
-        assertEquals(initialText, editor.document.text)
+        state.pendingSequence shouldBe ""
+        editor.document.text shouldBe initialText
     }
 
     fun testSingleKeyReplaceWithClipboard() {
@@ -1201,8 +1208,8 @@ class HelixEditorTest : BasePlatformTestCase() {
 
         HelixKeyHandler.handleKey('R', editor)
 
-        assertEquals("hello new_universe end", editor.document.text)
-        assertEquals("new_universe", caret.selectedText)
+        editor.document.text shouldBe "hello new_universe end"
+        caret.selectedText shouldBe "new_universe"
     }
 
     fun testPageDownAndPageUpNormalMode() {
@@ -1215,12 +1222,12 @@ class HelixEditorTest : BasePlatformTestCase() {
         val pageSize = HelixMotions.getPageSize(editor)
 
         HelixMotions.pageDown(editor)
-        assertEquals(pageSize, editor.document.getLineNumber(caret.offset))
-        assertFalse(caret.hasSelection())
+        editor.document.getLineNumber(caret.offset) shouldBe pageSize
+        caret.hasSelection().shouldBeFalse()
 
         HelixMotions.pageUp(editor)
-        assertEquals(0, editor.document.getLineNumber(caret.offset))
-        assertFalse(caret.hasSelection())
+        editor.document.getLineNumber(caret.offset) shouldBe 0
+        caret.hasSelection().shouldBeFalse()
     }
 
     fun testHalfPageDownAndHalfPageUpNormalMode() {
@@ -1233,12 +1240,12 @@ class HelixEditorTest : BasePlatformTestCase() {
         val halfPage = (HelixMotions.getPageSize(editor) / 2).coerceAtLeast(1)
 
         HelixMotions.halfPageDown(editor)
-        assertEquals(halfPage, editor.document.getLineNumber(caret.offset))
-        assertFalse(caret.hasSelection())
+        editor.document.getLineNumber(caret.offset) shouldBe halfPage
+        caret.hasSelection().shouldBeFalse()
 
         HelixMotions.halfPageUp(editor)
-        assertEquals(0, editor.document.getLineNumber(caret.offset))
-        assertFalse(caret.hasSelection())
+        editor.document.getLineNumber(caret.offset) shouldBe 0
+        caret.hasSelection().shouldBeFalse()
     }
 
     fun testPageMotionsInSelectModeExtendsSelection() {
@@ -1249,15 +1256,15 @@ class HelixEditorTest : BasePlatformTestCase() {
         caret.moveToOffset(0)
 
         HelixKeyHandler.handleKey('v', editor)
-        assertEquals(HelixMode.SELECT, HelixStateManager.getOrCreate(editor).mode)
+        HelixStateManager.getOrCreate(editor).mode shouldBe HelixMode.SELECT
 
         val halfPage = (HelixMotions.getPageSize(editor) / 2).coerceAtLeast(1)
         HelixMotions.halfPageDown(editor)
 
-        assertEquals(halfPage, editor.document.getLineNumber(caret.offset))
-        assertTrue(caret.hasSelection())
-        assertEquals(0, caret.selectionStart)
-        assertEquals(caret.offset, caret.selectionEnd)
+        editor.document.getLineNumber(caret.offset) shouldBe halfPage
+        caret.hasSelection().shouldBeTrue()
+        caret.selectionStart shouldBe 0
+        caret.selectionEnd shouldBe caret.offset
     }
 
     fun testPageMotionsWithCountPrefix() {
@@ -1273,7 +1280,7 @@ class HelixEditorTest : BasePlatformTestCase() {
         HelixKeyHandler.handleKey('2', editor)
         HelixKeyHandler.handleKey('\u0004', editor)
 
-        assertEquals(halfPage * 2, editor.document.getLineNumber(caret.offset))
+        editor.document.getLineNumber(caret.offset) shouldBe halfPage * 2
     }
 
     fun testPageMotionsViaActions() {
@@ -1293,11 +1300,11 @@ class HelixEditorTest : BasePlatformTestCase() {
         )
 
         pageDownAction.update(event)
-        assertTrue(event.presentation.isEnabled)
+        event.presentation.isEnabled.shouldBeTrue()
 
         pageDownAction.actionPerformed(event)
         val pageSize = HelixMotions.getPageSize(editor)
-        assertEquals(pageSize, editor.document.getLineNumber(caret.offset))
+        editor.document.getLineNumber(caret.offset) shouldBe pageSize
 
         val halfPageUpAction = jp.titze.intellij.helix.editor.HelixHalfPageUpAction()
         val halfUpEvent = com.intellij.openapi.actionSystem.AnActionEvent.createFromAnAction(
@@ -1308,7 +1315,7 @@ class HelixEditorTest : BasePlatformTestCase() {
         )
         halfPageUpAction.actionPerformed(halfUpEvent)
         val halfPage = (pageSize / 2).coerceAtLeast(1)
-        assertEquals(pageSize - halfPage, editor.document.getLineNumber(caret.offset))
+        editor.document.getLineNumber(caret.offset) shouldBe pageSize - halfPage
     }
 
     fun testPageMotionsClampedAtDocumentBounds() {
@@ -1320,11 +1327,11 @@ class HelixEditorTest : BasePlatformTestCase() {
 
         // page down when file has only 10 lines (pageSize=25) -> clamps to last line (index 9)
         HelixMotions.pageDown(editor)
-        assertEquals(9, editor.document.getLineNumber(caret.offset))
+        editor.document.getLineNumber(caret.offset) shouldBe 9
 
         // page up from last line -> clamps to line 0
         HelixMotions.pageUp(editor)
-        assertEquals(0, editor.document.getLineNumber(caret.offset))
+        editor.document.getLineNumber(caret.offset) shouldBe 0
     }
 
     fun testHelixEventDispatcherCtrlFAndCtrlB() {
@@ -1345,11 +1352,11 @@ class HelixEditorTest : BasePlatformTestCase() {
         )
 
         val handled = dispatcher.dispatch(ctrlF)
-        assertTrue(handled)
-        assertTrue(ctrlF.isConsumed)
+        handled.shouldBeTrue()
+        ctrlF.isConsumed.shouldBeTrue()
 
         val pageSize = HelixMotions.getPageSize(editor)
-        assertEquals(pageSize, editor.document.getLineNumber(caret.offset))
+        editor.document.getLineNumber(caret.offset) shouldBe pageSize
 
         val ctrlB = java.awt.event.KeyEvent(
             editor.contentComponent,
@@ -1361,9 +1368,9 @@ class HelixEditorTest : BasePlatformTestCase() {
         )
 
         val handledB = dispatcher.dispatch(ctrlB)
-        assertTrue(handledB)
-        assertTrue(ctrlB.isConsumed)
-        assertEquals(0, editor.document.getLineNumber(caret.offset))
+        handledB.shouldBeTrue()
+        ctrlB.isConsumed.shouldBeTrue()
+        editor.document.getLineNumber(caret.offset) shouldBe 0
     }
 
     fun testHelixEventDispatcherCtrlDAndCtrlU() {
@@ -1383,11 +1390,11 @@ class HelixEditorTest : BasePlatformTestCase() {
             java.awt.event.KeyEvent.CHAR_UNDEFINED
         )
 
-        assertTrue(dispatcher.dispatch(ctrlD))
-        assertTrue(ctrlD.isConsumed)
+        dispatcher.dispatch(ctrlD).shouldBeTrue()
+        ctrlD.isConsumed.shouldBeTrue()
 
         val halfPage = (HelixMotions.getPageSize(editor) / 2).coerceAtLeast(1)
-        assertEquals(halfPage, editor.document.getLineNumber(caret.offset))
+        editor.document.getLineNumber(caret.offset) shouldBe halfPage
 
         val ctrlU = java.awt.event.KeyEvent(
             editor.contentComponent,
@@ -1398,9 +1405,9 @@ class HelixEditorTest : BasePlatformTestCase() {
             java.awt.event.KeyEvent.CHAR_UNDEFINED
         )
 
-        assertTrue(dispatcher.dispatch(ctrlU))
-        assertTrue(ctrlU.isConsumed)
-        assertEquals(0, editor.document.getLineNumber(caret.offset))
+        dispatcher.dispatch(ctrlU).shouldBeTrue()
+        ctrlU.isConsumed.shouldBeTrue()
+        editor.document.getLineNumber(caret.offset) shouldBe 0
     }
 
     fun testHelixEventDispatcherIgnoredInInsertMode() {
@@ -1419,8 +1426,8 @@ class HelixEditorTest : BasePlatformTestCase() {
             java.awt.event.KeyEvent.CHAR_UNDEFINED
         )
 
-        assertFalse(dispatcher.dispatch(ctrlF))
-        assertFalse(ctrlF.isConsumed)
+        dispatcher.dispatch(ctrlF).shouldBeFalse()
+        ctrlF.isConsumed.shouldBeFalse()
     }
 
     fun testHelixEventDispatcherWithCount() {
@@ -1440,9 +1447,9 @@ class HelixEditorTest : BasePlatformTestCase() {
             java.awt.event.KeyEvent.CHAR_UNDEFINED
         )
 
-        assertTrue(dispatcher.dispatch(ctrlD))
+        dispatcher.dispatch(ctrlD).shouldBeTrue()
         val halfPage = (HelixMotions.getPageSize(editor) / 2).coerceAtLeast(1)
-        assertEquals(halfPage * 2, editor.document.getLineNumber(editor.caretModel.offset))
+        editor.document.getLineNumber(editor.caretModel.offset) shouldBe halfPage * 2
     }
 
     fun testMoveFileEndViaGe() {
@@ -1455,8 +1462,8 @@ class HelixEditorTest : BasePlatformTestCase() {
         HelixKeyHandler.handleKey('g', editor)
         HelixKeyHandler.handleKey('e', editor)
 
-        assertEquals(lines.length, caret.offset)
-        assertEquals(199, editor.document.getLineNumber(caret.offset))
+        caret.offset shouldBe lines.length
+        editor.document.getLineNumber(caret.offset) shouldBe 199
     }
 
     fun testSelectRegexWholeBufferPercentS() {
@@ -1466,17 +1473,17 @@ class HelixEditorTest : BasePlatformTestCase() {
 
         // '%' selects entire buffer
         HelixKeyHandler.handleKey('%', editor)
-        assertEquals(text, editor.selectionModel.selectedText)
+        editor.selectionModel.selectedText shouldBe text
 
         // 's' select_regex
         val matched = HelixActions.selectRegex(editor, "apple")
-        assertTrue(matched)
+        matched.shouldBeTrue()
 
         val caretModel = editor.caretModel
-        assertEquals(3, caretModel.caretCount)
+        caretModel.caretCount shouldBe 3
 
         val selectedTexts = caretModel.allCarets.map { it.selectedText }
-        assertEquals(listOf("apple", "apple", "apple"), selectedTexts)
+        selectedTexts shouldBe listOf("apple", "apple", "apple")
     }
 
     fun testSelectRegexWithSubsequentDelete() {
@@ -1486,14 +1493,14 @@ class HelixEditorTest : BasePlatformTestCase() {
 
         HelixKeyHandler.handleKey('%', editor)
         val matched = HelixActions.selectRegex(editor, "alpha")
-        assertTrue(matched)
+        matched.shouldBeTrue()
 
-        assertEquals(3, editor.caretModel.caretCount)
+        editor.caretModel.caretCount shouldBe 3
 
         // 'd' deletes selection across all carets
         HelixKeyHandler.handleKey('d', editor)
-        assertEquals("foo  bar  baz ", editor.document.text)
-        assertEquals(3, editor.caretModel.caretCount)
+        editor.document.text shouldBe "foo  bar  baz "
+        editor.caretModel.caretCount shouldBe 3
     }
 
     fun testSelectRegexPartialSelection() {
@@ -1503,14 +1510,14 @@ class HelixEditorTest : BasePlatformTestCase() {
 
         // Select line 1 only with 'x'
         HelixKeyHandler.handleKey('x', editor)
-        assertEquals("target line 1\n", editor.selectionModel.selectedText)
+        editor.selectionModel.selectedText shouldBe "target line 1\n"
 
         // Select "target" inside line 1 selection
         val matched = HelixActions.selectRegex(editor, "target")
-        assertTrue(matched)
-        assertEquals(1, editor.caretModel.caretCount)
-        assertEquals("target", editor.caretModel.primaryCaret.selectedText)
-        assertEquals(0, editor.caretModel.primaryCaret.selectionStart)
+        matched.shouldBeTrue()
+        editor.caretModel.caretCount shouldBe 1
+        editor.caretModel.primaryCaret.selectedText shouldBe "target"
+        editor.caretModel.primaryCaret.selectionStart shouldBe 0
     }
 
     fun testSelectRegexRegexPattern() {
@@ -1520,11 +1527,11 @@ class HelixEditorTest : BasePlatformTestCase() {
 
         HelixKeyHandler.handleKey('%', editor)
         val matched = HelixActions.selectRegex(editor, """item_\d+""")
-        assertTrue(matched)
+        matched.shouldBeTrue()
 
         val carets = editor.caretModel.allCarets
-        assertEquals(3, carets.size)
-        assertEquals(listOf("item_100", "item_200", "item_300"), carets.map { it.selectedText })
+        carets.size shouldBe 3
+        carets.map { it.selectedText } shouldBe listOf("item_100", "item_200", "item_300")
     }
 
     fun testSelectRegexNoMatchKeepsSelection() {
@@ -1534,9 +1541,9 @@ class HelixEditorTest : BasePlatformTestCase() {
 
         HelixKeyHandler.handleKey('%', editor)
         val matched = HelixActions.selectRegex(editor, "not_found")
-        assertFalse(matched)
-        assertEquals(1, editor.caretModel.caretCount)
-        assertEquals(text, editor.selectionModel.selectedText)
+        matched.shouldBeFalse()
+        editor.caretModel.caretCount shouldBe 1
+        editor.selectionModel.selectedText shouldBe text
     }
 
     fun testCountRegexMatches() {
@@ -1545,9 +1552,9 @@ class HelixEditorTest : BasePlatformTestCase() {
         val editor = myFixture.editor
 
         HelixKeyHandler.handleKey('%', editor)
-        assertEquals(3, HelixActions.countRegexMatches(editor, "abc"))
-        assertEquals(2, HelixActions.countRegexMatches(editor, """\d+"""))
-        assertEquals(0, HelixActions.countRegexMatches(editor, "zzz"))
+        HelixActions.countRegexMatches(editor, "abc") shouldBe 3
+        HelixActions.countRegexMatches(editor, """\d+""") shouldBe 2
+        HelixActions.countRegexMatches(editor, "zzz") shouldBe 0
     }
 
     fun testSplitSelection() {
@@ -1557,11 +1564,11 @@ class HelixEditorTest : BasePlatformTestCase() {
 
         HelixKeyHandler.handleKey('%', editor)
         val success = HelixActions.splitSelection(editor, ",")
-        assertTrue(success)
+        success.shouldBeTrue()
 
         val carets = editor.caretModel.allCarets
-        assertEquals(4, carets.size)
-        assertEquals(listOf("apple", "banana", "orange", "grape"), carets.map { it.selectedText })
+        carets.size shouldBe 4
+        carets.map { it.selectedText } shouldBe listOf("apple", "banana", "orange", "grape")
     }
 
     fun testForwardSearchAndNext() {
@@ -1573,40 +1580,40 @@ class HelixEditorTest : BasePlatformTestCase() {
 
         // Forward search for "apple"
         val found = HelixActions.search(editor, "apple", backward = false)
-        assertTrue(found)
-        assertEquals("apple", caret.selectedText)
-        assertEquals(0, caret.selectionStart)
-        assertEquals(5, caret.selectionEnd)
+        found.shouldBeTrue()
+        caret.selectedText shouldBe "apple"
+        caret.selectionStart shouldBe 0
+        caret.selectionEnd shouldBe 5
 
         // 'n' -> next match
         HelixKeyHandler.handleKey('n', editor)
-        assertEquals("apple", caret.selectedText)
-        assertEquals(13, caret.selectionStart)
-        assertEquals(18, caret.selectionEnd)
+        caret.selectedText shouldBe "apple"
+        caret.selectionStart shouldBe 13
+        caret.selectionEnd shouldBe 18
 
         // 'n' -> next match
         HelixKeyHandler.handleKey('n', editor)
-        assertEquals("apple", caret.selectedText)
-        assertEquals(26, caret.selectionStart)
-        assertEquals(31, caret.selectionEnd)
+        caret.selectedText shouldBe "apple"
+        caret.selectionStart shouldBe 26
+        caret.selectionEnd shouldBe 31
 
         // 'n' -> wrap around to first match
         HelixKeyHandler.handleKey('n', editor)
-        assertEquals("apple", caret.selectedText)
-        assertEquals(0, caret.selectionStart)
-        assertEquals(5, caret.selectionEnd)
+        caret.selectedText shouldBe "apple"
+        caret.selectionStart shouldBe 0
+        caret.selectionEnd shouldBe 5
 
         // 'N' -> reverse direction back to last match
         HelixKeyHandler.handleKey('N', editor)
-        assertEquals("apple", caret.selectedText)
-        assertEquals(26, caret.selectionStart)
-        assertEquals(31, caret.selectionEnd)
+        caret.selectedText shouldBe "apple"
+        caret.selectionStart shouldBe 26
+        caret.selectionEnd shouldBe 31
 
         // 'n' after 'N' must continue in original forward direction (wrap around to first match)
         HelixKeyHandler.handleKey('n', editor)
-        assertEquals("apple", caret.selectedText)
-        assertEquals(0, caret.selectionStart)
-        assertEquals(5, caret.selectionEnd)
+        caret.selectedText shouldBe "apple"
+        caret.selectionStart shouldBe 0
+        caret.selectionEnd shouldBe 5
     }
 
     fun testBackwardSearchAndPrev() {
@@ -1618,22 +1625,22 @@ class HelixEditorTest : BasePlatformTestCase() {
 
         // Backward search for "apple"
         val found = HelixActions.search(editor, "apple", backward = true)
-        assertTrue(found)
-        assertEquals("apple", caret.selectedText)
-        assertEquals(26, caret.selectionStart)
-        assertEquals(31, caret.selectionEnd)
+        found.shouldBeTrue()
+        caret.selectedText shouldBe "apple"
+        caret.selectionStart shouldBe 26
+        caret.selectionEnd shouldBe 31
 
         // 'n' repeats in same direction (backward)
         HelixKeyHandler.handleKey('n', editor)
-        assertEquals("apple", caret.selectedText)
-        assertEquals(13, caret.selectionStart)
-        assertEquals(18, caret.selectionEnd)
+        caret.selectedText shouldBe "apple"
+        caret.selectionStart shouldBe 13
+        caret.selectionEnd shouldBe 18
 
         // 'N' reverses direction (forward)
         HelixKeyHandler.handleKey('N', editor)
-        assertEquals("apple", caret.selectedText)
-        assertEquals(26, caret.selectionStart)
-        assertEquals(31, caret.selectionEnd)
+        caret.selectedText shouldBe "apple"
+        caret.selectionStart shouldBe 26
+        caret.selectionEnd shouldBe 31
     }
 
     fun testSearchWordUnderCursorAsterisk() {
@@ -1645,9 +1652,9 @@ class HelixEditorTest : BasePlatformTestCase() {
 
         HelixKeyHandler.handleKey('*', editor)
         // Moves to next occurrence of "hello"
-        assertEquals("hello", caret.selectedText)
-        assertEquals(12, caret.selectionStart)
-        assertEquals(17, caret.selectionEnd)
+        caret.selectedText shouldBe "hello"
+        caret.selectionStart shouldBe 12
+        caret.selectionEnd shouldBe 17
     }
 
     fun testCountDocumentRegexMatches() {
@@ -1655,9 +1662,9 @@ class HelixEditorTest : BasePlatformTestCase() {
         myFixture.configureByText("test.txt", text)
         val editor = myFixture.editor
 
-        assertEquals(3, HelixActions.countDocumentRegexMatches(editor, "foo"))
-        assertEquals(2, HelixActions.countDocumentRegexMatches(editor, """\d+"""))
-        assertEquals(0, HelixActions.countDocumentRegexMatches(editor, "nonexistent"))
+        HelixActions.countDocumentRegexMatches(editor, "foo") shouldBe 3
+        HelixActions.countDocumentRegexMatches(editor, """\d+""") shouldBe 2
+        HelixActions.countDocumentRegexMatches(editor, "nonexistent") shouldBe 0
     }
 
     fun testCopySelectionOnNextLineSingleCaret() {
@@ -1668,13 +1675,13 @@ class HelixEditorTest : BasePlatformTestCase() {
         caret.moveToOffset(1) // 'e' on line 0
 
         val handled = HelixKeyHandler.handleKey('C', editor)
-        assertTrue(handled)
-        assertEquals(2, editor.caretModel.caretCount)
+        handled.shouldBeTrue()
+        editor.caretModel.caretCount shouldBe 2
 
         val carets = editor.caretModel.allCarets.sortedBy { it.offset }
-        assertEquals(1, carets[0].offset) // 'e' on line 0
-        assertEquals(7, carets[1].offset) // 'o' on line 1 ("world")
-        assertEquals(editor.caretModel.primaryCaret, carets[1])
+        carets[0].offset shouldBe 1 // 'e' on line 0
+        carets[1].offset shouldBe 7 // 'o' on line 1 ("world")
+        carets[1] shouldBe editor.caretModel.primaryCaret
     }
 
     fun testCopySelectionOnNextLineWithSelection() {
@@ -1686,13 +1693,13 @@ class HelixEditorTest : BasePlatformTestCase() {
         caret.setSelection(4, 7) // "foo"
 
         val handled = HelixKeyHandler.handleKey('C', editor)
-        assertTrue(handled)
-        assertEquals(2, editor.caretModel.caretCount)
+        handled.shouldBeTrue()
+        editor.caretModel.caretCount shouldBe 2
 
         val carets = editor.caretModel.allCarets.sortedBy { it.offset }
-        assertEquals("foo", carets[0].selectedText)
-        assertEquals("bar", carets[1].selectedText)
-        assertEquals(carets[1], editor.caretModel.primaryCaret)
+        carets[0].selectedText shouldBe "foo"
+        carets[1].selectedText shouldBe "bar"
+        editor.caretModel.primaryCaret shouldBe carets[1]
     }
 
     fun testCopySelectionOnNextLineWithCount() {
@@ -1705,11 +1712,11 @@ class HelixEditorTest : BasePlatformTestCase() {
         HelixKeyHandler.handleKey('3', editor)
         HelixKeyHandler.handleKey('C', editor)
 
-        assertEquals(4, editor.caretModel.caretCount)
+        editor.caretModel.caretCount shouldBe 4
         val carets = editor.caretModel.allCarets.sortedBy { it.offset }
         for (i in 0..3) {
             val lineStart = editor.document.getLineStartOffset(i)
-            assertEquals(lineStart + 2, carets[i].offset)
+            carets[i].offset shouldBe lineStart + 2
         }
     }
 
@@ -1722,13 +1729,13 @@ class HelixEditorTest : BasePlatformTestCase() {
         caret.moveToOffset(line2Start + 3)
 
         HelixMotions.copySelectionOnPrevLine(editor, 1)
-        assertEquals(2, editor.caretModel.caretCount)
+        editor.caretModel.caretCount shouldBe 2
 
         val carets = editor.caretModel.allCarets.sortedBy { it.offset }
         val line1Start = editor.document.getLineStartOffset(1)
-        assertEquals(line1Start + 3, carets[0].offset)
-        assertEquals(line2Start + 3, carets[1].offset)
-        assertEquals(carets[0], editor.caretModel.primaryCaret)
+        carets[0].offset shouldBe line1Start + 3
+        carets[1].offset shouldBe line2Start + 3
+        editor.caretModel.primaryCaret shouldBe carets[0]
     }
 
     fun testRemovePrimarySelection() {
@@ -1738,10 +1745,10 @@ class HelixEditorTest : BasePlatformTestCase() {
         val caret = editor.caretModel.primaryCaret
         caret.moveToOffset(0)
         HelixMotions.copySelectionOnNextLine(editor, 1)
-        assertEquals(2, editor.caretModel.caretCount)
+        editor.caretModel.caretCount shouldBe 2
 
         HelixMotions.removePrimarySelection(editor)
-        assertEquals(1, editor.caretModel.caretCount)
+        editor.caretModel.caretCount shouldBe 1
     }
 
     fun testRotateSelectionsForwardAndBackward() {
@@ -1754,30 +1761,30 @@ class HelixEditorTest : BasePlatformTestCase() {
         // Create 3 carets: line 0, 1, 2
         HelixKeyHandler.handleKey('2', editor)
         HelixKeyHandler.handleKey('C', editor)
-        assertEquals(3, editor.caretModel.caretCount)
+        editor.caretModel.caretCount shouldBe 3
 
         val line0Offset = editor.document.getLineStartOffset(0)
         val line1Offset = editor.document.getLineStartOffset(1)
         val line2Offset = editor.document.getLineStartOffset(2)
 
         // Currently primary is on line 2 (bottom one)
-        assertEquals(line2Offset, editor.caretModel.primaryCaret.offset)
+        editor.caretModel.primaryCaret.offset shouldBe line2Offset
 
         // Rotate forward: line 2 -> line 0
         HelixKeyHandler.handleKey(')', editor)
-        assertEquals(line0Offset, editor.caretModel.primaryCaret.offset)
+        editor.caretModel.primaryCaret.offset shouldBe line0Offset
 
         // Rotate forward: line 0 -> line 1
         HelixKeyHandler.handleKey(')', editor)
-        assertEquals(line1Offset, editor.caretModel.primaryCaret.offset)
+        editor.caretModel.primaryCaret.offset shouldBe line1Offset
 
         // Rotate backward: line 1 -> line 0
         HelixKeyHandler.handleKey('(', editor)
-        assertEquals(line0Offset, editor.caretModel.primaryCaret.offset)
+        editor.caretModel.primaryCaret.offset shouldBe line0Offset
 
         // Rotate backward: line 0 -> line 2
         HelixKeyHandler.handleKey('(', editor)
-        assertEquals(line2Offset, editor.caretModel.primaryCaret.offset)
+        editor.caretModel.primaryCaret.offset shouldBe line2Offset
     }
 
     fun testSplitSelectionOnNewlines() {
@@ -1787,15 +1794,15 @@ class HelixEditorTest : BasePlatformTestCase() {
 
         // Select all
         HelixMotions.selectAll(editor)
-        assertEquals(text, editor.caretModel.primaryCaret.selectedText)
+        editor.caretModel.primaryCaret.selectedText shouldBe text
 
         HelixMotions.splitSelectionOnNewlines(editor)
-        assertEquals(3, editor.caretModel.caretCount)
+        editor.caretModel.caretCount shouldBe 3
 
         val carets = editor.caretModel.allCarets.sortedBy { it.offset }
-        assertEquals("hello", carets[0].selectedText)
-        assertEquals("world", carets[1].selectedText)
-        assertEquals("again", carets[2].selectedText)
+        carets[0].selectedText shouldBe "hello"
+        carets[1].selectedText shouldBe "world"
+        carets[2].selectedText shouldBe "again"
     }
 
     fun testFlipSelection() {
@@ -1806,16 +1813,16 @@ class HelixEditorTest : BasePlatformTestCase() {
         caret.moveToOffset(5)
         caret.setSelection(0, 5) // anchor 0, cursor 5
 
-        assertEquals(0, caret.leadSelectionOffset)
-        assertEquals(5, caret.offset)
+        caret.leadSelectionOffset shouldBe 0
+        caret.offset shouldBe 5
 
         HelixMotions.flipSelection(editor)
-        assertEquals(5, caret.leadSelectionOffset)
-        assertEquals(0, caret.offset)
+        caret.leadSelectionOffset shouldBe 5
+        caret.offset shouldBe 0
 
         HelixMotions.flipSelection(editor)
-        assertEquals(0, caret.leadSelectionOffset)
-        assertEquals(5, caret.offset)
+        caret.leadSelectionOffset shouldBe 0
+        caret.offset shouldBe 5
     }
 
     fun testHelixSettingsSearchUiMode() {
@@ -1824,10 +1831,10 @@ class HelixEditorTest : BasePlatformTestCase() {
 
         try {
             settings.searchUiMode = HelixSearchUiMode.STOCK_HELIX
-            assertEquals(HelixSearchUiMode.STOCK_HELIX, settings.searchUiMode)
+            settings.searchUiMode shouldBe HelixSearchUiMode.STOCK_HELIX
 
             settings.searchUiMode = HelixSearchUiMode.POPUP
-            assertEquals(HelixSearchUiMode.POPUP, settings.searchUiMode)
+            settings.searchUiMode shouldBe HelixSearchUiMode.POPUP
         } finally {
             settings.searchUiMode = original
         }
@@ -1842,16 +1849,16 @@ class HelixEditorTest : BasePlatformTestCase() {
         try {
             settings.searchUiMode = HelixSearchUiMode.STOCK_HELIX
             HelixCommandPopup.executeCommand("toggle-search-ui", editor)
-            assertEquals(HelixSearchUiMode.POPUP, settings.searchUiMode)
+            settings.searchUiMode shouldBe HelixSearchUiMode.POPUP
 
             HelixCommandPopup.executeCommand("toggle-search-ui", editor)
-            assertEquals(HelixSearchUiMode.STOCK_HELIX, settings.searchUiMode)
+            settings.searchUiMode shouldBe HelixSearchUiMode.STOCK_HELIX
 
             HelixCommandPopup.executeCommand("set search-ui=popup", editor)
-            assertEquals(HelixSearchUiMode.POPUP, settings.searchUiMode)
+            settings.searchUiMode shouldBe HelixSearchUiMode.POPUP
 
             HelixCommandPopup.executeCommand("set search-ui=inline", editor)
-            assertEquals(HelixSearchUiMode.STOCK_HELIX, settings.searchUiMode)
+            settings.searchUiMode shouldBe HelixSearchUiMode.STOCK_HELIX
         } finally {
             settings.searchUiMode = original
         }
@@ -1866,21 +1873,21 @@ class HelixEditorTest : BasePlatformTestCase() {
         editor.caretModel.primaryCaret.setSelection(0, 5) // "alpha"
 
         val snapshot = HelixActions.captureCarets(editor)
-        assertEquals(1, snapshot.size)
-        assertEquals(5, snapshot[0].offset)
-        assertEquals(0, snapshot[0].selectionStart)
-        assertEquals(5, snapshot[0].selectionEnd)
+        snapshot.size shouldBe 1
+        snapshot[0].offset shouldBe 5
+        snapshot[0].selectionStart shouldBe 0
+        snapshot[0].selectionEnd shouldBe 5
 
         // Move caret elsewhere
         editor.caretModel.primaryCaret.moveToOffset(15)
         editor.caretModel.primaryCaret.removeSelection()
-        assertEquals(15, editor.caretModel.primaryCaret.offset)
-        assertFalse(editor.caretModel.primaryCaret.hasSelection())
+        editor.caretModel.primaryCaret.offset shouldBe 15
+        editor.caretModel.primaryCaret.hasSelection().shouldBeFalse()
 
         // Restore snapshot
         HelixActions.restoreCarets(editor, snapshot)
-        assertEquals(5, editor.caretModel.primaryCaret.offset)
-        assertEquals("alpha", editor.caretModel.primaryCaret.selectedText)
+        editor.caretModel.primaryCaret.offset shouldBe 5
+        editor.caretModel.primaryCaret.selectedText shouldBe "alpha"
     }
 
     fun testIncrementalSearchPreviewAndCancel() {
@@ -1894,15 +1901,15 @@ class HelixEditorTest : BasePlatformTestCase() {
 
         // Live preview typing "banana"
         val found = HelixActions.previewSearch(editor, "banana", backward = false, count = 1, baseSnapshot = snapshot)
-        assertTrue(found)
-        assertEquals("banana", caret.selectedText)
-        assertEquals(6, caret.selectionStart)
-        assertEquals(12, caret.selectionEnd)
+        found.shouldBeTrue()
+        caret.selectedText shouldBe "banana"
+        caret.selectionStart shouldBe 6
+        caret.selectionEnd shouldBe 12
 
         // Cancel / revert (simulating Esc)
         HelixActions.restoreCarets(editor, snapshot)
-        assertEquals(0, caret.offset)
-        assertFalse(caret.hasSelection())
+        caret.offset shouldBe 0
+        caret.hasSelection().shouldBeFalse()
     }
 
     fun testIncrementalSelectRegexPreviewAndCancel() {
@@ -1917,16 +1924,16 @@ class HelixEditorTest : BasePlatformTestCase() {
 
         // Incremental regex select \d+
         val found = HelixActions.previewSelectRegex(editor, """\d+""", baseSnapshot = snapshot)
-        assertTrue(found)
-        assertEquals(2, editor.caretModel.caretCount)
+        found.shouldBeTrue()
+        editor.caretModel.caretCount shouldBe 2
         val carets = editor.caretModel.allCarets.sortedBy { it.offset }
-        assertEquals("123", carets[0].selectedText)
-        assertEquals("456", carets[1].selectedText)
+        carets[0].selectedText shouldBe "123"
+        carets[1].selectedText shouldBe "456"
 
         // Cancel / revert (simulating Esc)
         HelixActions.restoreCarets(editor, snapshot)
-        assertEquals(1, editor.caretModel.caretCount)
-        assertEquals(text, editor.caretModel.primaryCaret.selectedText)
+        editor.caretModel.caretCount shouldBe 1
+        editor.caretModel.primaryCaret.selectedText shouldBe text
     }
 
     fun testIncrementalSplitRegexPreviewAndCancel() {
@@ -1941,17 +1948,17 @@ class HelixEditorTest : BasePlatformTestCase() {
 
         // Incremental split on comma
         val found = HelixActions.previewSplitRegex(editor, ",", baseSnapshot = snapshot)
-        assertTrue(found)
-        assertEquals(3, editor.caretModel.caretCount)
+        found.shouldBeTrue()
+        editor.caretModel.caretCount shouldBe 3
         val carets = editor.caretModel.allCarets.sortedBy { it.offset }
-        assertEquals("foo", carets[0].selectedText)
-        assertEquals("bar", carets[1].selectedText)
-        assertEquals("baz", carets[2].selectedText)
+        carets[0].selectedText shouldBe "foo"
+        carets[1].selectedText shouldBe "bar"
+        carets[2].selectedText shouldBe "baz"
 
         // Cancel / revert (simulating Esc)
         HelixActions.restoreCarets(editor, snapshot)
-        assertEquals(1, editor.caretModel.caretCount)
-        assertEquals(text, editor.caretModel.primaryCaret.selectedText)
+        editor.caretModel.caretCount shouldBe 1
+        editor.caretModel.primaryCaret.selectedText shouldBe text
     }
 
     fun testPromptBarComponentCreation() {
@@ -1959,14 +1966,14 @@ class HelixEditorTest : BasePlatformTestCase() {
         val editor = myFixture.editor
 
         val bar = HelixPromptBar.getOrCreate(editor)
-        assertNotNull(bar)
-        assertSame(bar, HelixPromptBar.getOrCreate(editor))
+        bar.shouldNotBeNull()
+        HelixPromptBar.getOrCreate(editor) shouldBeSameInstanceAs bar
 
         bar.show(HelixPromptType.SEARCH)
-        assertTrue(bar.isVisible)
+        bar.isVisible.shouldBeTrue()
 
         bar.cancelAndClose()
-        assertFalse(bar.isVisible)
+        bar.isVisible.shouldBeFalse()
     }
 }
 
