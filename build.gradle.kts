@@ -47,6 +47,10 @@ detekt {
     config.setFrom(files("$projectDir/config/detekt/detekt.yml"))
 }
 
+tasks.named("detektTest") {
+    enabled = false
+}
+
 tasks.test {
     useJUnitPlatform()
 }

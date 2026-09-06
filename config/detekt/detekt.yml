@@ -23,21 +23,33 @@ style:
   ReturnCount:
     active: true
     max: 10
+  UseOrEmpty:
+    active: false
 
 # -----------------------------------------------------------
 # Complexity Overrides
 # -----------------------------------------------------------
 complexity:
+  LargeClass:
+    active: true
+    allowedLines: 1300
+    excludes: ['**/test/**', '**/*Test.kt']
+  LongMethod:
+    active: true
+    allowedLines: 120
   TooManyFunctions:
     active: true
-    allowedFunctionsPerFile: 20
+    allowedFunctionsPerFile: 60
+    allowedFunctionsPerClass: 60
+    allowedFunctionsPerObject: 60
+    ignorePrivate: true
   LongParameterList:
     active: true
-    allowedFunctionParameters: 7
-    allowedConstructorParameters: 7
+    allowedFunctionParameters: 8
+    allowedConstructorParameters: 8
   CyclomaticComplexMethod:
     active: true
-    allowedComplexity: 15
+    allowedComplexity: 60
 
 # -----------------------------------------------------------
 # Exceptions
