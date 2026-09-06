@@ -12,7 +12,9 @@ import com.intellij.psi.util.PsiTreeUtil
 object HelixTextObjectActions {
 
     private enum class CharKind {
-        WORD, PUNCTUATION, WHITESPACE
+        WORD,
+        PUNCTUATION,
+        WHITESPACE,
     }
 
     private fun getCharKind(c: Char): CharKind = when {
@@ -45,12 +47,7 @@ object HelixTextObjectActions {
         return anySelected
     }
 
-    fun findTextObjectRange(
-        editor: Editor,
-        caret: Caret,
-        inside: Boolean,
-        objectChar: Char
-    ): Pair<Int, Int>? {
+    fun findTextObjectRange(editor: Editor, caret: Caret, inside: Boolean, objectChar: Char): Pair<Int, Int>? {
         val doc = editor.document
         return when (objectChar) {
             'w' -> findWordRange(doc, caret, inside)
@@ -282,12 +279,7 @@ object HelixTextObjectActions {
     /**
      * Pair delimiters: '(', '[', '{', '<', '"', '\'', '`'
      */
-    private fun findDelimitedPairRange(
-        doc: Document,
-        caret: Caret,
-        inside: Boolean,
-        delim: Char
-    ): Pair<Int, Int>? {
+    private fun findDelimitedPairRange(doc: Document, caret: Caret, inside: Boolean, delim: Char): Pair<Int, Int>? {
         val pair = HelixSurroundActions.findEnclosingPair(doc, caret, delim) ?: return null
         val (openPos, closePos) = pair
 
@@ -331,10 +323,15 @@ object HelixTextObjectActions {
                             return@runReadAction Pair(range.startOffset, range.endOffset)
                         }
                         val text = comment.text
-                        val trimmedStart = text.indexOfFirst { it != '/' && it != '*' && it != '#' && !it.isWhitespace() }
+                        val trimmedStart = text.indexOfFirst {
+                            it != '/' && it != '*' && it != '#' && !it.isWhitespace()
+                        }
                         val trimmedEnd = text.indexOfLast { it != '/' && it != '*' && !it.isWhitespace() }
                         if (trimmedStart in 0..trimmedEnd) {
-                            return@runReadAction Pair(range.startOffset + trimmedStart, range.startOffset + trimmedEnd + 1)
+                            return@runReadAction Pair(
+                                range.startOffset + trimmedStart,
+                                range.startOffset + trimmedEnd + 1,
+                            )
                         }
                         return@runReadAction Pair(range.startOffset, range.endOffset)
                     }
@@ -357,7 +354,8 @@ object HelixTextObjectActions {
         val startOffset = lineStart + commentIdx
         return if (inside) {
             val innerStart = startOffset + commentPrefix.length
-            val trimmedStart = (innerStart until lineEnd).firstOrNull { !doc.charsSequence[it].isWhitespace() } ?: innerStart
+            val trimmedStart =
+                (innerStart until lineEnd).firstOrNull { !doc.charsSequence[it].isWhitespace() } ?: innerStart
             Pair(trimmedStart, lineEnd)
         } else {
             Pair(startOffset, lineEnd)
@@ -376,7 +374,9 @@ object HelixTextObjectActions {
             val psiPair = try {
                 runReadAction {
                     val psiFile = PsiDocumentManager.getInstance(project).getPsiFile(doc) ?: return@runReadAction null
-                    var elem: PsiElement? = psiFile.findElementAt(caret.offset.coerceIn(0, (doc.textLength - 1).coerceAtLeast(0)))
+                    var elem: PsiElement? = psiFile.findElementAt(
+                        caret.offset.coerceIn(0, (doc.textLength - 1).coerceAtLeast(0)),
+                    )
                     while (elem != null && elem !is com.intellij.psi.PsiFile) {
                         val typeName = elem.javaClass.simpleName
                         if (typeName.contains("Method", ignoreCase = true) ||
@@ -418,7 +418,9 @@ object HelixTextObjectActions {
             val psiPair = try {
                 runReadAction {
                     val psiFile = PsiDocumentManager.getInstance(project).getPsiFile(doc) ?: return@runReadAction null
-                    var elem: PsiElement? = psiFile.findElementAt(caret.offset.coerceIn(0, (doc.textLength - 1).coerceAtLeast(0)))
+                    var elem: PsiElement? = psiFile.findElementAt(
+                        caret.offset.coerceIn(0, (doc.textLength - 1).coerceAtLeast(0)),
+                    )
                     while (elem != null && elem !is com.intellij.psi.PsiFile) {
                         val typeName = elem.javaClass.simpleName
                         if (typeName.contains("Class", ignoreCase = true) ||
@@ -467,7 +469,9 @@ object HelixTextObjectActions {
             val c = innerText[i]
             when (c) {
                 '(', '[', '{' -> depth++
+
                 ')', ']', '}' -> if (depth > 0) depth--
+
                 ',' -> {
                     if (depth == 0) {
                         items.add(Pair(currentItemStart, i))
@@ -518,7 +522,7 @@ object HelixTextObjectActions {
         doc: Document,
         elem: PsiElement,
         open: Char,
-        close: Char
+        close: Char,
     ): Pair<Int, Int>? {
         val range = elem.textRange
         val text = doc.charsSequence

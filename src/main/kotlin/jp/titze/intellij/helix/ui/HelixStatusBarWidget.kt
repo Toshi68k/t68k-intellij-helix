@@ -22,7 +22,9 @@ class HelixStatusBarWidgetFactory : StatusBarWidgetFactory {
     override fun canBeEnabledOn(statusBar: StatusBar): Boolean = true
 }
 
-class HelixStatusBarWidget(private val project: Project) : StatusBarWidget, StatusBarWidget.TextPresentation {
+class HelixStatusBarWidget(private val project: Project) :
+    StatusBarWidget,
+    StatusBarWidget.TextPresentation {
 
     private var myStatusBar: StatusBar? = null
     private var currentState: HelixEditorState? = null
@@ -35,11 +37,14 @@ class HelixStatusBarWidget(private val project: Project) : StatusBarWidget, Stat
     override fun install(statusBar: StatusBar) {
         myStatusBar = statusBar
         val busConnection = project.messageBus.connect(this)
-        busConnection.subscribe(FileEditorManagerListener.FILE_EDITOR_MANAGER, object : FileEditorManagerListener {
-            override fun selectionChanged(event: FileEditorManagerEvent) {
-                updateCurrentEditor()
-            }
-        })
+        busConnection.subscribe(
+            FileEditorManagerListener.FILE_EDITOR_MANAGER,
+            object : FileEditorManagerListener {
+                override fun selectionChanged(event: FileEditorManagerEvent) {
+                    updateCurrentEditor()
+                }
+            },
+        )
         updateCurrentEditor()
     }
 

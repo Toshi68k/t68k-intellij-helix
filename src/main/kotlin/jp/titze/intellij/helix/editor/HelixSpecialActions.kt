@@ -20,9 +20,7 @@ class HelixEscapeAction : AnAction() {
         e.presentation.isEnabled = e.getData(CommonDataKeys.EDITOR) != null
     }
 
-    override fun getActionUpdateThread(): ActionUpdateThread {
-        return ActionUpdateThread.BGT
-    }
+    override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT
 }
 
 class HelixExpandSelectionAction : AnAction() {
@@ -35,9 +33,7 @@ class HelixExpandSelectionAction : AnAction() {
         e.presentation.isEnabled = e.getData(CommonDataKeys.EDITOR) != null
     }
 
-    override fun getActionUpdateThread(): ActionUpdateThread {
-        return ActionUpdateThread.BGT
-    }
+    override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT
 }
 
 class HelixShrinkSelectionAction : AnAction() {
@@ -50,9 +46,7 @@ class HelixShrinkSelectionAction : AnAction() {
         e.presentation.isEnabled = e.getData(CommonDataKeys.EDITOR) != null
     }
 
-    override fun getActionUpdateThread(): ActionUpdateThread {
-        return ActionUpdateThread.BGT
-    }
+    override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT
 }
 
 class HelixSelectNextOccurrenceAction : AnAction() {
@@ -65,9 +59,7 @@ class HelixSelectNextOccurrenceAction : AnAction() {
         e.presentation.isEnabled = e.getData(CommonDataKeys.EDITOR) != null
     }
 
-    override fun getActionUpdateThread(): ActionUpdateThread {
-        return ActionUpdateThread.BGT
-    }
+    override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT
 }
 
 class HelixCommentLineAction : AnAction() {
@@ -80,9 +72,7 @@ class HelixCommentLineAction : AnAction() {
         e.presentation.isEnabled = e.getData(CommonDataKeys.EDITOR) != null
     }
 
-    override fun getActionUpdateThread(): ActionUpdateThread {
-        return ActionUpdateThread.BGT
-    }
+    override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT
 }
 
 class HelixPageDownAction : AnAction() {
@@ -100,9 +90,7 @@ class HelixPageDownAction : AnAction() {
         e.presentation.isEnabled = editor != null && state != null && !state.mode.isInsertable
     }
 
-    override fun getActionUpdateThread(): ActionUpdateThread {
-        return ActionUpdateThread.BGT
-    }
+    override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT
 }
 
 class HelixPageUpAction : AnAction() {
@@ -120,9 +108,7 @@ class HelixPageUpAction : AnAction() {
         e.presentation.isEnabled = editor != null && state != null && !state.mode.isInsertable
     }
 
-    override fun getActionUpdateThread(): ActionUpdateThread {
-        return ActionUpdateThread.BGT
-    }
+    override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT
 }
 
 class HelixHalfPageDownAction : AnAction() {
@@ -140,9 +126,7 @@ class HelixHalfPageDownAction : AnAction() {
         e.presentation.isEnabled = editor != null && state != null && !state.mode.isInsertable
     }
 
-    override fun getActionUpdateThread(): ActionUpdateThread {
-        return ActionUpdateThread.BGT
-    }
+    override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT
 }
 
 class HelixHalfPageUpAction : AnAction() {
@@ -160,9 +144,7 @@ class HelixHalfPageUpAction : AnAction() {
         e.presentation.isEnabled = editor != null && state != null && !state.mode.isInsertable
     }
 
-    override fun getActionUpdateThread(): ActionUpdateThread {
-        return ActionUpdateThread.BGT
-    }
+    override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT
 }
 
 class HelixCopySelectionOnNextLineAction : AnAction() {
@@ -356,4 +338,3 @@ class HelixJumplistPickerAction : AnAction() {
 
     override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT
 }
-

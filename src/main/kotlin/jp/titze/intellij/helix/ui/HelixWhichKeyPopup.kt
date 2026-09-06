@@ -25,11 +25,7 @@ import javax.swing.BorderFactory
 import javax.swing.JPanel
 import javax.swing.SwingUtilities
 
-data class WhichKeyItem(
-    val key: String,
-    val label: String,
-    val description: String = ""
-)
+data class WhichKeyItem(val key: String, val label: String, val description: String = "")
 
 object HelixWhichKeyPopup {
     private var activePopup: JBPopup? = null
@@ -64,7 +60,7 @@ object HelixWhichKeyPopup {
         WhichKeyItem("P", "Paste clipboard before"),
         WhichKeyItem("R", "Replace with clipboard"),
         WhichKeyItem("k", "Hover / Documentation", "QuickJavaDoc"),
-        WhichKeyItem("?", "Command palette", "GotoAction")
+        WhichKeyItem("?", "Command palette", "GotoAction"),
     )
 
     private val gotoItems = listOf(
@@ -75,7 +71,7 @@ object HelixWhichKeyPopup {
         WhichKeyItem("l", "Goto line end"),
         WhichKeyItem("s", "Goto first non-whitespace"),
         WhichKeyItem("g", "Goto line / file start", "line <count>"),
-        WhichKeyItem("e", "Goto file end")
+        WhichKeyItem("e", "Goto file end"),
     )
 
     private val matchItems = listOf(
@@ -84,7 +80,7 @@ object HelixWhichKeyPopup {
         WhichKeyItem("d", "Surround delete", "md<char>"),
         WhichKeyItem("m", "Match bracket", "Jump to matching bracket"),
         WhichKeyItem("a", "Select around textobject", "ma<obj>"),
-        WhichKeyItem("i", "Select inside textobject", "mi<obj>")
+        WhichKeyItem("i", "Select inside textobject", "mi<obj>"),
     )
 
     private val bracketOpenItems = listOf(
@@ -99,7 +95,7 @@ object HelixWhichKeyPopup {
         WhichKeyItem("g", "Previous change", "VcsShowPrevChangeMarker"),
         WhichKeyItem("G", "First change", "First change"),
         WhichKeyItem("Space", "Add newline above", "Blank line above"),
-        WhichKeyItem("b", "Previous buffer / tab", "PreviousTab")
+        WhichKeyItem("b", "Previous buffer / tab", "PreviousTab"),
     )
 
     private val bracketCloseItems = listOf(
@@ -114,7 +110,7 @@ object HelixWhichKeyPopup {
         WhichKeyItem("g", "Next change", "VcsShowNextChangeMarker"),
         WhichKeyItem("G", "Last change", "Last change"),
         WhichKeyItem("Space", "Add newline below", "Blank line below"),
-        WhichKeyItem("b", "Next buffer / tab", "NextTab")
+        WhichKeyItem("b", "Next buffer / tab", "NextTab"),
     )
 
     fun hide() {
@@ -186,7 +182,7 @@ object HelixWhichKeyPopup {
                 prefWidth = prefSize.width,
                 prefHeight = prefSize.height,
                 visibleX = visibleRect.x,
-                visibleY = visibleRect.y
+                visibleY = visibleRect.y,
             )
             popup.show(RelativePoint(component, pos))
         } else {
@@ -207,7 +203,7 @@ object HelixWhichKeyPopup {
         visibleX: Int = 0,
         visibleY: Int = 0,
         marginX: Int = JBUI.scale(20),
-        marginY: Int = JBUI.scale(20)
+        marginY: Int = JBUI.scale(20),
     ): Point {
         val x = visibleX + (viewWidth - prefWidth - marginX).coerceAtLeast(0)
         val y = visibleY + (viewHeight - prefHeight - marginY).coerceAtLeast(0)
@@ -218,7 +214,7 @@ object HelixWhichKeyPopup {
         title: String,
         items: List<WhichKeyItem>,
         editor: Editor,
-        maxHeight: Int = 600
+        maxHeight: Int = 600,
     ): JPanel {
         val mainPanel = RoundedCardPanel(BorderLayout())
         mainPanel.isFocusable = true
@@ -228,7 +224,7 @@ object HelixWhichKeyPopup {
         headerPanel.isOpaque = false
         headerPanel.border = BorderFactory.createCompoundBorder(
             BorderFactory.createMatteBorder(0, 0, 1, 0, DIVIDER_COLOR),
-            JBUI.Borders.empty(12, 14, 10, 14)
+            JBUI.Borders.empty(12, 14, 10, 14),
         )
 
         val titleLabel = JBLabel(title)
@@ -273,7 +269,7 @@ object HelixWhichKeyPopup {
             val boundedScrollHeight = maxHeight - headerHeight - JBUI.scale(10)
             scrollPane.preferredSize = java.awt.Dimension(
                 itemsPanel.preferredSize.width,
-                boundedScrollHeight.coerceAtLeast(JBUI.scale(150))
+                boundedScrollHeight.coerceAtLeast(JBUI.scale(150)),
             )
         }
 
@@ -355,10 +351,7 @@ object HelixWhichKeyPopup {
         }
     }
 
-    private class WhichKeyRow(
-        item: WhichKeyItem,
-        val onClick: () -> Unit
-    ) : JPanel(BorderLayout(JBUI.scale(10), 0)) {
+    private class WhichKeyRow(item: WhichKeyItem, val onClick: () -> Unit) : JPanel(BorderLayout(JBUI.scale(10), 0)) {
         private var isHovered = false
 
         init {
@@ -409,7 +402,7 @@ object HelixWhichKeyPopup {
                 val g2 = g.create() as java.awt.Graphics2D
                 g2.setRenderingHint(
                     java.awt.RenderingHints.KEY_ANTIALIASING,
-                    java.awt.RenderingHints.VALUE_ANTIALIAS_ON
+                    java.awt.RenderingHints.VALUE_ANTIALIAS_ON,
                 )
                 g2.color = HOVER_BG
                 g2.fillRoundRect(0, 0, width, height, JBUI.scale(6), JBUI.scale(6))

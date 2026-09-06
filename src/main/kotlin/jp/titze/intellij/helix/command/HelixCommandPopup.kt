@@ -42,7 +42,7 @@ data class HelixCommandItem(
     val name: String,
     val aliases: List<String>,
     val description: String,
-    val action: (Editor) -> Unit
+    val action: (Editor) -> Unit,
 ) {
     fun matches(query: String): Boolean {
         if (query.isEmpty()) return true
@@ -128,7 +128,7 @@ object HelixCommandPopup {
         },
         HelixCommandItem("jumps", emptyList(), "Open jumplist picker") { editor ->
             HelixJumplistPopup.show(editor)
-        }
+        },
     )
 
     private class RoundedCardPanel(layout: java.awt.LayoutManager) : JPanel(layout) {
@@ -164,11 +164,13 @@ object HelixCommandPopup {
     private class KeycapBadge(text: String) : JPanel(BorderLayout()) {
         init {
             isOpaque = false
-            add(JBLabel(text).apply {
-                font = Font(Font.MONOSPACED, Font.BOLD, JBUI.scaleFontSize(11f))
-                foreground = KEYCAP_FG
-                border = JBUI.Borders.empty(2, 6)
-            })
+            add(
+                JBLabel(text).apply {
+                    font = Font(Font.MONOSPACED, Font.BOLD, JBUI.scaleFontSize(11f))
+                    foreground = KEYCAP_FG
+                    border = JBUI.Borders.empty(2, 6)
+                },
+            )
         }
 
         override fun paintComponent(g: Graphics) {
@@ -200,7 +202,7 @@ object HelixCommandPopup {
         headerPanel.isOpaque = false
         headerPanel.border = BorderFactory.createCompoundBorder(
             BorderFactory.createMatteBorder(0, 0, 1, 0, DIVIDER_COLOR),
-            JBUI.Borders.empty(12, 14, 10, 14)
+            JBUI.Borders.empty(12, 14, 10, 14),
         )
 
         val titleLabel = JBLabel("COMMAND PALETTE")
@@ -289,7 +291,7 @@ object HelixCommandPopup {
                 value: HelixCommandItem?,
                 index: Int,
                 isSelected: Boolean,
-                cellHasFocus: Boolean
+                cellHasFocus: Boolean,
             ): Component {
                 cellPanel.isSelectedRow = isSelected
                 badgeHolder.removeAll()
@@ -319,7 +321,7 @@ object HelixCommandPopup {
         footerPanel.isOpaque = false
         footerPanel.border = BorderFactory.createCompoundBorder(
             BorderFactory.createMatteBorder(1, 0, 0, 0, DIVIDER_COLOR),
-            JBUI.Borders.empty(8, 14, 10, 14)
+            JBUI.Borders.empty(8, 14, 10, 14),
         )
         val footerLabel = JBLabel("Enter: run | Tab: complete | ↑/↓: select | Esc: cancel")
         footerLabel.font = JBUI.Fonts.label().deriveFont(Font.BOLD, JBUI.scaleFontSize(9.5f).toFloat())
@@ -467,8 +469,11 @@ object HelixCommandPopup {
         // Fallbacks for standard vim/helix commands
         when (cleanCmd) {
             "jumps" -> HelixJumplistPopup.show(editor)
+
             "w", "write" -> HelixActionDelegate.executeAction("SaveAll", editor)
+
             "q", "quit" -> HelixActionDelegate.executeAction("CloseContent", editor)
+
             "wq", "x" -> {
                 HelixActionDelegate.executeAction("SaveAll", editor)
                 ApplicationManager.getApplication().invokeLater {
@@ -477,10 +482,15 @@ object HelixCommandPopup {
             }
 
             "wa" -> HelixActionDelegate.executeAction("SaveAll", editor)
+
             "qa" -> HelixActionDelegate.executeAction("CloseAllEditors", editor)
+
             "vsp" -> HelixActionDelegate.executeAction("SplitVertically", editor)
+
             "sp" -> HelixActionDelegate.executeAction("SplitHorizontally", editor)
+
             "format" -> HelixActionDelegate.executeAction("ReformatCode", editor)
+
             "set search-ui=inline", "set search-ui=stock" -> {
                 HelixSettings.instance.searchUiMode = HelixSearchUiMode.STOCK_HELIX
             }
@@ -492,7 +502,13 @@ object HelixCommandPopup {
             "toggle-search-ui", "search-ui" -> {
                 val current = HelixSettings.instance.searchUiMode
                 val next =
-                    if (current == HelixSearchUiMode.STOCK_HELIX) HelixSearchUiMode.POPUP else HelixSearchUiMode.STOCK_HELIX
+                    if (current ==
+                        HelixSearchUiMode.STOCK_HELIX
+                    ) {
+                        HelixSearchUiMode.POPUP
+                    } else {
+                        HelixSearchUiMode.STOCK_HELIX
+                    }
                 HelixSettings.instance.searchUiMode = next
             }
         }

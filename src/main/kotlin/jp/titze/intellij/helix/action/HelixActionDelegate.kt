@@ -19,7 +19,7 @@ object HelixActionDelegate {
             action,
             null,
             ActionPlaces.EDITOR_POPUP,
-            dataContext
+            dataContext,
         )
 
         ApplicationManager.getApplication().invokeLater {
