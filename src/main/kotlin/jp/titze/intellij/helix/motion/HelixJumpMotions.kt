@@ -426,7 +426,14 @@ object HelixJumpMotions {
         repeat(count) {
             HelixMotionUtils.runForEachCaret(editor) { caret ->
                 val curOffset = caret.offset
-                val anchor = if (isSelect && caret.hasSelection()) caret.leadSelectionOffset else curOffset
+                val hadSelection = caret.hasSelection()
+                val prevStart = if (hadSelection) caret.selectionStart else curOffset
+                val prevEnd = if (hadSelection) caret.selectionEnd else curOffset
+                val fromBracketOffset = when {
+                    curOffset in 0 until textLen && HelixMotionUtils.isPairBracket(text[curOffset]) -> curOffset
+                    curOffset > 0 && HelixMotionUtils.isPairBracket(text[curOffset - 1]) -> curOffset - 1
+                    else -> curOffset
+                }
 
                 var targetOffset: Int? = null
 
@@ -447,11 +454,17 @@ object HelixJumpMotions {
                     targetOffset = findMatchingBracketFallback(text, textLen, curOffset)
                 }
 
-                if (targetOffset != null && targetOffset != curOffset) {
-                    HelixMotionUtils.applyMotion(caret, anchor, targetOffset, isSelect)
-                    anyMoved = true
-                } else if (isSelect && targetOffset != null) {
-                    caret.setSelection(anchor, targetOffset)
+                if (targetOffset != null && targetOffset != curOffset && targetOffset != fromBracketOffset) {
+                    HelixMotionUtils.applyBracketMotion(
+                        caret = caret,
+                        fromBracket = fromBracketOffset,
+                        toBracket = targetOffset,
+                        textLen = textLen,
+                        isSelect = isSelect,
+                        hadSelection = hadSelection,
+                        prevSelectionStart = prevStart,
+                        prevSelectionEnd = prevEnd,
+                    )
                     anyMoved = true
                 }
             }

@@ -302,9 +302,48 @@ class HelixCodeNavigationTest : BasePlatformTestCase() {
         HelixKeyHandler.handleKey('m', editor).shouldBeTrue()
         HelixKeyHandler.handleKey('m', editor).shouldBeTrue()
 
-        caret.offset shouldBe 12
+        caret.offset shouldBe 13
         caret.hasSelection().shouldBeTrue()
-        caret.selectedText shouldBe "(hello world"
+        caret.selectedText shouldBe "(hello world)"
+    }
+
+    fun testMatchBracketsInSelectModeBackward() {
+        val text = "(hello world)"
+        myFixture.configureByText("test.txt", text)
+        val editor = myFixture.editor
+        val caret = editor.caretModel.primaryCaret
+
+        caret.moveToOffset(12) // on ')'
+        HelixActions.toggleSelectMode(editor)
+
+        HelixKeyHandler.handleKey('m', editor).shouldBeTrue()
+        HelixKeyHandler.handleKey('m', editor).shouldBeTrue()
+
+        caret.offset shouldBe 0
+        caret.hasSelection().shouldBeTrue()
+        caret.selectedText shouldBe "(hello world)"
+    }
+
+    fun testMatchBracketsInSelectModeToggle() {
+        val text = "(hello world)"
+        myFixture.configureByText("test.txt", text)
+        val editor = myFixture.editor
+        val caret = editor.caretModel.primaryCaret
+
+        caret.moveToOffset(0)
+        HelixActions.toggleSelectMode(editor)
+
+        // Forward to ')'
+        HelixKeyHandler.handleKey('m', editor).shouldBeTrue()
+        HelixKeyHandler.handleKey('m', editor).shouldBeTrue()
+        caret.offset shouldBe 13
+        caret.selectedText shouldBe "(hello world)"
+
+        // Backward to '('
+        HelixKeyHandler.handleKey('m', editor).shouldBeTrue()
+        HelixKeyHandler.handleKey('m', editor).shouldBeTrue()
+        caret.offset shouldBe 0
+        caret.selectedText shouldBe "(hello world)"
     }
 
     fun testMatchBracketsMultiCaret() {
