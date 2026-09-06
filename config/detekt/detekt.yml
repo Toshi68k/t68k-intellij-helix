@@ -1,0 +1,47 @@
+# config/detekt.yml
+
+# -----------------------------------------------------------
+# Formatting (Ktlint Wrapper)
+# -----------------------------------------------------------
+ktlint:
+  active: true
+  autoCorrect: false
+  MaximumLineLength:
+    active: true
+    maxLineLength: 120
+
+# -----------------------------------------------------------
+# Style Overrides
+# -----------------------------------------------------------
+style:
+  # Disabled to let ktlint's 'MaximumLineLength' handle it safely
+  MaxLineLength:
+    active: false
+  MagicNumber:
+    active: true
+    ignoreNumbers: ['-1', '0', '1', '2', '3', '10', '100']
+  ReturnCount:
+    active: true
+    max: 3
+
+# -----------------------------------------------------------
+# Complexity Overrides
+# -----------------------------------------------------------
+complexity:
+  TooManyFunctions:
+    active: true
+    allowedFunctionsPerFile: 20
+  LongParameterList:
+    active: true
+    allowedFunctionParameters: 7
+    allowedConstructorParameters: 7
+  CyclomaticComplexMethod:
+    active: true
+    allowedComplexity: 15
+
+# -----------------------------------------------------------
+# Empty Blocks
+# -----------------------------------------------------------
+empty-blocks:
+  EmptyClassBlock:
+    active: false

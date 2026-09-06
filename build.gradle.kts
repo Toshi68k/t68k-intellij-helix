@@ -4,6 +4,7 @@ plugins {
     id("java")
     kotlin("jvm") version "2.4.10"
     id("org.jetbrains.intellij.platform") version "2.18.1"
+    id("dev.detekt") version "2.0.0-alpha.6"
 }
 
 group = "jp.titze.intellij"
@@ -28,6 +29,8 @@ dependencies {
         intellijIdeaCommunity("2024.2.4")
         testFramework(TestFrameworkType.Platform)
     }
+    detektPlugins("dev.detekt:detekt-rules-ktlint-wrapper:2.0.0-alpha.6")
+
     testImplementation(kotlin("test"))
     testImplementation("org.junit.jupiter:junit-jupiter:6.1.3")
     testImplementation("org.junit.vintage:junit-vintage-engine:6.1.3")
@@ -36,6 +39,12 @@ dependencies {
         exclude(group = "org.jetbrains.kotlinx", module = "kotlinx-coroutines-jdk8")
         exclude(group = "org.jetbrains.kotlinx", module = "kotlinx-coroutines-test")
     }
+}
+
+detekt {
+    autoCorrect = false
+    buildUponDefaultConfig = true
+    config.setFrom(files("$projectDir/config/detekt/detekt.yml"))
 }
 
 tasks.test {
