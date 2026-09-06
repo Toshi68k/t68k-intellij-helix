@@ -42,7 +42,7 @@ dependencies {
 }
 
 detekt {
-    autoCorrect = false
+    autoCorrect = true
     buildUponDefaultConfig = true
     config.setFrom(files("$projectDir/config/detekt/detekt.yml"))
 }

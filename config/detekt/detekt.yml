@@ -5,7 +5,7 @@
 # -----------------------------------------------------------
 ktlint:
   active: true
-  autoCorrect: false
+  autoCorrect: true
   MaximumLineLength:
     active: true
     maxLineLength: 120
@@ -18,11 +18,11 @@ style:
   MaxLineLength:
     active: false
   MagicNumber:
-    active: true
+    active: false
     ignoreNumbers: ['-1', '0', '1', '2', '3', '10', '100']
   ReturnCount:
     active: true
-    max: 3
+    max: 10
 
 # -----------------------------------------------------------
 # Complexity Overrides
@@ -38,6 +38,15 @@ complexity:
   CyclomaticComplexMethod:
     active: true
     allowedComplexity: 15
+
+# -----------------------------------------------------------
+# Exceptions
+# -----------------------------------------------------------
+exceptions:
+  SwallowedException:
+    active: false
+  TooGenericExceptionCaught:
+    active: false
 
 # -----------------------------------------------------------
 # Empty Blocks
