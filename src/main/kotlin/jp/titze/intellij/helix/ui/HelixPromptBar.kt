@@ -7,6 +7,7 @@ import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBTextField
 import com.intellij.util.ui.JBUI
 import jp.titze.intellij.helix.action.HelixActions
+import jp.titze.intellij.helix.action.HelixCaretSnapshot
 import java.awt.BorderLayout
 import java.awt.Dimension
 import java.awt.Font
@@ -39,7 +40,7 @@ class HelixPromptBar(private val editor: Editor) : JPanel(BorderLayout(JBUI.scal
 
     private var currentType: HelixPromptType = HelixPromptType.SEARCH
     private var currentCount: Int = 1
-    private var baseSnapshot: List<HelixActions.HelixCaretSnapshot> = emptyList()
+    private var baseSnapshot: List<HelixCaretSnapshot> = emptyList()
     private var isUpdatingPreview = false
 
     private class KeycapBadge(keyText: String) : JPanel(BorderLayout()) {
