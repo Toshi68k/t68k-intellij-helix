@@ -38,6 +38,9 @@ object HelixMotions {
         editor.caretModel.runForEachCaret(action)
     }
 
+    private fun isLineEnding(c: Char): Boolean = c == '\n' || c == '\r'
+    private fun isHorizontalWhitespace(c: Char): Boolean = c.isWhitespace() && !isLineEnding(c)
+
     /**
      * w: Move forward to start of next word (selects word in Normal mode, extends in Select mode)
      */
@@ -52,21 +55,48 @@ object HelixMotions {
 
         runForEachCaret(editor) { caret ->
             val startOffset = caret.offset
-            val anchor = if (isSelect && caret.hasSelection()) caret.leadSelectionOffset else startOffset
+            var anchor = if (isSelect && caret.hasSelection()) caret.leadSelectionOffset else startOffset
             var offset = startOffset
 
             repeat(count) {
                 if (offset < textLen) {
-                    val initialType = getCharType(text[offset])
-                    if (initialType != CharType.WHITESPACE) {
-                        // Skip current group
+                    if (isLineEnding(text[offset])) {
+                        // Starting at a line break: advance across line breaks
+                        while (offset < textLen && isLineEnding(text[offset])) {
+                            offset++
+                        }
+                        if (!isSelect) {
+                            anchor = offset
+                        }
+                        // If line starts with indentation, select that indentation
+                        if (offset < textLen && isHorizontalWhitespace(text[offset])) {
+                            while (offset < textLen && isHorizontalWhitespace(text[offset])) {
+                                offset++
+                            }
+                        } else if (offset < textLen && !isLineEnding(text[offset])) {
+                            val initialType = getCharType(text[offset])
+                            while (offset < textLen && getCharType(text[offset]) == initialType) {
+                                offset++
+                            }
+                            while (offset < textLen && isHorizontalWhitespace(text[offset])) {
+                                offset++
+                            }
+                        }
+                    } else if (isHorizontalWhitespace(text[offset])) {
+                        // Starting on horizontal whitespace: skip whitespace up to word or line break
+                        while (offset < textLen && isHorizontalWhitespace(text[offset])) {
+                            offset++
+                        }
+                    } else {
+                        // Starting on word or punctuation
+                        val initialType = getCharType(text[offset])
                         while (offset < textLen && getCharType(text[offset]) == initialType) {
                             offset++
                         }
-                    }
-                    // Skip whitespace
-                    while (offset < textLen && text[offset].isWhitespace()) {
-                        offset++
+                        // Skip trailing horizontal whitespace on the same line, stopping before line break
+                        while (offset < textLen && isHorizontalWhitespace(text[offset])) {
+                            offset++
+                        }
                     }
                 }
             }
