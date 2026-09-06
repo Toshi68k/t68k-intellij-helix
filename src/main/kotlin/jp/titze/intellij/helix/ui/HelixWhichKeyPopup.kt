@@ -111,6 +111,20 @@ object HelixWhichKeyPopup {
         WhichKeyItem("b", "Next buffer / tab", "NextTab"),
     )
 
+    private val viewItems = listOf(
+        WhichKeyItem("c", "Center view", "align_view_center"),
+        WhichKeyItem("t", "Align view top", "align_view_top"),
+        WhichKeyItem("b", "Align view bottom", "align_view_bottom"),
+        WhichKeyItem("m", "Align view middle (horiz)", "align_view_middle"),
+        WhichKeyItem("j", "Scroll view down", "scroll_down"),
+        WhichKeyItem("k", "Scroll view up", "scroll_up"),
+        WhichKeyItem("d", "Scroll half page down", "half_page_down"),
+        WhichKeyItem("u", "Scroll half page up", "half_page_up"),
+        WhichKeyItem("f", "Scroll page down", "page_down"),
+        WhichKeyItem("F", "Scroll page up", "page_up"),
+        WhichKeyItem("z", "Center view", "align_view_center"),
+    )
+
     fun hide() {
         val app = ApplicationManager.getApplication()
         if (app != null && !app.isDispatchThread) {
@@ -141,6 +155,8 @@ object HelixWhichKeyPopup {
             "m" -> "MATCH MENU" to matchItems
             "[" -> "JUMP BACK MENU" to bracketOpenItems
             "]" -> "JUMP FORWARD MENU" to bracketCloseItems
+            "z" -> "VIEW MENU" to viewItems
+            "Z" -> "STICKY VIEW MENU" to viewItems
             else -> return
         }
 

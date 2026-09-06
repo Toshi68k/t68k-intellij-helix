@@ -295,7 +295,12 @@ t68k-intellij-helix/
 │   │           └── plugin.xml
 │   └── test/
 │       └── kotlin/jp/titze/intellij/helix/
-│           └── HelixEditorTest.kt  # Headless test suite for modal editing and motions
+│           ├── HelixEditingActionsTest.kt     # Tests for modal editing, insert, delete, and change actions
+│           ├── HelixMotionsTest.kt            # Tests for word, line, count, page, find, and view motions
+│           ├── HelixNavigationAndSearchTest.kt# Tests for search, commands, jumplist, and brackets
+│           ├── HelixSelectionTest.kt          # Tests for multi-caret, surround, and text objects
+│           └── settings/
+│               └── HelixSettingsTest.kt       # Tests for plugin settings and configuration
 └── README.md
 ```
 

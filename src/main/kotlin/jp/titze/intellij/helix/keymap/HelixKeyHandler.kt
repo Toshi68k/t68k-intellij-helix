@@ -8,6 +8,7 @@ import jp.titze.intellij.helix.action.HelixTextObjectActions
 import jp.titze.intellij.helix.command.HelixCommandPopup
 import jp.titze.intellij.helix.jumplist.HelixJumpListService
 import jp.titze.intellij.helix.motion.HelixMotions
+import jp.titze.intellij.helix.motion.HelixViewMotions
 import jp.titze.intellij.helix.state.HelixEditorState
 import jp.titze.intellij.helix.state.HelixStateManager
 import jp.titze.intellij.helix.ui.HelixJumplistPopup
@@ -27,11 +28,15 @@ object HelixKeyHandler {
 
         // Check if we are waiting for the second key of a multi-key prefix
         if (seq.isNotEmpty()) {
+            if (seq == "Z" && isCountDigit(charTyped, state.hasCount)) {
+                state.appendCountDigit(charTyped)
+                return true
+            }
             return handlePendingSequence(seq, charTyped, editor, state)
         }
 
         // Accumulate count digits when no prefix is pending
-        if (charTyped in '1'..'9' || (charTyped == '0' && state.hasCount)) {
+        if (isCountDigit(charTyped, state.hasCount)) {
             state.appendCountDigit(charTyped)
             return true
         }
@@ -43,7 +48,7 @@ object HelixKeyHandler {
 
         // Check if character starts a multi-key sequence
         when (charTyped) {
-            'g', ' ', '[', ']', 'm' -> {
+            'g', ' ', '[', ']', 'm', 'z', 'Z' -> {
                 state.appendKey(charTyped)
                 HelixWhichKeyPopup.show(editor, charTyped.toString())
                 return true
@@ -99,6 +104,22 @@ object HelixKeyHandler {
             "]" -> {
                 state.clearPendingSequence()
                 handleBracketClose(ch, editor, count ?: 1)
+            }
+
+            "z" -> {
+                state.clearPendingSequence()
+                handleViewMenu(ch, editor, count)
+            }
+
+            "Z" -> {
+                val handled = handleViewMenu(ch, editor, count)
+                if (handled) {
+                    HelixWhichKeyPopup.show(editor, "Z")
+                    true
+                } else {
+                    state.clearPendingSequence()
+                    false
+                }
             }
 
             "m" -> handleMatchMenu(ch, editor, state, count)
@@ -214,6 +235,63 @@ object HelixKeyHandler {
         }
 
         else -> false
+    }
+
+    private fun handleViewMenu(ch: Char, editor: Editor, count: Int? = null): Boolean {
+        val lines = count ?: 1
+        return when (ch) {
+            'c', 'z' -> {
+                HelixViewMotions.alignViewCenter(editor)
+                true
+            }
+
+            't' -> {
+                HelixViewMotions.alignViewTop(editor)
+                true
+            }
+
+            'b' -> {
+                HelixViewMotions.alignViewBottom(editor)
+                true
+            }
+
+            'm' -> {
+                HelixViewMotions.alignViewMiddle(editor)
+                true
+            }
+
+            'j' -> {
+                HelixViewMotions.scrollViewDown(editor, lines)
+                true
+            }
+
+            'k' -> {
+                HelixViewMotions.scrollViewUp(editor, lines)
+                true
+            }
+
+            'd' -> {
+                HelixViewMotions.scrollHalfPageDown(editor, lines)
+                true
+            }
+
+            'u' -> {
+                HelixViewMotions.scrollHalfPageUp(editor, lines)
+                true
+            }
+
+            'f' -> {
+                HelixViewMotions.scrollPageDown(editor, lines)
+                true
+            }
+
+            'F' -> {
+                HelixViewMotions.scrollPageUp(editor, lines)
+                true
+            }
+
+            else -> false
+        }
     }
 
     private fun handleSpaceMenu(ch: Char, editor: Editor): Boolean = when (ch) {
@@ -551,4 +629,6 @@ object HelixKeyHandler {
         }
         return true
     }
+
+    private fun isCountDigit(ch: Char, hasCount: Boolean): Boolean = ch in '1'..'9' || (ch == '0' && hasCount)
 }
