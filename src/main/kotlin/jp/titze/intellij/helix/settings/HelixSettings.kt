@@ -11,8 +11,16 @@ enum class HelixSearchUiMode(val displayName: String) {
     POPUP("Popup Window (Floating dialog)"),
 }
 
+enum class HelixColorTheme(val displayName: String) {
+    SYNC("Sync with IDE"),
+    DARK("Dark"),
+    LIGHT("Light"),
+}
+
 class HelixSettingsState {
     var searchUiMode: String = HelixSearchUiMode.STOCK_HELIX.name
+    var jumpListMaxEntries: Int = HelixSettings.DEFAULT_JUMP_LIST_MAX_ENTRIES
+    var colorTheme: String = HelixColorTheme.SYNC.name
 }
 
 @Service(Service.Level.APP)
@@ -33,6 +41,29 @@ class HelixSettings : PersistentStateComponent<HelixSettingsState> {
             myState.searchUiMode = value.name
         }
 
+    var jumpListMaxEntries: Int
+        get() {
+            val entries = myState.jumpListMaxEntries
+            return if (entries <= 0) {
+                DEFAULT_JUMP_LIST_MAX_ENTRIES
+            } else {
+                entries.coerceIn(MIN_JUMP_LIST_ENTRIES, MAX_JUMP_LIST_ENTRIES)
+            }
+        }
+        set(value) {
+            myState.jumpListMaxEntries = value.coerceIn(MIN_JUMP_LIST_ENTRIES, MAX_JUMP_LIST_ENTRIES)
+        }
+
+    var colorTheme: HelixColorTheme
+        get() = try {
+            HelixColorTheme.valueOf(myState.colorTheme)
+        } catch (e: Exception) {
+            HelixColorTheme.SYNC
+        }
+        set(value) {
+            myState.colorTheme = value.name
+        }
+
     override fun getState(): HelixSettingsState = myState
 
     override fun loadState(state: HelixSettingsState) {
@@ -40,6 +71,10 @@ class HelixSettings : PersistentStateComponent<HelixSettingsState> {
     }
 
     companion object {
+        const val DEFAULT_JUMP_LIST_MAX_ENTRIES = 100
+        const val MIN_JUMP_LIST_ENTRIES = 10
+        const val MAX_JUMP_LIST_ENTRIES = 1000
+
         val instance: HelixSettings
             get() {
                 val app = ApplicationManager.getApplication()
