@@ -16,6 +16,7 @@ import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
 import jp.titze.intellij.helix.action.HelixActionDelegate
 import jp.titze.intellij.helix.action.HelixSurroundActions
+import jp.titze.intellij.helix.jumplist.HelixJumpListService
 import jp.titze.intellij.helix.state.HelixMode
 import jp.titze.intellij.helix.state.HelixStateManager
 
@@ -168,7 +169,8 @@ object HelixMotions {
                 val selEnd = caret.selectionEnd
 
                 val startLine = doc.getLineNumber(selStart)
-                val endLine = doc.getLineNumber(if (hasSel && selEnd > selStart) (selEnd - 1).coerceAtLeast(0) else selStart)
+                val endLine =
+                    doc.getLineNumber(if (hasSel && selEnd > selStart) (selEnd - 1).coerceAtLeast(0) else selStart)
 
                 val lineStartOffset = doc.getLineStartOffset(startLine)
                 val lineEndOffset = getLineEndWithNewline(doc, endLine)
@@ -476,7 +478,8 @@ object HelixMotions {
             for (caret in currentCarets) {
                 val headLogical = editor.offsetToLogicalPosition(caret.offset)
                 val hasSel = caret.hasSelection()
-                val anchorLogical = if (hasSel) editor.offsetToLogicalPosition(caret.leadSelectionOffset) else headLogical
+                val anchorLogical =
+                    if (hasSel) editor.offsetToLogicalPosition(caret.leadSelectionOffset) else headLogical
 
                 val targetHeadLine = headLogical.line + delta
                 val targetAnchorLine = anchorLogical.line + delta
@@ -488,7 +491,8 @@ object HelixMotions {
 
                     val anchorLineStart = doc.getLineStartOffset(targetAnchorLine)
                     val anchorLineEnd = doc.getLineEndOffset(targetAnchorLine)
-                    val targetAnchorOffset = (anchorLineStart + anchorLogical.column).coerceIn(anchorLineStart, anchorLineEnd)
+                    val targetAnchorOffset =
+                        (anchorLineStart + anchorLogical.column).coerceIn(anchorLineStart, anchorLineEnd)
 
                     newCaretTargets.add(Triple(targetHeadOffset, targetAnchorOffset, hasSel))
                 }
@@ -497,7 +501,7 @@ object HelixMotions {
             for ((targetHeadOffset, targetAnchorOffset, hasSel) in newCaretTargets) {
                 val alreadyExists = editor.caretModel.allCarets.any {
                     it.offset == targetHeadOffset &&
-                        (!hasSel || (it.hasSelection() && it.leadSelectionOffset == targetAnchorOffset))
+                            (!hasSel || (it.hasSelection() && it.leadSelectionOffset == targetAnchorOffset))
                 }
                 if (!alreadyExists) {
                     val newCaret = editor.caretModel.addCaret(editor.offsetToVisualPosition(targetHeadOffset), false)
@@ -730,6 +734,7 @@ object HelixMotions {
                 }
                 return null
             }
+
             'T', 'F' -> {
                 var idx = curOffset - 1
                 while (idx >= 0) {
@@ -747,6 +752,7 @@ object HelixMotions {
                 }
                 return null
             }
+
             else -> return null
         }
     }
@@ -868,21 +874,21 @@ object HelixMotions {
         val ranges = getMatchingRangesFromPsi(editor) { elem ->
             val name = elem.javaClass.simpleName
             val isFuncCandidate = name.contains("Method", ignoreCase = true) ||
-                name.contains("Function", ignoreCase = true) ||
-                name.contains("Constructor", ignoreCase = true)
+                    name.contains("Function", ignoreCase = true) ||
+                    name.contains("Constructor", ignoreCase = true)
             isFuncCandidate &&
-                !name.contains("Literal", ignoreCase = true) &&
-                !name.contains("Lambda", ignoreCase = true) &&
-                !name.contains("Body", ignoreCase = true) &&
-                !name.contains("Call", ignoreCase = true) &&
-                !name.contains("Expr", ignoreCase = true) &&
-                !name.contains("Reference", ignoreCase = true) &&
-                !name.contains("List", ignoreCase = true) &&
-                !name.contains("Parameter", ignoreCase = true) &&
-                !name.contains("Type", ignoreCase = true) &&
-                !name.contains("Argument", ignoreCase = true) &&
-                !name.contains("Block", ignoreCase = true) &&
-                !name.contains("Statement", ignoreCase = true)
+                    !name.contains("Literal", ignoreCase = true) &&
+                    !name.contains("Lambda", ignoreCase = true) &&
+                    !name.contains("Body", ignoreCase = true) &&
+                    !name.contains("Call", ignoreCase = true) &&
+                    !name.contains("Expr", ignoreCase = true) &&
+                    !name.contains("Reference", ignoreCase = true) &&
+                    !name.contains("List", ignoreCase = true) &&
+                    !name.contains("Parameter", ignoreCase = true) &&
+                    !name.contains("Type", ignoreCase = true) &&
+                    !name.contains("Argument", ignoreCase = true) &&
+                    !name.contains("Block", ignoreCase = true) &&
+                    !name.contains("Statement", ignoreCase = true)
         }
 
         val moved = navigateToRange(editor, ranges, forward, count)
@@ -903,32 +909,32 @@ object HelixMotions {
         var ranges = getMatchingRangesFromPsi(editor) { elem ->
             val name = elem.javaClass.simpleName
             val isTypeCandidate = (name.contains("Class", ignoreCase = true) ||
-                name.contains("Interface", ignoreCase = true) ||
-                name.contains("Struct", ignoreCase = true) ||
-                name.contains("Trait", ignoreCase = true) ||
-                name.contains("Enum", ignoreCase = true) ||
-                name.contains("Record", ignoreCase = true) ||
-                name.contains("Object", ignoreCase = true) ||
-                name.contains("TypeAlias", ignoreCase = true))
+                    name.contains("Interface", ignoreCase = true) ||
+                    name.contains("Struct", ignoreCase = true) ||
+                    name.contains("Trait", ignoreCase = true) ||
+                    name.contains("Enum", ignoreCase = true) ||
+                    name.contains("Record", ignoreCase = true) ||
+                    name.contains("Object", ignoreCase = true) ||
+                    name.contains("TypeAlias", ignoreCase = true))
 
             isTypeCandidate &&
-                !name.contains("Literal", ignoreCase = true) &&
-                !name.contains("Destruct", ignoreCase = true) &&
-                !name.contains("Component", ignoreCase = true) &&
-                !name.contains("Body", ignoreCase = true) &&
-                !name.contains("Initializer", ignoreCase = true) &&
-                !name.contains("List", ignoreCase = true) &&
-                !name.contains("Header", ignoreCase = true) &&
-                !name.contains("Access", ignoreCase = true) &&
-                !name.contains("Expr", ignoreCase = true) &&
-                !name.contains("Reference", ignoreCase = true) &&
-                !name.contains("TypeElement", ignoreCase = true) &&
-                !name.contains("Parameter", ignoreCase = true) &&
-                !name.contains("Constant", ignoreCase = true) &&
-                !name.contains("Entry", ignoreCase = true) &&
-                !name.contains("Argument", ignoreCase = true) &&
-                !name.contains("Statement", ignoreCase = true) &&
-                !name.contains("Block", ignoreCase = true)
+                    !name.contains("Literal", ignoreCase = true) &&
+                    !name.contains("Destruct", ignoreCase = true) &&
+                    !name.contains("Component", ignoreCase = true) &&
+                    !name.contains("Body", ignoreCase = true) &&
+                    !name.contains("Initializer", ignoreCase = true) &&
+                    !name.contains("List", ignoreCase = true) &&
+                    !name.contains("Header", ignoreCase = true) &&
+                    !name.contains("Access", ignoreCase = true) &&
+                    !name.contains("Expr", ignoreCase = true) &&
+                    !name.contains("Reference", ignoreCase = true) &&
+                    !name.contains("TypeElement", ignoreCase = true) &&
+                    !name.contains("Parameter", ignoreCase = true) &&
+                    !name.contains("Constant", ignoreCase = true) &&
+                    !name.contains("Entry", ignoreCase = true) &&
+                    !name.contains("Argument", ignoreCase = true) &&
+                    !name.contains("Statement", ignoreCase = true) &&
+                    !name.contains("Block", ignoreCase = true)
         }
 
         if (ranges.isEmpty()) {
@@ -945,8 +951,8 @@ object HelixMotions {
         val ranges = getMatchingRangesFromPsi(editor) { elem ->
             val name = elem.javaClass.simpleName
             name.contains("Parameter", ignoreCase = true) &&
-                !name.contains("List", ignoreCase = true) &&
-                !name.contains("Type", ignoreCase = true)
+                    !name.contains("List", ignoreCase = true) &&
+                    !name.contains("Type", ignoreCase = true)
         }
 
         return navigateToRange(editor, ranges, forward, count)
@@ -958,17 +964,18 @@ object HelixMotions {
     fun moveTest(editor: Editor, forward: Boolean, count: Int = 1): Boolean {
         val ranges = getMatchingRangesFromPsi(editor) { elem ->
             val name = elem.javaClass.simpleName
-            val isMethodOrFunc = (name.contains("Method", ignoreCase = true) || name.contains("Function", ignoreCase = true)) &&
-                !name.contains("Body", ignoreCase = true) &&
-                !name.contains("Call", ignoreCase = true) &&
-                !name.contains("Expr", ignoreCase = true) &&
-                !name.contains("List", ignoreCase = true)
+            val isMethodOrFunc =
+                (name.contains("Method", ignoreCase = true) || name.contains("Function", ignoreCase = true)) &&
+                        !name.contains("Body", ignoreCase = true) &&
+                        !name.contains("Call", ignoreCase = true) &&
+                        !name.contains("Expr", ignoreCase = true) &&
+                        !name.contains("List", ignoreCase = true)
             if (isMethodOrFunc) {
                 val text = elem.text
                 text.contains("@Test") ||
-                    text.contains("fun test", ignoreCase = true) ||
-                    text.contains("def test", ignoreCase = true) ||
-                    text.contains("void test", ignoreCase = true)
+                        text.contains("fun test", ignoreCase = true) ||
+                        text.contains("def test", ignoreCase = true) ||
+                        text.contains("void test", ignoreCase = true)
             } else false
         }
 
@@ -1033,7 +1040,8 @@ object HelixMotions {
         val doc = editor.document
         return try {
             runReadAction {
-                val psiFile = PsiDocumentManager.getInstance(project).getPsiFile(doc) ?: return@runReadAction emptyList()
+                val psiFile =
+                    PsiDocumentManager.getInstance(project).getPsiFile(doc) ?: return@runReadAction emptyList()
                 collectMatchingRanges(psiFile, predicate)
             }
         } catch (_: Throwable) {
@@ -1079,7 +1087,10 @@ object HelixMotions {
     }
 
     private fun findClassRangesRegex(doc: Document): List<TextRange> {
-        val regex = Regex("""^\s*(?:(?:public|private|protected|internal|abstract|final|open|data|sealed|value)\s+)*(?:class|interface|struct|trait|enum(?:\s+class)?|record|object|typealias)\s+([A-Za-z0-9_]+)""", RegexOption.MULTILINE)
+        val regex = Regex(
+            """^\s*(?:(?:public|private|protected|internal|abstract|final|open|data|sealed|value)\s+)*(?:class|interface|struct|trait|enum(?:\s+class)?|record|object|typealias)\s+([A-Za-z0-9_]+)""",
+            RegexOption.MULTILINE
+        )
         val text = doc.charsSequence
         return regex.findAll(text).map { match ->
             val start = match.range.first
@@ -1143,6 +1154,8 @@ object HelixMotions {
         val text = doc.charsSequence
         val textLen = text.length
         if (textLen == 0) return false
+
+        editor.project?.let { HelixJumpListService.getInstance(it).recordCurrent(editor) }
 
         val state = HelixStateManager.getOrCreate(editor)
         val isSelect = state.mode == HelixMode.SELECT

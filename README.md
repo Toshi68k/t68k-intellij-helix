@@ -7,10 +7,12 @@
 [![Helix](https://img.shields.io/badge/Modal-Helix-03C7D3.svg)](https://helix-editor.com)
 [![License](https://img.shields.io/badge/License-Apache_2.0-green.svg)](https://www.apache.org/licenses/LICENSE-2.0)
 
-A complete modal editing plugin for JetBrains IDEs implementing the [Helix](https://helix-editor.com) editor's **selection-first paradigm**, deeply integrated with IntelliJ's native IDE intelligence, AST capabilities, and refactoring engines.
+A modal editing plugin for JetBrains IDEs implementing the [Helix](https://helix-editor.com) editor's **selection-first paradigm**, deeply integrated with IntelliJ's native IDE intelligence, AST capabilities, and refactoring engines.
+
+The goal of this plugin is to provide a more complete and polished Helix-like experience than what is currently available with the [Vim](https://www.vim.org) plugin. This plugin attempts to provide an experience that is as close to the original Helix editor as possible, while still being deeply integrated with IntelliJ's native IDE capabilities. It is currently under development and is not yet complete.
 
 - **Plugin ID**: `jp.titze.intellij.helix`
-- **Vendor**: [Thorsten Titze](https://titze.jp)
+- **Vendor**: [Thorsten Titze](https://github.com/Toshi68k)
 - **Target IDE**: IntelliJ IDEA 2024.2+ (Community & Ultimate) and JetBrains IDEs
 
 ---
@@ -55,6 +57,15 @@ A complete modal editing plugin for JetBrains IDEs implementing the [Helix](http
 | `Ctrl+b` / `PageUp` | Move page up |
 | `Ctrl+d` | Move half page down |
 | `Ctrl+u` | Move half page up |
+
+### Jumplist Navigation
+
+| Key | Action | Description |
+|---|---|---|
+| `Ctrl+o` | `HelixJumpBackward` | Jump backward in the jump list (supports count) |
+| `Ctrl+i` | `HelixJumpForward` | Jump forward in the jump list (supports count) |
+| `Ctrl+s` | `HelixSaveJump` | Save current selection to the jump list manually (Normal/Select mode) |
+| `space + j` | `HelixJumplistPopup` | Open interactive jumplist picker popup |
 
 ### Selection Manipulation
 
@@ -153,7 +164,7 @@ Whenever a chord prefix key (<kbd>Space</kbd>, `g`, `m`, `[`, or `]`) is pressed
 | `space + f` | `GotoFile` / `SearchEverywhere` | Dedicated fuzzy file picker |
 | `space + b` | `RecentFiles` | Open buffer / tab switcher |
 | `space + /` | `FindInPath` | Live project-wide text search (live grep) with preview |
-| `space + j` | `RecentLocations` | Visual jumplist picker with recent edits and code diffs |
+| `space + j` | `HelixJumplistPopup` | Open interactive jumplist picker popup |
 | `space + s` | `FileStructurePopup` | Document symbols / outline picker |
 | `space + S` | `GotoSymbol` | Workspace-wide symbol picker across AST |
 | `space + d` | `ShowErrorDescription` | Diagnostic error inspection under caret |
@@ -208,6 +219,7 @@ Press `:` in Normal mode to open the interactive **Helix Command Picker**, style
 - `:toggle-search-ui` / `:search-ui` &rarr; Toggle between Stock Helix inline bar and Popup dialog
 - `:set search-ui=inline` / `:set search-ui=stock` &rarr; Set search UI to Stock Helix inline bar
 - `:set search-ui=popup` &rarr; Set search UI to Popup dialog
+- `:jumps` &rarr; Open interactive jumplist picker
 
 #### Search & Selection UI Modes
 Helix Keymap supports two switchable search and regex prompt styles:
@@ -272,8 +284,10 @@ t68k-intellij-helix/
 │   │   │   ├── action/       # Deletion, yanking, pasting, IntelliJ ActionManager delegation
 │   │   │   ├── command/      # Lightweight : command palette popup
 │   │   │   ├── editor/       # TypedActionHandler, Escape/Alt shortcuts, Editor listener
+│   │   │   ├── jumplist/     # Jumplist service
 │   │   │   ├── keymap/       # Sequence dispatching engine (g, space, [, ], count prefixes)
 │   │   │   ├── motion/       # Word, line, and buffer motions with active selection semantics
+│   │   │   ├── settings/     # Configuration panel and settings
 │   │   │   ├── state/        # HelixMode (Normal, Insert, Select), state manager & cursor logic
 │   │   │   └── ui/           # Status bar mode widget and factory
 │   │   └── resources/
@@ -290,5 +304,5 @@ t68k-intellij-helix/
 ## 🛠️ Development & Contributing
 
 This simple extension was written out of my own need for a useful Helix-like IntelliJ extension 
-after completely changing from Vim to Helix
+after completely changing from Vim to Helix.
 

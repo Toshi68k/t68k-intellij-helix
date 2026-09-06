@@ -5,8 +5,10 @@ import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.CommonDataKeys
 import jp.titze.intellij.helix.action.HelixActionDelegate
+import jp.titze.intellij.helix.jumplist.HelixJumpListService
 import jp.titze.intellij.helix.motion.HelixMotions
 import jp.titze.intellij.helix.state.HelixStateManager
+import jp.titze.intellij.helix.ui.HelixJumplistPopup
 
 class HelixEscapeAction : AnAction() {
     override fun actionPerformed(e: AnActionEvent) {
@@ -279,6 +281,77 @@ class HelixFlipSelectionAction : AnAction() {
         val editor = e.getData(CommonDataKeys.EDITOR)
         val state = editor?.let { HelixStateManager.getOrCreate(it) }
         e.presentation.isEnabled = editor != null && state != null && !state.mode.isInsertable
+    }
+
+    override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT
+}
+
+class HelixJumpBackwardAction : AnAction() {
+    override fun actionPerformed(e: AnActionEvent) {
+        val editor = e.getData(CommonDataKeys.EDITOR) ?: return
+        val project = e.project ?: editor.project ?: return
+        val state = HelixStateManager.getOrCreate(editor)
+        if (state.mode.isInsertable) return
+        val count = state.takeCount() ?: 1
+        HelixJumpListService.getInstance(project).jumpBackward(editor, count)
+    }
+
+    override fun update(e: AnActionEvent) {
+        val editor = e.getData(CommonDataKeys.EDITOR)
+        val state = editor?.let { HelixStateManager.getOrCreate(it) }
+        e.presentation.isEnabled = editor != null && state != null && !state.mode.isInsertable
+    }
+
+    override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT
+}
+
+class HelixJumpForwardAction : AnAction() {
+    override fun actionPerformed(e: AnActionEvent) {
+        val editor = e.getData(CommonDataKeys.EDITOR) ?: return
+        val project = e.project ?: editor.project ?: return
+        val state = HelixStateManager.getOrCreate(editor)
+        if (state.mode.isInsertable) return
+        val count = state.takeCount() ?: 1
+        HelixJumpListService.getInstance(project).jumpForward(editor, count)
+    }
+
+    override fun update(e: AnActionEvent) {
+        val editor = e.getData(CommonDataKeys.EDITOR)
+        val state = editor?.let { HelixStateManager.getOrCreate(it) }
+        e.presentation.isEnabled = editor != null && state != null && !state.mode.isInsertable
+    }
+
+    override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT
+}
+
+class HelixSaveJumpAction : AnAction() {
+    override fun actionPerformed(e: AnActionEvent) {
+        val editor = e.getData(CommonDataKeys.EDITOR) ?: return
+        val project = e.project ?: editor.project ?: return
+        val state = HelixStateManager.getOrCreate(editor)
+        if (state.mode.isInsertable) return
+        state.clearCount()
+        HelixJumpListService.getInstance(project).recordCurrent(editor, force = true)
+    }
+
+    override fun update(e: AnActionEvent) {
+        val editor = e.getData(CommonDataKeys.EDITOR)
+        val state = editor?.let { HelixStateManager.getOrCreate(it) }
+        e.presentation.isEnabled = editor != null && state != null && !state.mode.isInsertable
+    }
+
+    override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT
+}
+
+class HelixJumplistPickerAction : AnAction() {
+    override fun actionPerformed(e: AnActionEvent) {
+        val editor = e.getData(CommonDataKeys.EDITOR) ?: return
+        HelixJumplistPopup.show(editor)
+    }
+
+    override fun update(e: AnActionEvent) {
+        val editor = e.getData(CommonDataKeys.EDITOR)
+        e.presentation.isEnabled = editor != null
     }
 
     override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT
