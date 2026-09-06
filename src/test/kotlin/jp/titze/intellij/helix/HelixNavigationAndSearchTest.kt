@@ -475,6 +475,13 @@ class HelixNavigationAndSearchTest : BasePlatformTestCase() {
 
         HelixWhichKeyPopup.show(editor, "]")
         HelixWhichKeyPopup.hide()
+
+        HelixWhichKeyPopup.show(editor, "z")
+        HelixWhichKeyPopup.hide()
+
+        HelixWhichKeyPopup.show(editor, "Z")
+        HelixWhichKeyPopup.hide()
+        HelixWhichKeyPopup.isShowing() shouldBe false
     }
 
     fun testParagraphNavigationForwardAndBackward() {

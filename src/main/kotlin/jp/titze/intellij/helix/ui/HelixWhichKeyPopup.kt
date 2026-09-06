@@ -27,6 +27,7 @@ data class WhichKeyItem(val key: String, val label: String, val description: Str
 
 object HelixWhichKeyPopup {
     private var activePopup: JBPopup? = null
+    private var currentPrefix: String? = null
 
     // Theme-adaptive colors matching the modern keycap design
     private val CARD_BG get() = HelixTheme.CARD_BG
@@ -125,12 +126,19 @@ object HelixWhichKeyPopup {
         WhichKeyItem("z", "Center view", "align_view_center"),
     )
 
+    fun isShowing(prefix: String? = null): Boolean {
+        val popup = activePopup ?: return false
+        if (popup.isDisposed || !popup.isVisible) return false
+        return prefix == null || currentPrefix == prefix
+    }
+
     fun hide() {
         val app = ApplicationManager.getApplication()
         if (app != null && !app.isDispatchThread) {
             SwingUtilities.invokeLater { hide() }
             return
         }
+        currentPrefix = null
         val popup = activePopup
         activePopup = null
         popup?.cancel()
@@ -147,7 +155,12 @@ object HelixWhichKeyPopup {
             return
         }
 
+        if (isShowing(prefix)) {
+            return
+        }
+
         hide()
+        currentPrefix = prefix
 
         val (title, items) = when (prefix) {
             " " -> "SPACE MENU" to spaceItems
@@ -184,6 +197,12 @@ object HelixWhichKeyPopup {
             override fun onClosed(event: LightweightWindowEvent) {
                 if (activePopup === popup) {
                     activePopup = null
+                    currentPrefix = null
+                }
+                val state = HelixStateManager.getOrCreate(editor)
+                if (state.pendingSequence == "Z") {
+                    state.clearPendingSequence()
+                    state.clearCount()
                 }
             }
         })
@@ -261,9 +280,18 @@ object HelixWhichKeyPopup {
 
         for (item in items) {
             val row = WhichKeyRow(item) {
-                hide()
+                val state = HelixStateManager.getOrCreate(editor)
+                val inStickyView = state.pendingSequence == "Z"
+                if (!inStickyView) {
+                    hide()
+                }
                 val triggerChar = if (item.key.equals("Space", ignoreCase = true)) ' ' else item.key[0]
-                HelixKeyHandler.handleKey(triggerChar, editor)
+                val handled = HelixKeyHandler.handleKey(triggerChar, editor)
+                if (inStickyView) {
+                    if (!handled || state.pendingSequence != "Z") {
+                        hide()
+                    }
+                }
             }
             itemsPanel.add(row)
             itemsPanel.add(javax.swing.Box.createVerticalStrut(JBUI.scale(2)))
@@ -294,6 +322,7 @@ object HelixWhichKeyPopup {
                 if (e.keyCode == KeyEvent.VK_ESCAPE) {
                     val state = HelixStateManager.getOrCreate(editor)
                     state.clearPendingSequence()
+                    state.clearCount()
                     hide()
                     e.consume()
                 }
@@ -302,8 +331,17 @@ object HelixWhichKeyPopup {
             override fun keyTyped(e: KeyEvent) {
                 val ch = e.keyChar
                 if (ch != KeyEvent.CHAR_UNDEFINED && ch != '\u001B') {
-                    hide()
-                    HelixKeyHandler.handleKey(ch, editor)
+                    val state = HelixStateManager.getOrCreate(editor)
+                    val inStickyView = state.pendingSequence == "Z"
+                    if (!inStickyView) {
+                        hide()
+                    }
+                    val handled = HelixKeyHandler.handleKey(ch, editor)
+                    if (inStickyView) {
+                        if (!handled || state.pendingSequence != "Z") {
+                            hide()
+                        }
+                    }
                     e.consume()
                 }
             }

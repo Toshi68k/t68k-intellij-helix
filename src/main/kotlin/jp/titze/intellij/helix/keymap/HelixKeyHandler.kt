@@ -72,7 +72,9 @@ object HelixKeyHandler {
     }
 
     private fun handlePendingSequence(prefix: String, ch: Char, editor: Editor, state: HelixEditorState): Boolean {
-        HelixWhichKeyPopup.hide()
+        if (prefix != "Z") {
+            HelixWhichKeyPopup.hide()
+        }
         val count = state.takeCount()
         return when (prefix) {
             "r" -> {
@@ -114,10 +116,13 @@ object HelixKeyHandler {
             "Z" -> {
                 val handled = handleViewMenu(ch, editor, count)
                 if (handled) {
-                    HelixWhichKeyPopup.show(editor, "Z")
+                    if (!HelixWhichKeyPopup.isShowing("Z")) {
+                        HelixWhichKeyPopup.show(editor, "Z")
+                    }
                     true
                 } else {
                     state.clearPendingSequence()
+                    HelixWhichKeyPopup.hide()
                     false
                 }
             }
