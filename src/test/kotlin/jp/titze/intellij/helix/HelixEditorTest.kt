@@ -84,6 +84,85 @@ class HelixEditorTest : BasePlatformTestCase() {
         caret.selectedText shouldBe "hello world "
     }
 
+    fun testWordMotionAtEndOfLine() {
+        myFixture.configureByText("test.txt", "hello world\nnext line")
+        val editor = myFixture.editor
+        val caret = editor.caretModel.primaryCaret
+        caret.moveToOffset(6) // on 'world'
+
+        // On the last word of a line, 'w' selects only up to the line break
+        HelixMotions.moveNextWordStart(editor)
+        caret.offset shouldBe 11 // on '\n'
+        caret.hasSelection().shouldBeTrue()
+        caret.selectedText shouldBe "world"
+
+        // Pressing 'w' again crosses the line break into the next line
+        HelixMotions.moveNextWordStart(editor)
+        caret.offset shouldBe 17 // on 'l' of "line"
+        caret.hasSelection().shouldBeTrue()
+        caret.selectedText shouldBe "next "
+
+        // With trailing whitespace before line break:
+        myFixture.configureByText("test2.txt", "first second   \nthird")
+        val editor2 = myFixture.editor
+        val caret2 = editor2.caretModel.primaryCaret
+        caret2.moveToOffset(6) // on 'second'
+
+        HelixMotions.moveNextWordStart(editor2)
+        caret2.offset shouldBe 15 // on '\n'
+        caret2.selectedText shouldBe "second   "
+
+        // Next line with indentation:
+        myFixture.configureByText("test3.txt", "line1\n    line2")
+        val editor3 = myFixture.editor
+        val caret3 = editor3.caretModel.primaryCaret
+        caret3.moveToOffset(0) // on 'line1'
+
+        // First 'w' selects up to '\n'
+        HelixMotions.moveNextWordStart(editor3)
+        caret3.offset shouldBe 5 // on '\n'
+        caret3.selectedText shouldBe "line1"
+
+        // Second 'w' selects indentation
+        HelixMotions.moveNextWordStart(editor3)
+        caret3.offset shouldBe 10 // on 'l' of "line2"
+        caret3.selectedText shouldBe "    "
+
+        // Third 'w' selects "line2"
+        HelixMotions.moveNextWordStart(editor3)
+        caret3.offset shouldBe 15
+        caret3.selectedText shouldBe "line2"
+
+        // CRLF line endings (IntelliJ normalizes \r\n to \n in Document):
+        myFixture.configureByText("test4.txt", "hello world\r\nnext")
+        val editor4 = myFixture.editor
+        val caret4 = editor4.caretModel.primaryCaret
+        caret4.moveToOffset(6) // on 'world'
+
+        HelixMotions.moveNextWordStart(editor4)
+        caret4.offset shouldBe 11
+        caret4.selectedText shouldBe "world"
+
+        HelixMotions.moveNextWordStart(editor4)
+        caret4.offset shouldBe 16 // end of "next"
+        caret4.selectedText shouldBe "next"
+
+        // Select mode: extends selection across the line break
+        myFixture.configureByText("test5.txt", "hello world\nnext line")
+        val editor5 = myFixture.editor
+        val caret5 = editor5.caretModel.primaryCaret
+        caret5.moveToOffset(6) // on 'world'
+
+        HelixActions.toggleSelectMode(editor5)
+        HelixMotions.moveNextWordStart(editor5)
+        caret5.offset shouldBe 11
+        caret5.selectedText shouldBe "world"
+
+        HelixMotions.moveNextWordStart(editor5)
+        caret5.offset shouldBe 17
+        caret5.selectedText shouldBe "world\nnext "
+    }
+
     fun testLineSelectionMotion() {
         myFixture.configureByText("test.txt", "first line\nsecond line\nthird line\n")
         val editor = myFixture.editor
