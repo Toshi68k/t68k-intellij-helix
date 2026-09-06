@@ -41,7 +41,8 @@
 
     <extensions defaultExtensionNs="com.intellij">
         <editorFactoryListener implementation="jp.titze.intellij.helix.editor.HelixEditorListener"/>
-        <statusBarWidgetFactory implementation="jp.titze.intellij.helix.ui.HelixStatusBarWidgetFactory" id="jp.titze.intellij.helix.status"/>
+        <statusBarWidgetFactory implementation="jp.titze.intellij.helix.ui.HelixStatusBarWidgetFactory"
+                                id="jp.titze.intellij.helix.status"/>
         <applicationService serviceImplementation="jp.titze.intellij.helix.settings.HelixSettings"/>
         <applicationConfigurable parentId="tools"
                                  instance="jp.titze.intellij.helix.settings.HelixConfigurable"
@@ -57,11 +58,9 @@
             <keyboard-shortcut keymap="$default" first-keystroke="ESCAPE"/>
             <keyboard-shortcut keymap="Mac OS X" first-keystroke="ESCAPE"/>
             <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="ESCAPE"/>
-            <keyboard-shortcut keymap="macOS" first-keystroke="ESCAPE"/>
             <keyboard-shortcut keymap="$default" first-keystroke="control OPEN_BRACKET"/>
             <keyboard-shortcut keymap="Mac OS X" first-keystroke="control OPEN_BRACKET"/>
             <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="control OPEN_BRACKET"/>
-            <keyboard-shortcut keymap="macOS" first-keystroke="control OPEN_BRACKET"/>
         </action>
 
         <action id="jp.titze.intellij.helix.expandSelection"
@@ -98,11 +97,9 @@
             <keyboard-shortcut keymap="$default" first-keystroke="alt shift C"/>
             <keyboard-shortcut keymap="Mac OS X" first-keystroke="alt shift C"/>
             <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="alt shift C"/>
-            <keyboard-shortcut keymap="macOS" first-keystroke="alt shift C"/>
             <keyboard-shortcut keymap="$default" first-keystroke="alt C"/>
             <keyboard-shortcut keymap="Mac OS X" first-keystroke="alt C"/>
             <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="alt C"/>
-            <keyboard-shortcut keymap="macOS" first-keystroke="alt C"/>
         </action>
 
         <action id="jp.titze.intellij.helix.removePrimarySelection"
@@ -112,7 +109,6 @@
             <keyboard-shortcut keymap="$default" first-keystroke="alt COMMA"/>
             <keyboard-shortcut keymap="Mac OS X" first-keystroke="alt COMMA"/>
             <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="alt COMMA"/>
-            <keyboard-shortcut keymap="macOS" first-keystroke="alt COMMA"/>
         </action>
 
         <action id="jp.titze.intellij.helix.rotateSelectionsForward"
@@ -134,7 +130,6 @@
             <keyboard-shortcut keymap="$default" first-keystroke="alt S"/>
             <keyboard-shortcut keymap="Mac OS X" first-keystroke="alt S"/>
             <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="alt S"/>
-            <keyboard-shortcut keymap="macOS" first-keystroke="alt S"/>
         </action>
 
         <action id="jp.titze.intellij.helix.flipSelection"
@@ -144,7 +139,6 @@
             <keyboard-shortcut keymap="$default" first-keystroke="alt SEMICOLON"/>
             <keyboard-shortcut keymap="Mac OS X" first-keystroke="alt SEMICOLON"/>
             <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="alt SEMICOLON"/>
-            <keyboard-shortcut keymap="macOS" first-keystroke="alt SEMICOLON"/>
         </action>
 
         <action id="jp.titze.intellij.helix.commentLine"
@@ -154,7 +148,6 @@
             <keyboard-shortcut keymap="$default" first-keystroke="control C"/>
             <keyboard-shortcut keymap="Mac OS X" first-keystroke="control C"/>
             <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="control C"/>
-            <keyboard-shortcut keymap="macOS" first-keystroke="control C"/>
         </action>
 
         <action id="jp.titze.intellij.helix.pageDown"
@@ -164,7 +157,6 @@
             <keyboard-shortcut keymap="$default" first-keystroke="control F"/>
             <keyboard-shortcut keymap="Mac OS X" first-keystroke="control F"/>
             <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="control F"/>
-            <keyboard-shortcut keymap="macOS" first-keystroke="control F"/>
             <keyboard-shortcut keymap="$default" first-keystroke="PAGE_DOWN"/>
         </action>
 
@@ -175,7 +167,6 @@
             <keyboard-shortcut keymap="$default" first-keystroke="control B"/>
             <keyboard-shortcut keymap="Mac OS X" first-keystroke="control B"/>
             <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="control B"/>
-            <keyboard-shortcut keymap="macOS" first-keystroke="control B"/>
             <keyboard-shortcut keymap="$default" first-keystroke="PAGE_UP"/>
         </action>
 
@@ -186,7 +177,6 @@
             <keyboard-shortcut keymap="$default" first-keystroke="control D"/>
             <keyboard-shortcut keymap="Mac OS X" first-keystroke="control D"/>
             <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="control D"/>
-            <keyboard-shortcut keymap="macOS" first-keystroke="control D"/>
         </action>
 
         <action id="jp.titze.intellij.helix.halfPageUp"
@@ -196,7 +186,39 @@
             <keyboard-shortcut keymap="$default" first-keystroke="control U"/>
             <keyboard-shortcut keymap="Mac OS X" first-keystroke="control U"/>
             <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="control U"/>
-            <keyboard-shortcut keymap="macOS" first-keystroke="control U"/>
+        </action>
+
+        <action id="jp.titze.intellij.helix.jumpBackward"
+                class="jp.titze.intellij.helix.editor.HelixJumpBackwardAction"
+                text="Helix Jump Backward"
+                description="Jump to previous location in jumplist">
+            <keyboard-shortcut keymap="$default" first-keystroke="control O"/>
+            <keyboard-shortcut keymap="Mac OS X" first-keystroke="control O"/>
+            <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="control O"/>
+        </action>
+
+        <action id="jp.titze.intellij.helix.jumpForward"
+                class="jp.titze.intellij.helix.editor.HelixJumpForwardAction"
+                text="Helix Jump Forward"
+                description="Jump to next location in jumplist">
+            <keyboard-shortcut keymap="$default" first-keystroke="control I"/>
+            <keyboard-shortcut keymap="Mac OS X" first-keystroke="control I"/>
+            <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="control I"/>
+        </action>
+
+        <action id="jp.titze.intellij.helix.saveJump"
+                class="jp.titze.intellij.helix.editor.HelixSaveJumpAction"
+                text="Helix Save Jump"
+                description="Save current location to jumplist">
+            <keyboard-shortcut keymap="$default" first-keystroke="control S"/>
+            <keyboard-shortcut keymap="Mac OS X" first-keystroke="control S"/>
+            <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="control S"/>
+        </action>
+
+        <action id="jp.titze.intellij.helix.jumplistPicker"
+                class="jp.titze.intellij.helix.editor.HelixJumplistPickerAction"
+                text="Helix Jumplist Picker"
+                description="Open jumplist picker popup">
         </action>
     </actions>
 </idea-plugin>

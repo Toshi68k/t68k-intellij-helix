@@ -6,9 +6,11 @@ import jp.titze.intellij.helix.action.HelixActions
 import jp.titze.intellij.helix.action.HelixSurroundActions
 import jp.titze.intellij.helix.action.HelixTextObjectActions
 import jp.titze.intellij.helix.command.HelixCommandPopup
+import jp.titze.intellij.helix.jumplist.HelixJumpListService
 import jp.titze.intellij.helix.motion.HelixMotions
 import jp.titze.intellij.helix.state.HelixEditorState
 import jp.titze.intellij.helix.state.HelixStateManager
+import jp.titze.intellij.helix.ui.HelixJumplistPopup
 import jp.titze.intellij.helix.ui.HelixSearchManager
 import jp.titze.intellij.helix.ui.HelixWhichKeyPopup
 
@@ -46,10 +48,12 @@ object HelixKeyHandler {
                 HelixWhichKeyPopup.show(editor, charTyped.toString())
                 return true
             }
+
             'f', 't', 'F', 'T', 'r' -> {
                 state.appendKey(charTyped)
                 return true
             }
+
             ':' -> {
                 state.clearCount()
                 HelixWhichKeyPopup.hide()
@@ -76,47 +80,58 @@ object HelixKeyHandler {
                 HelixActions.replaceChar(editor, ch, count ?: 1)
                 return true
             }
+
             "f", "t", "F", "T" -> {
                 state.clearPendingSequence()
                 return HelixMotions.findCharMotion(editor, prefix[0], ch, count ?: 1)
             }
+
             "g" -> {
                 state.clearPendingSequence()
                 return handleGMenu(ch, editor, count)
             }
+
             " " -> {
                 state.clearPendingSequence()
                 return handleSpaceMenu(ch, editor)
             }
+
             "[" -> {
                 state.clearPendingSequence()
                 return handleBracketOpen(ch, editor, count ?: 1)
             }
+
             "]" -> {
                 state.clearPendingSequence()
                 return handleBracketClose(ch, editor, count ?: 1)
             }
+
             "m" -> return handleMatchMenu(ch, editor, state, count)
             "ms" -> {
                 state.clearPendingSequence()
                 return HelixSurroundActions.surroundAdd(editor, ch)
             }
+
             "md" -> {
                 state.clearPendingSequence()
                 return HelixSurroundActions.surroundDelete(editor, ch)
             }
+
             "mr" -> {
                 state.appendKey(ch)
                 return true
             }
+
             "ma" -> {
                 state.clearPendingSequence()
                 return HelixTextObjectActions.selectTextObject(editor, inside = false, objectChar = ch)
             }
+
             "mi" -> {
                 state.clearPendingSequence()
                 return HelixTextObjectActions.selectTextObject(editor, inside = true, objectChar = ch)
             }
+
             else -> {
                 if (prefix.startsWith("mr") && prefix.length == 3) {
                     val fromChar = prefix[2]
@@ -135,10 +150,12 @@ object HelixKeyHandler {
                 state.appendKey(ch)
                 return true
             }
+
             'm' -> {
                 state.clearPendingSequence()
                 return HelixMotions.matchBrackets(editor, count ?: 1)
             }
+
             else -> {
                 state.clearPendingSequence()
                 return false
@@ -146,43 +163,94 @@ object HelixKeyHandler {
         }
     }
 
+    private fun recordJump(editor: Editor) {
+        val project = editor.project ?: return
+        HelixJumpListService.getInstance(project).recordCurrent(editor)
+    }
+
     private fun handleGMenu(ch: Char, editor: Editor, count: Int? = null): Boolean {
         return when (ch) {
-            'd' -> HelixActionDelegate.executeAction("GotoDeclaration", editor)
-            'y' -> HelixActionDelegate.executeAction("GotoTypeDeclaration", editor)
-            'r' -> HelixActionDelegate.executeAction("FindUsages", editor)
+            'd' -> {
+                recordJump(editor)
+                HelixActionDelegate.executeAction("GotoDeclaration", editor)
+            }
+
+            'y' -> {
+                recordJump(editor)
+                HelixActionDelegate.executeAction("GotoTypeDeclaration", editor)
+            }
+
+            'r' -> {
+                recordJump(editor)
+                HelixActionDelegate.executeAction("FindUsages", editor)
+            }
+
             'h' -> {
                 HelixMotions.moveLineStart(editor)
                 true
             }
+
             's' -> {
                 HelixMotions.moveLineFirstNonWhitespace(editor)
                 true
             }
+
             'l' -> {
                 HelixMotions.moveLineEnd(editor)
                 true
             }
+
             'e' -> {
+                recordJump(editor)
                 HelixMotions.moveFileEnd(editor)
                 true
             }
+
             'g' -> {
+                recordJump(editor)
                 HelixMotions.moveFileStart(editor, count)
                 true
             }
+
             else -> false
         }
     }
 
     private fun handleSpaceMenu(ch: Char, editor: Editor): Boolean {
         return when (ch) {
-            'f' -> HelixActionDelegate.executeAction("GotoFile", editor) || HelixActionDelegate.executeAction("SearchEverywhere", editor)
-            'b' -> HelixActionDelegate.executeAction("RecentFiles", editor)
-            '/' -> HelixActionDelegate.executeAction("FindInPath", editor)
-            'j' -> HelixActionDelegate.executeAction("RecentLocations", editor)
-            's' -> HelixActionDelegate.executeAction("FileStructurePopup", editor)
-            'S' -> HelixActionDelegate.executeAction("GotoSymbol", editor)
+            'f' -> {
+                recordJump(editor)
+                HelixActionDelegate.executeAction(
+                    "GotoFile",
+                    editor
+                ) || HelixActionDelegate.executeAction("SearchEverywhere", editor)
+            }
+
+            'b' -> {
+                recordJump(editor)
+                HelixActionDelegate.executeAction("RecentFiles", editor)
+            }
+
+            '/' -> {
+                recordJump(editor)
+                HelixActionDelegate.executeAction("FindInPath", editor)
+            }
+
+            'j' -> {
+                HelixJumplistPopup.show(editor)
+                true
+            }
+
+            's' -> {
+                recordJump(editor)
+                HelixActionDelegate.executeAction("FileStructurePopup", editor)
+            }
+
+            'S' -> {
+                recordJump(editor)
+                HelixActionDelegate.executeAction("GotoSymbol", editor)
+            }
+
             'd' -> HelixActionDelegate.executeAction("ShowErrorDescription", editor)
             'D' -> HelixActionDelegate.executeAction("ActivateProblemsViewToolWindow", editor)
             'a' -> HelixActionDelegate.executeAction("ShowIntentionActions", editor)
@@ -192,18 +260,22 @@ object HelixKeyHandler {
                 HelixActions.yankSelection(editor)
                 true
             }
+
             'p' -> {
                 HelixActions.paste(editor, after = true)
                 true
             }
+
             'P' -> {
                 HelixActions.paste(editor, after = false)
                 true
             }
+
             'R' -> {
                 HelixActions.replaceWithClipboard(editor)
                 true
             }
+
             'k' -> HelixActionDelegate.executeAction("QuickJavaDoc", editor)
             '?' -> HelixActionDelegate.executeAction("GotoAction", editor)
             else -> false
@@ -212,48 +284,110 @@ object HelixKeyHandler {
 
     private fun handleBracketOpen(ch: Char, editor: Editor, count: Int): Boolean {
         return when (ch) {
-            'd' -> HelixMotions.moveDiagnostic(editor, forward = false, count = count, toEnd = false)
-            'D' -> HelixMotions.moveDiagnostic(editor, forward = false, count = count, toEnd = true)
-            'b' -> repeat(count) { HelixActionDelegate.executeAction("PreviousTab", editor) }.let { true }
-            'f' -> HelixMotions.moveFunction(editor, forward = false, count = count)
-            't' -> HelixMotions.moveType(editor, forward = false, count = count)
+            'd' -> {
+                recordJump(editor)
+                HelixMotions.moveDiagnostic(editor, forward = false, count = count, toEnd = false)
+            }
+
+            'D' -> {
+                recordJump(editor)
+                HelixMotions.moveDiagnostic(editor, forward = false, count = count, toEnd = true)
+            }
+
+            'b' -> {
+                recordJump(editor)
+                repeat(count) { HelixActionDelegate.executeAction("PreviousTab", editor) }.let { true }
+            }
+
+            'f' -> {
+                recordJump(editor)
+                HelixMotions.moveFunction(editor, forward = false, count = count)
+            }
+
+            't' -> {
+                recordJump(editor)
+                HelixMotions.moveType(editor, forward = false, count = count)
+            }
+
             'a' -> HelixMotions.moveParameter(editor, forward = false, count = count)
             'c' -> HelixMotions.moveComment(editor, forward = false, count = count)
             'T' -> HelixMotions.moveTest(editor, forward = false, count = count)
             'p' -> {
+                recordJump(editor)
                 HelixMotions.moveParagraph(editor, forward = false, count = count)
                 true
             }
-            'g' -> HelixMotions.moveChange(editor, forward = false, count = count, toEnd = false)
-            'G' -> HelixMotions.moveChange(editor, forward = false, count = count, toEnd = true)
+
+            'g' -> {
+                recordJump(editor)
+                HelixMotions.moveChange(editor, forward = false, count = count, toEnd = false)
+            }
+
+            'G' -> {
+                recordJump(editor)
+                HelixMotions.moveChange(editor, forward = false, count = count, toEnd = true)
+            }
+
             ' ' -> {
                 HelixMotions.addNewline(editor, below = false, count = count)
                 true
             }
+
             else -> false
         }
     }
 
     private fun handleBracketClose(ch: Char, editor: Editor, count: Int): Boolean {
         return when (ch) {
-            'd' -> HelixMotions.moveDiagnostic(editor, forward = true, count = count, toEnd = false)
-            'D' -> HelixMotions.moveDiagnostic(editor, forward = true, count = count, toEnd = true)
-            'b' -> repeat(count) { HelixActionDelegate.executeAction("NextTab", editor) }.let { true }
-            'f' -> HelixMotions.moveFunction(editor, forward = true, count = count)
-            't' -> HelixMotions.moveType(editor, forward = true, count = count)
+            'd' -> {
+                recordJump(editor)
+                HelixMotions.moveDiagnostic(editor, forward = true, count = count, toEnd = false)
+            }
+
+            'D' -> {
+                recordJump(editor)
+                HelixMotions.moveDiagnostic(editor, forward = true, count = count, toEnd = true)
+            }
+
+            'b' -> {
+                recordJump(editor)
+                repeat(count) { HelixActionDelegate.executeAction("NextTab", editor) }.let { true }
+            }
+
+            'f' -> {
+                recordJump(editor)
+                HelixMotions.moveFunction(editor, forward = true, count = count)
+            }
+
+            't' -> {
+                recordJump(editor)
+                HelixMotions.moveType(editor, forward = true, count = count)
+            }
+
             'a' -> HelixMotions.moveParameter(editor, forward = true, count = count)
             'c' -> HelixMotions.moveComment(editor, forward = true, count = count)
             'T' -> HelixMotions.moveTest(editor, forward = true, count = count)
             'p' -> {
+                recordJump(editor)
                 HelixMotions.moveParagraph(editor, forward = true, count = count)
                 true
             }
-            'g' -> HelixMotions.moveChange(editor, forward = true, count = count, toEnd = false)
-            'G' -> HelixMotions.moveChange(editor, forward = true, count = count, toEnd = true)
+
+            'g' -> {
+                recordJump(editor)
+                HelixMotions.moveChange(editor, forward = true, count = count, toEnd = false)
+            }
+
+            'G' -> {
+                recordJump(editor)
+                HelixMotions.moveChange(editor, forward = true, count = count, toEnd = true)
+            }
+
             ' ' -> {
                 HelixMotions.addNewline(editor, below = true, count = count)
                 true
             }
+
             else -> false
         }
     }
@@ -268,18 +402,24 @@ object HelixKeyHandler {
             'b' -> HelixMotions.movePrevWordStart(editor, count)
             'e' -> HelixMotions.moveWordEnd(editor, count)
             'x' -> HelixMotions.selectLine(editor, count)
-            '%' -> HelixMotions.selectAll(editor)
+            '%' -> {
+                recordJump(editor)
+                HelixMotions.selectAll(editor)
+            }
+
             'h' -> HelixMotions.moveLeft(editor, count)
             'j' -> HelixMotions.moveDown(editor, count)
             'k' -> HelixMotions.moveUp(editor, count)
             'l' -> HelixMotions.moveRight(editor, count)
             'G' -> {
+                recordJump(editor)
                 if (rawCount != null) {
                     HelixMotions.moveFileStart(editor, rawCount)
                 } else {
                     HelixMotions.moveFileEnd(editor)
                 }
             }
+
             ';' -> HelixMotions.collapseSelection(editor)
             ',' -> HelixMotions.keepOnlyPrimaryCaret(editor)
             '(' -> HelixMotions.rotateSelections(editor, forward = false)
@@ -289,6 +429,19 @@ object HelixKeyHandler {
             '\u0002' -> HelixMotions.pageUp(editor, count)
             '\u0004' -> HelixMotions.halfPageDown(editor, count)
             '\u0015' -> HelixMotions.halfPageUp(editor, count)
+            '\u000F' -> {
+                val project = editor.project
+                if (project != null) {
+                    HelixJumpListService.getInstance(project).jumpBackward(editor, count)
+                }
+            }
+
+            '\u0013' -> {
+                val project = editor.project
+                if (project != null) {
+                    HelixJumpListService.getInstance(project).recordCurrent(editor, force = true)
+                }
+            }
 
             // Actions
             'd' -> HelixActions.deleteSelection(editor)
@@ -308,6 +461,7 @@ object HelixKeyHandler {
                 HelixActionDelegate.executeAction("EditorStartNewLine", editor)
                 HelixActions.enterInsert(editor)
             }
+
             'O' -> {
                 HelixActionDelegate.executeAction("EditorStartNewLineBefore", editor)
                 HelixActions.enterInsert(editor)
@@ -324,11 +478,30 @@ object HelixKeyHandler {
             '~' -> HelixActionDelegate.executeAction("ToggleCase", editor)
             's' -> HelixSearchManager.startSelect(editor, isSplit = false)
             'S' -> HelixSearchManager.startSelect(editor, isSplit = true)
-            '/' -> HelixSearchManager.startSearch(editor, backward = false, count = count)
-            '?' -> HelixSearchManager.startSearch(editor, backward = true, count = count)
-            'n' -> HelixActions.searchNext(editor, count)
-            'N' -> HelixActions.searchPrev(editor, count)
-            '*' -> HelixActions.searchSelection(editor)
+            '/' -> {
+                recordJump(editor)
+                HelixSearchManager.startSearch(editor, backward = false, count = count)
+            }
+
+            '?' -> {
+                recordJump(editor)
+                HelixSearchManager.startSearch(editor, backward = true, count = count)
+            }
+
+            'n' -> {
+                recordJump(editor)
+                HelixActions.searchNext(editor, count)
+            }
+
+            'N' -> {
+                recordJump(editor)
+                HelixActions.searchPrev(editor, count)
+            }
+
+            '*' -> {
+                recordJump(editor)
+                HelixActions.searchSelection(editor)
+            }
 
             else -> return false
         }

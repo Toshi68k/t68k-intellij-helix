@@ -6,6 +6,7 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.EditorFactory
 import jp.titze.intellij.helix.action.HelixActionDelegate
+import jp.titze.intellij.helix.jumplist.HelixJumpListService
 import jp.titze.intellij.helix.motion.HelixMotions
 import jp.titze.intellij.helix.state.HelixStateManager
 import java.awt.AWTEvent
@@ -49,35 +50,69 @@ class HelixEventDispatcher : IdeEventQueue.EventDispatcher {
                 HelixMotions.pageDown(editor, count)
                 true
             }
+
             isCtrl && e.keyCode == KeyEvent.VK_B -> {
                 val count = state.takeCount() ?: 1
                 HelixMotions.pageUp(editor, count)
                 true
             }
+
             isCtrl && e.keyCode == KeyEvent.VK_D -> {
                 val count = state.takeCount() ?: 1
                 HelixMotions.halfPageDown(editor, count)
                 true
             }
+
             isCtrl && e.keyCode == KeyEvent.VK_U -> {
                 val count = state.takeCount() ?: 1
                 HelixMotions.halfPageUp(editor, count)
                 true
             }
+
             isCtrl && e.keyCode == KeyEvent.VK_C -> {
                 HelixActionDelegate.executeAction("CommentByLineComment", editor)
                 true
             }
+
+            isCtrl && e.keyCode == KeyEvent.VK_O -> {
+                val count = state.takeCount() ?: 1
+                val project = editor.project
+                if (project != null) {
+                    HelixJumpListService.getInstance(project).jumpBackward(editor, count)
+                }
+                true
+            }
+
+            isCtrl && e.keyCode == KeyEvent.VK_I -> {
+                val count = state.takeCount() ?: 1
+                val project = editor.project
+                if (project != null) {
+                    HelixJumpListService.getInstance(project).jumpForward(editor, count)
+                }
+                true
+            }
+
+            isCtrl && e.keyCode == KeyEvent.VK_S -> {
+                state.clearCount()
+                val project = editor.project
+                if (project != null) {
+                    HelixJumpListService.getInstance(project).recordCurrent(editor, force = true)
+                }
+                true
+            }
+
             isNoModifiers && e.keyCode == KeyEvent.VK_PAGE_DOWN -> {
                 val count = state.takeCount() ?: 1
                 HelixMotions.pageDown(editor, count)
                 true
             }
+
             isNoModifiers && e.keyCode == KeyEvent.VK_PAGE_UP -> {
                 val count = state.takeCount() ?: 1
                 HelixMotions.pageUp(editor, count)
                 true
             }
+
             else -> false
         }
 

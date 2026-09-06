@@ -10,14 +10,12 @@ import com.intellij.ui.JBColor
 import com.intellij.ui.awt.RelativePoint
 import com.intellij.ui.components.JBLabel
 import com.intellij.util.ui.JBUI
-import com.intellij.util.ui.UIUtil
 import jp.titze.intellij.helix.keymap.HelixKeyHandler
 import jp.titze.intellij.helix.state.HelixStateManager
 import java.awt.BorderLayout
 import java.awt.Color
 import java.awt.Cursor
 import java.awt.Font
-import java.awt.GridLayout
 import java.awt.Point
 import java.awt.event.KeyAdapter
 import java.awt.event.KeyEvent
@@ -57,7 +55,7 @@ object HelixWhichKeyPopup {
         WhichKeyItem("S", "Workspace symbol picker", "GotoSymbol"),
         WhichKeyItem("d", "Diagnostics picker", "ShowError"),
         WhichKeyItem("D", "Workspace diagnostics", "Problems"),
-        WhichKeyItem("j", "Jumplist picker", "RecentLocations"),
+        WhichKeyItem("j", "Jumplist picker", "Jumplist"),
         WhichKeyItem("a", "Code action", "Intentions"),
         WhichKeyItem("r", "Rename symbol", "RenameElement"),
         WhichKeyItem("w", "Save", "SaveAll"),
@@ -358,7 +356,7 @@ object HelixWhichKeyPopup {
     }
 
     private class WhichKeyRow(
-        val item: WhichKeyItem,
+        item: WhichKeyItem,
         val onClick: () -> Unit
     ) : JPanel(BorderLayout(JBUI.scale(10), 0)) {
         private var isHovered = false
@@ -409,7 +407,10 @@ object HelixWhichKeyPopup {
         override fun paintComponent(g: java.awt.Graphics) {
             if (isHovered) {
                 val g2 = g.create() as java.awt.Graphics2D
-                g2.setRenderingHint(java.awt.RenderingHints.KEY_ANTIALIASING, java.awt.RenderingHints.VALUE_ANTIALIAS_ON)
+                g2.setRenderingHint(
+                    java.awt.RenderingHints.KEY_ANTIALIASING,
+                    java.awt.RenderingHints.VALUE_ANTIALIAS_ON
+                )
                 g2.color = HOVER_BG
                 g2.fillRoundRect(0, 0, width, height, JBUI.scale(6), JBUI.scale(6))
                 g2.dispose()

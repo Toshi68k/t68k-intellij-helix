@@ -9,10 +9,12 @@ import com.intellij.ui.components.JBList
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.components.JBTextField
 import com.intellij.util.ui.JBUI
-import com.intellij.util.ui.UIUtil
 import jp.titze.intellij.helix.action.HelixActionDelegate
+import jp.titze.intellij.helix.jumplist.HelixJumpListService
+import jp.titze.intellij.helix.motion.HelixMotions
 import jp.titze.intellij.helix.settings.HelixSearchUiMode
 import jp.titze.intellij.helix.settings.HelixSettings
+import jp.titze.intellij.helix.ui.HelixJumplistPopup
 import java.awt.BorderLayout
 import java.awt.Color
 import java.awt.Component
@@ -100,10 +102,10 @@ object HelixCommandPopup {
             HelixActionDelegate.executeAction("ReformatCode", editor)
         },
         HelixCommandItem("earlier", emptyList(), "Undo earlier changes") { editor ->
-            HelixActionDelegate.executeAction("\$Undo", editor)
+            HelixActionDelegate.executeAction($$"$Undo", editor)
         },
         HelixCommandItem("later", emptyList(), "Redo later changes") { editor ->
-            HelixActionDelegate.executeAction("\$Redo", editor)
+            HelixActionDelegate.executeAction($$"$Redo", editor)
         },
         HelixCommandItem("reload", emptyList(), "Synchronize / reload buffer from disk") { editor ->
             HelixActionDelegate.executeAction("Synchronize", editor)
@@ -111,22 +113,29 @@ object HelixCommandPopup {
         HelixCommandItem("config-reload", emptyList(), "Reload Helix configuration") { _ ->
         },
         HelixCommandItem("toggle-search-ui", emptyList(), "Toggle search UI (Stock Helix / Popup)") { _ ->
-            HelixSettings.instance.searchUiMode = if (HelixSettings.instance.searchUiMode == HelixSearchUiMode.STOCK_HELIX) {
-                HelixSearchUiMode.POPUP
-            } else {
-                HelixSearchUiMode.STOCK_HELIX
-            }
+            HelixSettings.instance.searchUiMode =
+                if (HelixSettings.instance.searchUiMode == HelixSearchUiMode.STOCK_HELIX) {
+                    HelixSearchUiMode.POPUP
+                } else {
+                    HelixSearchUiMode.STOCK_HELIX
+                }
         },
         HelixCommandItem("set-search-ui-stock", emptyList(), "Set search UI to Stock Helix inline bar") { _ ->
             HelixSettings.instance.searchUiMode = HelixSearchUiMode.STOCK_HELIX
         },
         HelixCommandItem("set-search-ui-popup", emptyList(), "Set search UI to Popup dialog") { _ ->
             HelixSettings.instance.searchUiMode = HelixSearchUiMode.POPUP
+        },
+        HelixCommandItem("jumps", emptyList(), "Open jumplist picker") { editor ->
+            HelixJumplistPopup.show(editor)
         }
     )
 
     private class RoundedCardPanel(layout: java.awt.LayoutManager) : JPanel(layout) {
-        init { isOpaque = false }
+        init {
+            isOpaque = false
+        }
+
         override fun paintComponent(g: Graphics) {
             val g2 = g.create() as Graphics2D
             g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
@@ -139,7 +148,10 @@ object HelixCommandPopup {
     }
 
     private class InputBoxPanel(layout: java.awt.LayoutManager) : JPanel(layout) {
-        init { isOpaque = false }
+        init {
+            isOpaque = false
+        }
+
         override fun paintComponent(g: Graphics) {
             val g2 = g.create() as Graphics2D
             g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
@@ -158,6 +170,7 @@ object HelixCommandPopup {
                 border = JBUI.Borders.empty(2, 6)
             })
         }
+
         override fun paintComponent(g: Graphics) {
             val g2 = g.create() as Graphics2D
             g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
@@ -235,10 +248,12 @@ object HelixCommandPopup {
         list.cellRenderer = object : ListCellRenderer<HelixCommandItem> {
             private val cellPanel = object : JPanel(BorderLayout(JBUI.scale(10), 0)) {
                 var isSelectedRow = false
+
                 init {
                     isOpaque = false
                     border = JBUI.Borders.empty(4, 8)
                 }
+
                 override fun paintComponent(g: Graphics) {
                     if (isSelectedRow) {
                         val g2 = g.create() as Graphics2D
@@ -287,7 +302,8 @@ object HelixCommandPopup {
                 } else {
                     ""
                 }
-                cellPanel.accessibleContext.accessibleName = value?.let { "${it.displayCommand}: ${it.description}" } ?: ""
+                cellPanel.accessibleContext.accessibleName =
+                    value?.let { "${it.displayCommand}: ${it.description}" } ?: ""
                 return cellPanel
             }
         }
@@ -358,10 +374,12 @@ object HelixCommandPopup {
                         runChosenCommand()
                         e.consume()
                     }
+
                     KeyEvent.VK_ESCAPE -> {
                         popup.cancel()
                         e.consume()
                     }
+
                     KeyEvent.VK_DOWN -> {
                         if (listModel.size > 0) {
                             val next = (list.selectedIndex + 1).coerceAtMost(listModel.size - 1)
@@ -370,6 +388,7 @@ object HelixCommandPopup {
                         }
                         e.consume()
                     }
+
                     KeyEvent.VK_UP -> {
                         if (listModel.size > 0) {
                             val prev = (list.selectedIndex - 1).coerceAtLeast(0)
@@ -378,6 +397,7 @@ object HelixCommandPopup {
                         }
                         e.consume()
                     }
+
                     KeyEvent.VK_TAB -> {
                         val selected = list.selectedValue
                         if (selected != null) {
@@ -385,6 +405,7 @@ object HelixCommandPopup {
                         }
                         e.consume()
                     }
+
                     KeyEvent.VK_N -> {
                         if (e.isControlDown && listModel.size > 0) {
                             val next = (list.selectedIndex + 1).coerceAtMost(listModel.size - 1)
@@ -393,6 +414,7 @@ object HelixCommandPopup {
                             e.consume()
                         }
                     }
+
                     KeyEvent.VK_P -> {
                         if (e.isControlDown && listModel.size > 0) {
                             val prev = (list.selectedIndex - 1).coerceAtLeast(0)
@@ -432,8 +454,19 @@ object HelixCommandPopup {
             return
         }
 
+        val targetLine = cleanCmd.toIntOrNull()
+        if (targetLine != null && targetLine > 0) {
+            val project = editor.project
+            if (project != null) {
+                HelixJumpListService.getInstance(project).recordCurrent(editor)
+            }
+            HelixMotions.moveFileStart(editor, targetLine)
+            return
+        }
+
         // Fallbacks for standard vim/helix commands
         when (cleanCmd) {
+            "jumps" -> HelixJumplistPopup.show(editor)
             "w", "write" -> HelixActionDelegate.executeAction("SaveAll", editor)
             "q", "quit" -> HelixActionDelegate.executeAction("CloseContent", editor)
             "wq", "x" -> {
@@ -442,6 +475,7 @@ object HelixCommandPopup {
                     HelixActionDelegate.executeAction("CloseContent", editor)
                 }
             }
+
             "wa" -> HelixActionDelegate.executeAction("SaveAll", editor)
             "qa" -> HelixActionDelegate.executeAction("CloseAllEditors", editor)
             "vsp" -> HelixActionDelegate.executeAction("SplitVertically", editor)
@@ -450,12 +484,15 @@ object HelixCommandPopup {
             "set search-ui=inline", "set search-ui=stock" -> {
                 HelixSettings.instance.searchUiMode = HelixSearchUiMode.STOCK_HELIX
             }
+
             "set search-ui=popup" -> {
                 HelixSettings.instance.searchUiMode = HelixSearchUiMode.POPUP
             }
+
             "toggle-search-ui", "search-ui" -> {
                 val current = HelixSettings.instance.searchUiMode
-                val next = if (current == HelixSearchUiMode.STOCK_HELIX) HelixSearchUiMode.POPUP else HelixSearchUiMode.STOCK_HELIX
+                val next =
+                    if (current == HelixSearchUiMode.STOCK_HELIX) HelixSearchUiMode.POPUP else HelixSearchUiMode.STOCK_HELIX
                 HelixSettings.instance.searchUiMode = next
             }
         }
