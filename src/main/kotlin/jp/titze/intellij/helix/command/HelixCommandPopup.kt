@@ -3,7 +3,6 @@ package jp.titze.intellij.helix.command
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.ui.popup.JBPopupFactory
-import com.intellij.ui.JBColor
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBList
 import com.intellij.ui.components.JBScrollPane
@@ -15,8 +14,8 @@ import jp.titze.intellij.helix.motion.HelixMotions
 import jp.titze.intellij.helix.settings.HelixSearchUiMode
 import jp.titze.intellij.helix.settings.HelixSettings
 import jp.titze.intellij.helix.ui.HelixJumplistPopup
+import jp.titze.intellij.helix.ui.HelixTheme
 import java.awt.BorderLayout
-import java.awt.Color
 import java.awt.Component
 import java.awt.Cursor
 import java.awt.Dimension
@@ -59,18 +58,18 @@ data class HelixCommandItem(
 
 object HelixCommandPopup {
 
-    private val CARD_BG = JBColor(Color(0xFA, 0xFA, 0xFC), Color(0x15, 0x16, 0x22))
-    private val CARD_BORDER = JBColor(Color(0xD8, 0xDC, 0xEA), Color(0x2B, 0x2E, 0x46))
-    private val DIVIDER_COLOR = JBColor(Color(0xEA, 0xED, 0xF5), Color(0x23, 0x26, 0x3A))
-    private val TITLE_COLOR = JBColor(Color(0x43, 0x38, 0xCA), Color(0xA5, 0xB4, 0xFC))
-    private val CANCEL_COLOR = JBColor(Color(0x8A, 0x90, 0xA2), Color(0x64, 0x6C, 0x8E))
-    private val KEYCAP_BG = JBColor(Color(0xEE, 0xF2, 0xFC), Color(0x23, 0x26, 0x3E))
-    private val KEYCAP_BORDER = JBColor(Color(0xCF, 0xD7, 0xEE), Color(0x38, 0x3D, 0x62))
-    private val KEYCAP_FG = JBColor(Color(0x3B, 0x47, 0x90), Color(0xA5, 0xB4, 0xFC))
-    private val ITEM_TEXT_COLOR = JBColor(Color(0x22, 0x24, 0x30), Color(0xDF, 0xE2, 0xEE))
-    private val ITEM_DESC_COLOR = JBColor(Color(0x8E, 0x94, 0xA8), Color(0x6A, 0x72, 0x94))
-    private val HOVER_BG = JBColor(Color(0xF0, 0xF3, 0xFA), Color(0x20, 0x23, 0x38))
-    private val INPUT_BG = JBColor(Color(0xF0, 0xF3, 0xFA), Color(0x1B, 0x1D, 0x2E))
+    private val CARD_BG get() = HelixTheme.CARD_BG
+    private val CARD_BORDER get() = HelixTheme.CARD_BORDER
+    private val DIVIDER_COLOR get() = HelixTheme.DIVIDER_COLOR
+    private val TITLE_COLOR get() = HelixTheme.TITLE_COLOR
+    private val CANCEL_COLOR get() = HelixTheme.CANCEL_COLOR
+    private val KEYCAP_BG get() = HelixTheme.KEYCAP_BG
+    private val KEYCAP_BORDER get() = HelixTheme.KEYCAP_BORDER
+    private val KEYCAP_FG get() = HelixTheme.KEYCAP_FG
+    private val ITEM_TEXT_COLOR get() = HelixTheme.ITEM_TEXT_COLOR
+    private val ITEM_DESC_COLOR get() = HelixTheme.ITEM_DESC_COLOR
+    private val HOVER_BG get() = HelixTheme.HOVER_BG
+    private val INPUT_BG get() = HelixTheme.INPUT_BG
 
     val COMMANDS = listOf(
         HelixCommandItem("write", listOf("w"), "Save all modified files") { editor ->

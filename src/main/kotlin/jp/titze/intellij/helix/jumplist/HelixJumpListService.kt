@@ -11,6 +11,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.TextRange
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.wm.WindowManager
+import jp.titze.intellij.helix.settings.HelixSettings
 
 data class HelixJumpEntry(
     val virtualFile: VirtualFile,
@@ -35,7 +36,8 @@ class HelixJumpListService(private val project: Project) {
 
     private val entries = mutableListOf<HelixJumpEntry>()
     private var currentIndex: Int = -1
-    private val maxEntries = 100
+    val maxEntries: Int
+        get() = HelixSettings.instance.jumpListMaxEntries
 
     @Synchronized
     fun getEntries(): List<HelixJumpEntry> = entries.toList()
@@ -47,6 +49,18 @@ class HelixJumpListService(private val project: Project) {
     fun clear() {
         entries.clear()
         currentIndex = -1
+    }
+
+    @Synchronized
+    fun trimToCapacity() {
+        val limit = maxEntries
+        while (entries.size > limit && entries.isNotEmpty()) {
+            entries.removeAt(0)
+            if (currentIndex > 0) currentIndex--
+        }
+        if (currentIndex >= entries.size) {
+            currentIndex = entries.size - 1
+        }
     }
 
     @Synchronized
@@ -95,7 +109,8 @@ class HelixJumpListService(private val project: Project) {
         )
 
         entries.add(entry)
-        if (entries.size > maxEntries) {
+        val limit = maxEntries
+        while (entries.size > limit && entries.isNotEmpty()) {
             entries.removeAt(0)
         }
         currentIndex = entries.size - 1
