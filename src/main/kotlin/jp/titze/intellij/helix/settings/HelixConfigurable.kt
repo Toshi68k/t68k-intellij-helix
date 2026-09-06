@@ -72,7 +72,7 @@ class HelixConfigurable : SearchableConfigurable {
         optionsPanel.add(popup)
 
         val helpLabel = JBLabel(
-            "<html>Applies to <code>/</code> (search), <code>?</code> (reverse search), <code>s</code> (regex select), and <code>S</code> (regex split).<br/>In Stock Helix mode, matches and selections update live in the editor buffer as you type. Pressing <b>Esc</b> cancels and restores original selections.</html>",
+            "<html>Applies to <code>/</code> (search), <code>?</code> (reverse search), <code>s</code> (regex select), and <code>S</code> (regex split).<br/>In Stock Helix mode, matches and selections update live in the editor buffer as you type.<br/>Pressing <b>Esc</b> cancels and restores original selections.</html>",
         )
         helpLabel.font = JBUI.Fonts.smallFont()
         helpLabel.foreground = UIUtil.getContextHelpForeground()
