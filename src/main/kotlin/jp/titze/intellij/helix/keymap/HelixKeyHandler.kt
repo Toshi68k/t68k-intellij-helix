@@ -3,19 +3,20 @@ package jp.titze.intellij.helix.keymap
 import com.intellij.openapi.editor.Editor
 import jp.titze.intellij.helix.action.HelixActionDelegate
 import jp.titze.intellij.helix.action.HelixActions
-import jp.titze.intellij.helix.action.HelixSurroundActions
-import jp.titze.intellij.helix.action.HelixTextObjectActions
 import jp.titze.intellij.helix.command.HelixCommandPopup
 import jp.titze.intellij.helix.jumplist.HelixJumpListService
 import jp.titze.intellij.helix.motion.HelixMotions
-import jp.titze.intellij.helix.motion.HelixViewMotions
 import jp.titze.intellij.helix.state.HelixEditorState
 import jp.titze.intellij.helix.state.HelixStateManager
-import jp.titze.intellij.helix.ui.HelixJumplistPopup
 import jp.titze.intellij.helix.ui.HelixSearchManager
 import jp.titze.intellij.helix.ui.HelixWhichKeyPopup
 
 object HelixKeyHandler {
+
+    internal fun recordJump(editor: Editor) {
+        val project = editor.project ?: return
+        HelixJumpListService.getInstance(project).recordCurrent(editor)
+    }
 
     fun handleKey(charTyped: Char, editor: Editor): Boolean {
         val state = HelixStateManager.getOrCreate(editor)
@@ -90,31 +91,31 @@ object HelixKeyHandler {
 
             "g" -> {
                 state.clearPendingSequence()
-                handleGMenu(ch, editor, count)
+                HelixGotoKeymap.handle(ch, editor, count)
             }
 
             " " -> {
                 state.clearPendingSequence()
-                handleSpaceMenu(ch, editor)
+                HelixSpaceKeymap.handle(ch, editor)
             }
 
             "[" -> {
                 state.clearPendingSequence()
-                handleBracketOpen(ch, editor, count ?: 1)
+                HelixBracketKeymap.handleOpen(ch, editor, count ?: 1)
             }
 
             "]" -> {
                 state.clearPendingSequence()
-                handleBracketClose(ch, editor, count ?: 1)
+                HelixBracketKeymap.handleClose(ch, editor, count ?: 1)
             }
 
             "z" -> {
                 state.clearPendingSequence()
-                handleViewMenu(ch, editor, count)
+                HelixViewKeymap.handle(ch, editor, count)
             }
 
             "Z" -> {
-                val handled = handleViewMenu(ch, editor, count)
+                val handled = HelixViewKeymap.handle(ch, editor, count)
                 if (handled) {
                     if (!HelixWhichKeyPopup.isShowing("Z")) {
                         HelixWhichKeyPopup.show(editor, "Z")
@@ -127,359 +128,10 @@ object HelixKeyHandler {
                 }
             }
 
-            "m" -> handleMatchMenu(ch, editor, state, count)
+            "m" -> HelixMatchKeymap.handle(ch, editor, state, count)
 
-            else -> handleMatchSubmenu(prefix, ch, editor, state)
+            else -> HelixMatchKeymap.handleSubmenu(prefix, ch, editor, state)
         }
-    }
-
-    private fun handleMatchSubmenu(prefix: String, ch: Char, editor: Editor, state: HelixEditorState): Boolean =
-        when (prefix) {
-            "ms" -> {
-                state.clearPendingSequence()
-                HelixSurroundActions.surroundAdd(editor, ch)
-            }
-
-            "md" -> {
-                state.clearPendingSequence()
-                HelixSurroundActions.surroundDelete(editor, ch)
-            }
-
-            "mr" -> {
-                state.appendKey(ch)
-                true
-            }
-
-            "ma" -> {
-                state.clearPendingSequence()
-                HelixTextObjectActions.selectTextObject(editor, inside = false, objectChar = ch)
-            }
-
-            "mi" -> {
-                state.clearPendingSequence()
-                HelixTextObjectActions.selectTextObject(editor, inside = true, objectChar = ch)
-            }
-
-            else -> {
-                if (prefix.startsWith("mr") && prefix.length == 3) {
-                    val fromChar = prefix[2]
-                    state.clearPendingSequence()
-                    HelixSurroundActions.surroundReplace(editor, fromChar, ch)
-                } else {
-                    state.clearPendingSequence()
-                    false
-                }
-            }
-        }
-
-    private fun handleMatchMenu(ch: Char, editor: Editor, state: HelixEditorState, count: Int? = null): Boolean {
-        when (ch) {
-            's', 'd', 'r', 'a', 'i' -> {
-                state.appendKey(ch)
-                return true
-            }
-
-            'm' -> {
-                state.clearPendingSequence()
-                return HelixMotions.matchBrackets(editor, count ?: 1)
-            }
-
-            else -> {
-                state.clearPendingSequence()
-                return false
-            }
-        }
-    }
-
-    private fun recordJump(editor: Editor) {
-        val project = editor.project ?: return
-        HelixJumpListService.getInstance(project).recordCurrent(editor)
-    }
-
-    private fun handleGMenu(ch: Char, editor: Editor, count: Int? = null): Boolean = when (ch) {
-        'd' -> {
-            recordJump(editor)
-            HelixActionDelegate.executeAction("GotoDeclaration", editor)
-        }
-
-        'y' -> {
-            recordJump(editor)
-            HelixActionDelegate.executeAction("GotoTypeDeclaration", editor)
-        }
-
-        'r' -> {
-            recordJump(editor)
-            HelixActionDelegate.executeAction("FindUsages", editor)
-        }
-
-        'h' -> {
-            HelixMotions.moveLineStart(editor)
-            true
-        }
-
-        's' -> {
-            HelixMotions.moveLineFirstNonWhitespace(editor)
-            true
-        }
-
-        'l' -> {
-            HelixMotions.moveLineEnd(editor)
-            true
-        }
-
-        'e' -> {
-            recordJump(editor)
-            HelixMotions.moveFileEnd(editor)
-            true
-        }
-
-        'g' -> {
-            recordJump(editor)
-            HelixMotions.moveFileStart(editor, count)
-            true
-        }
-
-        else -> false
-    }
-
-    private fun handleViewMenu(ch: Char, editor: Editor, count: Int? = null): Boolean {
-        val lines = count ?: 1
-        return when (ch) {
-            'c', 'z' -> {
-                HelixViewMotions.alignViewCenter(editor)
-                true
-            }
-
-            't' -> {
-                HelixViewMotions.alignViewTop(editor)
-                true
-            }
-
-            'b' -> {
-                HelixViewMotions.alignViewBottom(editor)
-                true
-            }
-
-            'm' -> {
-                HelixViewMotions.alignViewMiddle(editor)
-                true
-            }
-
-            'j' -> {
-                HelixViewMotions.scrollViewDown(editor, lines)
-                true
-            }
-
-            'k' -> {
-                HelixViewMotions.scrollViewUp(editor, lines)
-                true
-            }
-
-            'd' -> {
-                HelixViewMotions.scrollHalfPageDown(editor, lines)
-                true
-            }
-
-            'u' -> {
-                HelixViewMotions.scrollHalfPageUp(editor, lines)
-                true
-            }
-
-            'f' -> {
-                HelixViewMotions.scrollPageDown(editor, lines)
-                true
-            }
-
-            'F' -> {
-                HelixViewMotions.scrollPageUp(editor, lines)
-                true
-            }
-
-            else -> false
-        }
-    }
-
-    private fun handleSpaceMenu(ch: Char, editor: Editor): Boolean = when (ch) {
-        'f' -> {
-            recordJump(editor)
-            HelixActionDelegate.executeAction(
-                "GotoFile",
-                editor,
-            ) || HelixActionDelegate.executeAction("SearchEverywhere", editor)
-        }
-
-        'b' -> {
-            recordJump(editor)
-            HelixActionDelegate.executeAction("RecentFiles", editor)
-        }
-
-        '/' -> {
-            recordJump(editor)
-            HelixActionDelegate.executeAction("FindInPath", editor)
-        }
-
-        'j' -> {
-            HelixJumplistPopup.show(editor)
-            true
-        }
-
-        's' -> {
-            recordJump(editor)
-            HelixActionDelegate.executeAction("FileStructurePopup", editor)
-        }
-
-        'S' -> {
-            recordJump(editor)
-            HelixActionDelegate.executeAction("GotoSymbol", editor)
-        }
-
-        'd' -> HelixActionDelegate.executeAction("ShowErrorDescription", editor)
-
-        'D' -> HelixActionDelegate.executeAction("ActivateProblemsViewToolWindow", editor)
-
-        'a' -> HelixActionDelegate.executeAction("ShowIntentionActions", editor)
-
-        'r' -> HelixActionDelegate.executeAction("RenameElement", editor)
-
-        'w' -> HelixActionDelegate.executeAction("SaveAll", editor)
-
-        'y' -> {
-            HelixActions.yankSelection(editor)
-            true
-        }
-
-        'p' -> {
-            HelixActions.paste(editor, after = true)
-            true
-        }
-
-        'P' -> {
-            HelixActions.paste(editor, after = false)
-            true
-        }
-
-        'R' -> {
-            HelixActions.replaceWithClipboard(editor)
-            true
-        }
-
-        'k' -> HelixActionDelegate.executeAction("QuickJavaDoc", editor)
-
-        '?' -> HelixActionDelegate.executeAction("GotoAction", editor)
-
-        else -> false
-    }
-
-    private fun handleBracketOpen(ch: Char, editor: Editor, count: Int): Boolean = when (ch) {
-        'd' -> {
-            recordJump(editor)
-            HelixMotions.moveDiagnostic(editor, forward = false, count = count, toEnd = false)
-        }
-
-        'D' -> {
-            recordJump(editor)
-            HelixMotions.moveDiagnostic(editor, forward = false, count = count, toEnd = true)
-        }
-
-        'b' -> {
-            recordJump(editor)
-            repeat(count) { HelixActionDelegate.executeAction("PreviousTab", editor) }.let { true }
-        }
-
-        'f' -> {
-            recordJump(editor)
-            HelixMotions.moveFunction(editor, forward = false, count = count)
-        }
-
-        't' -> {
-            recordJump(editor)
-            HelixMotions.moveType(editor, forward = false, count = count)
-        }
-
-        'a' -> HelixMotions.moveParameter(editor, forward = false, count = count)
-
-        'c' -> HelixMotions.moveComment(editor, forward = false, count = count)
-
-        'T' -> HelixMotions.moveTest(editor, forward = false, count = count)
-
-        'p' -> {
-            recordJump(editor)
-            HelixMotions.moveParagraph(editor, forward = false, count = count)
-            true
-        }
-
-        'g' -> {
-            recordJump(editor)
-            HelixMotions.moveChange(editor, forward = false, count = count, toEnd = false)
-        }
-
-        'G' -> {
-            recordJump(editor)
-            HelixMotions.moveChange(editor, forward = false, count = count, toEnd = true)
-        }
-
-        ' ' -> {
-            HelixMotions.addNewline(editor, below = false, count = count)
-            true
-        }
-
-        else -> false
-    }
-
-    private fun handleBracketClose(ch: Char, editor: Editor, count: Int): Boolean = when (ch) {
-        'd' -> {
-            recordJump(editor)
-            HelixMotions.moveDiagnostic(editor, forward = true, count = count, toEnd = false)
-        }
-
-        'D' -> {
-            recordJump(editor)
-            HelixMotions.moveDiagnostic(editor, forward = true, count = count, toEnd = true)
-        }
-
-        'b' -> {
-            recordJump(editor)
-            repeat(count) { HelixActionDelegate.executeAction("NextTab", editor) }.let { true }
-        }
-
-        'f' -> {
-            recordJump(editor)
-            HelixMotions.moveFunction(editor, forward = true, count = count)
-        }
-
-        't' -> {
-            recordJump(editor)
-            HelixMotions.moveType(editor, forward = true, count = count)
-        }
-
-        'a' -> HelixMotions.moveParameter(editor, forward = true, count = count)
-
-        'c' -> HelixMotions.moveComment(editor, forward = true, count = count)
-
-        'T' -> HelixMotions.moveTest(editor, forward = true, count = count)
-
-        'p' -> {
-            recordJump(editor)
-            HelixMotions.moveParagraph(editor, forward = true, count = count)
-            true
-        }
-
-        'g' -> {
-            recordJump(editor)
-            HelixMotions.moveChange(editor, forward = true, count = count, toEnd = false)
-        }
-
-        'G' -> {
-            recordJump(editor)
-            HelixMotions.moveChange(editor, forward = true, count = count, toEnd = true)
-        }
-
-        ' ' -> {
-            HelixMotions.addNewline(editor, below = true, count = count)
-            true
-        }
-
-        else -> false
     }
 
     private fun handleSingleKey(ch: Char, editor: Editor, state: HelixEditorState): Boolean {
@@ -587,9 +239,9 @@ object HelixKeyHandler {
             // Mode & History & IDE
             'v' -> HelixActions.toggleSelectMode(editor)
 
-            'u' -> repeat(count) { HelixActionDelegate.executeAction($$"$Undo", editor) }
+            'u' -> repeat(count) { HelixActionDelegate.executeAction("\$Undo", editor) }
 
-            'U' -> repeat(count) { HelixActionDelegate.executeAction($$"$Redo", editor) }
+            'U' -> repeat(count) { HelixActionDelegate.executeAction("\$Redo", editor) }
 
             'K' -> HelixActionDelegate.executeAction("QuickJavaDoc", editor)
 
