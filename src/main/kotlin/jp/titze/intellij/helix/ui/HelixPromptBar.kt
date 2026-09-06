@@ -30,7 +30,7 @@ enum class HelixPromptType(val badge: String) {
     SEARCH("search"),
     RSEARCH("rsearch"),
     SELECT("select"),
-    SPLIT("split")
+    SPLIT("split"),
 }
 
 class HelixPromptBar(private val editor: Editor) : JPanel(BorderLayout(JBUI.scale(8), 0)) {
@@ -79,7 +79,7 @@ class HelixPromptBar(private val editor: Editor) : JPanel(BorderLayout(JBUI.scal
         background = CARD_BG
         border = BorderFactory.createCompoundBorder(
             BorderFactory.createMatteBorder(1, 0, 0, 0, CARD_BORDER),
-            JBUI.Borders.empty(4, 10)
+            JBUI.Borders.empty(4, 10),
         )
         preferredSize = Dimension(Short.MAX_VALUE.toInt(), JBUI.scale(32))
 
@@ -107,10 +107,12 @@ class HelixPromptBar(private val editor: Editor) : JPanel(BorderLayout(JBUI.scal
                         commitAndClose()
                         e.consume()
                     }
+
                     KeyEvent.VK_ESCAPE -> {
                         cancelAndClose()
                         e.consume()
                     }
+
                     KeyEvent.VK_BACK_SPACE -> {
                         if (textField.text.isEmpty()) {
                             cancelAndClose()
@@ -162,20 +164,35 @@ class HelixPromptBar(private val editor: Editor) : JPanel(BorderLayout(JBUI.scal
         try {
             when (currentType) {
                 HelixPromptType.SEARCH -> {
-                    HelixActions.previewSearch(editor, query, backward = false, count = currentCount, baseSnapshot = baseSnapshot)
+                    HelixActions.previewSearch(
+                        editor,
+                        query,
+                        backward = false,
+                        count = currentCount,
+                        baseSnapshot = baseSnapshot,
+                    )
                     val matches = HelixActions.countDocumentRegexMatches(editor, query)
                     updateStatusText(matches)
                 }
+
                 HelixPromptType.RSEARCH -> {
-                    HelixActions.previewSearch(editor, query, backward = true, count = currentCount, baseSnapshot = baseSnapshot)
+                    HelixActions.previewSearch(
+                        editor,
+                        query,
+                        backward = true,
+                        count = currentCount,
+                        baseSnapshot = baseSnapshot,
+                    )
                     val matches = HelixActions.countDocumentRegexMatches(editor, query)
                     updateStatusText(matches)
                 }
+
                 HelixPromptType.SELECT -> {
                     HelixActions.previewSelectRegex(editor, query, baseSnapshot = baseSnapshot)
                     val matches = HelixActions.countRegexMatchesInSnapshot(editor, query, baseSnapshot)
                     updateStatusText(matches)
                 }
+
                 HelixPromptType.SPLIT -> {
                     HelixActions.previewSplitRegex(editor, query, baseSnapshot = baseSnapshot)
                     val matches = HelixActions.countRegexMatchesInSnapshot(editor, query, baseSnapshot)

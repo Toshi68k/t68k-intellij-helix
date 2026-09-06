@@ -6,9 +6,7 @@ import com.intellij.openapi.util.Key
 object HelixStateManager {
     private val HELIX_STATE_KEY = Key.create<HelixEditorState>("HELIX_STATE_KEY")
 
-    fun get(editor: Editor): HelixEditorState? {
-        return editor.getUserData(HELIX_STATE_KEY)
-    }
+    fun get(editor: Editor): HelixEditorState? = editor.getUserData(HELIX_STATE_KEY)
 
     fun getOrCreate(editor: Editor): HelixEditorState {
         var state = editor.getUserData(HELIX_STATE_KEY)
@@ -27,6 +25,7 @@ object HelixStateManager {
             HelixMode.NORMAL, HelixMode.SELECT -> {
                 settings.isBlockCursor = true
             }
+
             HelixMode.INSERT -> {
                 settings.isBlockCursor = false
             }

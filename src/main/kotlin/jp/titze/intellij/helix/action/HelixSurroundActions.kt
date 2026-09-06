@@ -38,12 +38,7 @@ object HelixSurroundActions {
         }
     }
 
-    private fun findEnclosingBrackets(
-        document: Document,
-        caret: Caret,
-        open: Char,
-        close: Char
-    ): Pair<Int, Int>? {
+    private fun findEnclosingBrackets(document: Document, caret: Caret, open: Char, close: Char): Pair<Int, Int>? {
         val text = document.charsSequence
         val len = text.length
         if (len == 0) return null
@@ -52,60 +47,75 @@ object HelixSurroundActions {
         val selStart = if (hasActiveSelection) caret.selectionStart else caret.offset
         val selEnd = if (hasActiveSelection) caret.selectionEnd else (caret.offset + 1).coerceAtMost(len)
 
-        // Check if the selection itself is bounded by open and close
-        if (hasActiveSelection && selStart < selEnd) {
-            if (text[selStart] == open && text[selEnd - 1] == close) {
-                if (isBalanced(text, selStart, selEnd - 1, open, close)) {
-                    return Pair(selStart, selEnd - 1)
-                }
-            }
-        }
+        val direct = findDirectBracketPair(text, caret, selStart, selEnd, hasActiveSelection, open, close)
+        if (direct != null) return direct
 
-        // Caret sitting on closing bracket
-        if (!caret.hasSelection() && caret.offset < len && text[caret.offset] == close) {
-            val matchingOpen = findMatchingOpen(text, caret.offset, open, close)
-            if (matchingOpen != null) {
-                return Pair(matchingOpen, caret.offset)
-            }
-        }
-
-        // Caret sitting on opening bracket
-        if (!caret.hasSelection() && caret.offset < len && text[caret.offset] == open) {
-            val matchingClose = findMatchingClose(text, caret.offset, open, close)
-            if (matchingClose != null) {
-                return Pair(caret.offset, matchingClose)
-            }
-        }
-
-        // Scan backwards from selStart - 1
         val startScan = (selStart - 1).coerceAtMost(len - 1)
         val requiredEnd = selEnd - 1
+        return findEnclosingBracketsByScanning(text, startScan, requiredEnd, open, close)
+    }
 
+    private fun findDirectBracketPair(
+        text: CharSequence,
+        caret: Caret,
+        selStart: Int,
+        selEnd: Int,
+        hasActiveSelection: Boolean,
+        open: Char,
+        close: Char,
+    ): Pair<Int, Int>? {
+        if (hasActiveSelection && selStart < selEnd && isDirectlySurrounded(text, selStart, selEnd, open, close)) {
+            return Pair(selStart, selEnd - 1)
+        }
+
+        if (!caret.hasSelection() && caret.offset < text.length) {
+            val cur = text[caret.offset]
+            if (cur == close) {
+                val matchingOpen = findMatchingOpen(text, caret.offset, open, close)
+                if (matchingOpen != null) return Pair(matchingOpen, caret.offset)
+            } else if (cur == open) {
+                val matchingClose = findMatchingClose(text, caret.offset, open, close)
+                if (matchingClose != null) return Pair(caret.offset, matchingClose)
+            }
+        }
+        return null
+    }
+
+    private fun isDirectlySurrounded(
+        text: CharSequence,
+        selStart: Int,
+        selEnd: Int,
+        open: Char,
+        close: Char,
+    ): Boolean = text[selStart] == open &&
+        text[selEnd - 1] == close &&
+        isBalanced(text, selStart, selEnd - 1, open, close)
+
+    private fun findEnclosingBracketsByScanning(
+        text: CharSequence,
+        startScan: Int,
+        requiredEnd: Int,
+        open: Char,
+        close: Char,
+    ): Pair<Int, Int>? {
         var depth = 0
-        var candidate: Pair<Int, Int>? = null
-        var minSpan = Int.MAX_VALUE
-
         for (i in startScan downTo 0) {
-            val c = text[i]
-            if (c == close) {
-                depth++
-            } else if (c == open) {
-                if (depth == 0) {
-                    val matchingClose = findMatchingClose(text, i, open, close)
-                    if (matchingClose != null && matchingClose >= requiredEnd) {
-                        val span = matchingClose - i
-                        if (span < minSpan) {
-                            minSpan = span
-                            candidate = Pair(i, matchingClose)
+            when (text[i]) {
+                close -> depth++
+
+                open -> {
+                    if (depth > 0) {
+                        depth--
+                    } else {
+                        val matchingClose = findMatchingClose(text, i, open, close)
+                        if (matchingClose != null && matchingClose >= requiredEnd) {
+                            return Pair(i, matchingClose)
                         }
-                        break
                     }
-                } else {
-                    depth--
                 }
             }
         }
-        return candidate
+        return null
     }
 
     fun findMatchingClose(text: CharSequence, openIndex: Int, open: Char, close: Char): Int? {
@@ -144,8 +154,9 @@ object HelixSurroundActions {
         var depth = 0
         for (i in start..end) {
             val c = text[i]
-            if (c == open) depth++
-            else if (c == close) {
+            if (c == open) {
+                depth++
+            } else if (c == close) {
                 depth--
                 if (depth < 0) return false
                 if (depth == 0 && i < end) return false
@@ -154,11 +165,7 @@ object HelixSurroundActions {
         return depth == 0
     }
 
-    private fun findEnclosingSymmetric(
-        document: Document,
-        caret: Caret,
-        delim: Char
-    ): Pair<Int, Int>? {
+    private fun findEnclosingSymmetric(document: Document, caret: Caret, delim: Char): Pair<Int, Int>? {
         val text = document.charsSequence
         val len = text.length
         if (len == 0) return null
@@ -194,7 +201,7 @@ object HelixSurroundActions {
         rangeEnd: Int,
         selStart: Int,
         selEnd: Int,
-        delim: Char
+        delim: Char,
     ): Pair<Int, Int>? {
         val unescaped = mutableListOf<Int>()
         var i = rangeStart

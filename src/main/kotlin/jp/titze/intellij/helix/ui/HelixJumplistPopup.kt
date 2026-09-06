@@ -36,18 +36,14 @@ import javax.swing.SwingUtilities
 import javax.swing.event.DocumentEvent
 import javax.swing.event.DocumentListener
 
-data class JumpListItem(
-    val originalIndex: Int,
-    val entry: HelixJumpEntry,
-    val isCurrent: Boolean
-) {
+data class JumpListItem(val originalIndex: Int, val entry: HelixJumpEntry, val isCurrent: Boolean) {
     fun matches(query: String): Boolean {
         if (query.isEmpty()) return true
         val q = query.lowercase()
         return entry.virtualFile.name.lowercase().contains(q) ||
-                entry.virtualFile.path.lowercase().contains(q) ||
-                entry.line.toString().contains(q) ||
-                entry.previewText.lowercase().contains(q)
+            entry.virtualFile.path.lowercase().contains(q) ||
+            entry.line.toString().contains(q) ||
+            entry.previewText.lowercase().contains(q)
     }
 }
 
@@ -106,11 +102,13 @@ object HelixJumplistPopup {
 
         init {
             isOpaque = false
-            add(JBLabel(text).apply {
-                font = Font(Font.MONOSPACED, Font.BOLD, JBUI.scaleFontSize(11f))
-                foreground = fg
-                border = JBUI.Borders.empty(2, 6)
-            })
+            add(
+                JBLabel(text).apply {
+                    font = Font(Font.MONOSPACED, Font.BOLD, JBUI.scaleFontSize(11f))
+                    foreground = fg
+                    border = JBUI.Borders.empty(2, 6)
+                },
+            )
         }
 
         override fun paintComponent(g: Graphics) {
@@ -180,7 +178,7 @@ object HelixJumplistPopup {
             JumpListItem(
                 originalIndex = index,
                 entry = entry,
-                isCurrent = index == currentIndex
+                isCurrent = index == currentIndex,
             )
         }.reversed()
 
@@ -248,7 +246,7 @@ object HelixJumplistPopup {
                 value: JumpListItem?,
                 index: Int,
                 isSelected: Boolean,
-                cellHasFocus: Boolean
+                cellHasFocus: Boolean,
             ): Component {
                 cellPanel.isSelectedRow = isSelected
                 badgeHolder.removeAll()

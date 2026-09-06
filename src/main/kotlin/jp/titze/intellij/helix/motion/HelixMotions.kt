@@ -23,15 +23,15 @@ import jp.titze.intellij.helix.state.HelixStateManager
 object HelixMotions {
 
     private enum class CharType {
-        WORD, PUNCTUATION, WHITESPACE
+        WORD,
+        PUNCTUATION,
+        WHITESPACE,
     }
 
-    private fun getCharType(c: Char): CharType {
-        return when {
-            c.isWhitespace() -> CharType.WHITESPACE
-            c.isLetterOrDigit() || c == '_' -> CharType.WORD
-            else -> CharType.PUNCTUATION
-        }
+    private fun getCharType(c: Char): CharType = when {
+        c.isWhitespace() -> CharType.WHITESPACE
+        c.isLetterOrDigit() || c == '_' -> CharType.WORD
+        else -> CharType.PUNCTUATION
     }
 
     private fun runForEachCaret(editor: Editor, action: (Caret) -> Unit) {
@@ -222,12 +222,10 @@ object HelixMotions {
         editor.scrollingModel.scrollToCaret(ScrollType.MAKE_VISIBLE)
     }
 
-    private fun getLineEndWithNewline(doc: Document, line: Int): Int {
-        return if (line + 1 < doc.lineCount) {
-            doc.getLineStartOffset(line + 1)
-        } else {
-            doc.getLineEndOffset(line)
-        }
+    private fun getLineEndWithNewline(doc: Document, line: Int): Int = if (line + 1 < doc.lineCount) {
+        doc.getLineStartOffset(line + 1)
+    } else {
+        doc.getLineEndOffset(line)
     }
 
     /**
@@ -529,9 +527,9 @@ object HelixMotions {
             }
 
             for ((targetHeadOffset, targetAnchorOffset, hasSel) in newCaretTargets) {
-                val alreadyExists = editor.caretModel.allCarets.any {
-                    it.offset == targetHeadOffset &&
-                            (!hasSel || (it.hasSelection() && it.leadSelectionOffset == targetAnchorOffset))
+                val alreadyExists = editor.caretModel.allCarets.any { c ->
+                    c.offset == targetHeadOffset &&
+                        (!hasSel || (c.hasSelection() && c.leadSelectionOffset == targetAnchorOffset))
                 }
                 if (!alreadyExists) {
                     val newCaret = editor.caretModel.addCaret(editor.offsetToVisualPosition(targetHeadOffset), false)
@@ -742,49 +740,57 @@ object HelixMotions {
         curOffset: Int,
         motion: Char,
         targetChar: Char,
-        count: Int
+        count: Int,
     ): Int? {
-        var remainingCount = count.coerceAtLeast(1)
-
-        when (motion) {
-            't', 'f' -> {
-                var idx = curOffset + 1
-                while (idx < textLen) {
-                    if (text[idx] == targetChar) {
-                        remainingCount--
-                        if (remainingCount == 0) {
-                            return if (motion == 't') {
-                                idx
-                            } else {
-                                (idx + 1).coerceAtMost(textLen)
-                            }
-                        }
-                    }
-                    idx++
-                }
-                return null
-            }
-
-            'T', 'F' -> {
-                var idx = curOffset - 1
-                while (idx >= 0) {
-                    if (text[idx] == targetChar) {
-                        remainingCount--
-                        if (remainingCount == 0) {
-                            return if (motion == 'T') {
-                                idx + 1
-                            } else {
-                                idx
-                            }
-                        }
-                    }
-                    idx--
-                }
-                return null
-            }
-
-            else -> return null
+        val steps = count.coerceAtLeast(1)
+        return when (motion) {
+            't', 'f' -> findForwardTargetOffset(text, textLen, curOffset, motion == 't', targetChar, steps)
+            'T', 'F' -> findBackwardTargetOffset(text, curOffset, motion == 'T', targetChar, steps)
+            else -> null
         }
+    }
+
+    private fun findForwardTargetOffset(
+        text: CharSequence,
+        textLen: Int,
+        curOffset: Int,
+        till: Boolean,
+        targetChar: Char,
+        count: Int,
+    ): Int? {
+        var remainingCount = count
+        var idx = curOffset + 1
+        while (idx < textLen) {
+            if (text[idx] == targetChar) {
+                remainingCount--
+                if (remainingCount == 0) {
+                    return if (till) idx else (idx + 1).coerceAtMost(textLen)
+                }
+            }
+            idx++
+        }
+        return null
+    }
+
+    private fun findBackwardTargetOffset(
+        text: CharSequence,
+        curOffset: Int,
+        till: Boolean,
+        targetChar: Char,
+        count: Int,
+    ): Int? {
+        var remainingCount = count
+        var idx = curOffset - 1
+        while (idx >= 0) {
+            if (text[idx] == targetChar) {
+                remainingCount--
+                if (remainingCount == 0) {
+                    return if (till) idx + 1 else idx
+                }
+            }
+            idx--
+        }
+        return null
     }
 
     // -------------------------------------------------------------------------
@@ -904,21 +910,21 @@ object HelixMotions {
         val ranges = getMatchingRangesFromPsi(editor) { elem ->
             val name = elem.javaClass.simpleName
             val isFuncCandidate = name.contains("Method", ignoreCase = true) ||
-                    name.contains("Function", ignoreCase = true) ||
-                    name.contains("Constructor", ignoreCase = true)
+                name.contains("Function", ignoreCase = true) ||
+                name.contains("Constructor", ignoreCase = true)
             isFuncCandidate &&
-                    !name.contains("Literal", ignoreCase = true) &&
-                    !name.contains("Lambda", ignoreCase = true) &&
-                    !name.contains("Body", ignoreCase = true) &&
-                    !name.contains("Call", ignoreCase = true) &&
-                    !name.contains("Expr", ignoreCase = true) &&
-                    !name.contains("Reference", ignoreCase = true) &&
-                    !name.contains("List", ignoreCase = true) &&
-                    !name.contains("Parameter", ignoreCase = true) &&
-                    !name.contains("Type", ignoreCase = true) &&
-                    !name.contains("Argument", ignoreCase = true) &&
-                    !name.contains("Block", ignoreCase = true) &&
-                    !name.contains("Statement", ignoreCase = true)
+                !name.contains("Literal", ignoreCase = true) &&
+                !name.contains("Lambda", ignoreCase = true) &&
+                !name.contains("Body", ignoreCase = true) &&
+                !name.contains("Call", ignoreCase = true) &&
+                !name.contains("Expr", ignoreCase = true) &&
+                !name.contains("Reference", ignoreCase = true) &&
+                !name.contains("List", ignoreCase = true) &&
+                !name.contains("Parameter", ignoreCase = true) &&
+                !name.contains("Type", ignoreCase = true) &&
+                !name.contains("Argument", ignoreCase = true) &&
+                !name.contains("Block", ignoreCase = true) &&
+                !name.contains("Statement", ignoreCase = true)
         }
 
         val moved = navigateToRange(editor, ranges, forward, count)
@@ -938,33 +944,35 @@ object HelixMotions {
     fun moveType(editor: Editor, forward: Boolean, count: Int = 1): Boolean {
         var ranges = getMatchingRangesFromPsi(editor) { elem ->
             val name = elem.javaClass.simpleName
-            val isTypeCandidate = (name.contains("Class", ignoreCase = true) ||
+            val isTypeCandidate = (
+                name.contains("Class", ignoreCase = true) ||
                     name.contains("Interface", ignoreCase = true) ||
                     name.contains("Struct", ignoreCase = true) ||
                     name.contains("Trait", ignoreCase = true) ||
                     name.contains("Enum", ignoreCase = true) ||
                     name.contains("Record", ignoreCase = true) ||
                     name.contains("Object", ignoreCase = true) ||
-                    name.contains("TypeAlias", ignoreCase = true))
+                    name.contains("TypeAlias", ignoreCase = true)
+                )
 
             isTypeCandidate &&
-                    !name.contains("Literal", ignoreCase = true) &&
-                    !name.contains("Destruct", ignoreCase = true) &&
-                    !name.contains("Component", ignoreCase = true) &&
-                    !name.contains("Body", ignoreCase = true) &&
-                    !name.contains("Initializer", ignoreCase = true) &&
-                    !name.contains("List", ignoreCase = true) &&
-                    !name.contains("Header", ignoreCase = true) &&
-                    !name.contains("Access", ignoreCase = true) &&
-                    !name.contains("Expr", ignoreCase = true) &&
-                    !name.contains("Reference", ignoreCase = true) &&
-                    !name.contains("TypeElement", ignoreCase = true) &&
-                    !name.contains("Parameter", ignoreCase = true) &&
-                    !name.contains("Constant", ignoreCase = true) &&
-                    !name.contains("Entry", ignoreCase = true) &&
-                    !name.contains("Argument", ignoreCase = true) &&
-                    !name.contains("Statement", ignoreCase = true) &&
-                    !name.contains("Block", ignoreCase = true)
+                !name.contains("Literal", ignoreCase = true) &&
+                !name.contains("Destruct", ignoreCase = true) &&
+                !name.contains("Component", ignoreCase = true) &&
+                !name.contains("Body", ignoreCase = true) &&
+                !name.contains("Initializer", ignoreCase = true) &&
+                !name.contains("List", ignoreCase = true) &&
+                !name.contains("Header", ignoreCase = true) &&
+                !name.contains("Access", ignoreCase = true) &&
+                !name.contains("Expr", ignoreCase = true) &&
+                !name.contains("Reference", ignoreCase = true) &&
+                !name.contains("TypeElement", ignoreCase = true) &&
+                !name.contains("Parameter", ignoreCase = true) &&
+                !name.contains("Constant", ignoreCase = true) &&
+                !name.contains("Entry", ignoreCase = true) &&
+                !name.contains("Argument", ignoreCase = true) &&
+                !name.contains("Statement", ignoreCase = true) &&
+                !name.contains("Block", ignoreCase = true)
         }
 
         if (ranges.isEmpty()) {
@@ -981,8 +989,8 @@ object HelixMotions {
         val ranges = getMatchingRangesFromPsi(editor) { elem ->
             val name = elem.javaClass.simpleName
             name.contains("Parameter", ignoreCase = true) &&
-                    !name.contains("List", ignoreCase = true) &&
-                    !name.contains("Type", ignoreCase = true)
+                !name.contains("List", ignoreCase = true) &&
+                !name.contains("Type", ignoreCase = true)
         }
 
         return navigateToRange(editor, ranges, forward, count)
@@ -996,17 +1004,19 @@ object HelixMotions {
             val name = elem.javaClass.simpleName
             val isMethodOrFunc =
                 (name.contains("Method", ignoreCase = true) || name.contains("Function", ignoreCase = true)) &&
-                        !name.contains("Body", ignoreCase = true) &&
-                        !name.contains("Call", ignoreCase = true) &&
-                        !name.contains("Expr", ignoreCase = true) &&
-                        !name.contains("List", ignoreCase = true)
+                    !name.contains("Body", ignoreCase = true) &&
+                    !name.contains("Call", ignoreCase = true) &&
+                    !name.contains("Expr", ignoreCase = true) &&
+                    !name.contains("List", ignoreCase = true)
             if (isMethodOrFunc) {
                 val text = elem.text
                 text.contains("@Test") ||
-                        text.contains("fun test", ignoreCase = true) ||
-                        text.contains("def test", ignoreCase = true) ||
-                        text.contains("void test", ignoreCase = true)
-            } else false
+                    text.contains("fun test", ignoreCase = true) ||
+                    text.contains("def test", ignoreCase = true) ||
+                    text.contains("void test", ignoreCase = true)
+            } else {
+                false
+            }
         }
 
         val moved = navigateToRange(editor, ranges, forward, count)
@@ -1062,10 +1072,7 @@ object HelixMotions {
         return true
     }
 
-    private fun getMatchingRangesFromPsi(
-        editor: Editor,
-        predicate: (PsiElement) -> Boolean
-    ): List<TextRange> {
+    private fun getMatchingRangesFromPsi(editor: Editor, predicate: (PsiElement) -> Boolean): List<TextRange> {
         val project = editor.project ?: return emptyList()
         val doc = editor.document
         return try {
@@ -1119,7 +1126,7 @@ object HelixMotions {
     private fun findClassRangesRegex(doc: Document): List<TextRange> {
         val regex = Regex(
             """^\s*(?:(?:public|private|protected|internal|abstract|final|open|data|sealed|value)\s+)*(?:class|interface|struct|trait|enum(?:\s+class)?|record|object|typealias)\s+([A-Za-z0-9_]+)""",
-            RegexOption.MULTILINE
+            RegexOption.MULTILINE,
         )
         val text = doc.charsSequence
         return regex.findAll(text).map { match ->
@@ -1130,12 +1137,7 @@ object HelixMotions {
         }.toList()
     }
 
-    private fun navigateToRange(
-        editor: Editor,
-        ranges: List<TextRange>,
-        forward: Boolean,
-        count: Int
-    ): Boolean {
+    private fun navigateToRange(editor: Editor, ranges: List<TextRange>, forward: Boolean, count: Int): Boolean {
         if (ranges.isEmpty()) return false
         val state = HelixStateManager.getOrCreate(editor)
         val isSelect = state.mode == HelixMode.SELECT
@@ -1249,18 +1251,15 @@ object HelixMotions {
         return null
     }
 
-    private fun findPairMatch(text: CharSequence, index: Int, ch: Char?): Int? {
-        return when (ch) {
-            '(' -> HelixSurroundActions.findMatchingClose(text, index, '(', ')')
-            '[' -> HelixSurroundActions.findMatchingClose(text, index, '[', ']')
-            '{' -> HelixSurroundActions.findMatchingClose(text, index, '{', '}')
-            '<' -> HelixSurroundActions.findMatchingClose(text, index, '<', '>')
-            ')' -> HelixSurroundActions.findMatchingOpen(text, index, '(', ')')
-            ']' -> HelixSurroundActions.findMatchingOpen(text, index, '[', ']')
-            '}' -> HelixSurroundActions.findMatchingOpen(text, index, '{', '}')
-            '>' -> HelixSurroundActions.findMatchingOpen(text, index, '<', '>')
-            else -> null
-        }
+    private fun findPairMatch(text: CharSequence, index: Int, ch: Char?): Int? = when (ch) {
+        '(' -> HelixSurroundActions.findMatchingClose(text, index, '(', ')')
+        '[' -> HelixSurroundActions.findMatchingClose(text, index, '[', ']')
+        '{' -> HelixSurroundActions.findMatchingClose(text, index, '{', '}')
+        '<' -> HelixSurroundActions.findMatchingClose(text, index, '<', '>')
+        ')' -> HelixSurroundActions.findMatchingOpen(text, index, '(', ')')
+        ']' -> HelixSurroundActions.findMatchingOpen(text, index, '[', ']')
+        '}' -> HelixSurroundActions.findMatchingOpen(text, index, '{', '}')
+        '>' -> HelixSurroundActions.findMatchingOpen(text, index, '<', '>')
+        else -> null
     }
 }
-

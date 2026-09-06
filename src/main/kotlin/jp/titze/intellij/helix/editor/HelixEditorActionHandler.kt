@@ -10,10 +10,8 @@ import jp.titze.intellij.helix.keymap.HelixKeyHandler
 import jp.titze.intellij.helix.motion.HelixMotions
 import jp.titze.intellij.helix.state.HelixStateManager
 
-class HelixEditorActionHandler(
-    private val actionId: String,
-    private val originalHandler: EditorActionHandler?
-) : EditorActionHandler() {
+class HelixEditorActionHandler(private val actionId: String, private val originalHandler: EditorActionHandler?) :
+    EditorActionHandler() {
 
     override fun doExecute(editor: Editor, caret: Caret?, dataContext: DataContext) {
         if (editor.isOneLineMode || editor.isViewer) {
@@ -46,6 +44,7 @@ class HelixEditorActionHandler(
                     state.removeLastCountDigit()
                 }
             }
+
             IdeActions.ACTION_EDITOR_ENTER -> {
                 if (state.pendingSequence in listOf("f", "t", "F", "T", "r")) {
                     HelixKeyHandler.handleKey('\n', editor)
@@ -94,7 +93,7 @@ class HelixEditorActionHandler(
                 IdeActions.ACTION_EDITOR_BACKSPACE,
                 IdeActions.ACTION_EDITOR_DELETE,
                 IdeActions.ACTION_EDITOR_ENTER,
-                IdeActions.ACTION_EDITOR_ESCAPE
+                IdeActions.ACTION_EDITOR_ESCAPE,
             )
 
             for (actionId in actionsToWrap) {

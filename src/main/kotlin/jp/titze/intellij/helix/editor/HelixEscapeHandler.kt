@@ -29,9 +29,11 @@ object HelixEscapeHandler {
                 HelixActions.enterNormalMode(editor)
                 HelixMotions.collapseSelection(editor)
             }
+
             HelixMode.SELECT -> {
                 HelixActions.enterNormalMode(editor)
             }
+
             HelixMode.NORMAL -> {
                 HelixMotions.collapseSelection(editor)
             }

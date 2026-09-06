@@ -26,7 +26,15 @@ object HelixActions {
                     val startLine = doc.getLineNumber(caret.selectionStart)
                     val endLine = doc.getLineNumber((caret.selectionEnd - 1).coerceAtLeast(0))
                     val isWholeLines = caret.selectionStart == doc.getLineStartOffset(startLine) &&
-                            caret.selectionEnd == (if (endLine + 1 < doc.lineCount) doc.getLineStartOffset(endLine + 1) else doc.getLineEndOffset(endLine))
+                        caret.selectionEnd == (
+                            if (endLine + 1 < doc.lineCount) {
+                                doc.getLineStartOffset(
+                                    endLine + 1,
+                                )
+                            } else {
+                                doc.getLineEndOffset(endLine)
+                            }
+                            )
                     if (isWholeLines && !text.endsWith("\n")) {
                         text += "\n"
                     }
@@ -70,7 +78,15 @@ object HelixActions {
                 val startLine = doc.getLineNumber(caret.selectionStart)
                 val endLine = doc.getLineNumber((caret.selectionEnd - 1).coerceAtLeast(0))
                 val isWholeLines = caret.selectionStart == doc.getLineStartOffset(startLine) &&
-                        caret.selectionEnd == (if (endLine + 1 < doc.lineCount) doc.getLineStartOffset(endLine + 1) else doc.getLineEndOffset(endLine))
+                    caret.selectionEnd == (
+                        if (endLine + 1 < doc.lineCount) {
+                            doc.getLineStartOffset(
+                                endLine + 1,
+                            )
+                        } else {
+                            doc.getLineEndOffset(endLine)
+                        }
+                        )
                 if (isWholeLines && !text.endsWith("\n")) {
                     text += "\n"
                 }
@@ -210,9 +226,11 @@ object HelixActions {
                     val end = caret.selectionEnd
                     val selectedText = doc.charsSequence.subSequence(start, end)
                     val sb = StringBuilder(selectedText.length)
+                    val isReplacementNewline = replacement == '\n' || replacement == '\r'
                     for (i in 0 until selectedText.length) {
                         val c = selectedText[i]
-                        if ((c == '\n' || c == '\r') && replacement != '\n' && replacement != '\r') {
+                        val isCharNewline = c == '\n' || c == '\r'
+                        if (isCharNewline && !isReplacementNewline) {
                             sb.append(c)
                         } else {
                             sb.append(replacement)
@@ -278,11 +296,7 @@ object HelixActions {
                     (startLine + count.coerceAtLeast(1)).coerceAtMost(doc.lineCount - 1)
                 }
 
-                if (targetEndLine <= startLine) {
-                    continue
-                }
-
-                if (!processedLines.add(startLine)) {
+                if (targetEndLine <= startLine || !processedLines.add(startLine)) {
                     continue
                 }
 
@@ -503,7 +517,13 @@ object HelixActions {
 
         for (caret in carets) {
             val rangeStart = if (caret.hasSelection()) caret.selectionStart else caret.offset
-            val rangeEnd = if (caret.hasSelection()) caret.selectionEnd else (caret.offset + 1).coerceAtMost(doc.textLength)
+            val rangeEnd = if (caret.hasSelection()) {
+                caret.selectionEnd
+            } else {
+                (caret.offset + 1).coerceAtMost(
+                    doc.textLength,
+                )
+            }
             if (rangeStart >= rangeEnd) continue
 
             val targetSub = text.subSequence(rangeStart, rangeEnd).toString()
@@ -533,7 +553,7 @@ object HelixActions {
             com.intellij.openapi.editor.CaretState(
                 editor.offsetToLogicalPosition(end),
                 editor.offsetToLogicalPosition(start),
-                editor.offsetToLogicalPosition(end)
+                editor.offsetToLogicalPosition(end),
             )
         }
         val success = try {
@@ -559,20 +579,14 @@ object HelixActions {
         editor.scrollingModel.scrollToCaret(com.intellij.openapi.editor.ScrollType.MAKE_VISIBLE)
     }
 
-    data class HelixCaretSnapshot(
-        val offset: Int,
-        val selectionStart: Int,
-        val selectionEnd: Int
-    )
+    data class HelixCaretSnapshot(val offset: Int, val selectionStart: Int, val selectionEnd: Int)
 
-    fun captureCarets(editor: Editor): List<HelixCaretSnapshot> {
-        return editor.caretModel.allCarets.map {
-            HelixCaretSnapshot(
-                offset = it.offset,
-                selectionStart = if (it.hasSelection()) it.selectionStart else it.offset,
-                selectionEnd = if (it.hasSelection()) it.selectionEnd else it.offset
-            )
-        }
+    fun captureCarets(editor: Editor): List<HelixCaretSnapshot> = editor.caretModel.allCarets.map {
+        HelixCaretSnapshot(
+            offset = it.offset,
+            selectionStart = if (it.hasSelection()) it.selectionStart else it.offset,
+            selectionEnd = if (it.hasSelection()) it.selectionEnd else it.offset,
+        )
     }
 
     fun restoreCarets(editor: Editor, snapshot: List<HelixCaretSnapshot>) {
@@ -581,7 +595,7 @@ object HelixActions {
             com.intellij.openapi.editor.CaretState(
                 editor.offsetToLogicalPosition(it.offset),
                 editor.offsetToLogicalPosition(it.selectionStart),
-                editor.offsetToLogicalPosition(it.selectionEnd)
+                editor.offsetToLogicalPosition(it.selectionEnd),
             )
         }
         val success = try {
@@ -612,7 +626,7 @@ object HelixActions {
         pattern: String,
         backward: Boolean = false,
         count: Int = 1,
-        baseSnapshot: List<HelixCaretSnapshot>
+        baseSnapshot: List<HelixCaretSnapshot>,
     ): Boolean {
         if (pattern.isEmpty()) {
             restoreCarets(editor, baseSnapshot)
@@ -681,11 +695,7 @@ object HelixActions {
         return true
     }
 
-    fun previewSelectRegex(
-        editor: Editor,
-        pattern: String,
-        baseSnapshot: List<HelixCaretSnapshot>
-    ): Boolean {
+    fun previewSelectRegex(editor: Editor, pattern: String, baseSnapshot: List<HelixCaretSnapshot>): Boolean {
         if (pattern.isEmpty()) {
             restoreCarets(editor, baseSnapshot)
             return false
@@ -739,11 +749,7 @@ object HelixActions {
         return true
     }
 
-    fun previewSplitRegex(
-        editor: Editor,
-        pattern: String,
-        baseSnapshot: List<HelixCaretSnapshot>
-    ): Boolean {
+    fun previewSplitRegex(editor: Editor, pattern: String, baseSnapshot: List<HelixCaretSnapshot>): Boolean {
         if (pattern.isEmpty()) {
             restoreCarets(editor, baseSnapshot)
             return false
@@ -874,7 +880,7 @@ object HelixActions {
         pattern: String,
         backward: Boolean = false,
         count: Int = 1,
-        updateDirection: Boolean = true
+        updateDirection: Boolean = true,
     ): Boolean {
         if (pattern.isEmpty()) return false
         lastSearchPattern = pattern
@@ -973,7 +979,9 @@ object HelixActions {
         return try {
             if (transferable.isDataFlavorSupported(DataFlavor.stringFlavor)) {
                 transferable.getTransferData(DataFlavor.stringFlavor) as? String
-            } else null
+            } else {
+                null
+            }
         } catch (e: Exception) {
             null
         }

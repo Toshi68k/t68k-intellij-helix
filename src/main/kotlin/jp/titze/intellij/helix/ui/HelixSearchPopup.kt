@@ -71,7 +71,7 @@ object HelixSearchPopup {
         keyText: String,
         private val minWidth: Int = 22,
         private val height: Int = 22,
-        fontSize: Float = 11.5f
+        fontSize: Float = 11.5f,
     ) : JPanel(BorderLayout()) {
         private val label = JBLabel(keyText, SwingConstants.CENTER)
 
@@ -290,6 +290,7 @@ object HelixSearchPopup {
                         }
                         e.consume()
                     }
+
                     KeyEvent.VK_ESCAPE -> {
                         popup.cancel()
                         e.consume()

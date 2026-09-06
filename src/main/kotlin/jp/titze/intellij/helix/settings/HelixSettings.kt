@@ -8,7 +8,7 @@ import com.intellij.openapi.components.Storage
 
 enum class HelixSearchUiMode(val displayName: String) {
     STOCK_HELIX("Stock Helix (Inline bottom bar with live search/select-as-you-type)"),
-    POPUP("Popup Window (Floating dialog)")
+    POPUP("Popup Window (Floating dialog)"),
 }
 
 class HelixSettingsState {
@@ -18,7 +18,7 @@ class HelixSettingsState {
 @Service(Service.Level.APP)
 @State(
     name = "jp.titze.intellij.helix.settings.HelixSettings",
-    storages = [Storage("helix_settings.xml")]
+    storages = [Storage("helix_settings.xml")],
 )
 class HelixSettings : PersistentStateComponent<HelixSettingsState> {
     private var myState = HelixSettingsState()

@@ -1,18 +1,17 @@
 package jp.titze.intellij.helix
 
-import io.kotest.matchers.shouldBe
-import io.kotest.matchers.shouldNotBe
-import io.kotest.matchers.booleans.shouldBeTrue
+import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import io.kotest.matchers.booleans.shouldBeFalse
+import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
+import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeSameInstanceAs
-import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import jp.titze.intellij.helix.action.HelixActions
-import jp.titze.intellij.helix.keymap.HelixKeyHandler
-import jp.titze.intellij.helix.motion.HelixMotions
 import jp.titze.intellij.helix.command.HelixCommandPopup
 import jp.titze.intellij.helix.jumplist.HelixJumpListService
+import jp.titze.intellij.helix.keymap.HelixKeyHandler
+import jp.titze.intellij.helix.motion.HelixMotions
 import jp.titze.intellij.helix.settings.HelixSearchUiMode
 import jp.titze.intellij.helix.settings.HelixSettings
 import jp.titze.intellij.helix.state.HelixMode
@@ -207,7 +206,6 @@ class HelixEditorTest : BasePlatformTestCase() {
         editor.document.text shouldBe ""
         HelixStateManager.getOrCreate(editor).mode shouldBe HelixMode.INSERT
     }
-
 
     fun testMultiCaretLineSelection() {
         val text = "line 1\nline 2\nline 3\n"
@@ -658,7 +656,7 @@ class HelixEditorTest : BasePlatformTestCase() {
         caret.setSelection(6, 15) // select "old_world"
 
         com.intellij.openapi.ide.CopyPasteManager.getInstance().setContents(
-            java.awt.datatransfer.StringSelection("new_universe")
+            java.awt.datatransfer.StringSelection("new_universe"),
         )
 
         // Trigger space R
@@ -1276,7 +1274,7 @@ class HelixEditorTest : BasePlatformTestCase() {
             escapeAction,
             null,
             com.intellij.openapi.actionSystem.ActionPlaces.KEYBOARD_SHORTCUT,
-            dataContext
+            dataContext,
         )
         escapeAction.actionPerformed(event)
 
@@ -1320,7 +1318,7 @@ class HelixEditorTest : BasePlatformTestCase() {
         caret.setSelection(6, 15) // select "old_world"
 
         com.intellij.openapi.ide.CopyPasteManager.getInstance().setContents(
-            java.awt.datatransfer.StringSelection("new_universe")
+            java.awt.datatransfer.StringSelection("new_universe"),
         )
 
         HelixKeyHandler.handleKey('R', editor)
@@ -1413,7 +1411,7 @@ class HelixEditorTest : BasePlatformTestCase() {
             pageDownAction,
             null,
             com.intellij.openapi.actionSystem.ActionPlaces.KEYBOARD_SHORTCUT,
-            dataContext
+            dataContext,
         )
 
         pageDownAction.update(event)
@@ -1428,7 +1426,7 @@ class HelixEditorTest : BasePlatformTestCase() {
             halfPageUpAction,
             null,
             com.intellij.openapi.actionSystem.ActionPlaces.KEYBOARD_SHORTCUT,
-            dataContext
+            dataContext,
         )
         halfPageUpAction.actionPerformed(halfUpEvent)
         val halfPage = (pageSize / 2).coerceAtLeast(1)
@@ -1465,7 +1463,7 @@ class HelixEditorTest : BasePlatformTestCase() {
             System.currentTimeMillis(),
             java.awt.event.InputEvent.CTRL_DOWN_MASK,
             java.awt.event.KeyEvent.VK_F,
-            java.awt.event.KeyEvent.CHAR_UNDEFINED
+            java.awt.event.KeyEvent.CHAR_UNDEFINED,
         )
 
         val handled = dispatcher.dispatch(ctrlF)
@@ -1481,7 +1479,7 @@ class HelixEditorTest : BasePlatformTestCase() {
             System.currentTimeMillis(),
             java.awt.event.InputEvent.CTRL_DOWN_MASK,
             java.awt.event.KeyEvent.VK_B,
-            java.awt.event.KeyEvent.CHAR_UNDEFINED
+            java.awt.event.KeyEvent.CHAR_UNDEFINED,
         )
 
         val handledB = dispatcher.dispatch(ctrlB)
@@ -1504,7 +1502,7 @@ class HelixEditorTest : BasePlatformTestCase() {
             System.currentTimeMillis(),
             java.awt.event.InputEvent.CTRL_DOWN_MASK,
             java.awt.event.KeyEvent.VK_D,
-            java.awt.event.KeyEvent.CHAR_UNDEFINED
+            java.awt.event.KeyEvent.CHAR_UNDEFINED,
         )
 
         dispatcher.dispatch(ctrlD).shouldBeTrue()
@@ -1519,7 +1517,7 @@ class HelixEditorTest : BasePlatformTestCase() {
             System.currentTimeMillis(),
             java.awt.event.InputEvent.CTRL_DOWN_MASK,
             java.awt.event.KeyEvent.VK_U,
-            java.awt.event.KeyEvent.CHAR_UNDEFINED
+            java.awt.event.KeyEvent.CHAR_UNDEFINED,
         )
 
         dispatcher.dispatch(ctrlU).shouldBeTrue()
@@ -1540,7 +1538,7 @@ class HelixEditorTest : BasePlatformTestCase() {
             System.currentTimeMillis(),
             java.awt.event.InputEvent.CTRL_DOWN_MASK,
             java.awt.event.KeyEvent.VK_F,
-            java.awt.event.KeyEvent.CHAR_UNDEFINED
+            java.awt.event.KeyEvent.CHAR_UNDEFINED,
         )
 
         dispatcher.dispatch(ctrlF).shouldBeFalse()
@@ -1561,7 +1559,7 @@ class HelixEditorTest : BasePlatformTestCase() {
             System.currentTimeMillis(),
             java.awt.event.InputEvent.CTRL_DOWN_MASK,
             java.awt.event.KeyEvent.VK_D,
-            java.awt.event.KeyEvent.CHAR_UNDEFINED
+            java.awt.event.KeyEvent.CHAR_UNDEFINED,
         )
 
         dispatcher.dispatch(ctrlD).shouldBeTrue()
@@ -2119,7 +2117,10 @@ class HelixEditorTest : BasePlatformTestCase() {
 
         // Add a secondary caret on the second line
         editor.caretModel.primaryCaret.moveToOffset(8)
-        val secondCaret = editor.caretModel.addCaret(editor.offsetToVisualPosition(doc.getLineStartOffset(1) + 7), false)
+        val secondCaret = editor.caretModel.addCaret(
+            editor.offsetToVisualPosition(doc.getLineStartOffset(1) + 7),
+            false,
+        )
         secondCaret.shouldNotBeNull()
 
         editor.caretModel.caretCount shouldBe 2
@@ -2168,7 +2169,7 @@ class HelixEditorTest : BasePlatformTestCase() {
             visibleX = 0,
             visibleY = 0,
             marginX = 20,
-            marginY = 20
+            marginY = 20,
         )
         pos.x shouldBe 680 // 1000 - 300 - 20
         pos.y shouldBe 580 // 800 - 200 - 20
@@ -2182,7 +2183,7 @@ class HelixEditorTest : BasePlatformTestCase() {
             visibleX = 50,
             visibleY = 100,
             marginX = 20,
-            marginY = 20
+            marginY = 20,
         )
         posWithOffset.x shouldBe 730 // 50 + 680
         posWithOffset.y shouldBe 680 // 100 + 580
@@ -2196,7 +2197,7 @@ class HelixEditorTest : BasePlatformTestCase() {
             visibleX = 0,
             visibleY = 0,
             marginX = 20,
-            marginY = 20
+            marginY = 20,
         )
         posClamped.x shouldBe 0
         posClamped.y shouldBe 0
@@ -2349,7 +2350,9 @@ class HelixEditorTest : BasePlatformTestCase() {
     }
 
     fun testFunctionNavigationWithLambdasAndBlocks() {
-        val text = "fun first() {\n    val f = { x: Int -> x * 2 }\n    items.forEach { println(it) }\n}\n\nfun second() {\n    val g = { y: Int -> y + 1 }\n}\n"
+        val text = "fun first() {\n    val f = { x: Int -> x * 2 }\n" +
+            "    items.forEach { println(it) }\n}\n\n" +
+            "fun second() {\n    val g = { y: Int -> y + 1 }\n}\n"
         myFixture.configureByText("test.kt", text)
         val editor = myFixture.editor
         val caret = editor.caretModel.primaryCaret
@@ -2361,7 +2364,8 @@ class HelixEditorTest : BasePlatformTestCase() {
         HelixKeyHandler.handleKey('f', editor).shouldBeTrue()
         caret.offset shouldBe text.indexOf("fun first")
         caret.hasSelection().shouldBeTrue()
-        caret.selectedText shouldBe "fun first() {\n    val f = { x: Int -> x * 2 }\n    items.forEach { println(it) }\n}"
+        caret.selectedText shouldBe
+            "fun first() {\n    val f = { x: Int -> x * 2 }\n    items.forEach { println(it) }\n}"
 
         // Jump forward to second() - must NOT select lambdas inside first()
         HelixKeyHandler.handleKey(']', editor).shouldBeTrue()
@@ -2375,7 +2379,8 @@ class HelixEditorTest : BasePlatformTestCase() {
         HelixKeyHandler.handleKey('f', editor).shouldBeTrue()
         caret.offset shouldBe text.indexOf("fun first")
         caret.hasSelection().shouldBeTrue()
-        caret.selectedText shouldBe "fun first() {\n    val f = { x: Int -> x * 2 }\n    items.forEach { println(it) }\n}"
+        caret.selectedText shouldBe
+            "fun first() {\n    val f = { x: Int -> x * 2 }\n    items.forEach { println(it) }\n}"
     }
 
     fun testObjectAndEnclosingClassNavigation() {
@@ -2410,7 +2415,9 @@ class HelixEditorTest : BasePlatformTestCase() {
     }
 
     fun testDestructuringDeclarationNotMatchedAsClass() {
-        val text = "class MyProcessor {\n    fun process(rangesToSearch: List<Pair<Int, Int>>) {\n        for ((rangeStart, rangeEnd) in rangesToSearch) {\n            println(rangeStart)\n        }\n    }\n}\n"
+        val text = "class MyProcessor {\n    fun process(rangesToSearch: List<Pair<Int, Int>>) {\n" +
+            "        for ((rangeStart, rangeEnd) in rangesToSearch) {\n" +
+            "            println(rangeStart)\n        }\n    }\n}\n"
         myFixture.configureByText("test.kt", text)
         val editor = myFixture.editor
         val caret = editor.caretModel.primaryCaret

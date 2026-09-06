@@ -18,7 +18,7 @@ data class HelixJumpEntry(
     val caretMarker: RangeMarker,
     val line: Int,
     val column: Int,
-    val previewText: String
+    val previewText: String,
 ) {
     val isValid: Boolean
         get() = virtualFile.isValid && anchorMarker.isValid && caretMarker.isValid
@@ -38,9 +38,7 @@ class HelixJumpListService(private val project: Project) {
     private val maxEntries = 100
 
     @Synchronized
-    fun getEntries(): List<HelixJumpEntry> {
-        return entries.toList()
-    }
+    fun getEntries(): List<HelixJumpEntry> = entries.toList()
 
     @Synchronized
     fun getCurrentIndex(): Int = currentIndex
@@ -93,7 +91,7 @@ class HelixJumpListService(private val project: Project) {
             caretMarker = caretMarker,
             line = line,
             column = column,
-            previewText = preview
+            previewText = preview,
         )
 
         entries.add(entry)
@@ -147,7 +145,7 @@ class HelixJumpListService(private val project: Project) {
     }
 
     @Synchronized
-    fun jumpForward(editor: Editor, count: Int = 1): Boolean {
+    fun jumpForward(@Suppress("UnusedParameter") editor: Editor, count: Int = 1): Boolean {
         if (entries.isEmpty()) return false
         if (currentIndex >= entries.size - 1) return false
 
@@ -206,8 +204,6 @@ class HelixJumpListService(private val project: Project) {
     }
 
     companion object {
-        fun getInstance(project: Project): HelixJumpListService {
-            return project.getService(HelixJumpListService::class.java)
-        }
+        fun getInstance(project: Project): HelixJumpListService = project.getService(HelixJumpListService::class.java)
     }
 }

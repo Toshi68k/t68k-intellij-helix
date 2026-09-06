@@ -29,7 +29,7 @@ class HelixEventDispatcher : IdeEventQueue.EventDispatcher {
 
         // Escape or Ctrl+[ should always work to exit insert/select mode or cancel pending actions
         val isEscape = (isNoModifiers && e.keyCode == KeyEvent.VK_ESCAPE) ||
-                (isCtrl && e.keyCode == KeyEvent.VK_OPEN_BRACKET)
+            (isCtrl && e.keyCode == KeyEvent.VK_OPEN_BRACKET)
 
         if (isEscape) {
             val lookup = com.intellij.codeInsight.lookup.LookupManager.getActiveLookup(editor)

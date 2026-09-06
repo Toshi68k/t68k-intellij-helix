@@ -71,7 +71,7 @@ object HelixSelectRegexPopup {
         keyText: String,
         private val minWidth: Int = 22,
         private val height: Int = 22,
-        fontSize: Float = 11.5f
+        fontSize: Float = 11.5f,
     ) : JPanel(BorderLayout()) {
         private val label = JBLabel(keyText, SwingConstants.CENTER)
 
@@ -179,7 +179,8 @@ object HelixSelectRegexPopup {
 
         val textField = JBTextField()
         textField.font = Font(Font.MONOSPACED, Font.PLAIN, JBUI.scaleFontSize(13f))
-        textField.emptyText.text = if (isSplit) "regex pattern to split selection on" else "regex pattern to select within selection"
+        textField.emptyText.text =
+            if (isSplit) "regex pattern to split selection on" else "regex pattern to select within selection"
         textField.border = BorderFactory.createEmptyBorder()
         textField.isOpaque = false
         inputBox.add(textField, BorderLayout.CENTER)
@@ -294,6 +295,7 @@ object HelixSelectRegexPopup {
                         }
                         e.consume()
                     }
+
                     KeyEvent.VK_ESCAPE -> {
                         popup.cancel()
                         e.consume()
