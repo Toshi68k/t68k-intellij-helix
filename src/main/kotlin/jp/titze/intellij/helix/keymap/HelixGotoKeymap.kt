@@ -32,6 +32,11 @@ internal object HelixGotoKeymap {
             repeat(count ?: 1) { HelixActionDelegate.executeAction("PreviousTab", editor) }.let { true }
         }
 
+        '.' -> {
+            HelixKeyHandler.recordJump(editor)
+            HelixActionDelegate.executeAction("JumpToLastChange", editor)
+        }
+
         'h' -> {
             HelixMotions.moveLineStart(editor)
             true
