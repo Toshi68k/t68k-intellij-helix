@@ -362,4 +362,15 @@ class HelixCodeNavigationTest : BasePlatformTestCase() {
         primary.offset shouldBe 6 // at closing ) of (first)
         secondCaret.offset shouldBe 17 // at closing ) of (second)
     }
+
+    fun testGotoNextAndPreviousBuffer() {
+        myFixture.configureByText("test.txt", "test")
+        val editor = myFixture.editor
+
+        HelixKeyHandler.handleKey('g', editor).shouldBeTrue()
+        HelixKeyHandler.handleKey('n', editor).shouldBeTrue()
+
+        HelixKeyHandler.handleKey('g', editor).shouldBeTrue()
+        HelixKeyHandler.handleKey('p', editor).shouldBeTrue()
+    }
 }

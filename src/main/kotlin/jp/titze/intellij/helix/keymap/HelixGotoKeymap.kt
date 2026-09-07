@@ -22,6 +22,16 @@ internal object HelixGotoKeymap {
             HelixActionDelegate.executeAction("FindUsages", editor)
         }
 
+        'n' -> {
+            HelixKeyHandler.recordJump(editor)
+            repeat(count ?: 1) { HelixActionDelegate.executeAction("NextTab", editor) }.let { true }
+        }
+
+        'p' -> {
+            HelixKeyHandler.recordJump(editor)
+            repeat(count ?: 1) { HelixActionDelegate.executeAction("PreviousTab", editor) }.let { true }
+        }
+
         'h' -> {
             HelixMotions.moveLineStart(editor)
             true
