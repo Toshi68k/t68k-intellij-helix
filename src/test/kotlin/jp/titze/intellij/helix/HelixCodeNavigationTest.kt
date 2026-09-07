@@ -373,4 +373,12 @@ class HelixCodeNavigationTest : BasePlatformTestCase() {
         HelixKeyHandler.handleKey('g', editor).shouldBeTrue()
         HelixKeyHandler.handleKey('p', editor).shouldBeTrue()
     }
+
+    fun testGotoLastEditLocation() {
+        myFixture.configureByText("test.txt", "test content")
+        val editor = myFixture.editor
+
+        HelixKeyHandler.handleKey('g', editor).shouldBeTrue()
+        HelixKeyHandler.handleKey('.', editor).shouldBeTrue()
+    }
 }

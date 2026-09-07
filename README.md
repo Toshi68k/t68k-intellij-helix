@@ -148,6 +148,9 @@ Built-in surround and textobject functionality matching [Helix Surround](https:/
 - `gd` &rarr; `GotoDeclaration` / `GotoImplementation`
 - `gy` &rarr; `GotoTypeDeclaration`
 - `gr` &rarr; `FindUsages`
+- `gn` &rarr; Next buffer / tab (`NextTab`)
+- `gp` &rarr; Previous buffer / tab (`PreviousTab`)
+- `g.` &rarr; Goto last modification point (`JumpToLastChange`)
 - `gh` &rarr; Line start (first character)
 - `gs` &rarr; First non-whitespace character
 - `gl` &rarr; Line end
