@@ -189,8 +189,14 @@ object HelixMotions {
                 val targetLine = (line + steps - 1).coerceAtMost(lineCount - 1)
                 val lineEnd = HelixMotionUtils.getLineEndWithNewline(doc, targetLine)
 
-                caret.moveToOffset(lineEnd)
-                caret.setSelection(lineStart, lineEnd)
+                if (lineStart == lineEnd && line > 0) {
+                    val prevLineEnd = doc.getLineEndOffset(line - 1)
+                    caret.moveToOffset(lineStart)
+                    caret.setSelection(prevLineEnd, lineStart)
+                } else {
+                    caret.moveToOffset(lineEnd)
+                    caret.setSelection(lineStart, lineEnd)
+                }
             } else {
                 val selStart = caret.selectionStart
                 val selEnd = caret.selectionEnd

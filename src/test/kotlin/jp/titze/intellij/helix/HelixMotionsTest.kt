@@ -140,6 +140,42 @@ class HelixMotionsTest : BasePlatformTestCase() {
         caret.selectedText shouldBe "first line\nsecond line\n"
     }
 
+    fun testLineSelectionOnEmptyLastLine() {
+        myFixture.configureByText("test.txt", "first line\nsecond line\n")
+        val editor = myFixture.editor
+        val caret = editor.caretModel.primaryCaret
+        // Move to the empty last line (line 2, offset 23)
+        caret.moveToOffset(23)
+
+        // 'x' selects the preceding newline for the empty last line
+        HelixMotions.selectLine(editor)
+        caret.hasSelection().shouldBeTrue()
+        caret.selectedText shouldBe "\n"
+
+        // 'd' deletes the selection, removing the empty line
+        HelixActions.deleteSelection(editor)
+        editor.document.text shouldBe "first line\nsecond line"
+    }
+
+    fun testDeleteEmptyLastLineWithXDKeyHandler() {
+        myFixture.configureByText("test.txt", "line1\nline2\n\n")
+        val editor = myFixture.editor
+        val caret = editor.caretModel.primaryCaret
+
+        // Move to line 3 (second empty line at offset 13)
+        caret.moveToOffset(13)
+
+        // Press 'x' then 'd' -> deletes line 3
+        HelixKeyHandler.handleKey('x', editor)
+        HelixKeyHandler.handleKey('d', editor)
+        editor.document.text shouldBe "line1\nline2\n"
+
+        // Press 'x' then 'd' again -> deletes line 2
+        HelixKeyHandler.handleKey('x', editor)
+        HelixKeyHandler.handleKey('d', editor)
+        editor.document.text shouldBe "line1\nline2"
+    }
+
     fun testSelectAllMotion() {
         val text = "first line\nsecond line\n"
         myFixture.configureByText("test.txt", text)
