@@ -28,6 +28,8 @@ object HelixWhichKeyMenus {
         WhichKeyItem("d", "Goto definition", "GotoDeclaration"),
         WhichKeyItem("y", "Goto type definition", "GotoTypeDeclaration"),
         WhichKeyItem("r", "Goto reference", "FindUsages"),
+        WhichKeyItem("n", "Next buffer / tab", "NextTab"),
+        WhichKeyItem("p", "Previous buffer / tab", "PreviousTab"),
         WhichKeyItem("h", "Goto line start"),
         WhichKeyItem("l", "Goto line end"),
         WhichKeyItem("s", "Goto first non-whitespace"),
