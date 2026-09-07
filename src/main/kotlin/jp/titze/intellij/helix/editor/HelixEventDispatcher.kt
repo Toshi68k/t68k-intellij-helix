@@ -6,6 +6,7 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.EditorFactory
 import jp.titze.intellij.helix.action.HelixActionDelegate
+import jp.titze.intellij.helix.action.HelixActions
 import jp.titze.intellij.helix.jumplist.HelixJumpListService
 import jp.titze.intellij.helix.motion.HelixMotions
 import jp.titze.intellij.helix.state.HelixStateManager
@@ -25,6 +26,7 @@ class HelixEventDispatcher : IdeEventQueue.EventDispatcher {
         if (editor.isOneLineMode || editor.isViewer) return false
 
         val isCtrl = e.isControlDown && !e.isMetaDown && !e.isAltDown
+        val isAlt = e.isAltDown && !e.isControlDown && !e.isMetaDown
         val isNoModifiers = !e.isControlDown && !e.isMetaDown && !e.isAltDown && !e.isShiftDown
 
         // Escape or Ctrl+[ should always work to exit insert/select mode or cancel pending actions
@@ -110,6 +112,12 @@ class HelixEventDispatcher : IdeEventQueue.EventDispatcher {
             isNoModifiers && e.keyCode == KeyEvent.VK_PAGE_UP -> {
                 val count = state.takeCount() ?: 1
                 HelixMotions.pageUp(editor, count)
+                true
+            }
+
+            isAlt && (e.keyCode == KeyEvent.VK_BACK_QUOTE || e.keyChar == '`') -> {
+                val count = state.takeCount() ?: 1
+                HelixActions.toUpperCase(editor, count)
                 true
             }
 
