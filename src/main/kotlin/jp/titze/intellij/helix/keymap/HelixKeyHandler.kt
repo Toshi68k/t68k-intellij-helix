@@ -251,7 +251,9 @@ object HelixKeyHandler {
 
             '<' -> HelixActionDelegate.executeAction("EditorUnindentSelection", editor)
 
-            '~' -> HelixActionDelegate.executeAction("ToggleCase", editor)
+            '~' -> HelixActions.toggleCase(editor, count)
+
+            '`' -> HelixActions.toLowerCase(editor, count)
 
             's' -> HelixSearchManager.startSelect(editor, isSplit = false)
 

@@ -454,6 +454,22 @@ object HelixActions {
         HelixRegexActions.countDocumentRegexMatches(editor, pattern)
 
     // -------------------------------------------------------------------------
+    // Case action delegates
+    // -------------------------------------------------------------------------
+
+    fun toggleCase(editor: Editor, count: Int = 1) {
+        HelixCaseActions.toggleCase(editor, count)
+    }
+
+    fun toLowerCase(editor: Editor, count: Int = 1) {
+        HelixCaseActions.toLowerCase(editor, count)
+    }
+
+    fun toUpperCase(editor: Editor, count: Int = 1) {
+        HelixCaseActions.toUpperCase(editor, count)
+    }
+
+    // -------------------------------------------------------------------------
     // Search action delegates (for backward compatibility)
     // -------------------------------------------------------------------------
 

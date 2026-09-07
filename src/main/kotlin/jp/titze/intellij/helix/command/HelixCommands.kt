@@ -3,6 +3,7 @@ package jp.titze.intellij.helix.command
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.editor.Editor
 import jp.titze.intellij.helix.action.HelixActionDelegate
+import jp.titze.intellij.helix.action.HelixActions
 import jp.titze.intellij.helix.jumplist.HelixJumpListService
 import jp.titze.intellij.helix.motion.HelixMotions
 import jp.titze.intellij.helix.settings.HelixSearchUiMode
@@ -86,6 +87,19 @@ object HelixCommands {
         },
         HelixCommandItem("jumps", emptyList(), "Open jumplist picker") { editor ->
             HelixJumplistPopup.show(editor)
+        },
+        HelixCommandItem("switch-case", listOf("switch_case"), "Switch case of selected text (~)") { editor ->
+            HelixActions.toggleCase(editor)
+        },
+        HelixCommandItem("switch-to-lowercase", listOf("switch_to_lowercase"), "Set selected text to lower case (`)") {
+            HelixActions.toLowerCase(it)
+        },
+        HelixCommandItem(
+            "switch-to-uppercase",
+            listOf("switch_to_uppercase"),
+            "Set selected text to upper case (Alt+`)",
+        ) { editor ->
+            HelixActions.toUpperCase(editor)
         },
     )
 

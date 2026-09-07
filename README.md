@@ -106,7 +106,9 @@ The goal of this plugin is to provide a more complete and polished Helix-like ex
 | `U` | Redo (`$Redo`) |
 | `=` | Reformat code (`ReformatCode`) |
 | `>` / `<` | Indent / Unindent selection |
-| `~` | Toggle case of selection (`ToggleCase`) |
+| `~` | Switch case of selection (`switch_case`) |
+| `` ` `` | Switch selection to lowercase (`switch_to_lowercase`) |
+| `Alt+` `` | Switch selection to uppercase (`switch_to_uppercase`) |
 | `Escape` | Return to `Normal` mode / clear pending chords |
 
 ### Surround & Match Mode (`m` menu)
