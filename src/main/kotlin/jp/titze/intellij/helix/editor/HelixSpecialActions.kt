@@ -312,7 +312,10 @@ class HelixSaveJumpAction : AnAction() {
         val editor = e.getData(CommonDataKeys.EDITOR) ?: return
         val project = e.project ?: editor.project ?: return
         val state = HelixStateManager.getOrCreate(editor)
-        if (state.mode.isInsertable) return
+        if (state.mode.isInsertable) {
+            HelixActions.commitUndoCheckpoint(editor)
+            return
+        }
         state.clearCount()
         HelixJumpListService.getInstance(project).recordCurrent(editor, force = true)
     }
@@ -320,7 +323,21 @@ class HelixSaveJumpAction : AnAction() {
     override fun update(e: AnActionEvent) {
         val editor = e.getData(CommonDataKeys.EDITOR)
         val state = editor?.let { HelixStateManager.getOrCreate(it) }
-        e.presentation.isEnabled = editor != null && state != null && !state.mode.isInsertable
+        e.presentation.isEnabled = editor != null && state != null
+    }
+
+    override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT
+}
+
+class HelixUndoCheckpointAction : AnAction() {
+    override fun actionPerformed(e: AnActionEvent) {
+        val editor = e.getData(CommonDataKeys.EDITOR) ?: return
+        HelixActions.commitUndoCheckpoint(editor)
+    }
+
+    override fun update(e: AnActionEvent) {
+        val editor = e.getData(CommonDataKeys.EDITOR)
+        e.presentation.isEnabled = editor != null
     }
 
     override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT

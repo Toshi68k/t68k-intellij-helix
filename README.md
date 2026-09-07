@@ -104,6 +104,7 @@ The goal of this plugin is to provide a more complete and polished Helix-like ex
 | `O` | Insert new line above (`EditorStartNewLineBefore`) and enter `Insert` mode |
 | `u` | Undo (`$Undo`) |
 | `U` | Redo (`$Redo`) |
+| `Ctrl+s` *(in `Insert` mode)* | Commit undo checkpoint (`commit-undo-checkpoint`) |
 | `=` | Reformat code (`ReformatCode`) |
 | `>` / `<` | Indent / Unindent selection |
 | `~` | Switch case of selection (`switch_case`) |
@@ -218,6 +219,7 @@ Press `:` in Normal mode to open the interactive **Helix Command Picker**, style
 - `:open` &rarr; Open fuzzy file picker (`GotoFile`)
 - `:buffer` / `:b` &rarr; Open buffer switcher (`RecentFiles`)
 - `:find` &rarr; Find in project files (`FindInPath`)
+- `:commit-undo-checkpoint` / `:checkpoint` &rarr; Commit undo checkpoint to break typing history
 - `:toggle-search-ui` / `:search-ui` &rarr; Toggle between Stock Helix inline bar and Popup dialog
 - `:set search-ui=inline` / `:set search-ui=stock` &rarr; Set search UI to Stock Helix inline bar
 - `:set search-ui=popup` &rarr; Set search UI to Popup dialog

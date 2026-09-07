@@ -66,6 +66,13 @@ object HelixCommands {
         HelixCommandItem("later", emptyList(), "Redo later changes") { editor ->
             HelixActionDelegate.executeAction("\$Redo", editor)
         },
+        HelixCommandItem(
+            "commit-undo-checkpoint",
+            listOf("checkpoint", "commit_undo_checkpoint"),
+            "Commit an undo checkpoint",
+        ) { editor ->
+            HelixActions.commitUndoCheckpoint(editor)
+        },
         HelixCommandItem("reload", emptyList(), "Synchronize / reload buffer from disk") { editor ->
             HelixActionDelegate.executeAction("Synchronize", editor)
         },

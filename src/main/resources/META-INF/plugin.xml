@@ -208,11 +208,17 @@
 
         <action id="jp.titze.intellij.helix.saveJump"
                 class="jp.titze.intellij.helix.editor.HelixSaveJumpAction"
-                text="Helix Save Jump"
-                description="Save current location to jumplist">
+                text="Helix Save Jump / Undo Checkpoint"
+                description="Save current selection to jumplist (Normal) or commit undo checkpoint (Insert)">
             <keyboard-shortcut keymap="$default" first-keystroke="control S"/>
             <keyboard-shortcut keymap="Mac OS X" first-keystroke="control S"/>
             <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="control S"/>
+        </action>
+
+        <action id="jp.titze.intellij.helix.undoCheckpoint"
+                class="jp.titze.intellij.helix.editor.HelixUndoCheckpointAction"
+                text="Helix Commit Undo Checkpoint"
+                description="Commit an undo checkpoint to break typing history">
         </action>
 
         <action id="jp.titze.intellij.helix.jumplistPicker"

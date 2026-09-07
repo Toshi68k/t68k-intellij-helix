@@ -44,6 +44,13 @@ class HelixEventDispatcher : IdeEventQueue.EventDispatcher {
         }
 
         val state = HelixStateManager.getOrCreate(editor)
+
+        if (isCtrl && e.keyCode == KeyEvent.VK_S && state.mode.isInsertable) {
+            HelixActions.commitUndoCheckpoint(editor)
+            e.consume()
+            return true
+        }
+
         if (state.mode.isInsertable) return false
 
         val handled = when {

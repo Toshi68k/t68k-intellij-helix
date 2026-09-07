@@ -22,6 +22,10 @@ object HelixKeyHandler {
         val state = HelixStateManager.getOrCreate(editor)
 
         if (state.mode.isInsertable) {
+            if (charTyped == '\u0013') {
+                HelixActions.commitUndoCheckpoint(editor)
+                return true
+            }
             return false // Let standard editor typing handle it
         }
 
