@@ -508,4 +508,101 @@ class HelixEditingActionsTest : BasePlatformTestCase() {
         editor.document.text shouldBe "hello new_universe end"
         caret.selectedText shouldBe "new_universe"
     }
+
+    fun testCommitUndoCheckpointBreaksTypingUndoHistory() {
+        myFixture.configureByText("test.txt", "")
+        val editor = myFixture.editor
+        val fileEditor = com.intellij.openapi.fileEditor.FileEditorManager.getInstance(project)
+            .getSelectedEditor(myFixture.file.virtualFile)
+        val undoManager = com.intellij.openapi.command.undo.UndoManager.getInstance(project)
+
+        HelixActions.enterInsert(editor)
+        myFixture.type("hello ")
+
+        HelixActions.commitUndoCheckpoint(editor)
+
+        myFixture.type("world")
+        editor.document.text shouldBe "hello world"
+
+        undoManager.undo(fileEditor)
+        editor.document.text shouldBe "hello "
+
+        undoManager.undo(fileEditor)
+        editor.document.text shouldBe ""
+    }
+
+    fun testCtrlSInInsertModeCommitsUndoCheckpointViaEventDispatcher() {
+        myFixture.configureByText("test.txt", "")
+        val editor = myFixture.editor
+        val fileEditor = com.intellij.openapi.fileEditor.FileEditorManager.getInstance(project)
+            .getSelectedEditor(myFixture.file.virtualFile)
+        val undoManager = com.intellij.openapi.command.undo.UndoManager.getInstance(project)
+
+        HelixActions.enterInsert(editor)
+        myFixture.type("first ")
+
+        val dispatcher = jp.titze.intellij.helix.editor.HelixEventDispatcher()
+        val ctrlS = java.awt.event.KeyEvent(
+            editor.contentComponent,
+            java.awt.event.KeyEvent.KEY_PRESSED,
+            System.currentTimeMillis(),
+            java.awt.event.InputEvent.CTRL_DOWN_MASK,
+            java.awt.event.KeyEvent.VK_S,
+            java.awt.event.KeyEvent.CHAR_UNDEFINED,
+        )
+        dispatcher.dispatch(ctrlS).shouldBeTrue()
+        ctrlS.isConsumed.shouldBeTrue()
+
+        myFixture.type("second")
+        editor.document.text shouldBe "first second"
+
+        undoManager.undo(fileEditor)
+        editor.document.text shouldBe "first "
+
+        undoManager.undo(fileEditor)
+        editor.document.text shouldBe ""
+    }
+
+    fun testCtrlSInInsertModeViaKeyHandler() {
+        myFixture.configureByText("test.txt", "")
+        val editor = myFixture.editor
+        val fileEditor = com.intellij.openapi.fileEditor.FileEditorManager.getInstance(project)
+            .getSelectedEditor(myFixture.file.virtualFile)
+        val undoManager = com.intellij.openapi.command.undo.UndoManager.getInstance(project)
+
+        HelixActions.enterInsert(editor)
+        myFixture.type("part1 ")
+
+        HelixKeyHandler.handleKey('\u0013', editor).shouldBeTrue()
+
+        myFixture.type("part2")
+        editor.document.text shouldBe "part1 part2"
+
+        undoManager.undo(fileEditor)
+        editor.document.text shouldBe "part1 "
+
+        undoManager.undo(fileEditor)
+        editor.document.text shouldBe ""
+    }
+
+    fun testCommitUndoCheckpointCommandPalette() {
+        myFixture.configureByText("test.txt", "")
+        val editor = myFixture.editor
+        val fileEditor = com.intellij.openapi.fileEditor.FileEditorManager.getInstance(project)
+            .getSelectedEditor(myFixture.file.virtualFile)
+        val undoManager = com.intellij.openapi.command.undo.UndoManager.getInstance(project)
+
+        HelixActions.enterInsert(editor)
+        myFixture.type("foo ")
+
+        val cmd = jp.titze.intellij.helix.command.HelixCommands.COMMANDS
+            .first { it.name == "commit-undo-checkpoint" }
+        cmd.action(editor)
+
+        myFixture.type("bar")
+        editor.document.text shouldBe "foo bar"
+
+        undoManager.undo(fileEditor)
+        editor.document.text shouldBe "foo "
+    }
 }

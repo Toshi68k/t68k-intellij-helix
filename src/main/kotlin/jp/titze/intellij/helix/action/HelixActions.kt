@@ -1,6 +1,9 @@
 package jp.titze.intellij.helix.action
 
+import com.intellij.openapi.command.CommandProcessor
 import com.intellij.openapi.command.WriteCommandAction
+import com.intellij.openapi.command.impl.UndoManagerImpl
+import com.intellij.openapi.command.undo.UndoManager
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.ScrollType
 import com.intellij.openapi.ide.CopyPasteManager
@@ -11,6 +14,18 @@ import java.awt.datatransfer.DataFlavor
 import java.awt.datatransfer.StringSelection
 
 object HelixActions {
+
+    fun commitUndoCheckpoint(editor: Editor) {
+        val project = editor.project ?: return
+        val undoManager = UndoManager.getInstance(project)
+        (undoManager as? UndoManagerImpl)?.flushCurrentCommandMerger()
+        CommandProcessor.getInstance().executeCommand(
+            project,
+            { },
+            "Undo Checkpoint",
+            Any(),
+        )
+    }
 
     fun deleteSelection(editor: Editor, enterInsert: Boolean = false) {
         val project = editor.project
