@@ -151,6 +151,12 @@ object HelixKeyHandler {
 
             'e' -> HelixMotions.moveWordEnd(editor, count)
 
+            'W' -> HelixMotions.moveNextBigWordStart(editor, count)
+
+            'B' -> HelixMotions.movePrevBigWordStart(editor, count)
+
+            'E' -> HelixMotions.moveBigWordEnd(editor, count)
+
             'x' -> HelixMotions.selectLine(editor, count)
 
             '%' -> {

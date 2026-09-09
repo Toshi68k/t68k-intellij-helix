@@ -46,6 +46,118 @@ class HelixMotionsTest : BasePlatformTestCase() {
         caret.selectedText shouldBe "hello world "
     }
 
+    fun testBigWordMotions() {
+        // In WORD motions, punctuation and letters form a single non-whitespace token
+        myFixture.configureByText("test.txt", "foo.bar(\"arg\") baz.qux() next")
+        val editor = myFixture.editor
+        val caret = editor.caretModel.primaryCaret
+        caret.moveToOffset(0)
+
+        // 'W' skips past all non-whitespace in foo.bar("arg") and trailing space to start of baz.qux()
+        HelixMotions.moveNextBigWordStart(editor)
+        caret.offset shouldBe 15
+        caret.hasSelection().shouldBeTrue()
+        caret.selectedText shouldBe "foo.bar(\"arg\") "
+
+        // Another 'W' moves to start of "next"
+        HelixMotions.moveNextBigWordStart(editor)
+        caret.offset shouldBe 25
+        caret.hasSelection().shouldBeTrue()
+        caret.selectedText shouldBe "baz.qux() "
+
+        // 'B' in Normal mode moves back to start of baz.qux() and selects it
+        HelixMotions.movePrevBigWordStart(editor)
+        caret.offset shouldBe 15
+        caret.hasSelection().shouldBeTrue()
+        caret.selectedText shouldBe "baz.qux() "
+
+        // Another 'B' moves back to start of foo.bar("arg")
+        HelixMotions.movePrevBigWordStart(editor)
+        caret.offset shouldBe 0
+        caret.hasSelection().shouldBeTrue()
+        caret.selectedText shouldBe "foo.bar(\"arg\") "
+
+        // 'E' from start of document moves to end of current WORD
+        HelixMotions.collapseSelection(editor)
+        caret.moveToOffset(0)
+        HelixMotions.moveBigWordEnd(editor)
+        caret.offset shouldBe 14 // index right after ')'
+        caret.hasSelection().shouldBeTrue()
+        caret.selectedText shouldBe "foo.bar(\"arg\")"
+
+        // Another 'E' moves to end of next WORD
+        HelixMotions.moveBigWordEnd(editor)
+        caret.offset shouldBe 24 // index right after ')'
+        caret.hasSelection().shouldBeTrue()
+        caret.selectedText shouldBe "baz.qux()"
+
+        // Select mode: 'W' extends selection across WORD boundaries
+        caret.moveToOffset(0)
+        HelixMotions.collapseSelection(editor)
+        HelixActions.toggleSelectMode(editor)
+        HelixStateManager.getOrCreate(editor).mode shouldBe HelixMode.SELECT
+
+        HelixMotions.moveNextBigWordStart(editor)
+        caret.offset shouldBe 15
+        caret.selectedText shouldBe "foo.bar(\"arg\") "
+
+        HelixMotions.moveNextBigWordStart(editor)
+        caret.offset shouldBe 25
+        caret.selectedText shouldBe "foo.bar(\"arg\") baz.qux() "
+    }
+
+    fun testBigWordMotionAtEndOfLine() {
+        myFixture.configureByText("test.txt", "alpha.beta(\"one\")\n    gamma.delta(\"two\")")
+        val editor = myFixture.editor
+        val caret = editor.caretModel.primaryCaret
+        caret.moveToOffset(0)
+
+        // 'W' at end of line stops before newline
+        HelixMotions.moveNextBigWordStart(editor)
+        caret.offset shouldBe 17 // offset of '\n'
+        caret.selectedText shouldBe "alpha.beta(\"one\")"
+
+        // Next 'W' crosses newline and selects indentation
+        HelixMotions.moveNextBigWordStart(editor)
+        caret.offset shouldBe 22 // start of gamma
+        caret.selectedText shouldBe "    "
+
+        // Next 'W' selects gamma.delta("two")
+        HelixMotions.moveNextBigWordStart(editor)
+        caret.offset shouldBe 40
+        caret.selectedText shouldBe "gamma.delta(\"two\")"
+    }
+
+    fun testBigWordKeyHandler() {
+        myFixture.configureByText("test.txt", "a.b() c.d() e.f()")
+        val editor = myFixture.editor
+        val caret = editor.caretModel.primaryCaret
+        caret.moveToOffset(0)
+
+        // Typing 'W' via HelixKeyHandler
+        HelixKeyHandler.handleKey('W', editor)
+        caret.offset shouldBe 6
+        caret.selectedText shouldBe "a.b() "
+
+        // Typing count prefix '2' then 'W'
+        HelixKeyHandler.handleKey('2', editor)
+        HelixKeyHandler.handleKey('W', editor)
+        caret.offset shouldBe 17
+        caret.selectedText shouldBe "c.d() e.f()"
+
+        // Typing 'B'
+        HelixKeyHandler.handleKey('B', editor)
+        caret.offset shouldBe 12
+        caret.selectedText shouldBe "e.f()"
+
+        // Typing 'E'
+        caret.moveToOffset(0)
+        HelixMotions.collapseSelection(editor)
+        HelixKeyHandler.handleKey('E', editor)
+        caret.offset shouldBe 5
+        caret.selectedText shouldBe "a.b()"
+    }
+
     fun testWordMotionAtEndOfLine() {
         myFixture.configureByText("test.txt", "hello world\nnext line")
         val editor = myFixture.editor

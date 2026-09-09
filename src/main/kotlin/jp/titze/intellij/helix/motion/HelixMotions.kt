@@ -8,168 +8,39 @@ import jp.titze.intellij.helix.state.HelixStateManager
 
 object HelixMotions {
 
-    private enum class CharType {
-        WORD,
-        PUNCTUATION,
-        WHITESPACE,
-    }
-
-    private fun getCharType(c: Char): CharType = when {
-        c.isWhitespace() -> CharType.WHITESPACE
-        c.isLetterOrDigit() || c == '_' -> CharType.WORD
-        else -> CharType.PUNCTUATION
-    }
-
     private fun runForEachCaret(editor: Editor, action: (Caret) -> Unit) {
         HelixMotionUtils.runForEachCaret(editor, action)
     }
 
-    private fun isLineEnding(c: Char): Boolean = HelixMotionUtils.isLineEnding(c)
-    private fun isHorizontalWhitespace(c: Char): Boolean = HelixMotionUtils.isHorizontalWhitespace(c)
-
     /**
      * w: Move forward to start of next word (selects word in Normal mode, extends in Select mode)
      */
-    fun moveNextWordStart(editor: Editor, count: Int = 1) {
-        val doc = editor.document
-        val text = doc.charsSequence
-        val textLen = doc.textLength
-        if (textLen == 0) return
-
-        val state = HelixStateManager.getOrCreate(editor)
-        val isSelect = state.mode == HelixMode.SELECT
-
-        runForEachCaret(editor) { caret ->
-            val startOffset = caret.offset
-            var anchor = if (isSelect && caret.hasSelection()) caret.leadSelectionOffset else startOffset
-            var offset = startOffset
-
-            repeat(count) {
-                if (offset < textLen) {
-                    if (isLineEnding(text[offset])) {
-                        // Starting at a line break: advance across line breaks
-                        while (offset < textLen && isLineEnding(text[offset])) {
-                            offset++
-                        }
-                        if (!isSelect) {
-                            anchor = offset
-                        }
-                        // If line starts with indentation, select that indentation
-                        if (offset < textLen && isHorizontalWhitespace(text[offset])) {
-                            while (offset < textLen && isHorizontalWhitespace(text[offset])) {
-                                offset++
-                            }
-                        } else if (offset < textLen && !isLineEnding(text[offset])) {
-                            val initialType = getCharType(text[offset])
-                            while (offset < textLen && getCharType(text[offset]) == initialType) {
-                                offset++
-                            }
-                            while (offset < textLen && isHorizontalWhitespace(text[offset])) {
-                                offset++
-                            }
-                        }
-                    } else if (isHorizontalWhitespace(text[offset])) {
-                        // Starting on horizontal whitespace: skip whitespace up to word or line break
-                        while (offset < textLen && isHorizontalWhitespace(text[offset])) {
-                            offset++
-                        }
-                    } else {
-                        // Starting on word or punctuation
-                        val initialType = getCharType(text[offset])
-                        while (offset < textLen && getCharType(text[offset]) == initialType) {
-                            offset++
-                        }
-                        // Skip trailing horizontal whitespace on the same line, stopping before line break
-                        while (offset < textLen && isHorizontalWhitespace(text[offset])) {
-                            offset++
-                        }
-                    }
-                }
-            }
-
-            offset = offset.coerceIn(0, textLen)
-            applySelectingMotion(caret, anchor, offset)
-        }
-        editor.scrollingModel.scrollToCaret(ScrollType.MAKE_VISIBLE)
-    }
+    fun moveNextWordStart(editor: Editor, count: Int = 1) = HelixWordMotions.moveNextWordStart(editor, count)
 
     /**
      * b: Move backward to start of previous word (selects word in Normal mode, extends in Select mode)
      */
-    fun movePrevWordStart(editor: Editor, count: Int = 1) {
-        val doc = editor.document
-        val text = doc.charsSequence
-        val textLen = doc.textLength
-        if (textLen == 0) return
-
-        val state = HelixStateManager.getOrCreate(editor)
-        val isSelect = state.mode == HelixMode.SELECT
-
-        runForEachCaret(editor) { caret ->
-            val startOffset = caret.offset
-            val anchor = if (isSelect && caret.hasSelection()) caret.leadSelectionOffset else startOffset
-            var offset = startOffset
-
-            repeat(count) {
-                if (offset > 0) {
-                    offset--
-                    // Skip whitespace backwards
-                    while (offset > 0 && text[offset].isWhitespace()) {
-                        offset--
-                    }
-                    val targetType = getCharType(text[offset])
-                    while (offset > 0 && getCharType(text[offset - 1]) == targetType) {
-                        offset--
-                    }
-                }
-            }
-
-            offset = offset.coerceIn(0, textLen)
-            applySelectingMotion(caret, anchor, offset)
-        }
-        editor.scrollingModel.scrollToCaret(ScrollType.MAKE_VISIBLE)
-    }
+    fun movePrevWordStart(editor: Editor, count: Int = 1) = HelixWordMotions.movePrevWordStart(editor, count)
 
     /**
      * e: Move forward to end of current/next word (selects in Normal mode, extends in Select mode)
      */
-    fun moveWordEnd(editor: Editor, count: Int = 1) {
-        val doc = editor.document
-        val text = doc.charsSequence
-        val textLen = doc.textLength
-        if (textLen == 0) return
+    fun moveWordEnd(editor: Editor, count: Int = 1) = HelixWordMotions.moveWordEnd(editor, count)
 
-        val state = HelixStateManager.getOrCreate(editor)
-        val isSelect = state.mode == HelixMode.SELECT
+    /**
+     * W: Move forward to start of next WORD (non-whitespace chunk)
+     */
+    fun moveNextBigWordStart(editor: Editor, count: Int = 1) = HelixWordMotions.moveNextBigWordStart(editor, count)
 
-        runForEachCaret(editor) { caret ->
-            val startOffset = caret.offset
-            val anchor = if (isSelect && caret.hasSelection()) caret.leadSelectionOffset else startOffset
-            var offset = startOffset
+    /**
+     * B: Move backward to start of previous WORD (non-whitespace chunk)
+     */
+    fun movePrevBigWordStart(editor: Editor, count: Int = 1) = HelixWordMotions.movePrevBigWordStart(editor, count)
 
-            repeat(count) {
-                if (offset < textLen) {
-                    offset++
-                    // Skip whitespace
-                    while (offset < textLen && text[offset].isWhitespace()) {
-                        offset++
-                    }
-                    if (offset < textLen) {
-                        val targetType = getCharType(text[offset])
-                        while (offset + 1 < textLen && getCharType(text[offset + 1]) == targetType) {
-                            offset++
-                        }
-                        // Include the character in word end
-                        if (offset < textLen) offset++
-                    }
-                }
-            }
-
-            offset = offset.coerceIn(0, textLen)
-            applySelectingMotion(caret, anchor, offset)
-        }
-        editor.scrollingModel.scrollToCaret(ScrollType.MAKE_VISIBLE)
-    }
+    /**
+     * E: Move forward to end of current/next WORD (non-whitespace chunk)
+     */
+    fun moveBigWordEnd(editor: Editor, count: Int = 1) = HelixWordMotions.moveBigWordEnd(editor, count)
 
     /**
      * x: Select current line (including newline). If already selected, extend selection by next line.
@@ -400,10 +271,6 @@ object HelixMotions {
 
     private fun applyMotion(caret: Caret, anchor: Int, targetOffset: Int, isSelect: Boolean) {
         HelixMotionUtils.applyMotion(caret, anchor, targetOffset, isSelect)
-    }
-
-    private fun applySelectingMotion(caret: Caret, anchor: Int, targetOffset: Int) {
-        HelixMotionUtils.applySelectingMotion(caret, anchor, targetOffset)
     }
 
     // -------------------------------------------------------------------------
