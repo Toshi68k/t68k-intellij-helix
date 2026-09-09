@@ -36,6 +36,12 @@ class HelixEditorState(val editor: Editor) {
         notifyListeners()
     }
 
+    fun setPendingSequence(seq: String) {
+        pendingBuffer.clear()
+        pendingBuffer.append(seq)
+        notifyListeners()
+    }
+
     fun clearPendingSequence() {
         if (pendingBuffer.isNotEmpty()) {
             pendingBuffer.clear()

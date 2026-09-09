@@ -271,5 +271,14 @@
             <keyboard-shortcut keymap="Mac OS X" first-keystroke="control X"/>
             <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="control X"/>
         </action>
+
+        <action id="jp.titze.intellij.helix.windowChord"
+                class="jp.titze.intellij.helix.editor.HelixWindowChordAction"
+                text="Helix Window and Split Menu"
+                description="Window and split management (Ctrl+w)">
+            <keyboard-shortcut keymap="$default" first-keystroke="control W"/>
+            <keyboard-shortcut keymap="Mac OS X" first-keystroke="control W"/>
+            <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="control W"/>
+        </action>
     </actions>
 </idea-plugin>

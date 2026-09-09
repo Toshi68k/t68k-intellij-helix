@@ -230,6 +230,29 @@ object HelixWhichKeyPopup {
                     state.clearCount()
                     hide()
                     e.consume()
+                    return
+                }
+
+                if (e.isControlDown && currentPrefix == "C-w") {
+                    val ch = when (e.keyCode) {
+                        KeyEvent.VK_V -> 'v'
+                        KeyEvent.VK_S -> 's'
+                        KeyEvent.VK_H -> 'h'
+                        KeyEvent.VK_J -> 'j'
+                        KeyEvent.VK_K -> 'k'
+                        KeyEvent.VK_L -> 'l'
+                        KeyEvent.VK_W -> 'w'
+                        KeyEvent.VK_Q -> 'q'
+                        KeyEvent.VK_C -> 'c'
+                        KeyEvent.VK_O -> 'o'
+                        else -> null
+                    }
+                    if (ch != null) {
+                        hide()
+                        HelixKeyHandler.handleKey(ch, editor)
+                        e.consume()
+                        return
+                    }
                 }
             }
 
