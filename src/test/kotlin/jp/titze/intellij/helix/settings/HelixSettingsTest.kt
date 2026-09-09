@@ -15,6 +15,7 @@ class HelixSettingsTest : BasePlatformTestCase() {
         settings.searchUiMode = HelixSearchUiMode.STOCK_HELIX
         settings.jumpListMaxEntries = HelixSettings.DEFAULT_JUMP_LIST_MAX_ENTRIES
         settings.colorTheme = HelixColorTheme.SYNC
+        settings.resetToNormalOnTabSwitch = true
         super.tearDown()
     }
 
@@ -23,6 +24,7 @@ class HelixSettingsTest : BasePlatformTestCase() {
         settings.searchUiMode shouldBe HelixSearchUiMode.STOCK_HELIX
         settings.jumpListMaxEntries shouldBe 100
         settings.colorTheme shouldBe HelixColorTheme.SYNC
+        settings.resetToNormalOnTabSwitch.shouldBeTrue()
     }
 
     fun testJumpListMaxEntriesClamping() {
@@ -64,6 +66,12 @@ class HelixSettingsTest : BasePlatformTestCase() {
         configurable.isModified.shouldBeFalse()
 
         settings.jumpListMaxEntries = 50
+        configurable.isModified.shouldBeTrue()
+
+        configurable.reset()
+        configurable.isModified.shouldBeFalse()
+
+        settings.resetToNormalOnTabSwitch = false
         configurable.isModified.shouldBeTrue()
 
         configurable.reset()

@@ -3,6 +3,7 @@ package jp.titze.intellij.helix.settings
 import com.intellij.openapi.options.SearchableConfigurable
 import com.intellij.openapi.project.ProjectManager
 import com.intellij.ui.JBIntSpinner
+import com.intellij.ui.components.JBCheckBox
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBRadioButton
 import com.intellij.util.ui.JBUI
@@ -28,6 +29,8 @@ class HelixConfigurable : SearchableConfigurable {
     private var darkThemeRadio: JBRadioButton? = null
     private var lightThemeRadio: JBRadioButton? = null
 
+    private var resetToNormalCheckBox: JBCheckBox? = null
+
     override fun getId(): String = "jp.titze.intellij.helix.settings"
 
     override fun getDisplayName(): String = "Helix Keymap"
@@ -44,6 +47,8 @@ class HelixConfigurable : SearchableConfigurable {
         contentBox.add(createJumpListSection())
         contentBox.add(Box.createVerticalStrut(JBUI.scale(20)))
         contentBox.add(createThemeSection())
+        contentBox.add(Box.createVerticalStrut(JBUI.scale(20)))
+        contentBox.add(createEditorBehaviorSection())
 
         mainPanel.add(contentBox, BorderLayout.NORTH)
 
@@ -158,6 +163,34 @@ class HelixConfigurable : SearchableConfigurable {
         return section
     }
 
+    private fun createEditorBehaviorSection(): JPanel {
+        val section = JPanel(BorderLayout(0, 8))
+        val titleLabel = JBLabel("Editor Behavior")
+        titleLabel.font = JBUI.Fonts.label().asBold()
+        section.add(titleLabel, BorderLayout.NORTH)
+
+        val checkBox = JBCheckBox("Reset to Normal mode when opening files or switching tabs")
+        resetToNormalCheckBox = checkBox
+
+        val optionsPanel = JPanel(BorderLayout())
+        optionsPanel.border = JBUI.Borders.emptyLeft(12)
+        optionsPanel.add(checkBox, BorderLayout.NORTH)
+
+        val helpLabel = JBLabel(
+            "<html>When enabled, opening a file or switching editor tabs automatically enters " +
+                "<b>Normal</b> mode.<br/>When disabled, each editor tab retains its last active mode.</html>",
+        )
+        helpLabel.font = JBUI.Fonts.smallFont()
+        helpLabel.foreground = UIUtil.getContextHelpForeground()
+        helpLabel.border = JBUI.Borders.emptyLeft(12)
+
+        val box = JPanel(BorderLayout(0, 8))
+        box.add(optionsPanel, BorderLayout.NORTH)
+        box.add(helpLabel, BorderLayout.CENTER)
+        section.add(box, BorderLayout.CENTER)
+        return section
+    }
+
     private fun getSelectedSearchUiMode(): HelixSearchUiMode = if (stockHelixRadio?.isSelected == true) {
         HelixSearchUiMode.STOCK_HELIX
     } else {
@@ -175,6 +208,7 @@ class HelixConfigurable : SearchableConfigurable {
         if (getSelectedSearchUiMode() != settings.searchUiMode) return true
         if (jumpListSpinner?.number != settings.jumpListMaxEntries) return true
         if (getSelectedColorTheme() != settings.colorTheme) return true
+        if (resetToNormalCheckBox?.isSelected != settings.resetToNormalOnTabSwitch) return true
         return false
     }
 
@@ -183,6 +217,7 @@ class HelixConfigurable : SearchableConfigurable {
         settings.searchUiMode = getSelectedSearchUiMode()
         jumpListSpinner?.let { settings.jumpListMaxEntries = it.number }
         settings.colorTheme = getSelectedColorTheme()
+        resetToNormalCheckBox?.let { settings.resetToNormalOnTabSwitch = it.isSelected }
 
         ProjectManager.getInstance().openProjects.forEach { project ->
             project.getService(HelixJumpListService::class.java)?.trimToCapacity()
@@ -199,6 +234,8 @@ class HelixConfigurable : SearchableConfigurable {
         syncThemeRadio?.isSelected = (settings.colorTheme == HelixColorTheme.SYNC)
         darkThemeRadio?.isSelected = (settings.colorTheme == HelixColorTheme.DARK)
         lightThemeRadio?.isSelected = (settings.colorTheme == HelixColorTheme.LIGHT)
+
+        resetToNormalCheckBox?.isSelected = settings.resetToNormalOnTabSwitch
     }
 
     override fun disposeUIResources() {
@@ -208,5 +245,6 @@ class HelixConfigurable : SearchableConfigurable {
         syncThemeRadio = null
         darkThemeRadio = null
         lightThemeRadio = null
+        resetToNormalCheckBox = null
     }
 }
