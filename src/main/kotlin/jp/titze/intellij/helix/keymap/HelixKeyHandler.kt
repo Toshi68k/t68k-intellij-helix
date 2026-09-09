@@ -5,6 +5,7 @@ import jp.titze.intellij.helix.action.HelixActionDelegate
 import jp.titze.intellij.helix.action.HelixActions
 import jp.titze.intellij.helix.command.HelixCommandPopup
 import jp.titze.intellij.helix.jumplist.HelixJumpListService
+import jp.titze.intellij.helix.motion.HelixJumpToWord
 import jp.titze.intellij.helix.motion.HelixMotions
 import jp.titze.intellij.helix.state.HelixEditorState
 import jp.titze.intellij.helix.state.HelixStateManager
@@ -19,14 +20,14 @@ object HelixKeyHandler {
     }
 
     fun handleKey(charTyped: Char, editor: Editor): Boolean {
+        if (HelixJumpToWord.isActive(editor)) {
+            return HelixJumpToWord.handleKey(charTyped, editor)
+        }
+
         val state = HelixStateManager.getOrCreate(editor)
 
         if (state.mode.isInsertable) {
-            if (charTyped == '\u0013') {
-                HelixActions.commitUndoCheckpoint(editor)
-                return true
-            }
-            return false // Let standard editor typing handle it
+            return handleInsertableKey(charTyped, editor)
         }
 
         val seq = state.pendingSequence
@@ -291,6 +292,14 @@ object HelixKeyHandler {
             else -> return false
         }
         return true
+    }
+
+    private fun handleInsertableKey(charTyped: Char, editor: Editor): Boolean {
+        if (charTyped == '\u0013') {
+            HelixActions.commitUndoCheckpoint(editor)
+            return true
+        }
+        return false
     }
 
     private fun isCountDigit(ch: Char, hasCount: Boolean): Boolean = ch in '1'..'9' || (ch == '0' && hasCount)
