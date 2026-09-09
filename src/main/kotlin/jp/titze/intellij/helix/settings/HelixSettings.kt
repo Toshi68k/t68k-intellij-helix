@@ -21,6 +21,7 @@ class HelixSettingsState {
     var searchUiMode: String = HelixSearchUiMode.STOCK_HELIX.name
     var jumpListMaxEntries: Int = HelixSettings.DEFAULT_JUMP_LIST_MAX_ENTRIES
     var colorTheme: String = HelixColorTheme.SYNC.name
+    var resetToNormalOnTabSwitch: Boolean = true
 }
 
 @Service(Service.Level.APP)
@@ -62,6 +63,12 @@ class HelixSettings : PersistentStateComponent<HelixSettingsState> {
         }
         set(value) {
             myState.colorTheme = value.name
+        }
+
+    var resetToNormalOnTabSwitch: Boolean
+        get() = myState.resetToNormalOnTabSwitch
+        set(value) {
+            myState.resetToNormalOnTabSwitch = value
         }
 
     override fun getState(): HelixSettingsState = myState

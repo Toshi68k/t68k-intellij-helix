@@ -235,9 +235,15 @@ Helix Keymap supports two switchable search and regex prompt styles:
 1. **Stock Helix Mode (Default)**: Single-line prompt bar docked at the bottom of the active editor (`search: `, `rsearch: `, `select: `, `split: `). Matches and selections update **live in the editor buffer as you type**. Pressing <kbd>Enter</kbd> confirms, while pressing <kbd>Esc</kbd> (or <kbd>Backspace</kbd> on empty query) cancels and reverts all carets and selections to their pre-search snapshot.
 2. **Popup Dialog Mode**: Centered floating dialog window with match counter badge, useful for users preferring a separate floating modal window.
 
-Switch between modes at any time:
 - In IntelliJ Settings: **Preferences / Settings &rarr; Tools &rarr; Helix Keymap**
 - In the `:` Command Picker: `:toggle-search-ui`, `:set search-ui=inline`, or `:set search-ui=popup`
+
+#### Editor Behavior Settings
+Configure Helix Keymap preferences under **Preferences / Settings &rarr; Tools &rarr; Helix Keymap**:
+- **Reset to Normal mode on tab switch / file open** *(default: enabled)*: Ensures each tab starts in **Normal** mode with block cursor whenever a file is opened or tabs are switched. Can be disabled if you prefer retaining active modes (such as Insert mode) across tabs.
+- **Search and Selection Prompt UI**: Toggle between Stock Helix inline bottom bar or Popup dialog.
+- **Jump List Capacity**: Set maximum recorded jump entries (10–1000).
+- **Color Theme**: Choose between Sync with IDE, Dark, or Light themes for all Helix overlays.
 
 ---
 

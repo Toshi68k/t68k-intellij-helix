@@ -50,6 +50,11 @@
                                  displayName="Helix Keymap"/>
     </extensions>
 
+    <projectListeners>
+        <listener class="jp.titze.intellij.helix.editor.HelixFileEditorListener"
+                  topic="com.intellij.openapi.fileEditor.FileEditorManagerListener"/>
+    </projectListeners>
+
     <actions>
         <action id="jp.titze.intellij.helix.escape"
                 class="jp.titze.intellij.helix.editor.HelixEscapeAction"
