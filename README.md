@@ -44,6 +44,9 @@ The goal of this plugin is to provide a more complete and polished Helix-like ex
 | `w` | Advance to the start of the next word |
 | `b` | Move backward to the start of the previous word |
 | `e` | Advance to the end of the current/next word |
+| `W` | Advance to the start of the next WORD (non-whitespace chunk) |
+| `B` | Move backward to the start of the previous WORD |
+| `E` | Advance to the end of the current/next WORD |
 | `ge` | Move backward to the end of the previous word |
 | `x` | Select current line (including newline); pressing `x` again extends to the next line |
 | `%` | Select entire buffer |
