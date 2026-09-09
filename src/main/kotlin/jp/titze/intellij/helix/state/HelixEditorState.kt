@@ -12,6 +12,8 @@ class HelixEditorState(val editor: Editor) {
 
     var yankRegister: String? = null
     var isYankLineWise: Boolean = false
+    var selectedRegister: Char? = null
+        private set
 
     val pendingSequence: String
         get() = pendingBuffer.toString()
@@ -27,6 +29,19 @@ class HelixEditorState(val editor: Editor) {
             mode = newMode
             clearPendingSequence()
             clearCount()
+            clearSelectedRegister()
+            notifyListeners()
+        }
+    }
+
+    fun setSelectedRegister(reg: Char?) {
+        selectedRegister = reg
+        notifyListeners()
+    }
+
+    fun clearSelectedRegister() {
+        if (selectedRegister != null) {
+            selectedRegister = null
             notifyListeners()
         }
     }

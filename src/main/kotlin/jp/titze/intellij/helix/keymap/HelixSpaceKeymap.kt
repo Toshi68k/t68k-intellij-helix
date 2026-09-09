@@ -52,22 +52,22 @@ internal object HelixSpaceKeymap {
         'w' -> HelixActionDelegate.executeAction("SaveAll", editor)
 
         'y' -> {
-            HelixActions.yankSelection(editor)
+            HelixActions.yankSelection(editor, register = '+')
             true
         }
 
         'p' -> {
-            HelixActions.paste(editor, after = true)
+            HelixActions.paste(editor, after = true, register = '+')
             true
         }
 
         'P' -> {
-            HelixActions.paste(editor, after = false)
+            HelixActions.paste(editor, after = false, register = '+')
             true
         }
 
         'R' -> {
-            HelixActions.replaceWithClipboard(editor)
+            HelixActions.replaceWithClipboard(editor, register = '+')
             true
         }
 

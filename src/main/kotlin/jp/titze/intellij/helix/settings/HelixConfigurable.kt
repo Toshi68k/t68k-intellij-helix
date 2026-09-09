@@ -30,6 +30,7 @@ class HelixConfigurable : SearchableConfigurable {
     private var lightThemeRadio: JBRadioButton? = null
 
     private var resetToNormalCheckBox: JBCheckBox? = null
+    private var syncClipboardCheckBox: JBCheckBox? = null
 
     override fun getId(): String = "jp.titze.intellij.helix.settings"
 
@@ -47,6 +48,8 @@ class HelixConfigurable : SearchableConfigurable {
         contentBox.add(createJumpListSection())
         contentBox.add(Box.createVerticalStrut(JBUI.scale(20)))
         contentBox.add(createThemeSection())
+        contentBox.add(Box.createVerticalStrut(JBUI.scale(20)))
+        contentBox.add(createRegistersSection())
         contentBox.add(Box.createVerticalStrut(JBUI.scale(20)))
         contentBox.add(createEditorBehaviorSection())
 
@@ -163,6 +166,37 @@ class HelixConfigurable : SearchableConfigurable {
         return section
     }
 
+    private fun createRegistersSection(): JPanel {
+        val section = JPanel(BorderLayout(0, 8))
+        val titleLabel = JBLabel("Registers and Clipboard")
+        titleLabel.font = JBUI.Fonts.label().asBold()
+        section.add(titleLabel, BorderLayout.NORTH)
+
+        val checkBox = JBCheckBox("Synchronize default register (\") with system clipboard")
+        syncClipboardCheckBox = checkBox
+
+        val optionsPanel = JPanel(BorderLayout())
+        optionsPanel.border = JBUI.Borders.emptyLeft(12)
+        optionsPanel.add(checkBox, BorderLayout.NORTH)
+
+        val helpLabel = JBLabel(
+            "<html>When enabled, default yank (<code>y</code>) and delete (<code>d</code>/<code>c</code>) " +
+                "synchronize with the OS clipboard.<br/>" +
+                "Use <code>\"_d</code> or <code>\"_c</code> to delete/change without overwriting the clipboard.<br/>" +
+                "When disabled, default yank/delete stay in the internal register, and " +
+                "<code>Space+y</code> / <code>Space+p</code> (or <code>\"+</code>) target the clipboard.</html>",
+        )
+        helpLabel.font = JBUI.Fonts.smallFont()
+        helpLabel.foreground = UIUtil.getContextHelpForeground()
+        helpLabel.border = JBUI.Borders.emptyLeft(12)
+
+        val box = JPanel(BorderLayout(0, 8))
+        box.add(optionsPanel, BorderLayout.NORTH)
+        box.add(helpLabel, BorderLayout.CENTER)
+        section.add(box, BorderLayout.CENTER)
+        return section
+    }
+
     private fun createEditorBehaviorSection(): JPanel {
         val section = JPanel(BorderLayout(0, 8))
         val titleLabel = JBLabel("Editor Behavior")
@@ -209,6 +243,7 @@ class HelixConfigurable : SearchableConfigurable {
         if (jumpListSpinner?.number != settings.jumpListMaxEntries) return true
         if (getSelectedColorTheme() != settings.colorTheme) return true
         if (resetToNormalCheckBox?.isSelected != settings.resetToNormalOnTabSwitch) return true
+        if (syncClipboardCheckBox?.isSelected != settings.syncClipboardWithDefaultRegister) return true
         return false
     }
 
@@ -218,6 +253,7 @@ class HelixConfigurable : SearchableConfigurable {
         jumpListSpinner?.let { settings.jumpListMaxEntries = it.number }
         settings.colorTheme = getSelectedColorTheme()
         resetToNormalCheckBox?.let { settings.resetToNormalOnTabSwitch = it.isSelected }
+        syncClipboardCheckBox?.let { settings.syncClipboardWithDefaultRegister = it.isSelected }
 
         ProjectManager.getInstance().openProjects.forEach { project ->
             project.getService(HelixJumpListService::class.java)?.trimToCapacity()
@@ -236,6 +272,7 @@ class HelixConfigurable : SearchableConfigurable {
         lightThemeRadio?.isSelected = (settings.colorTheme == HelixColorTheme.LIGHT)
 
         resetToNormalCheckBox?.isSelected = settings.resetToNormalOnTabSwitch
+        syncClipboardCheckBox?.isSelected = settings.syncClipboardWithDefaultRegister
     }
 
     override fun disposeUIResources() {
@@ -246,5 +283,6 @@ class HelixConfigurable : SearchableConfigurable {
         darkThemeRadio = null
         lightThemeRadio = null
         resetToNormalCheckBox = null
+        syncClipboardCheckBox = null
     }
 }

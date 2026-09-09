@@ -23,9 +23,10 @@ object HelixEscapeHandler {
             return true
         }
 
-        if (state.pendingSequence.isNotEmpty() || state.hasCount) {
+        if (state.pendingSequence.isNotEmpty() || state.hasCount || state.selectedRegister != null) {
             state.clearPendingSequence()
             state.clearCount()
+            state.clearSelectedRegister()
             return true
         }
 
