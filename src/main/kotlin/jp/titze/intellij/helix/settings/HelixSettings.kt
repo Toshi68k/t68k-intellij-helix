@@ -22,6 +22,7 @@ class HelixSettingsState {
     var jumpListMaxEntries: Int = HelixSettings.DEFAULT_JUMP_LIST_MAX_ENTRIES
     var colorTheme: String = HelixColorTheme.SYNC.name
     var resetToNormalOnTabSwitch: Boolean = true
+    var syncClipboardWithDefaultRegister: Boolean = true
 }
 
 @Service(Service.Level.APP)
@@ -69,6 +70,12 @@ class HelixSettings : PersistentStateComponent<HelixSettingsState> {
         get() = myState.resetToNormalOnTabSwitch
         set(value) {
             myState.resetToNormalOnTabSwitch = value
+        }
+
+    var syncClipboardWithDefaultRegister: Boolean
+        get() = myState.syncClipboardWithDefaultRegister
+        set(value) {
+            myState.syncClipboardWithDefaultRegister = value
         }
 
     override fun getState(): HelixSettingsState = myState

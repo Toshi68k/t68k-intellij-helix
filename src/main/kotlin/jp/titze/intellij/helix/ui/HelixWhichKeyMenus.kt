@@ -105,6 +105,17 @@ object HelixWhichKeyMenus {
         WhichKeyItem("o", "Close other splits", "UnsplitAll"),
     )
 
+    val registerItems = listOf(
+        WhichKeyItem("_", "Black hole", "Discard output"),
+        WhichKeyItem("\"", "Default register", "Unnamed"),
+        WhichKeyItem("+", "System clipboard", "Clipboard"),
+        WhichKeyItem("*", "Primary selection", "Selection"),
+        WhichKeyItem("0-9", "Numbered registers", "0=yank, 1-9=delete"),
+        WhichKeyItem("a-z", "Named registers", "A-Z to append"),
+        WhichKeyItem("/", "Search register", "Last search regex"),
+        WhichKeyItem("%", "Buffer name", "Current file path"),
+    )
+
     fun getMenu(prefix: String): Pair<String, List<WhichKeyItem>>? = when (prefix) {
         " " -> "SPACE MENU" to spaceItems
         "g" -> "GOTO MENU" to gotoItems
@@ -114,6 +125,7 @@ object HelixWhichKeyMenus {
         "z" -> "VIEW MENU" to viewItems
         "Z" -> "STICKY VIEW MENU" to viewItems
         "C-w", "Ctrl+w", "\u0017" -> "WINDOW MENU" to windowItems
+        "\"" -> "REGISTERS" to registerItems
         else -> null
     }
 }

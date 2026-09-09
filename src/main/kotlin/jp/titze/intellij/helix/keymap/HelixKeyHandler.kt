@@ -64,28 +64,36 @@ object HelixKeyHandler {
         }
 
         // Single key commands
-        return handleSingleKey(charTyped, editor, state)
+        try {
+            return handleSingleKey(charTyped, editor, state)
+        } finally {
+            state.clearSelectedRegister()
+        }
     }
 
     private fun handlePrefixInitiation(charTyped: Char, editor: Editor, state: HelixEditorState): Boolean =
         when (charTyped) {
-            'g', ' ', '[', ']', 'm', 'z', 'Z' -> {
+            'g', ' ', '[', ']', 'm', 'z', 'Z', '"' -> {
+                state.clearSelectedRegister()
                 state.appendKey(charTyped)
                 HelixWhichKeyPopup.show(editor, charTyped.toString())
                 true
             }
 
             '\u0017' -> {
+                state.clearSelectedRegister()
                 startWindowChord(editor)
                 true
             }
 
             'f', 't', 'F', 'T', 'r' -> {
+                state.clearSelectedRegister()
                 state.appendKey(charTyped)
                 true
             }
 
             ':' -> {
+                state.clearSelectedRegister()
                 state.clearCount()
                 HelixWhichKeyPopup.hide()
                 HelixCommandPopup.show(editor)
@@ -156,6 +164,16 @@ object HelixKeyHandler {
             "C-w" -> {
                 state.clearPendingSequence()
                 HelixWindowKeymap.handle(ch, editor)
+            }
+
+            "\"" -> {
+                state.clearPendingSequence()
+                if (isValidRegisterChar(ch)) {
+                    state.setSelectedRegister(ch)
+                    true
+                } else {
+                    false
+                }
             }
 
             else -> HelixMatchKeymap.handleSubmenu(prefix, ch, editor, state)
@@ -237,11 +255,11 @@ object HelixKeyHandler {
             }
 
             // Actions
-            'd' -> HelixActions.deleteSelection(editor)
+            'd' -> HelixActions.deleteSelection(editor, count = count)
 
-            'c' -> HelixActions.deleteSelection(editor, enterInsert = true)
+            'c' -> HelixActions.deleteSelection(editor, enterInsert = true, count = count)
 
-            'y' -> HelixActions.yankSelection(editor)
+            'y' -> HelixActions.yankSelection(editor, count = count)
 
             'p' -> HelixActions.paste(editor, after = true)
 
@@ -330,6 +348,10 @@ object HelixKeyHandler {
         }
         return false
     }
+
+    private fun isValidRegisterChar(ch: Char): Boolean = ch == '_' || ch == '+' || ch == '*' || ch == '"' ||
+        ch in '0'..'9' || ch in 'a'..'z' || ch in 'A'..'Z' ||
+        ch == '/' || ch == '%'
 
     private fun isCountDigit(ch: Char, hasCount: Boolean): Boolean = ch in '1'..'9' || (ch == '0' && hasCount)
 }
