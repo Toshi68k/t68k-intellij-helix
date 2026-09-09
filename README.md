@@ -165,11 +165,26 @@ Built-in surround and textobject functionality matching [Helix Surround](https:/
 - `gg` &rarr; Goto start of buffer
 
 #### Interactive Which-Key Floating Menu
-Whenever a chord prefix key (<kbd>Space</kbd>, `g`, `m`, `[`, or `]`) is pressed in Normal mode, an interactive, non-intrusive **Which-Key popup** appears in authentic Helix cyan:
+Whenever a chord prefix key (<kbd>Space</kbd>, `Ctrl+w`, `g`, `m`, `[`, or `]`) is pressed in Normal mode, an interactive, non-intrusive **Which-Key popup** appears in authentic Helix cyan:
 - **Zero latency**: Muscle memory stays instant—typing the follow-up key immediately executes the command without waiting.
-- **Visual discoverability**: Pausing on <kbd>Space</kbd> reveals all available pickers and actions.
+- **Visual discoverability**: Pausing on any chord reveals all available pickers and actions.
 - **Single-key & click dispatch**: Pressing any highlighted key or clicking any option directly executes the action.
 - **Cancelable**: Pressing <kbd>Esc</kbd> or clicking outside dismisses the menu and restores `Normal` mode.
+
+#### Window & Split Management (`Ctrl+w`)
+| Key | Action | Description |
+|-----|--------|-------------|
+| `Ctrl+w v` | `SplitVertically` | Vertical editor split |
+| `Ctrl+w s` | `SplitHorizontally` | Horizontal editor split |
+| `Ctrl+w h` | `PrevSplitter` | Focus split to the left |
+| `Ctrl+w j` | `NextSplitter` | Focus split below |
+| `Ctrl+w k` | `PrevSplitter` | Focus split above |
+| `Ctrl+w l` | `NextSplitter` | Focus split to the right |
+| `Ctrl+w w` | `NextSplitter` | Cycle focus to next split window |
+| `Ctrl+w q` / `Ctrl+w c` | `Unsplit` | Close active split |
+| `Ctrl+w o` | `UnsplitAll` | Close all other splits |
+
+*(Holding Ctrl during chords, e.g. `Ctrl+w Ctrl+v`, `Ctrl+w Ctrl+w`, etc. is also fully supported.)*
 
 #### Pickers & Space Menu (`space`)
 | Key | Action | Description |
@@ -224,6 +239,8 @@ Press `:` in Normal mode to open the interactive **Helix Command Picker**, style
 - `:qa` &rarr; Close all editors (`CloseAllEditors`)
 - `:vsp` / `:vsplit` &rarr; Split editor vertically
 - `:sp` / `:hsplit` &rarr; Split editor horizontally
+- `:unsplit` / `:only` &rarr; Close all other splits (`UnsplitAll`)
+- `:close-split` / `:close` &rarr; Close active split (`Unsplit`)
 - `:format` &rarr; Reformat code (`ReformatCode`)
 - `:reload` / `:e!` &rarr; Reload file from disk (`SynchronizeCurrentFile`)
 - `:open` &rarr; Open fuzzy file picker (`GotoFile`)

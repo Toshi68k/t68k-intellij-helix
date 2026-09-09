@@ -92,6 +92,19 @@ object HelixWhichKeyMenus {
         WhichKeyItem("z", "Center view", "align_view_center"),
     )
 
+    val windowItems = listOf(
+        WhichKeyItem("v", "Vertical split", "SplitVertically"),
+        WhichKeyItem("s", "Horizontal split", "SplitHorizontally"),
+        WhichKeyItem("h", "Focus left", "PrevSplitter"),
+        WhichKeyItem("j", "Focus below", "NextSplitter"),
+        WhichKeyItem("k", "Focus above", "PrevSplitter"),
+        WhichKeyItem("l", "Focus right", "NextSplitter"),
+        WhichKeyItem("w", "Cycle next window", "NextSplitter"),
+        WhichKeyItem("q", "Close active split", "Unsplit"),
+        WhichKeyItem("c", "Close active split", "Unsplit"),
+        WhichKeyItem("o", "Close other splits", "UnsplitAll"),
+    )
+
     fun getMenu(prefix: String): Pair<String, List<WhichKeyItem>>? = when (prefix) {
         " " -> "SPACE MENU" to spaceItems
         "g" -> "GOTO MENU" to gotoItems
@@ -100,6 +113,7 @@ object HelixWhichKeyMenus {
         "]" -> "JUMP FORWARD MENU" to bracketCloseItems
         "z" -> "VIEW MENU" to viewItems
         "Z" -> "STICKY VIEW MENU" to viewItems
+        "C-w", "Ctrl+w", "\u0017" -> "WINDOW MENU" to windowItems
         else -> null
     }
 }

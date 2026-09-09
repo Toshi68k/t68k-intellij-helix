@@ -58,6 +58,13 @@ object HelixCommands {
         HelixCommandItem("hsplit", listOf("sp"), "Split editor horizontally") { editor ->
             HelixActionDelegate.executeAction("SplitHorizontally", editor)
         },
+        HelixCommandItem("unsplit", listOf("only"), "Close all other splits") { editor ->
+            HelixActionDelegate.executeAction("UnsplitAll", editor)
+        },
+        HelixCommandItem("close-split", listOf("close", "clo"), "Close active split") { editor ->
+            HelixActionDelegate.executeAction("Unsplit", editor) ||
+                HelixActionDelegate.executeAction("CloseContent", editor)
+        },
         HelixCommandItem("format", emptyList(), "Format buffer using IDE code formatter") { editor ->
             HelixActionDelegate.executeAction("ReformatCode", editor)
         },
@@ -171,6 +178,13 @@ object HelixCommands {
             "vsp" -> HelixActionDelegate.executeAction("SplitVertically", editor)
 
             "sp" -> HelixActionDelegate.executeAction("SplitHorizontally", editor)
+
+            "unsplit", "only" -> HelixActionDelegate.executeAction("UnsplitAll", editor)
+
+            "close-split", "close", "clo" -> {
+                HelixActionDelegate.executeAction("Unsplit", editor) ||
+                    HelixActionDelegate.executeAction("CloseContent", editor)
+            }
 
             "format" -> HelixActionDelegate.executeAction("ReformatCode", editor)
 

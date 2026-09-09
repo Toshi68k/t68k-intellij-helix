@@ -182,6 +182,9 @@ class HelixUiPopupsTest : BasePlatformTestCase() {
 
         HelixWhichKeyPopup.show(editor, "Z")
         HelixWhichKeyPopup.hide()
+
+        HelixWhichKeyPopup.show(editor, "C-w")
+        HelixWhichKeyPopup.hide()
         HelixWhichKeyPopup.isShowing() shouldBe false
     }
 }

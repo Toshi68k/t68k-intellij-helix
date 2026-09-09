@@ -19,6 +19,12 @@ object HelixKeyHandler {
         HelixJumpListService.getInstance(project).recordCurrent(editor)
     }
 
+    fun startWindowChord(editor: Editor) {
+        val state = HelixStateManager.getOrCreate(editor)
+        state.setPendingSequence("C-w")
+        HelixWhichKeyPopup.show(editor, "C-w")
+    }
+
     fun handleKey(charTyped: Char, editor: Editor): Boolean {
         if (HelixJumpToWord.isActive(editor)) {
             return HelixJumpToWord.handleKey(charTyped, editor)
@@ -53,29 +59,41 @@ object HelixKeyHandler {
         }
 
         // Check if character starts a multi-key sequence
+        if (handlePrefixInitiation(charTyped, editor, state)) {
+            return true
+        }
+
+        // Single key commands
+        return handleSingleKey(charTyped, editor, state)
+    }
+
+    private fun handlePrefixInitiation(charTyped: Char, editor: Editor, state: HelixEditorState): Boolean =
         when (charTyped) {
             'g', ' ', '[', ']', 'm', 'z', 'Z' -> {
                 state.appendKey(charTyped)
                 HelixWhichKeyPopup.show(editor, charTyped.toString())
-                return true
+                true
+            }
+
+            '\u0017' -> {
+                startWindowChord(editor)
+                true
             }
 
             'f', 't', 'F', 'T', 'r' -> {
                 state.appendKey(charTyped)
-                return true
+                true
             }
 
             ':' -> {
                 state.clearCount()
                 HelixWhichKeyPopup.hide()
                 HelixCommandPopup.show(editor)
-                return true
+                true
             }
-        }
 
-        // Single key commands
-        return handleSingleKey(charTyped, editor, state)
-    }
+            else -> false
+        }
 
     private fun handlePendingSequence(prefix: String, ch: Char, editor: Editor, state: HelixEditorState): Boolean {
         if (prefix != "Z") {
@@ -134,6 +152,11 @@ object HelixKeyHandler {
             }
 
             "m" -> HelixMatchKeymap.handle(ch, editor, state, count)
+
+            "C-w" -> {
+                state.clearPendingSequence()
+                HelixWindowKeymap.handle(ch, editor)
+            }
 
             else -> HelixMatchKeymap.handleSubmenu(prefix, ch, editor, state)
         }
