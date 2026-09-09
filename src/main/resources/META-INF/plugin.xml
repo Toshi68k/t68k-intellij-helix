@@ -27,6 +27,7 @@
                     <li>Ctrl+c: Toggle line comment</li>
                     <li>Ctrl+f / Ctrl+b (PageDown / PageUp): Page down / up</li>
                     <li>Ctrl+d / Ctrl+u: Half page down / up</li>
+                    <li>Ctrl+a / Ctrl+x: Increment / decrement integer under cursor or selection</li>
                     <li>K: Quick documentation hover</li>
                     <li>=: Reformat code</li>
                     <li>u / U: Native undo / redo</li>
@@ -251,6 +252,24 @@
             <keyboard-shortcut keymap="$default" first-keystroke="alt BACK_QUOTE"/>
             <keyboard-shortcut keymap="Mac OS X" first-keystroke="alt BACK_QUOTE"/>
             <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="alt BACK_QUOTE"/>
+        </action>
+
+        <action id="jp.titze.intellij.helix.increment"
+                class="jp.titze.intellij.helix.editor.HelixIncrementAction"
+                text="Helix Increment"
+                description="Increment integer under cursor or within selection (Ctrl+a)">
+            <keyboard-shortcut keymap="$default" first-keystroke="control A"/>
+            <keyboard-shortcut keymap="Mac OS X" first-keystroke="control A"/>
+            <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="control A"/>
+        </action>
+
+        <action id="jp.titze.intellij.helix.decrement"
+                class="jp.titze.intellij.helix.editor.HelixDecrementAction"
+                text="Helix Decrement"
+                description="Decrement integer under cursor or within selection (Ctrl+x)">
+            <keyboard-shortcut keymap="$default" first-keystroke="control X"/>
+            <keyboard-shortcut keymap="Mac OS X" first-keystroke="control X"/>
+            <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="control X"/>
         </action>
     </actions>
 </idea-plugin>

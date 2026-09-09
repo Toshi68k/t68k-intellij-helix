@@ -8,6 +8,7 @@ import jp.titze.intellij.helix.jumplist.HelixJumpListService
 import jp.titze.intellij.helix.motion.HelixMotions
 import jp.titze.intellij.helix.settings.HelixSearchUiMode
 import jp.titze.intellij.helix.settings.HelixSettings
+import jp.titze.intellij.helix.state.HelixStateManager
 import jp.titze.intellij.helix.ui.HelixJumplistPopup
 
 data class HelixCommandItem(
@@ -107,6 +108,24 @@ object HelixCommands {
             "Set selected text to upper case (Alt+`)",
         ) { editor ->
             HelixActions.toUpperCase(editor)
+        },
+        HelixCommandItem(
+            "increment",
+            listOf("inc"),
+            "Increment integer under cursor or selection (Ctrl+a)",
+        ) { editor ->
+            val state = HelixStateManager.getOrCreate(editor)
+            val count = state.takeCount() ?: 1
+            HelixActions.increment(editor, count)
+        },
+        HelixCommandItem(
+            "decrement",
+            listOf("dec"),
+            "Decrement integer under cursor or selection (Ctrl+x)",
+        ) { editor ->
+            val state = HelixStateManager.getOrCreate(editor)
+            val count = state.takeCount() ?: 1
+            HelixActions.decrement(editor, count)
         },
     )
 

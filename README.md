@@ -27,7 +27,7 @@ The goal of this plugin is to provide a more complete and polished Helix-like ex
   - **Insert** (`INS`): Standard bar cursor, raw typing delegated to IntelliJ.
   - **Select** (`SEL`): Block cursor, motions extend selections from anchor.
   - **Status Bar Widget**: Displays active mode and pending key chords (e.g., `NOR`, `NOR g-`, `NOR  -`).
-- **Command Palette (`:`)**: Lightweight command prompt supporting standard Helix buffer commands (`:w`, `:q`, `:wq`, `:wa`, `:qa`, `:vsp`, `:sp`, `:format`).
+- **Command Palette (`:`)**: Lightweight command prompt supporting standard Helix buffer commands (`:w`, `:q`, `:wq`, `:wa`, `:qa`, `:vsp`, `:sp`, `:format`, `:increment`, `:decrement`).
 
 ---
 
@@ -114,6 +114,8 @@ The goal of this plugin is to provide a more complete and polished Helix-like ex
 | `~` | Switch case of selection (`switch_case`) |
 | `` ` `` | Switch selection to lowercase (`switch_to_lowercase`) |
 | `Alt+` `` | Switch selection to uppercase (`switch_to_uppercase`) |
+| `Ctrl+a` | Increment integer under cursor or within selection (`increment`, supports `[count]`) |
+| `Ctrl+x` | Decrement integer under cursor or within selection (`decrement`, supports `[count]`) |
 | `Escape` | Return to `Normal` mode / clear pending chords |
 
 ### Surround & Match Mode (`m` menu)
@@ -232,6 +234,8 @@ Press `:` in Normal mode to open the interactive **Helix Command Picker**, style
 - `:set search-ui=inline` / `:set search-ui=stock` &rarr; Set search UI to Stock Helix inline bar
 - `:set search-ui=popup` &rarr; Set search UI to Popup dialog
 - `:jumps` &rarr; Open interactive jumplist picker
+- `:increment` / `:inc` &rarr; Increment integer under cursor or within selection (`Ctrl+a`)
+- `:decrement` / `:dec` &rarr; Decrement integer under cursor or within selection (`Ctrl+x`)
 
 #### Search & Selection UI Modes
 Helix Keymap supports two switchable search and regex prompt styles:

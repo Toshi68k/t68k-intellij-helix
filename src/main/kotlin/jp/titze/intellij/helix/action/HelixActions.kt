@@ -484,6 +484,14 @@ object HelixActions {
         HelixCaseActions.toUpperCase(editor, count)
     }
 
+    fun increment(editor: Editor, count: Int = 1) {
+        HelixNumberActions.increment(editor, count)
+    }
+
+    fun decrement(editor: Editor, count: Int = 1) {
+        HelixNumberActions.decrement(editor, count)
+    }
+
     // -------------------------------------------------------------------------
     // Search action delegates (for backward compatibility)
     // -------------------------------------------------------------------------
