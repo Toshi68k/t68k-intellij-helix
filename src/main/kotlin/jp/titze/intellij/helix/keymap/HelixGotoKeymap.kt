@@ -2,6 +2,7 @@ package jp.titze.intellij.helix.keymap
 
 import com.intellij.openapi.editor.Editor
 import jp.titze.intellij.helix.action.HelixActionDelegate
+import jp.titze.intellij.helix.motion.HelixJumpToWord
 import jp.titze.intellij.helix.motion.HelixMotions
 
 internal object HelixGotoKeymap {
@@ -57,6 +58,8 @@ internal object HelixGotoKeymap {
             HelixMotions.moveFileEnd(editor)
             true
         }
+
+        'w' -> HelixJumpToWord.start(editor)
 
         'g' -> {
             HelixKeyHandler.recordJump(editor)

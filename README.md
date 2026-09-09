@@ -51,6 +51,7 @@ The goal of this plugin is to provide a more complete and polished Helix-like ex
 | `gh` | Move to line start (actual first character) |
 | `gs` | Move to first non-whitespace character of line |
 | `gl` | Move to line end |
+| `gw` | Jump to visible word with 2-letter badge overlays (`goto_word`) |
 | `gg` | Move to the top of the buffer |
 | `ge` *(in `g` menu)* | Move to the end of the buffer |
 | `Ctrl+f` / `PageDown` | Move page down |
@@ -154,6 +155,7 @@ Built-in surround and textobject functionality matching [Helix Surround](https:/
 - `gh` &rarr; Line start (first character)
 - `gs` &rarr; First non-whitespace character
 - `gl` &rarr; Line end
+- `gw` &rarr; Jump to word on screen (`goto_word`) with overlay badges
 - `ge` &rarr; Goto end of buffer
 - `gg` &rarr; Goto start of buffer
 

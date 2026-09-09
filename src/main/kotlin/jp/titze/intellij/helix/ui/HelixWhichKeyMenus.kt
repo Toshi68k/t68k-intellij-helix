@@ -34,6 +34,7 @@ object HelixWhichKeyMenus {
         WhichKeyItem("h", "Goto line start"),
         WhichKeyItem("l", "Goto line end"),
         WhichKeyItem("s", "Goto first non-whitespace"),
+        WhichKeyItem("w", "Jump to word", "goto_word"),
         WhichKeyItem("g", "Goto line / file start", "line <count>"),
         WhichKeyItem("e", "Goto file end"),
     )

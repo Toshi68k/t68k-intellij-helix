@@ -7,6 +7,7 @@ import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.actionSystem.EditorActionHandler
 import com.intellij.openapi.editor.actionSystem.EditorActionManager
 import jp.titze.intellij.helix.keymap.HelixKeyHandler
+import jp.titze.intellij.helix.motion.HelixJumpToWord
 import jp.titze.intellij.helix.motion.HelixMotions
 import jp.titze.intellij.helix.state.HelixStateManager
 
@@ -38,6 +39,10 @@ class HelixEditorActionHandler(private val actionId: String, private val origina
         // Non-insertable mode: do NOT modify buffer text
         when (actionId) {
             IdeActions.ACTION_EDITOR_BACKSPACE -> {
+                if (HelixJumpToWord.isActive(editor)) {
+                    HelixJumpToWord.handleBackspace(editor)
+                    return
+                }
                 if (state.pendingSequence.isNotEmpty()) {
                     state.clearPendingSequence()
                 } else if (state.hasCount) {
@@ -73,9 +78,13 @@ class HelixEditorActionHandler(private val actionId: String, private val origina
         }
 
         return when (actionId) {
-            IdeActions.ACTION_EDITOR_BACKSPACE -> state.hasCount || state.pendingSequence.isNotEmpty()
+            IdeActions.ACTION_EDITOR_BACKSPACE -> HelixJumpToWord.isActive(editor) ||
+                state.hasCount || state.pendingSequence.isNotEmpty()
+
             IdeActions.ACTION_EDITOR_ENTER -> true
+
             IdeActions.ACTION_EDITOR_DELETE -> false
+
             else -> false
         }
     }
