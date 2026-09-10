@@ -178,6 +178,10 @@ Built-in surround and textobject functionality matching [Helix Surround](https:/
 - `gw` &rarr; Jump to word on screen (`goto_word`) with overlay badges
 - `ge` &rarr; Goto end of buffer
 - `gg` &rarr; Goto start of buffer
+- `ga` &rarr; Goto last accessed file / alternate buffer (`goto_last_accessed_file`, similar to Vim `Ctrl+^`)
+- `gm` &rarr; Goto last modified file in project (`goto_last_modified_file`)
+- `gj` &rarr; Move down by visual screen line (`move_visual_line_down`, soft-wrap aware)
+- `gk` &rarr; Move up by visual screen line (`move_visual_line_up`, soft-wrap aware)
 
 #### Interactive Which-Key Floating Menu
 Whenever a chord prefix key (<kbd>Space</kbd>, `Ctrl+w`, `g`, `m`, `[`, or `]`) is pressed in Normal mode, an interactive, non-intrusive **Which-Key popup** appears in authentic Helix cyan:
@@ -280,6 +284,9 @@ Press `:` in Normal mode to open the interactive **Helix Command Picker**, style
 - `:shrink-to-line-bounds` / `:shrink_to_line_bounds` &rarr; Shrink selection to line bounds excluding line breaks (`Alt+x`)
 - `:record-macro` / `:macro-record` &rarr; Start or stop recording a keyboard macro (`Q`)
 - `:replay-macro` / `:macro-play` &rarr; Replay the last recorded keyboard macro (`q`)
+- `:sort` / `:sort -r` &rarr; Sort selected lines alphabetically or in reverse (whole buffer if no selection)
+- `:sh` / `:terminal` &rarr; Open / toggle IntelliJ's built-in terminal tool window (`ActivateTerminalToolWindow`)
+- `:cd [path]` / `:pwd` &rarr; Change or display current working directory (supports `~`, `-`, relative paths)
 
 #### Search & Selection UI Modes
 Helix Keymap supports two switchable search and regex prompt styles:

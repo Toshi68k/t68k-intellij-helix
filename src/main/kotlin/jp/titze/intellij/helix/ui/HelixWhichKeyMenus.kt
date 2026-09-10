@@ -37,6 +37,10 @@ object HelixWhichKeyMenus {
         WhichKeyItem("w", "Jump to word", "goto_word"),
         WhichKeyItem("g", "Goto line / file start", "line <count>"),
         WhichKeyItem("e", "Goto file end"),
+        WhichKeyItem("a", "Last accessed file", "goto_last_accessed_file"),
+        WhichKeyItem("m", "Last modified file", "goto_last_modified_file"),
+        WhichKeyItem("j", "Move down visual line", "move_visual_line_down"),
+        WhichKeyItem("k", "Move up visual line", "move_visual_line_up"),
     )
 
     val matchItems = listOf(

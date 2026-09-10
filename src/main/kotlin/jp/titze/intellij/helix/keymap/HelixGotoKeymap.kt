@@ -2,6 +2,7 @@ package jp.titze.intellij.helix.keymap
 
 import com.intellij.openapi.editor.Editor
 import jp.titze.intellij.helix.action.HelixActionDelegate
+import jp.titze.intellij.helix.motion.HelixFileNavigation
 import jp.titze.intellij.helix.motion.HelixJumpToWord
 import jp.titze.intellij.helix.motion.HelixMotions
 
@@ -64,6 +65,26 @@ internal object HelixGotoKeymap {
         'g' -> {
             HelixKeyHandler.recordJump(editor)
             HelixMotions.moveFileStart(editor, count)
+            true
+        }
+
+        'a' -> {
+            HelixKeyHandler.recordJump(editor)
+            HelixFileNavigation.gotoLastAccessedFile(editor)
+        }
+
+        'm' -> {
+            HelixKeyHandler.recordJump(editor)
+            HelixFileNavigation.gotoLastModifiedFile(editor)
+        }
+
+        'j' -> {
+            HelixMotions.moveVisualDown(editor, count ?: 1)
+            true
+        }
+
+        'k' -> {
+            HelixMotions.moveVisualUp(editor, count ?: 1)
             true
         }
 

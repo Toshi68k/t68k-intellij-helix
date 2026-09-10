@@ -381,4 +381,73 @@ class HelixCodeNavigationTest : BasePlatformTestCase() {
         HelixKeyHandler.handleKey('g', editor).shouldBeTrue()
         HelixKeyHandler.handleKey('.', editor).shouldBeTrue()
     }
+
+    fun testVisualLineMotionsGjAndGk() {
+        myFixture.configureByText("test.txt", "line 1\nline 2\nline 3\n")
+        val editor = myFixture.editor
+        val caret = editor.caretModel.primaryCaret
+
+        caret.moveToOffset(0)
+        HelixKeyHandler.handleKey('g', editor).shouldBeTrue()
+        HelixKeyHandler.handleKey('j', editor).shouldBeTrue()
+        caret.visualPosition.line shouldBe 1
+
+        HelixKeyHandler.handleKey('g', editor).shouldBeTrue()
+        HelixKeyHandler.handleKey('k', editor).shouldBeTrue()
+        caret.visualPosition.line shouldBe 0
+
+        // In Select mode, gj extends selection
+        HelixActions.toggleSelectMode(editor)
+        HelixKeyHandler.handleKey('g', editor).shouldBeTrue()
+        HelixKeyHandler.handleKey('j', editor).shouldBeTrue()
+        caret.hasSelection().shouldBeTrue()
+    }
+
+    fun testGotoLastAccessedFileGa() {
+        val fileA = myFixture.addFileToProject("FileA.txt", "content A")
+        val fileB = myFixture.addFileToProject("FileB.txt", "content B")
+
+        myFixture.openFileInEditor(fileA.virtualFile)
+        myFixture.openFileInEditor(fileB.virtualFile)
+
+        jp.titze.intellij.helix.motion.HelixFileNavigation.recordFileAccess(
+            project,
+            fileA.virtualFile,
+            fileB.virtualFile,
+        )
+
+        val fileEditorManager = com.intellij.openapi.fileEditor.FileEditorManager.getInstance(project)
+
+        // ga switches from fileB to fileA
+        val editorB = fileEditorManager.selectedTextEditor ?: myFixture.editor
+        HelixKeyHandler.handleKey('g', editorB).shouldBeTrue()
+        HelixKeyHandler.handleKey('a', editorB).shouldBeTrue()
+        fileEditorManager.selectedFiles.first().name shouldBe "FileA.txt"
+
+        // ga switches back from fileA to fileB
+        val editorA = fileEditorManager.selectedTextEditor ?: myFixture.editor
+        HelixKeyHandler.handleKey('g', editorA).shouldBeTrue()
+        HelixKeyHandler.handleKey('a', editorA).shouldBeTrue()
+        fileEditorManager.selectedFiles.first().name shouldBe "FileB.txt"
+
+        jp.titze.intellij.helix.motion.HelixFileNavigation.reset()
+    }
+
+    fun testGotoLastModifiedFileGm() {
+        val fileA = myFixture.addFileToProject("ModA.txt", "content A")
+        val fileB = myFixture.addFileToProject("ModB.txt", "content B")
+
+        myFixture.openFileInEditor(fileA.virtualFile)
+        myFixture.openFileInEditor(fileB.virtualFile)
+
+        jp.titze.intellij.helix.motion.HelixFileNavigation.recordFileModified(project, fileA.virtualFile)
+
+        // From fileB, gm jumps to fileA
+        HelixKeyHandler.handleKey('g', myFixture.editor).shouldBeTrue()
+        HelixKeyHandler.handleKey('m', myFixture.editor).shouldBeTrue()
+        com.intellij.openapi.fileEditor.FileEditorManager.getInstance(project).selectedFiles.first().name shouldBe
+            "ModA.txt"
+
+        jp.titze.intellij.helix.motion.HelixFileNavigation.reset()
+    }
 }

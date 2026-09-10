@@ -382,4 +382,6 @@ object HelixActions {
 
     fun filterSelections(editor: Editor, pattern: String, keepMatching: Boolean) =
         HelixRegexActions.filterSelections(editor, pattern, keepMatching)
+
+    fun sortLines(editor: Editor, reverse: Boolean = false) = HelixSortActions.sortLines(editor, reverse)
 }
