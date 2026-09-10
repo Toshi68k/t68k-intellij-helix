@@ -311,4 +311,87 @@ object HelixRegexActions {
         }
         return count
     }
+
+    fun previewFilterSelectionsRegex(
+        editor: Editor,
+        pattern: String,
+        keepMatching: Boolean,
+        baseSnapshot: List<HelixCaretSnapshot>,
+    ): Boolean {
+        if (pattern.isEmpty()) {
+            HelixCaretUtils.restoreCarets(editor, baseSnapshot)
+            return false
+        }
+        val doc = editor.document
+        val text = doc.charsSequence
+        val regex = try {
+            Regex(pattern)
+        } catch (e: Exception) {
+            try {
+                Regex(Regex.escape(pattern))
+            } catch (e2: Exception) {
+                HelixCaretUtils.restoreCarets(editor, baseSnapshot)
+                return false
+            }
+        }
+
+        val filteredSnapshots = baseSnapshot.filter { caret ->
+            val rangeStart = caret.selectionStart
+            val rangeEnd = caret.selectionEnd
+            val targetSub = if (rangeEnd > rangeStart) {
+                text.subSequence(rangeStart, rangeEnd).toString()
+            } else {
+                val offset = caret.offset
+                if (offset < doc.textLength) text.subSequence(offset, offset + 1).toString() else ""
+            }
+            val matches = regex.containsMatchIn(targetSub)
+            if (keepMatching) matches else !matches
+        }
+
+        if (filteredSnapshots.isEmpty()) {
+            HelixCaretUtils.restoreCarets(editor, baseSnapshot)
+            return false
+        }
+
+        HelixCaretUtils.restoreCarets(editor, filteredSnapshots)
+        return true
+    }
+
+    fun countFilterSelectionsMatches(
+        editor: Editor,
+        pattern: String,
+        keepMatching: Boolean,
+        baseSnapshot: List<HelixCaretSnapshot>,
+    ): Int {
+        if (pattern.isEmpty()) return baseSnapshot.size
+        val doc = editor.document
+        val text = doc.charsSequence
+        val regex = try {
+            Regex(pattern)
+        } catch (e: Exception) {
+            try {
+                Regex(Regex.escape(pattern))
+            } catch (e2: Exception) {
+                return 0
+            }
+        }
+
+        return baseSnapshot.count { caret ->
+            val rangeStart = caret.selectionStart
+            val rangeEnd = caret.selectionEnd
+            val targetSub = if (rangeEnd > rangeStart) {
+                text.subSequence(rangeStart, rangeEnd).toString()
+            } else {
+                val offset = caret.offset
+                if (offset < doc.textLength) text.subSequence(offset, offset + 1).toString() else ""
+            }
+            val matches = regex.containsMatchIn(targetSub)
+            if (keepMatching) matches else !matches
+        }
+    }
+
+    fun filterSelections(editor: Editor, pattern: String, keepMatching: Boolean) {
+        val snapshot = HelixCaretUtils.captureCarets(editor)
+        previewFilterSelectionsRegex(editor, pattern, keepMatching, snapshot)
+    }
 }

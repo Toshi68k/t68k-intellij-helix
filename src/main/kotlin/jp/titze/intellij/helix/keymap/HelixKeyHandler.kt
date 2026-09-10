@@ -180,12 +180,8 @@ object HelixKeyHandler {
         }
     }
 
-    private fun handleSingleKey(ch: Char, editor: Editor, state: HelixEditorState): Boolean {
-        val rawCount = state.takeCount()
-        val count = rawCount ?: 1
-
+    private fun handleMotionKey(ch: Char, editor: Editor, count: Int, rawCount: Int?): Boolean {
         when (ch) {
-            // Motions
             'w' -> HelixMotions.moveNextWordStart(editor, count)
 
             'b' -> HelixMotions.movePrevWordStart(editor, count)
@@ -199,6 +195,8 @@ object HelixKeyHandler {
             'E' -> HelixMotions.moveBigWordEnd(editor, count)
 
             'x' -> HelixMotions.selectLine(editor, count)
+
+            'X' -> HelixMotions.extendToLineBounds(editor, count)
 
             '%' -> {
                 recordJump(editor)
@@ -254,6 +252,20 @@ object HelixKeyHandler {
                 }
             }
 
+            else -> return false
+        }
+        return true
+    }
+
+    private fun handleSingleKey(ch: Char, editor: Editor, state: HelixEditorState): Boolean {
+        val rawCount = state.takeCount()
+        val count = rawCount ?: 1
+
+        if (handleMotionKey(ch, editor, count, rawCount)) {
+            return true
+        }
+
+        when (ch) {
             // Actions
             'd' -> HelixActions.deleteSelection(editor, count = count)
 
@@ -306,6 +318,10 @@ object HelixKeyHandler {
             '~' -> HelixActions.toggleCase(editor, count)
 
             '`' -> HelixActions.toLowerCase(editor, count)
+
+            '_' -> HelixActions.trimSelections(editor)
+
+            '&' -> HelixActions.alignSelections(editor)
 
             's' -> HelixSearchManager.startSelect(editor, isSplit = false)
 

@@ -350,4 +350,36 @@ object HelixActions {
         count: Int = 1,
         baseSnapshot: List<HelixCaretSnapshot>,
     ): Boolean = HelixSearchActions.previewSearch(editor, pattern, backward, count, baseSnapshot)
+
+    // -------------------------------------------------------------------------
+    // Selection manipulation delegates
+    // -------------------------------------------------------------------------
+
+    fun trimSelections(editor: Editor) = HelixSelectionActions.trimSelections(editor)
+
+    fun alignSelections(editor: Editor) = HelixSelectionActions.alignSelections(editor)
+
+    fun ensureSelectionsForward(editor: Editor) = HelixSelectionActions.ensureSelectionsForward(editor)
+
+    fun mergeSelections(editor: Editor) = HelixSelectionActions.mergeSelections(editor)
+
+    fun rotateSelectionsContents(editor: Editor, forward: Boolean) =
+        HelixSelectionActions.rotateSelectionsContents(editor, forward)
+
+    fun previewFilterSelectionsRegex(
+        editor: Editor,
+        pattern: String,
+        keepMatching: Boolean,
+        baseSnapshot: List<HelixCaretSnapshot>,
+    ): Boolean = HelixRegexActions.previewFilterSelectionsRegex(editor, pattern, keepMatching, baseSnapshot)
+
+    fun countFilterSelectionsMatches(
+        editor: Editor,
+        pattern: String,
+        keepMatching: Boolean,
+        baseSnapshot: List<HelixCaretSnapshot>,
+    ): Int = HelixRegexActions.countFilterSelectionsMatches(editor, pattern, keepMatching, baseSnapshot)
+
+    fun filterSelections(editor: Editor, pattern: String, keepMatching: Boolean) =
+        HelixRegexActions.filterSelections(editor, pattern, keepMatching)
 }

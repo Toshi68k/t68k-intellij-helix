@@ -134,6 +134,56 @@ object HelixCommands {
             val count = state.takeCount() ?: 1
             HelixActions.decrement(editor, count)
         },
+        HelixCommandItem(
+            "trim-selections",
+            listOf("trim_selections"),
+            "Trim whitespace from selections (_)",
+        ) { editor -> HelixActions.trimSelections(editor) },
+        HelixCommandItem(
+            "align-selections",
+            listOf("align_selections"),
+            "Align selections by padding with whitespace (&)",
+        ) { editor -> HelixActions.alignSelections(editor) },
+        HelixCommandItem(
+            "keep-selections",
+            listOf("keep_selections"),
+            "Filter selections by regex, keeping matching (Alt+k)",
+        ) { editor -> jp.titze.intellij.helix.ui.HelixSearchManager.startKeepSelections(editor) },
+        HelixCommandItem(
+            "remove-selections",
+            listOf("remove_selections"),
+            "Filter selections by regex, removing matching (Alt+K)",
+        ) { editor -> jp.titze.intellij.helix.ui.HelixSearchManager.startRemoveSelections(editor) },
+        HelixCommandItem(
+            "ensure-selections-forward",
+            listOf("ensure_selections_forward"),
+            "Flip backward selections forward (Alt+:)",
+        ) { editor -> HelixActions.ensureSelectionsForward(editor) },
+        HelixCommandItem(
+            "merge-selections",
+            listOf("merge_selections", "merge_consecutive_selections"),
+            "Merge contiguous or overlapping selections (Alt+_)",
+        ) { editor -> HelixActions.mergeSelections(editor) },
+        HelixCommandItem(
+            "rotate-selection-contents-forward",
+            listOf("rotate_selections_contents_forward"),
+            "Cycle text contents forward without moving carets (Alt+))",
+        ) { editor -> HelixActions.rotateSelectionsContents(editor, forward = true) },
+        HelixCommandItem(
+            "rotate-selection-contents-backward",
+            listOf("rotate_selections_contents_backward"),
+            "Cycle text contents backward without moving carets (Alt+()",
+        ) { editor -> HelixActions.rotateSelectionsContents(editor, forward = false) },
+        HelixCommandItem(
+            "extend-to-line-bounds",
+            listOf("extend_to_line_bounds", "extend_line_below"),
+            "Extend selection to whole line bounds (X)",
+        ) { editor -> HelixMotions.extendToLineBounds(editor) },
+        HelixCommandItem(
+            "shrink-to-line-bounds",
+            listOf("shrink_to_line_bounds"),
+            "Shrink selection to line bounds excluding line breaks (Alt+x)",
+        ) { editor -> HelixMotions.shrinkToLineBounds(editor) },
     )
 
     fun execute(cmd: String, editor: Editor) {

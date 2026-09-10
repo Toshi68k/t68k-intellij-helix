@@ -12,6 +12,7 @@ import jp.titze.intellij.helix.keymap.HelixKeyHandler
 import jp.titze.intellij.helix.keymap.HelixWindowKeymap
 import jp.titze.intellij.helix.motion.HelixMotions
 import jp.titze.intellij.helix.state.HelixStateManager
+import jp.titze.intellij.helix.ui.HelixSearchManager
 import jp.titze.intellij.helix.ui.HelixWhichKeyPopup
 import java.awt.AWTEvent
 import java.awt.KeyboardFocusManager
@@ -182,6 +183,41 @@ class HelixEventDispatcher : IdeEventQueue.EventDispatcher {
     ): Boolean = when {
         e.keyCode == KeyEvent.VK_BACK_QUOTE || e.keyChar == '`' -> {
             HelixActions.toUpperCase(editor, state.takeCount() ?: 1)
+            true
+        }
+
+        !e.isShiftDown && (e.keyCode == KeyEvent.VK_K || e.keyChar == 'k') -> {
+            HelixSearchManager.startKeepSelections(editor)
+            true
+        }
+
+        e.isShiftDown && (e.keyCode == KeyEvent.VK_K || e.keyChar == 'K') -> {
+            HelixSearchManager.startRemoveSelections(editor)
+            true
+        }
+
+        e.keyChar == ':' || (e.isShiftDown && e.keyCode == KeyEvent.VK_SEMICOLON) -> {
+            HelixActions.ensureSelectionsForward(editor)
+            true
+        }
+
+        e.keyChar == '_' || (e.isShiftDown && e.keyCode == KeyEvent.VK_MINUS) -> {
+            HelixActions.mergeSelections(editor)
+            true
+        }
+
+        e.keyChar == '(' || (e.isShiftDown && e.keyCode == KeyEvent.VK_9) -> {
+            HelixActions.rotateSelectionsContents(editor, forward = false)
+            true
+        }
+
+        e.keyChar == ')' || (e.isShiftDown && e.keyCode == KeyEvent.VK_0) -> {
+            HelixActions.rotateSelectionsContents(editor, forward = true)
+            true
+        }
+
+        !e.isShiftDown && (e.keyCode == KeyEvent.VK_X || e.keyChar == 'x') -> {
+            HelixMotions.shrinkToLineBounds(editor)
             true
         }
 

@@ -245,4 +245,71 @@ object HelixSelectionMotions {
         }
         editor.scrollingModel.scrollToCaret(ScrollType.MAKE_VISIBLE)
     }
+
+    /**
+     * X: Extend selection to line bounds (including trailing newline).
+     */
+    fun extendToLineBounds(editor: Editor, count: Int = 1) {
+        val doc = editor.document
+        if (doc.textLength == 0 || doc.lineCount == 0) return
+        val steps = count.coerceAtLeast(1)
+
+        HelixMotionUtils.runForEachCaret(editor) { caret ->
+            val selStart = caret.selectionStart
+            val selEnd = caret.selectionEnd
+            val isForward = caret.offset >= caret.leadSelectionOffset
+
+            val startLine = doc.getLineNumber(selStart)
+            val baseEndLine = if (caret.hasSelection()) {
+                doc.getLineNumber((selEnd - 1).coerceAtLeast(selStart))
+            } else {
+                startLine
+            }
+            val targetEndLine = (baseEndLine + steps - 1).coerceAtMost(doc.lineCount - 1)
+
+            val newLineStart = doc.getLineStartOffset(startLine)
+            val newLineEnd = HelixMotionUtils.getLineEndWithNewline(doc, targetEndLine)
+
+            if (isForward) {
+                caret.moveToOffset(newLineEnd)
+                caret.setSelection(newLineStart, newLineEnd)
+            } else {
+                caret.moveToOffset(newLineStart)
+                caret.setSelection(newLineEnd, newLineStart)
+            }
+        }
+        editor.scrollingModel.scrollToCaret(ScrollType.MAKE_VISIBLE)
+    }
+
+    /**
+     * Alt+x: Shrink selection to line bounds (excluding trailing line breaks).
+     */
+    fun shrinkToLineBounds(editor: Editor) {
+        val doc = editor.document
+        if (doc.textLength == 0) return
+        val text = doc.charsSequence
+
+        HelixMotionUtils.runForEachCaret(editor) { caret ->
+            if (caret.hasSelection()) {
+                val start = caret.selectionStart
+                var end = caret.selectionEnd
+                val isForward = caret.offset >= caret.leadSelectionOffset
+
+                while (end > start && (text[end - 1] == '\n' || text[end - 1] == '\r')) {
+                    end--
+                }
+
+                if (end > start) {
+                    if (isForward) {
+                        caret.moveToOffset(end)
+                        caret.setSelection(start, end)
+                    } else {
+                        caret.moveToOffset(start)
+                        caret.setSelection(end, start)
+                    }
+                }
+            }
+        }
+        editor.scrollingModel.scrollToCaret(ScrollType.MAKE_VISIBLE)
+    }
 }
