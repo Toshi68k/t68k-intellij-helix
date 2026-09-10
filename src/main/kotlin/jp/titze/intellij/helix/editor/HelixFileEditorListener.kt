@@ -6,6 +6,7 @@ import com.intellij.openapi.fileEditor.FileEditorManagerListener
 import com.intellij.openapi.fileEditor.TextEditor
 import com.intellij.openapi.vfs.VirtualFile
 import jp.titze.intellij.helix.action.HelixActions
+import jp.titze.intellij.helix.motion.HelixFileNavigation
 import jp.titze.intellij.helix.motion.HelixJumpToWord
 import jp.titze.intellij.helix.settings.HelixSettings
 import jp.titze.intellij.helix.state.HelixMode
@@ -18,6 +19,8 @@ class HelixFileEditorListener : FileEditorManagerListener {
     override fun selectionChanged(event: FileEditorManagerEvent) {
         HelixWhichKeyPopup.hide()
 
+        HelixFileNavigation.recordFileAccess(event.manager.project, event.oldFile, event.newFile)
+
         (event.oldEditor as? TextEditor)?.editor?.let { oldEditor ->
             HelixJumpToWord.cancel(oldEditor)
             HelixPromptBar.cancelActivePrompt(oldEditor)
@@ -28,6 +31,8 @@ class HelixFileEditorListener : FileEditorManagerListener {
     }
 
     override fun fileOpened(source: FileEditorManager, file: VirtualFile) {
+        HelixFileNavigation.recordFileAccess(source.project, null, file)
+
         val editor = (source.getSelectedEditor(file) as? TextEditor)?.editor
             ?: source.getEditors(file).filterIsInstance<TextEditor>().firstOrNull()?.editor
             ?: return

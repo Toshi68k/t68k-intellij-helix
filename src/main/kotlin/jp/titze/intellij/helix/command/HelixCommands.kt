@@ -198,10 +198,52 @@ object HelixCommands {
         ) { editor ->
             HelixActionDelegate.executeAction("PlaybackLastMacro", editor)
         },
+        HelixCommandItem("sort", emptyList(), "Sort selected lines alphabetically") { editor ->
+            HelixActions.sortLines(editor, reverse = false)
+        },
+        HelixCommandItem("sort-reverse", listOf("sort -r"), "Sort selected lines in reverse") { editor ->
+            HelixActions.sortLines(editor, reverse = true)
+        },
+        HelixCommandItem(
+            "terminal",
+            listOf("sh"),
+            "Open / toggle built-in terminal (ActivateTerminalToolWindow)",
+        ) { editor ->
+            HelixActionDelegate.executeAction("ActivateTerminalToolWindow", editor)
+        },
+        HelixCommandItem("pwd", emptyList(), "Display current working directory") { editor ->
+            HelixDirectoryManager.printWorkingDirectory(editor)
+        },
+        HelixCommandItem("cd", emptyList(), "Change working directory") { editor ->
+            HelixDirectoryManager.changeDirectory("", editor)
+        },
     )
 
     fun execute(cmd: String, editor: Editor) {
         val cleanCmd = cmd.trim().removePrefix(":")
+
+        val parts = cleanCmd.split(Regex("\\s+"), limit = 2)
+        val baseCmd = parts[0].lowercase()
+        val arg = if (parts.size > 1) parts[1].trim() else ""
+
+        if (baseCmd == "cd") {
+            HelixDirectoryManager.changeDirectory(arg, editor)
+            return
+        }
+        if (baseCmd == "pwd") {
+            HelixDirectoryManager.printWorkingDirectory(editor)
+            return
+        }
+        if (baseCmd == "sort") {
+            val isReverse = arg == "-r" || arg == "--reverse" || arg == "reverse"
+            HelixActions.sortLines(editor, isReverse)
+            return
+        }
+        if (baseCmd == "terminal" || baseCmd == "sh") {
+            HelixActionDelegate.executeAction("ActivateTerminalToolWindow", editor)
+            return
+        }
+
         val matched = COMMANDS.firstOrNull {
             it.name.equals(cleanCmd, ignoreCase = true) || it.aliases.any { a -> a.equals(cleanCmd, ignoreCase = true) }
         }

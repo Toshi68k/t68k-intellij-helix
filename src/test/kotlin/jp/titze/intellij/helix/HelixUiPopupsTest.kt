@@ -187,4 +187,58 @@ class HelixUiPopupsTest : BasePlatformTestCase() {
         HelixWhichKeyPopup.hide()
         HelixWhichKeyPopup.isShowing() shouldBe false
     }
+
+    fun testTerminalAndShCommandExecution() {
+        myFixture.configureByText("test.txt", "test")
+        val editor = myFixture.editor
+        var executedAction: String? = null
+        val originalExecutor = jp.titze.intellij.helix.action.HelixActionDelegate.actionExecutor
+
+        try {
+            jp.titze.intellij.helix.action.HelixActionDelegate.actionExecutor = { actionId, _ ->
+                executedAction = actionId
+                true
+            }
+
+            HelixCommandPopup.executeCommand("terminal", editor)
+            executedAction shouldBe "ActivateTerminalToolWindow"
+
+            executedAction = null
+            HelixCommandPopup.executeCommand("sh", editor)
+            executedAction shouldBe "ActivateTerminalToolWindow"
+
+            val terminalCmd = HelixCommandPopup.COMMANDS.first { it.name == "terminal" }
+            terminalCmd.aliases.contains("sh").shouldBeTrue()
+        } finally {
+            jp.titze.intellij.helix.action.HelixActionDelegate.actionExecutor = originalExecutor
+        }
+    }
+
+    fun testDirectoryCommandsCdAndPwd() {
+        myFixture.configureByText("test.txt", "test")
+        val editor = myFixture.editor
+
+        jp.titze.intellij.helix.command.HelixDirectoryManager.reset()
+        val initialDir = jp.titze.intellij.helix.command.HelixDirectoryManager.getCurrentDirectory(editor)
+
+        val pwdMsg = jp.titze.intellij.helix.command.HelixDirectoryManager.printWorkingDirectory(editor)
+        pwdMsg shouldBe "Working directory: $initialDir"
+
+        val tempDir = java.io.File(System.getProperty("java.io.tmpdir")).canonicalPath
+        val cdMsg = jp.titze.intellij.helix.command.HelixDirectoryManager.changeDirectory(tempDir, editor)
+        cdMsg shouldBe "Working directory changed to: $tempDir"
+        jp.titze.intellij.helix.command.HelixDirectoryManager.getCurrentDirectory(editor) shouldBe tempDir
+
+        // Test cd - returns to previous directory
+        val cdBackMsg = jp.titze.intellij.helix.command.HelixDirectoryManager.changeDirectory("-", editor)
+        cdBackMsg shouldBe "Working directory changed to: $initialDir"
+        jp.titze.intellij.helix.command.HelixDirectoryManager.getCurrentDirectory(editor) shouldBe initialDir
+
+        // Test non-existent directory
+        val invalidMsg = jp.titze.intellij.helix.command.HelixDirectoryManager
+            .changeDirectory("/non_existent_path_xyz_123", editor)
+        invalidMsg shouldBe "Directory not found: /non_existent_path_xyz_123"
+
+        jp.titze.intellij.helix.command.HelixDirectoryManager.reset()
+    }
 }
