@@ -48,7 +48,9 @@ The goal of this plugin is to provide a more complete and polished Helix-like ex
 | `B` | Move backward to the start of the previous WORD |
 | `E` | Advance to the end of the current/next WORD |
 | `ge` | Move backward to the end of the previous word |
-| `x` | Select current line (including newline); pressing `x` again extends to the next line |
+| `x` | Select current line (including newline); pressing `x` again extends to the next line (`extend_line_below`) |
+| `X` | Extend selection to whole line bounds including trailing newline (`extend_to_line_bounds`) |
+| `Alt+x` | Shrink selection to line bounds excluding trailing line breaks (`shrink_to_line_bounds`) |
 | `%` | Select entire buffer |
 | `h` / `j` / `k` / `l` | Move left / down / up / right (mode-aware selection update) |
 | `gh` | Move to line start (actual first character) |
@@ -75,6 +77,14 @@ The goal of this plugin is to provide a more complete and polished Helix-like ex
 
 | Key | Description |
 |-----|-------------|
+| `_` | Trim leading and trailing whitespace from every active selection (`trim_selections`) |
+| `&` | Align multi-caret selections into vertical columns by inserting padding whitespace (`align_selections`) |
+| `Alt+k` | Prompt for regex pattern and keep only matching selections (`keep_selections`) |
+| `Alt+K` | Prompt for regex pattern and remove matching selections (`remove_selections`) |
+| `Alt+:` | Ensure selections are oriented forward with anchor $\le$ cursor (`ensure_selections_forward`) |
+| `Alt+_` | Merge contiguous (touching) or overlapping selections into single spans (`merge_consecutive_selections`) |
+| `Alt+)` | Rotate text contents forward between multi-carets without moving caret positions (`rotate_selections_contents_forward`) |
+| `Alt+(` | Rotate text contents backward between multi-carets without moving caret positions (`rotate_selections_contents_backward`) |
 | `C` | Copy selection to next line (duplicate selection and add caret below) |
 | `Alt+C` | Copy selection to previous line (duplicate selection and add caret above) |
 | `;` | Collapse selection to a single cursor at caret |
@@ -87,6 +97,7 @@ The goal of this plugin is to provide a more complete and polished Helix-like ex
 | `s` | Select all regex matches inside selections |
 | `S` | Split selection into subselections on regex matches |
 | `v` | Toggle between `Normal` and `Select` mode |
+
 
 ### Actions on Selection
 
@@ -253,10 +264,21 @@ Press `:` in Normal mode to open the interactive **Helix Command Picker**, style
 - `:jumps` &rarr; Open interactive jumplist picker
 - `:increment` / `:inc` &rarr; Increment integer under cursor or within selection (`Ctrl+a`)
 - `:decrement` / `:dec` &rarr; Decrement integer under cursor or within selection (`Ctrl+x`)
+- `:trim-selections` / `:trim_selections` &rarr; Trim whitespace from selections (`_`)
+- `:align-selections` / `:align_selections` &rarr; Align selections into columns by inserting whitespace (`&`)
+- `:keep-selections` / `:keep_selections` &rarr; Filter selections by regex, keeping matching (`Alt+k`)
+- `:remove-selections` / `:remove_selections` &rarr; Filter selections by regex, removing matching (`Alt+K`)
+- `:ensure-selections-forward` / `:ensure_selections_forward` &rarr; Flip backward selections forward (`Alt+:`)
+- `:merge-selections` / `:merge_consecutive_selections` &rarr; Merge contiguous or overlapping selections (`Alt+_`)
+- `:rotate-selection-contents-forward` &rarr; Cycle text contents forward without moving carets (`Alt+)`)
+- `:rotate-selection-contents-backward` &rarr; Cycle text contents backward without moving carets (`Alt+(`)
+- `:extend-to-line-bounds` / `:extend_to_line_bounds` &rarr; Extend selection to whole line bounds (`X`)
+- `:shrink-to-line-bounds` / `:shrink_to_line_bounds` &rarr; Shrink selection to line bounds excluding line breaks (`Alt+x`)
 
 #### Search & Selection UI Modes
 Helix Keymap supports two switchable search and regex prompt styles:
-1. **Stock Helix Mode (Default)**: Single-line prompt bar docked at the bottom of the active editor (`search: `, `rsearch: `, `select: `, `split: `). Matches and selections update **live in the editor buffer as you type**. Pressing <kbd>Enter</kbd> confirms, while pressing <kbd>Esc</kbd> (or <kbd>Backspace</kbd> on empty query) cancels and reverts all carets and selections to their pre-search snapshot.
+1. **Stock Helix Mode (Default)**: Single-line prompt bar docked at the bottom of the active editor (`search: `, `rsearch: `, `select: `, `split: `, `keep: `, `remove: `). Matches and selections update **live in the editor buffer as you type**. Pressing <kbd>Enter</kbd> confirms, while pressing <kbd>Esc</kbd> (or <kbd>Backspace</kbd> on empty query) cancels and reverts all carets and selections to their pre-search snapshot.
+
 2. **Popup Dialog Mode**: Centered floating dialog window with match counter badge, useful for users preferring a separate floating modal window.
 
 - In IntelliJ Settings: **Preferences / Settings &rarr; Tools &rarr; Helix Keymap**

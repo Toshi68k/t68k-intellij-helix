@@ -280,5 +280,87 @@
             <keyboard-shortcut keymap="Mac OS X" first-keystroke="control W"/>
             <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="control W"/>
         </action>
+
+        <action id="jp.titze.intellij.helix.trimSelections"
+                class="jp.titze.intellij.helix.editor.HelixTrimSelectionsAction"
+                text="Helix Trim Selections"
+                description="Trim whitespace from selections (_)">
+        </action>
+
+        <action id="jp.titze.intellij.helix.alignSelections"
+                class="jp.titze.intellij.helix.editor.HelixAlignSelectionsAction"
+                text="Helix Align Selections"
+                description="Align selections by padding with whitespace (&amp;)">
+        </action>
+
+        <action id="jp.titze.intellij.helix.keepSelections"
+                class="jp.titze.intellij.helix.editor.HelixKeepSelectionsAction"
+                text="Helix Keep Selections"
+                description="Filter selections by regex, keeping matching (Alt+k)">
+            <keyboard-shortcut keymap="$default" first-keystroke="alt K"/>
+            <keyboard-shortcut keymap="Mac OS X" first-keystroke="alt K"/>
+            <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="alt K"/>
+        </action>
+
+        <action id="jp.titze.intellij.helix.removeSelections"
+                class="jp.titze.intellij.helix.editor.HelixRemoveSelectionsAction"
+                text="Helix Remove Selections"
+                description="Filter selections by regex, removing matching (Alt+K)">
+            <keyboard-shortcut keymap="$default" first-keystroke="alt shift K"/>
+            <keyboard-shortcut keymap="Mac OS X" first-keystroke="alt shift K"/>
+            <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="alt shift K"/>
+        </action>
+
+        <action id="jp.titze.intellij.helix.ensureSelectionsForward"
+                class="jp.titze.intellij.helix.editor.HelixEnsureSelectionsForwardAction"
+                text="Helix Ensure Selections Forward"
+                description="Flip backward selections forward (Alt+:)">
+            <keyboard-shortcut keymap="$default" first-keystroke="alt shift SEMICOLON"/>
+            <keyboard-shortcut keymap="Mac OS X" first-keystroke="alt shift SEMICOLON"/>
+            <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="alt shift SEMICOLON"/>
+        </action>
+
+        <action id="jp.titze.intellij.helix.mergeSelections"
+                class="jp.titze.intellij.helix.editor.HelixMergeSelectionsAction"
+                text="Helix Merge Selections"
+                description="Merge contiguous or overlapping selections (Alt+_)">
+            <keyboard-shortcut keymap="$default" first-keystroke="alt shift MINUS"/>
+            <keyboard-shortcut keymap="Mac OS X" first-keystroke="alt shift MINUS"/>
+            <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="alt shift MINUS"/>
+        </action>
+
+        <action id="jp.titze.intellij.helix.rotateSelectionsContentsForward"
+                class="jp.titze.intellij.helix.editor.HelixRotateSelectionsContentsForwardAction"
+                text="Helix Rotate Selections Contents Forward"
+                description="Cycle text contents between multi-carets forward (Alt+))">
+            <keyboard-shortcut keymap="$default" first-keystroke="alt shift 0"/>
+            <keyboard-shortcut keymap="Mac OS X" first-keystroke="alt shift 0"/>
+            <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="alt shift 0"/>
+        </action>
+
+        <action id="jp.titze.intellij.helix.rotateSelectionsContentsBackward"
+                class="jp.titze.intellij.helix.editor.HelixRotateSelectionsContentsBackwardAction"
+                text="Helix Rotate Selections Contents Backward"
+                description="Cycle text contents between multi-carets backward (Alt+()">
+            <keyboard-shortcut keymap="$default" first-keystroke="alt shift 9"/>
+            <keyboard-shortcut keymap="Mac OS X" first-keystroke="alt shift 9"/>
+            <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="alt shift 9"/>
+        </action>
+
+        <action id="jp.titze.intellij.helix.extendToLineBounds"
+                class="jp.titze.intellij.helix.editor.HelixExtendToLineBoundsAction"
+                text="Helix Extend to Line Bounds"
+                description="Extend selection to whole line bounds (X)">
+        </action>
+
+        <action id="jp.titze.intellij.helix.shrinkToLineBounds"
+                class="jp.titze.intellij.helix.editor.HelixShrinkToLineBoundsAction"
+                text="Helix Shrink to Line Bounds"
+                description="Shrink selection to line bounds excluding line breaks (Alt+x)">
+            <keyboard-shortcut keymap="$default" first-keystroke="alt X"/>
+            <keyboard-shortcut keymap="Mac OS X" first-keystroke="alt X"/>
+            <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="alt X"/>
+        </action>
     </actions>
 </idea-plugin>
+

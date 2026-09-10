@@ -30,6 +30,8 @@ enum class HelixPromptType(val badge: String) {
     RSEARCH("rsearch"),
     SELECT("select"),
     SPLIT("split"),
+    KEEP("keep"),
+    REMOVE("remove"),
 }
 
 class HelixPromptBar(private val editor: Editor) : JPanel(BorderLayout(JBUI.scale(8), 0)) {
@@ -199,9 +201,51 @@ class HelixPromptBar(private val editor: Editor) : JPanel(BorderLayout(JBUI.scal
                     val matches = HelixActions.countRegexMatchesInSnapshot(editor, query, baseSnapshot)
                     updateStatusText(matches)
                 }
+
+                HelixPromptType.KEEP -> {
+                    HelixActions.previewFilterSelectionsRegex(
+                        editor,
+                        query,
+                        keepMatching = true,
+                        baseSnapshot = baseSnapshot,
+                    )
+                    val count = HelixActions.countFilterSelectionsMatches(
+                        editor,
+                        query,
+                        keepMatching = true,
+                        baseSnapshot = baseSnapshot,
+                    )
+                    updateStatusSelectionCount(count)
+                }
+
+                HelixPromptType.REMOVE -> {
+                    HelixActions.previewFilterSelectionsRegex(
+                        editor,
+                        query,
+                        keepMatching = false,
+                        baseSnapshot = baseSnapshot,
+                    )
+                    val count = HelixActions.countFilterSelectionsMatches(
+                        editor,
+                        query,
+                        keepMatching = false,
+                        baseSnapshot = baseSnapshot,
+                    )
+                    updateStatusSelectionCount(count)
+                }
             }
         } catch (e: Exception) {
             statusLabel.text = "invalid regex"
+            statusLabel.foreground = MATCH_WARN_FG
+        }
+    }
+
+    private fun updateStatusSelectionCount(count: Int) {
+        if (count > 0) {
+            statusLabel.text = "$count selection${if (count == 1) "" else "s"}"
+            statusLabel.foreground = MATCH_SUCCESS_FG
+        } else {
+            statusLabel.text = "0 selections"
             statusLabel.foreground = MATCH_WARN_FG
         }
     }

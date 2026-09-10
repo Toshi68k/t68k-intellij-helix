@@ -25,4 +25,22 @@ object HelixSearchManager {
             HelixPromptBar.show(editor, promptType, count = 1)
         }
     }
+
+    fun startKeepSelections(editor: Editor) {
+        val mode = HelixSettings.instance.searchUiMode
+        if (mode == HelixSearchUiMode.POPUP) {
+            HelixSelectRegexPopup.show(editor, mode = HelixSelectRegexPopup.Mode.KEEP)
+        } else {
+            HelixPromptBar.show(editor, HelixPromptType.KEEP, count = 1)
+        }
+    }
+
+    fun startRemoveSelections(editor: Editor) {
+        val mode = HelixSettings.instance.searchUiMode
+        if (mode == HelixSearchUiMode.POPUP) {
+            HelixSelectRegexPopup.show(editor, mode = HelixSelectRegexPopup.Mode.REMOVE)
+        } else {
+            HelixPromptBar.show(editor, HelixPromptType.REMOVE, count = 1)
+        }
+    }
 }

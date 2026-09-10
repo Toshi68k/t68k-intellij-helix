@@ -7,6 +7,7 @@ import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBTextField
 import com.intellij.util.ui.JBUI
 import jp.titze.intellij.helix.action.HelixActions
+import jp.titze.intellij.helix.action.HelixCaretUtils
 import java.awt.BorderLayout
 import java.awt.Dimension
 import java.awt.Font
@@ -134,14 +135,25 @@ object HelixSelectRegexPopup {
         }
     }
 
+    enum class Mode {
+        SELECT,
+        SPLIT,
+        KEEP,
+        REMOVE,
+    }
+
     fun show(editor: Editor, isSplit: Boolean = false) {
+        show(editor, if (isSplit) Mode.SPLIT else Mode.SELECT)
+    }
+
+    fun show(editor: Editor, mode: Mode) {
         val app = ApplicationManager.getApplication()
         if (app != null && (app.isUnitTestMode || app.isHeadlessEnvironment)) {
             return
         }
 
         if (app != null && !app.isDispatchThread) {
-            SwingUtilities.invokeLater { show(editor, isSplit) }
+            SwingUtilities.invokeLater { show(editor, mode) }
             return
         }
 
@@ -153,7 +165,12 @@ object HelixSelectRegexPopup {
         val headerRow = JPanel(BorderLayout())
         headerRow.isOpaque = false
 
-        val titleText = if (isSplit) "SPLIT SELECTION" else "SELECT REGEX"
+        val titleText = when (mode) {
+            Mode.SPLIT -> "SPLIT SELECTION"
+            Mode.KEEP -> "KEEP SELECTIONS"
+            Mode.REMOVE -> "REMOVE SELECTIONS"
+            Mode.SELECT -> "SELECT REGEX"
+        }
         val titleLabel = JBLabel(titleText)
         titleLabel.font = Font(Font.SANS_SERIF, Font.BOLD, JBUI.scaleFontSize(10.5f))
         titleLabel.foreground = TITLE_COLOR
@@ -168,7 +185,13 @@ object HelixSelectRegexPopup {
 
         // 2. Input Box
         val inputBox = InputBoxPanel()
-        val badge = KeycapBadge(if (isSplit) "S" else "s", minWidth = 24, height = 24, fontSize = 12f)
+        val badgeKey = when (mode) {
+            Mode.SPLIT -> "S"
+            Mode.KEEP -> "Alt+k"
+            Mode.REMOVE -> "Alt+K"
+            Mode.SELECT -> "s"
+        }
+        val badge = KeycapBadge(badgeKey, minWidth = 24, height = 24, fontSize = 12f)
         val badgeWrapper = JPanel(GridBagLayout()).apply {
             isOpaque = false
             add(badge)
@@ -179,8 +202,12 @@ object HelixSelectRegexPopup {
         textField.font = Font(Font.MONOSPACED, Font.PLAIN, JBUI.scaleFontSize(13f))
         textField.foreground = HelixTheme.ITEM_TEXT_COLOR
         textField.caretColor = HelixTheme.ITEM_TEXT_COLOR
-        textField.emptyText.text =
-            if (isSplit) "regex pattern to split selection on" else "regex pattern to select within selection"
+        textField.emptyText.text = when (mode) {
+            Mode.SPLIT -> "regex pattern to split selection on"
+            Mode.KEEP -> "regex pattern to keep matching selections"
+            Mode.REMOVE -> "regex pattern to drop matching selections"
+            Mode.SELECT -> "regex pattern to select within selection"
+        }
         textField.border = BorderFactory.createEmptyBorder()
         textField.isOpaque = false
         inputBox.add(textField, BorderLayout.CENTER)
@@ -259,13 +286,31 @@ object HelixSelectRegexPopup {
                 statusLabel.foreground = HINT_FG
             } else {
                 try {
-                    val matches = HelixActions.countRegexMatches(editor, query)
-                    if (matches > 0) {
-                        statusLabel.text = "$matches match${if (matches == 1) "" else "es"} in selection"
-                        statusLabel.foreground = MATCH_SUCCESS_FG
-                    } else {
-                        statusLabel.text = "0 matches in selection"
-                        statusLabel.foreground = MATCH_WARN_FG
+                    val snapshot = HelixCaretUtils.captureCarets(editor)
+                    when (mode) {
+                        Mode.SELECT -> {
+                            val matches = HelixActions.countRegexMatchesInSnapshot(editor, query, snapshot)
+                            statusLabel.text = "$matches match${if (matches == 1) "" else "es"} in selection"
+                            statusLabel.foreground = if (matches > 0) MATCH_SUCCESS_FG else MATCH_WARN_FG
+                        }
+
+                        Mode.SPLIT -> {
+                            val matches = HelixActions.countRegexMatchesInSnapshot(editor, query, snapshot)
+                            statusLabel.text = "$matches match${if (matches == 1) "" else "es"} to split on"
+                            statusLabel.foreground = if (matches > 0) MATCH_SUCCESS_FG else MATCH_WARN_FG
+                        }
+
+                        Mode.KEEP -> {
+                            val count = HelixActions.countFilterSelectionsMatches(editor, query, true, snapshot)
+                            statusLabel.text = "$count matching selection${if (count == 1) "" else "s"}"
+                            statusLabel.foreground = if (count > 0) MATCH_SUCCESS_FG else MATCH_WARN_FG
+                        }
+
+                        Mode.REMOVE -> {
+                            val count = HelixActions.countFilterSelectionsMatches(editor, query, false, snapshot)
+                            statusLabel.text = "$count remaining selection${if (count == 1) "" else "s"}"
+                            statusLabel.foreground = if (count > 0) MATCH_SUCCESS_FG else MATCH_WARN_FG
+                        }
                     }
                 } catch (e: Exception) {
                     statusLabel.text = "Invalid regex"
@@ -287,10 +332,11 @@ object HelixSelectRegexPopup {
                         val pattern = textField.text
                         popup.cancel()
                         if (pattern.isNotEmpty()) {
-                            if (isSplit) {
-                                HelixActions.splitSelection(editor, pattern)
-                            } else {
-                                HelixActions.selectRegex(editor, pattern)
+                            when (mode) {
+                                Mode.SPLIT -> HelixActions.splitSelection(editor, pattern)
+                                Mode.SELECT -> HelixActions.selectRegex(editor, pattern)
+                                Mode.KEEP -> HelixActions.filterSelections(editor, pattern, keepMatching = true)
+                                Mode.REMOVE -> HelixActions.filterSelections(editor, pattern, keepMatching = false)
                             }
                         }
                         e.consume()

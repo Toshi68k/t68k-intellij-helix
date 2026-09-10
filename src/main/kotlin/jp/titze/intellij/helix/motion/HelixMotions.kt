@@ -287,6 +287,8 @@ object HelixMotions {
     fun removePrimarySelection(editor: Editor) = HelixSelectionMotions.removePrimarySelection(editor)
     fun rotateSelections(editor: Editor, forward: Boolean) = HelixSelectionMotions.rotateSelections(editor, forward)
     fun splitSelectionOnNewlines(editor: Editor) = HelixSelectionMotions.splitSelectionOnNewlines(editor)
+    fun extendToLineBounds(editor: Editor, count: Int = 1) = HelixSelectionMotions.extendToLineBounds(editor, count)
+    fun shrinkToLineBounds(editor: Editor) = HelixSelectionMotions.shrinkToLineBounds(editor)
 
     fun getPageSize(editor: Editor): Int = HelixPageMotions.getPageSize(editor)
     fun pageDown(editor: Editor, count: Int = 1) = HelixPageMotions.pageDown(editor, count)
