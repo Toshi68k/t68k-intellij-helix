@@ -63,6 +63,8 @@ object HelixTextObjectActions {
             'f' -> findFunctionRange(editor, caret, inside)
             't' -> findTypeRange(editor, caret, inside)
             'a' -> findArgumentRange(editor, caret, inside)
+            'i' -> findIndentationRange(editor, caret)
+            'e' -> findEntireBufferRange(doc)
             else -> findDelimitedPairRange(doc, caret, inside, objectChar)
         }
     }
@@ -529,5 +531,126 @@ object HelixTextObjectActions {
         val openIdx = (range.startOffset until range.endOffset).firstOrNull { text[it] == open } ?: return null
         val closeIdx = (range.endOffset - 1 downTo openIdx).firstOrNull { text[it] == close } ?: return null
         return Pair(openIdx + 1, closeIdx)
+    }
+
+    /**
+     * i: Indentation block textobject
+     * mii / mai: selects all lines indented at the same or deeper level.
+     */
+    private fun findIndentationRange(editor: Editor, caret: Caret): Pair<Int, Int>? {
+        val doc = editor.document
+        val lineCount = doc.lineCount
+        if (lineCount == 0 || doc.textLength == 0) return null
+
+        val offset = caret.offset.coerceIn(0, (doc.textLength - 1).coerceAtLeast(0))
+        val curLine = doc.getLineNumber(offset)
+        val tabSize = editor.settings.getTabSize(editor.project).coerceAtLeast(1)
+
+        val targetLine = if (!isDocLineBlank(doc, curLine)) {
+            curLine
+        } else {
+            val prev = findPrecedingNonBlankLine(doc, curLine - 1)
+            if (prev >= 0) prev else findFollowingNonBlankLine(doc, curLine + 1, lineCount)
+        }
+        if (targetLine !in 0 until lineCount) return null
+
+        val baseIndent = getDocLineIndent(doc, targetLine, tabSize)
+        val startLine = findIndentBlockStart(doc, targetLine, baseIndent, tabSize)
+        val endLine = findIndentBlockEnd(doc, targetLine, baseIndent, tabSize, lineCount)
+
+        return Pair(doc.getLineStartOffset(startLine), doc.getLineEndOffset(endLine))
+    }
+
+    private fun findIndentBlockStart(doc: Document, targetLine: Int, baseIndent: Int, tabSize: Int): Int {
+        var startLine = targetLine
+        var line = targetLine - 1
+        while (line >= 0) {
+            val candidate = if (isDocLineBlank(doc, line)) findPrecedingNonBlankLine(doc, line) else line
+            if (candidate >= 0 && getDocLineIndent(doc, candidate, tabSize) >= baseIndent) {
+                startLine = candidate
+                line = candidate - 1
+            } else {
+                return startLine
+            }
+        }
+        return startLine
+    }
+
+    private fun findIndentBlockEnd(
+        doc: Document,
+        targetLine: Int,
+        baseIndent: Int,
+        tabSize: Int,
+        lineCount: Int,
+    ): Int {
+        var endLine = targetLine
+        var line = targetLine + 1
+        while (line < lineCount) {
+            val candidate = if (isDocLineBlank(doc, line)) {
+                findFollowingNonBlankLine(doc, line, lineCount)
+            } else {
+                line
+            }
+            if (candidate < lineCount && getDocLineIndent(doc, candidate, tabSize) >= baseIndent) {
+                endLine = candidate
+                line = candidate + 1
+            } else {
+                return endLine
+            }
+        }
+        return endLine
+    }
+
+    private fun isDocLineBlank(doc: Document, line: Int): Boolean {
+        val start = doc.getLineStartOffset(line)
+        val end = doc.getLineEndOffset(line)
+        for (i in start until end) {
+            if (!doc.charsSequence[i].isWhitespace()) return false
+        }
+        return true
+    }
+
+    private fun getDocLineIndent(doc: Document, line: Int, tabSize: Int): Int {
+        val start = doc.getLineStartOffset(line)
+        val end = doc.getLineEndOffset(line)
+        val chars = doc.charsSequence
+        var indent = 0
+        for (i in start until end) {
+            val c = chars[i]
+            if (c == ' ') {
+                indent++
+            } else if (c == '\t') {
+                indent += tabSize - (indent % tabSize)
+            } else {
+                break
+            }
+        }
+        return indent
+    }
+
+    private fun findPrecedingNonBlankLine(doc: Document, fromLine: Int): Int {
+        var line = fromLine
+        while (line >= 0 && isDocLineBlank(doc, line)) {
+            line--
+        }
+        return line
+    }
+
+    private fun findFollowingNonBlankLine(doc: Document, fromLine: Int, lineCount: Int): Int {
+        var line = fromLine
+        while (line < lineCount && isDocLineBlank(doc, line)) {
+            line++
+        }
+        return line
+    }
+
+    /**
+     * e: Entire buffer textobject
+     * mie / mae: selects the entire document (useful for quick buffer-wide operations with surround/delete).
+     */
+    private fun findEntireBufferRange(doc: Document): Pair<Int, Int>? {
+        val len = doc.textLength
+        if (len == 0) return null
+        return Pair(0, len)
     }
 }

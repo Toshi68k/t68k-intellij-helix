@@ -148,6 +148,8 @@ Built-in surround and textobject functionality matching [Helix Surround](https:/
 - **`w`** &rarr; Word (`miw` selects inner word; `maw` selects word + trailing or leading whitespace)
 - **`W`** &rarr; WORD (`miW` selects non-whitespace token; `maW` selects token + whitespace)
 - **`p`** &rarr; Paragraph (`mip` selects paragraph lines; `map` includes blank lines)
+- **`i`** &rarr; Indentation block (`mii` / `mai` selects all lines indented at the same or deeper level)
+- **`e`** &rarr; Entire buffer (`mie` / `mae` selects the entire document)
 - **Delimiters**: `(`, `[`, `{`, `<`, `"`, `'`, `` ` `` (e.g. `mi(` selects inside parens; `ma(` includes parens)
 - **`m`** &rarr; Closest enclosing pair / quote (`mim` inside closest pair; `mam` around closest pair)
 - **`a`** &rarr; Argument / parameter (`mia` inside parameter; `maa` includes delimiter/comma)

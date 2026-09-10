@@ -390,6 +390,95 @@ class HelixSelectionTest : BasePlatformTestCase() {
         caret.selectedText shouldBe "second, "
     }
 
+    fun testTextObjectIndentation() {
+        val text = """
+            fun main() {
+                val a = 1
+                val b = 2
+
+                val c = 3
+            }
+        """.trimIndent()
+        myFixture.configureByText("test.kt", text)
+        val editor = myFixture.editor
+        val caret = editor.caretModel.primaryCaret
+
+        // Move to "val b = 2"
+        caret.moveToOffset(text.indexOf("val b = 2"))
+
+        // mii selects all lines indented at 4 spaces, including the blank line in-between
+        HelixKeyHandler.handleKey('m', editor)
+        HelixKeyHandler.handleKey('i', editor)
+        HelixKeyHandler.handleKey('i', editor)
+        val expected = "    val a = 1\n    val b = 2\n\n    val c = 3"
+        caret.selectedText shouldBe expected
+
+        // mai also selects the same indented block
+        caret.removeSelection()
+        caret.moveToOffset(text.indexOf("val a = 1"))
+        HelixKeyHandler.handleKey('m', editor)
+        HelixKeyHandler.handleKey('a', editor)
+        HelixKeyHandler.handleKey('i', editor)
+        caret.selectedText shouldBe expected
+    }
+
+    fun testTextObjectIndentationNested() {
+        val text = """
+            root {
+                parent {
+                    child1
+                    child2
+                }
+                sibling
+            }
+        """.trimIndent()
+        myFixture.configureByText("test.txt", text)
+        val editor = myFixture.editor
+        val caret = editor.caretModel.primaryCaret
+
+        // Deepest level: child1
+        caret.moveToOffset(text.indexOf("child1"))
+        HelixKeyHandler.handleKey('m', editor)
+        HelixKeyHandler.handleKey('i', editor)
+        HelixKeyHandler.handleKey('i', editor)
+        caret.selectedText shouldBe "        child1\n        child2"
+
+        // Outer level: parent
+        caret.removeSelection()
+        caret.moveToOffset(text.indexOf("parent"))
+        HelixKeyHandler.handleKey('m', editor)
+        HelixKeyHandler.handleKey('i', editor)
+        HelixKeyHandler.handleKey('i', editor)
+        val outerExpected = "    parent {\n        child1\n        child2\n    }\n    sibling"
+        caret.selectedText shouldBe outerExpected
+    }
+
+    fun testTextObjectEntireBuffer() {
+        val text = "first line\nsecond line\nthird line"
+        myFixture.configureByText("test.txt", text)
+        val editor = myFixture.editor
+        val caret = editor.caretModel.primaryCaret
+        caret.moveToOffset(6)
+
+        // mie selects the entire buffer
+        HelixKeyHandler.handleKey('m', editor)
+        HelixKeyHandler.handleKey('i', editor)
+        HelixKeyHandler.handleKey('e', editor)
+        caret.selectedText shouldBe text
+
+        // mae also selects the entire buffer
+        caret.removeSelection()
+        caret.moveToOffset(2)
+        HelixKeyHandler.handleKey('m', editor)
+        HelixKeyHandler.handleKey('a', editor)
+        HelixKeyHandler.handleKey('e', editor)
+        caret.selectedText shouldBe text
+
+        // Delete entire buffer with mie then d
+        HelixKeyHandler.handleKey('d', editor)
+        editor.document.text shouldBe ""
+    }
+
     fun testTextObjectMultiCaret() {
         val text = "foo alpha bar\nbaz beta qux\n"
         myFixture.configureByText("test.txt", text)
