@@ -119,6 +119,8 @@ The goal of this plugin is to provide a more complete and polished Helix-like ex
 | `O` | Insert new line above (`EditorStartNewLineBefore`) and enter `Insert` mode |
 | `u` | Undo (`$Undo`) |
 | `U` | Redo (`$Redo`) |
+| `Q` | Start / stop recording keyboard macro (`StartStopMacroRecording`, `record-macro`) |
+| `q` | Replay last recorded macro (`PlaybackLastMacro`, `replay-macro`, supports `[count]`) |
 | `Ctrl+s` *(in `Insert` mode)* | Commit undo checkpoint (`commit-undo-checkpoint`) |
 | `=` | Reformat code (`ReformatCode`) |
 | `>` / `<` | Indent / Unindent selection |
@@ -274,6 +276,8 @@ Press `:` in Normal mode to open the interactive **Helix Command Picker**, style
 - `:rotate-selection-contents-backward` &rarr; Cycle text contents backward without moving carets (`Alt+(`)
 - `:extend-to-line-bounds` / `:extend_to_line_bounds` &rarr; Extend selection to whole line bounds (`X`)
 - `:shrink-to-line-bounds` / `:shrink_to_line_bounds` &rarr; Shrink selection to line bounds excluding line breaks (`Alt+x`)
+- `:record-macro` / `:macro-record` &rarr; Start or stop recording a keyboard macro (`Q`)
+- `:replay-macro` / `:macro-play` &rarr; Replay the last recorded keyboard macro (`q`)
 
 #### Search & Selection UI Modes
 Helix Keymap supports two switchable search and regex prompt styles:

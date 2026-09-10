@@ -184,6 +184,20 @@ object HelixCommands {
             listOf("shrink_to_line_bounds"),
             "Shrink selection to line bounds excluding line breaks (Alt+x)",
         ) { editor -> HelixMotions.shrinkToLineBounds(editor) },
+        HelixCommandItem(
+            "record-macro",
+            listOf("macro-record"),
+            "Start or stop recording a keyboard macro (Q)",
+        ) { editor ->
+            HelixActionDelegate.executeAction("StartStopMacroRecording", editor)
+        },
+        HelixCommandItem(
+            "replay-macro",
+            listOf("macro-play", "playback-macro"),
+            "Replay the last recorded keyboard macro (q)",
+        ) { editor ->
+            HelixActionDelegate.executeAction("PlaybackLastMacro", editor)
+        },
     )
 
     fun execute(cmd: String, editor: Editor) {
