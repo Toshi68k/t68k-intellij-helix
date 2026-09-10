@@ -10,7 +10,11 @@ import com.intellij.openapi.editor.Editor
 
 object HelixActionDelegate {
 
+    @Volatile
+    var actionExecutor: ((actionId: String, editor: Editor) -> Boolean)? = null
+
     fun executeAction(actionId: String, editor: Editor): Boolean {
+        actionExecutor?.let { return it(actionId, editor) }
         val actionManager = ActionManager.getInstance()
         val action = actionManager.getAction(actionId) ?: return false
 

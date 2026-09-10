@@ -307,6 +307,10 @@ object HelixKeyHandler {
 
             'U' -> repeat(count) { HelixActionDelegate.executeAction("\$Redo", editor) }
 
+            'Q' -> HelixActionDelegate.executeAction("StartStopMacroRecording", editor)
+
+            'q' -> repeat(count) { HelixActionDelegate.executeAction("PlaybackLastMacro", editor) }
+
             'K' -> HelixActionDelegate.executeAction("QuickJavaDoc", editor)
 
             '=' -> HelixActionDelegate.executeAction("ReformatCode", editor)
