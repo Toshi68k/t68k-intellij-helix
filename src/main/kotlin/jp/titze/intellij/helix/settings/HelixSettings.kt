@@ -17,12 +17,19 @@ enum class HelixColorTheme(val displayName: String) {
     LIGHT("Light"),
 }
 
+enum class WhichKeyHintMode(val displayName: String) {
+    HELIX_COMMAND("Helix Command (snake_case)"),
+    INTELLIJ_ACTION("IntelliJ Action ID (PascalCase)"),
+}
+
 class HelixSettingsState {
     var searchUiMode: String = HelixSearchUiMode.STOCK_HELIX.name
     var jumpListMaxEntries: Int = HelixSettings.DEFAULT_JUMP_LIST_MAX_ENTRIES
     var colorTheme: String = HelixColorTheme.SYNC.name
     var resetToNormalOnTabSwitch: Boolean = true
     var syncClipboardWithDefaultRegister: Boolean = true
+    var enableWhichKeyPopups: Boolean = true
+    var whichKeyHintMode: String = WhichKeyHintMode.HELIX_COMMAND.name
 }
 
 @Service(Service.Level.APP)
@@ -76,6 +83,22 @@ class HelixSettings : PersistentStateComponent<HelixSettingsState> {
         get() = myState.syncClipboardWithDefaultRegister
         set(value) {
             myState.syncClipboardWithDefaultRegister = value
+        }
+
+    var enableWhichKeyPopups: Boolean
+        get() = myState.enableWhichKeyPopups
+        set(value) {
+            myState.enableWhichKeyPopups = value
+        }
+
+    var whichKeyHintMode: WhichKeyHintMode
+        get() = try {
+            WhichKeyHintMode.valueOf(myState.whichKeyHintMode)
+        } catch (e: Exception) {
+            WhichKeyHintMode.HELIX_COMMAND
+        }
+        set(value) {
+            myState.whichKeyHintMode = value.name
         }
 
     override fun getState(): HelixSettingsState = myState

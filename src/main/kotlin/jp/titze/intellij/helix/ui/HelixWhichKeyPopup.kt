@@ -10,9 +10,12 @@ import com.intellij.ui.awt.RelativePoint
 import com.intellij.ui.components.JBLabel
 import com.intellij.util.ui.JBUI
 import jp.titze.intellij.helix.keymap.HelixKeyHandler
+import jp.titze.intellij.helix.settings.HelixSettings
+import jp.titze.intellij.helix.settings.WhichKeyHintMode
 import jp.titze.intellij.helix.state.HelixStateManager
 import java.awt.BorderLayout
 import java.awt.Cursor
+import java.awt.FlowLayout
 import java.awt.Font
 import java.awt.Point
 import java.awt.event.KeyAdapter
@@ -26,6 +29,13 @@ import javax.swing.SwingUtilities
 object HelixWhichKeyPopup {
     private var activePopup: JBPopup? = null
     private var currentPrefix: String? = null
+    private var onToggleHintAction: (() -> Unit)? = null
+
+    fun toggleHintMode(): Boolean {
+        val action = onToggleHintAction ?: return false
+        action.invoke()
+        return true
+    }
 
     // Theme-adaptive colors matching the modern keycap design
     private val CARD_BG get() = HelixTheme.CARD_BG
@@ -52,7 +62,9 @@ object HelixWhichKeyPopup {
             SwingUtilities.invokeLater { hide() }
             return
         }
+
         currentPrefix = null
+        onToggleHintAction = null
         val popup = activePopup
         activePopup = null
         popup?.cancel()
@@ -61,6 +73,11 @@ object HelixWhichKeyPopup {
     fun show(editor: Editor, prefix: String) {
         val app = ApplicationManager.getApplication()
         if (app != null && (app.isUnitTestMode || app.isHeadlessEnvironment)) {
+            return
+        }
+
+        val settings = HelixSettings.instance
+        if (!settings.enableWhichKeyPopups) {
             return
         }
 
@@ -103,6 +120,7 @@ object HelixWhichKeyPopup {
                 if (activePopup === popup) {
                     activePopup = null
                     currentPrefix = null
+                    onToggleHintAction = null
                 }
                 val state = HelixStateManager.getOrCreate(editor)
                 if (state.pendingSequence == "Z") {
@@ -138,14 +156,16 @@ object HelixWhichKeyPopup {
         viewHeight: Int,
         prefWidth: Int,
         prefHeight: Int,
-        visibleX: Int = 0,
-        visibleY: Int = 0,
-        marginX: Int = JBUI.scale(20),
-        marginY: Int = JBUI.scale(20),
+        visibleX: Int,
+        visibleY: Int,
+        marginX: Int = 20,
+        marginY: Int = 20,
     ): Point {
-        val x = visibleX + (viewWidth - prefWidth - marginX).coerceAtLeast(0)
-        val y = visibleY + (viewHeight - prefHeight - marginY).coerceAtLeast(0)
-        return Point(x, y)
+        val scaledMarginX = JBUI.scale(marginX)
+        val scaledMarginY = JBUI.scale(marginY)
+        val targetX = visibleX + (viewWidth - prefWidth - scaledMarginX).coerceAtLeast(0)
+        val targetY = visibleY + (viewHeight - prefHeight - scaledMarginY).coerceAtLeast(0)
+        return Point(targetX, targetY)
     }
 
     internal fun createWhichKeyPanel(
@@ -158,8 +178,11 @@ object HelixWhichKeyPopup {
         val cardMinWidth = if (numColumns > 1) JBUI.scale(560) else JBUI.scale(290)
         val mainPanel = RoundedCardPanel(BorderLayout(), minWidth = cardMinWidth)
         mainPanel.isFocusable = true
+        mainPanel.focusTraversalKeysEnabled = false
 
-        // Header: "SPACE MENU" on left, "ESC TO CANCEL" on right
+        val settings = HelixSettings.instance
+        var activeHintMode = settings.whichKeyHintMode
+
         val headerPanel = JPanel(BorderLayout(JBUI.scale(12), 0))
         headerPanel.isOpaque = false
         headerPanel.border = BorderFactory.createCompoundBorder(
@@ -172,29 +195,79 @@ object HelixWhichKeyPopup {
         titleLabel.foreground = TITLE_COLOR
         headerPanel.add(titleLabel, BorderLayout.WEST)
 
-        val cancelLabel = JBLabel("ESC TO CANCEL")
-        cancelLabel.font = JBUI.Fonts.label().deriveFont(Font.BOLD, JBUI.scaleFontSize(9.5f).toFloat())
-        cancelLabel.foreground = CANCEL_COLOR
-        headerPanel.add(cancelLabel, BorderLayout.EAST)
+        val rightHeaderPanel = JPanel(FlowLayout(FlowLayout.RIGHT, JBUI.scale(10), 0)).apply {
+            isOpaque = false
+        }
+
+        fun hintBadgeText(mode: WhichKeyHintMode) = if (mode == WhichKeyHintMode.HELIX_COMMAND) {
+            "TAB: HELIX"
+        } else {
+            "TAB: INTELLIJ"
+        }
+
+        val toggleModeLabel = JBLabel(hintBadgeText(activeHintMode)).apply {
+            font = JBUI.Fonts.label().deriveFont(Font.BOLD, JBUI.scaleFontSize(9.5f).toFloat())
+            foreground = TITLE_COLOR
+            cursor = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
+            toolTipText = "Click or press Tab to switch between Helix command names and IntelliJ action IDs"
+        }
+
+        val cancelLabel = JBLabel("ESC TO CANCEL").apply {
+            font = JBUI.Fonts.label().deriveFont(Font.BOLD, JBUI.scaleFontSize(9.5f).toFloat())
+            foreground = CANCEL_COLOR
+        }
+
+        rightHeaderPanel.add(toggleModeLabel)
+        rightHeaderPanel.add(cancelLabel)
+        headerPanel.add(rightHeaderPanel, BorderLayout.EAST)
 
         mainPanel.add(headerPanel, BorderLayout.NORTH)
 
-        fun createRow(item: WhichKeyItem): JPanel = WhichKeyRow(item) {
-            val state = HelixStateManager.getOrCreate(editor)
-            val inStickyView = state.pendingSequence == "Z"
-            if (!inStickyView) {
-                hide()
+        val allRows = mutableListOf<WhichKeyRow>()
+
+        fun toggleHintMode() {
+            activeHintMode = if (activeHintMode == WhichKeyHintMode.HELIX_COMMAND) {
+                WhichKeyHintMode.INTELLIJ_ACTION
+            } else {
+                WhichKeyHintMode.HELIX_COMMAND
             }
-            val triggerChar = if (item.key.equals("Space", ignoreCase = true)) ' ' else item.key[0]
-            val handled = HelixKeyHandler.handleKey(triggerChar, editor)
-            if (inStickyView) {
-                if (!handled || state.pendingSequence != "Z") {
+            toggleModeLabel.text = hintBadgeText(activeHintMode)
+            allRows.forEach { it.updateHintMode(activeHintMode) }
+            mainPanel.revalidate()
+            mainPanel.repaint()
+        }
+
+        onToggleHintAction = { toggleHintMode() }
+
+        mainPanel.registerKeyboardAction(
+            { toggleHintMode() },
+            javax.swing.KeyStroke.getKeyStroke(KeyEvent.VK_TAB, 0),
+            javax.swing.JComponent.WHEN_IN_FOCUSED_WINDOW,
+        )
+
+        toggleModeLabel.addMouseListener(object : MouseAdapter() {
+            override fun mousePressed(e: MouseEvent) {
+                toggleHintMode()
+            }
+        })
+
+        fun createRow(item: WhichKeyItem): JPanel {
+            val row = WhichKeyRow(item, activeHintMode) {
+                val state = HelixStateManager.getOrCreate(editor)
+                val inStickyView = state.pendingSequence == "Z"
+                if (!inStickyView) {
+                    hide()
+                }
+                val triggerChar = if (item.key.equals("Space", ignoreCase = true)) ' ' else item.key[0]
+                val handled = HelixKeyHandler.handleKey(triggerChar, editor)
+                if (inStickyView && (!handled || state.pendingSequence != "Z")) {
                     hide()
                 }
             }
+            allRows.add(row)
+            return row
         }
 
-        // Items panel with 1-column or 2-column layout
         val itemsPanel = JPanel()
         itemsPanel.isOpaque = false
         itemsPanel.border = JBUI.Borders.empty(6, 6, 8, 6)
@@ -259,7 +332,7 @@ object HelixWhichKeyPopup {
                     BorderFactory.createMatteBorder(1, 0, 0, 0, DIVIDER_COLOR),
                     JBUI.Borders.empty(6, 14, 6, 14),
                 )
-                val hint = JBLabel("↑/↓: scroll | PgUp/PgDn: page").apply {
+                val hint = JBLabel("Tab: toggle hint | ↑/↓: scroll | PgUp/PgDn: page").apply {
                     font = JBUI.Fonts.smallFont()
                     foreground = CANCEL_COLOR
                 }
@@ -281,97 +354,31 @@ object HelixWhichKeyPopup {
                     return
                 }
 
-                // Keyboard scrolling
-                val scrollBar = scrollPane.verticalScrollBar
-                when (e.keyCode) {
-                    KeyEvent.VK_DOWN -> {
-                        scrollBar.value = (scrollBar.value + scrollBar.unitIncrement * 2)
-                            .coerceAtMost(scrollBar.maximum - scrollBar.visibleAmount)
-                        e.consume()
-                        return
-                    }
-
-                    KeyEvent.VK_UP -> {
-                        scrollBar.value = (scrollBar.value - scrollBar.unitIncrement * 2).coerceAtLeast(0)
-                        e.consume()
-                        return
-                    }
-
-                    KeyEvent.VK_PAGE_DOWN -> {
-                        scrollBar.value = (scrollBar.value + scrollBar.blockIncrement)
-                            .coerceAtMost(scrollBar.maximum - scrollBar.visibleAmount)
-                        e.consume()
-                        return
-                    }
-
-                    KeyEvent.VK_PAGE_UP -> {
-                        scrollBar.value = (scrollBar.value - scrollBar.blockIncrement).coerceAtLeast(0)
-                        e.consume()
-                        return
-                    }
-
-                    KeyEvent.VK_HOME -> {
-                        scrollBar.value = 0
-                        e.consume()
-                        return
-                    }
-
-                    KeyEvent.VK_END -> {
-                        scrollBar.value = scrollBar.maximum - scrollBar.visibleAmount
-                        e.consume()
-                        return
-                    }
+                if (e.keyCode == KeyEvent.VK_TAB) {
+                    toggleHintMode()
+                    e.consume()
+                    return
                 }
 
-                if (e.isControlDown) {
-                    if (e.keyCode == KeyEvent.VK_D) {
-                        scrollBar.value = (scrollBar.value + scrollBar.blockIncrement / 2)
-                            .coerceAtMost(scrollBar.maximum - scrollBar.visibleAmount)
-                        e.consume()
-                        return
-                    } else if (e.keyCode == KeyEvent.VK_U) {
-                        scrollBar.value = (scrollBar.value - scrollBar.blockIncrement / 2).coerceAtLeast(0)
-                        e.consume()
-                        return
-                    }
-                }
+                handleNavigationKeys(e, scrollPane)
+                if (e.isConsumed) return
 
                 if (e.isControlDown && currentPrefix == "C-w") {
-                    val ch = when (e.keyCode) {
-                        KeyEvent.VK_V -> 'v'
-                        KeyEvent.VK_S -> 's'
-                        KeyEvent.VK_H -> 'h'
-                        KeyEvent.VK_J -> 'j'
-                        KeyEvent.VK_K -> 'k'
-                        KeyEvent.VK_L -> 'l'
-                        KeyEvent.VK_W -> 'w'
-                        KeyEvent.VK_Q -> 'q'
-                        KeyEvent.VK_C -> 'c'
-                        KeyEvent.VK_O -> 'o'
-                        else -> null
-                    }
-                    if (ch != null) {
-                        hide()
-                        HelixKeyHandler.handleKey(ch, editor)
-                        e.consume()
-                        return
-                    }
+                    handleWindowCtrlChords(e, editor)
                 }
             }
 
             override fun keyTyped(e: KeyEvent) {
                 val ch = e.keyChar
-                if (ch != KeyEvent.CHAR_UNDEFINED && ch != '\u001B') {
+                if (ch != KeyEvent.CHAR_UNDEFINED && ch != '\u001B' && ch != '\t') {
                     val state = HelixStateManager.getOrCreate(editor)
                     val inStickyView = state.pendingSequence == "Z"
                     if (!inStickyView) {
                         hide()
                     }
                     val handled = HelixKeyHandler.handleKey(ch, editor)
-                    if (inStickyView) {
-                        if (!handled || state.pendingSequence != "Z") {
-                            hide()
-                        }
+                    if (inStickyView && (!handled || state.pendingSequence != "Z")) {
+                        hide()
                     }
                     e.consume()
                 }
@@ -379,6 +386,75 @@ object HelixWhichKeyPopup {
         })
 
         return mainPanel
+    }
+
+    private fun handleNavigationKeys(e: KeyEvent, scrollPane: com.intellij.ui.components.JBScrollPane) {
+        val scrollBar = scrollPane.verticalScrollBar
+        when (e.keyCode) {
+            KeyEvent.VK_DOWN -> {
+                scrollBar.value = (scrollBar.value + scrollBar.unitIncrement * 2)
+                    .coerceAtMost(scrollBar.maximum - scrollBar.visibleAmount)
+                e.consume()
+            }
+
+            KeyEvent.VK_UP -> {
+                scrollBar.value = (scrollBar.value - scrollBar.unitIncrement * 2).coerceAtLeast(0)
+                e.consume()
+            }
+
+            KeyEvent.VK_PAGE_DOWN -> {
+                scrollBar.value = (scrollBar.value + scrollBar.blockIncrement)
+                    .coerceAtMost(scrollBar.maximum - scrollBar.visibleAmount)
+                e.consume()
+            }
+
+            KeyEvent.VK_PAGE_UP -> {
+                scrollBar.value = (scrollBar.value - scrollBar.blockIncrement).coerceAtLeast(0)
+                e.consume()
+            }
+
+            KeyEvent.VK_HOME -> {
+                scrollBar.value = 0
+                e.consume()
+            }
+
+            KeyEvent.VK_END -> {
+                scrollBar.value = scrollBar.maximum - scrollBar.visibleAmount
+                e.consume()
+            }
+        }
+
+        if (!e.isConsumed && e.isControlDown) {
+            if (e.keyCode == KeyEvent.VK_D) {
+                scrollBar.value = (scrollBar.value + scrollBar.blockIncrement / 2)
+                    .coerceAtMost(scrollBar.maximum - scrollBar.visibleAmount)
+                e.consume()
+            } else if (e.keyCode == KeyEvent.VK_U) {
+                scrollBar.value = (scrollBar.value - scrollBar.blockIncrement / 2).coerceAtLeast(0)
+                e.consume()
+            }
+        }
+    }
+
+    private fun handleWindowCtrlChords(e: KeyEvent, editor: Editor) {
+        val ch = when (e.keyCode) {
+            KeyEvent.VK_V -> 'v'
+            KeyEvent.VK_S -> 's'
+            KeyEvent.VK_H -> 'h'
+            KeyEvent.VK_J -> 'j'
+            KeyEvent.VK_K -> 'k'
+            KeyEvent.VK_L -> 'l'
+            KeyEvent.VK_W -> 'w'
+            KeyEvent.VK_Q -> 'q'
+            KeyEvent.VK_C -> 'c'
+            KeyEvent.VK_O -> 'o'
+            else -> null
+        }
+        if (ch != null) {
+            hide()
+            HelixKeyHandler.handleKey(ch, editor)
+            e.consume()
+        }
     }
 
     private class RoundedCardPanel(layout: java.awt.LayoutManager, private val minWidth: Int = JBUI.scale(290)) :
@@ -435,8 +511,14 @@ object HelixWhichKeyPopup {
         }
     }
 
-    private class WhichKeyRow(item: WhichKeyItem, val onClick: () -> Unit) : JPanel(BorderLayout(JBUI.scale(10), 0)) {
+    private class WhichKeyRow(val item: WhichKeyItem, initialMode: WhichKeyHintMode, val onClick: () -> Unit) :
+        JPanel(BorderLayout(JBUI.scale(10), 0)) {
         private var isHovered = false
+        private val descLabel = JBLabel().apply {
+            font = JBUI.Fonts.smallFont()
+            foreground = ITEM_DESC_COLOR
+            border = JBUI.Borders.emptyLeft(8)
+        }
 
         init {
             isOpaque = false
@@ -453,16 +535,10 @@ object HelixWhichKeyPopup {
             label.font = JBUI.Fonts.label().deriveFont(Font.PLAIN, JBUI.scaleFontSize(12.5f).toFloat())
             label.foreground = ITEM_TEXT_COLOR
             textPanel.add(label, BorderLayout.WEST)
-
-            if (item.description.isNotEmpty() && item.description != item.label) {
-                val desc = JBLabel(item.description)
-                desc.font = JBUI.Fonts.smallFont()
-                desc.foreground = ITEM_DESC_COLOR
-                desc.border = JBUI.Borders.emptyLeft(8)
-                textPanel.add(desc, BorderLayout.EAST)
-            }
+            textPanel.add(descLabel, BorderLayout.EAST)
 
             add(textPanel, BorderLayout.CENTER)
+            updateHintMode(initialMode)
 
             addMouseListener(object : MouseAdapter() {
                 override fun mouseEntered(e: MouseEvent) {
@@ -479,6 +555,23 @@ object HelixWhichKeyPopup {
                     onClick()
                 }
             })
+        }
+
+        fun updateHintMode(mode: WhichKeyHintMode) {
+            val text = when (mode) {
+                WhichKeyHintMode.HELIX_COMMAND -> item.helixCommand
+                WhichKeyHintMode.INTELLIJ_ACTION -> item.intelliJAction.ifEmpty { item.helixCommand }
+            }
+            descLabel.text = text
+            descLabel.isVisible = text.isNotEmpty() && text != item.label
+
+            toolTipText = when {
+                item.intelliJAction.isNotEmpty() -> "IntelliJ Action: ${item.intelliJAction} (${item.helixCommand})"
+                item.helixCommand.isNotEmpty() -> "Helix Command: ${item.helixCommand}"
+                else -> item.label
+            }
+            revalidate()
+            repaint()
         }
 
         override fun paintComponent(g: java.awt.Graphics) {
