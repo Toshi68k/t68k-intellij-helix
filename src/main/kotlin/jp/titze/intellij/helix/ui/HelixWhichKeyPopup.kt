@@ -148,13 +148,15 @@ object HelixWhichKeyPopup {
         return Point(x, y)
     }
 
-    private fun createWhichKeyPanel(
+    internal fun createWhichKeyPanel(
         title: String,
         items: List<WhichKeyItem>,
         editor: Editor,
         maxHeight: Int = 600,
     ): JPanel {
-        val mainPanel = RoundedCardPanel(BorderLayout())
+        val numColumns = if (items.size > 14) 2 else 1
+        val cardMinWidth = if (numColumns > 1) JBUI.scale(560) else JBUI.scale(290)
+        val mainPanel = RoundedCardPanel(BorderLayout(), minWidth = cardMinWidth)
         mainPanel.isFocusable = true
 
         // Header: "SPACE MENU" on left, "ESC TO CANCEL" on right
@@ -177,29 +179,58 @@ object HelixWhichKeyPopup {
 
         mainPanel.add(headerPanel, BorderLayout.NORTH)
 
-        // Items list
+        fun createRow(item: WhichKeyItem): JPanel = WhichKeyRow(item) {
+            val state = HelixStateManager.getOrCreate(editor)
+            val inStickyView = state.pendingSequence == "Z"
+            if (!inStickyView) {
+                hide()
+            }
+            val triggerChar = if (item.key.equals("Space", ignoreCase = true)) ' ' else item.key[0]
+            val handled = HelixKeyHandler.handleKey(triggerChar, editor)
+            if (inStickyView) {
+                if (!handled || state.pendingSequence != "Z") {
+                    hide()
+                }
+            }
+        }
+
+        // Items panel with 1-column or 2-column layout
         val itemsPanel = JPanel()
-        itemsPanel.layout = javax.swing.BoxLayout(itemsPanel, javax.swing.BoxLayout.Y_AXIS)
         itemsPanel.isOpaque = false
         itemsPanel.border = JBUI.Borders.empty(6, 6, 8, 6)
 
-        for (item in items) {
-            val row = WhichKeyRow(item) {
-                val state = HelixStateManager.getOrCreate(editor)
-                val inStickyView = state.pendingSequence == "Z"
-                if (!inStickyView) {
-                    hide()
-                }
-                val triggerChar = if (item.key.equals("Space", ignoreCase = true)) ' ' else item.key[0]
-                val handled = HelixKeyHandler.handleKey(triggerChar, editor)
-                if (inStickyView) {
-                    if (!handled || state.pendingSequence != "Z") {
-                        hide()
-                    }
-                }
+        if (numColumns == 1) {
+            itemsPanel.layout = javax.swing.BoxLayout(itemsPanel, javax.swing.BoxLayout.Y_AXIS)
+            for (item in items) {
+                itemsPanel.add(createRow(item))
+                itemsPanel.add(javax.swing.Box.createVerticalStrut(JBUI.scale(2)))
             }
-            itemsPanel.add(row)
-            itemsPanel.add(javax.swing.Box.createVerticalStrut(JBUI.scale(2)))
+        } else {
+            itemsPanel.layout = java.awt.GridLayout(1, 2, JBUI.scale(12), 0)
+            val mid = (items.size + 1) / 2
+            val col1Items = items.subList(0, mid)
+            val col2Items = items.subList(mid, items.size)
+
+            val col1Panel = JPanel().apply {
+                layout = javax.swing.BoxLayout(this, javax.swing.BoxLayout.Y_AXIS)
+                isOpaque = false
+            }
+            for (item in col1Items) {
+                col1Panel.add(createRow(item))
+                col1Panel.add(javax.swing.Box.createVerticalStrut(JBUI.scale(2)))
+            }
+
+            val col2Panel = JPanel().apply {
+                layout = javax.swing.BoxLayout(this, javax.swing.BoxLayout.Y_AXIS)
+                isOpaque = false
+            }
+            for (item in col2Items) {
+                col2Panel.add(createRow(item))
+                col2Panel.add(javax.swing.Box.createVerticalStrut(JBUI.scale(2)))
+            }
+
+            itemsPanel.add(col1Panel)
+            itemsPanel.add(col2Panel)
         }
 
         val scrollPane = com.intellij.ui.components.JBScrollPane(itemsPanel)
@@ -207,17 +238,34 @@ object HelixWhichKeyPopup {
         scrollPane.isOpaque = false
         scrollPane.viewport.isOpaque = false
         scrollPane.horizontalScrollBarPolicy = javax.swing.ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER
+        scrollPane.verticalScrollBar.unitIncrement = JBUI.scale(16)
+        scrollPane.verticalScrollBar.blockIncrement = JBUI.scale(80)
 
         val prefItemsHeight = itemsPanel.preferredSize.height
         val headerHeight = headerPanel.preferredSize.height
         val totalPreferredHeight = prefItemsHeight + headerHeight + JBUI.scale(10)
 
-        if (totalPreferredHeight > maxHeight) {
+        val isScrollable = totalPreferredHeight > maxHeight
+        if (isScrollable) {
             val boundedScrollHeight = maxHeight - headerHeight - JBUI.scale(10)
             scrollPane.preferredSize = java.awt.Dimension(
                 itemsPanel.preferredSize.width,
                 boundedScrollHeight.coerceAtLeast(JBUI.scale(150)),
             )
+
+            val footerPanel = JPanel(BorderLayout()).apply {
+                isOpaque = false
+                border = BorderFactory.createCompoundBorder(
+                    BorderFactory.createMatteBorder(1, 0, 0, 0, DIVIDER_COLOR),
+                    JBUI.Borders.empty(6, 14, 6, 14),
+                )
+                val hint = JBLabel("↑/↓: scroll | PgUp/PgDn: page").apply {
+                    font = JBUI.Fonts.smallFont()
+                    foreground = CANCEL_COLOR
+                }
+                add(hint, BorderLayout.WEST)
+            }
+            mainPanel.add(footerPanel, BorderLayout.SOUTH)
         }
 
         mainPanel.add(scrollPane, BorderLayout.CENTER)
@@ -231,6 +279,61 @@ object HelixWhichKeyPopup {
                     hide()
                     e.consume()
                     return
+                }
+
+                // Keyboard scrolling
+                val scrollBar = scrollPane.verticalScrollBar
+                when (e.keyCode) {
+                    KeyEvent.VK_DOWN -> {
+                        scrollBar.value = (scrollBar.value + scrollBar.unitIncrement * 2)
+                            .coerceAtMost(scrollBar.maximum - scrollBar.visibleAmount)
+                        e.consume()
+                        return
+                    }
+
+                    KeyEvent.VK_UP -> {
+                        scrollBar.value = (scrollBar.value - scrollBar.unitIncrement * 2).coerceAtLeast(0)
+                        e.consume()
+                        return
+                    }
+
+                    KeyEvent.VK_PAGE_DOWN -> {
+                        scrollBar.value = (scrollBar.value + scrollBar.blockIncrement)
+                            .coerceAtMost(scrollBar.maximum - scrollBar.visibleAmount)
+                        e.consume()
+                        return
+                    }
+
+                    KeyEvent.VK_PAGE_UP -> {
+                        scrollBar.value = (scrollBar.value - scrollBar.blockIncrement).coerceAtLeast(0)
+                        e.consume()
+                        return
+                    }
+
+                    KeyEvent.VK_HOME -> {
+                        scrollBar.value = 0
+                        e.consume()
+                        return
+                    }
+
+                    KeyEvent.VK_END -> {
+                        scrollBar.value = scrollBar.maximum - scrollBar.visibleAmount
+                        e.consume()
+                        return
+                    }
+                }
+
+                if (e.isControlDown) {
+                    if (e.keyCode == KeyEvent.VK_D) {
+                        scrollBar.value = (scrollBar.value + scrollBar.blockIncrement / 2)
+                            .coerceAtMost(scrollBar.maximum - scrollBar.visibleAmount)
+                        e.consume()
+                        return
+                    } else if (e.keyCode == KeyEvent.VK_U) {
+                        scrollBar.value = (scrollBar.value - scrollBar.blockIncrement / 2).coerceAtLeast(0)
+                        e.consume()
+                        return
+                    }
                 }
 
                 if (e.isControlDown && currentPrefix == "C-w") {
@@ -278,14 +381,15 @@ object HelixWhichKeyPopup {
         return mainPanel
     }
 
-    private class RoundedCardPanel(layout: java.awt.LayoutManager) : JPanel(layout) {
+    private class RoundedCardPanel(layout: java.awt.LayoutManager, private val minWidth: Int = JBUI.scale(290)) :
+        JPanel(layout) {
         init {
             isOpaque = false
         }
 
         override fun getPreferredSize(): java.awt.Dimension {
             val pref = super.getPreferredSize()
-            return java.awt.Dimension(maxOf(pref.width, JBUI.scale(290)), pref.height)
+            return java.awt.Dimension(maxOf(pref.width, minWidth), pref.height)
         }
 
         override fun paintComponent(g: java.awt.Graphics) {
