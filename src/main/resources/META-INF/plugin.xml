@@ -415,6 +415,42 @@
             <keyboard-shortcut keymap="Mac OS X" first-keystroke="alt shift 8"/>
             <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="alt shift 8"/>
         </action>
+
+        <action id="jp.titze.intellij.helix.deleteWordBackward"
+                class="jp.titze.intellij.helix.editor.HelixDeleteWordBackwardAction"
+                text="Helix Delete Word Backward"
+                description="Delete previous word backward (Alt+Backspace)">
+            <keyboard-shortcut keymap="$default" first-keystroke="alt BACK_SPACE"/>
+            <keyboard-shortcut keymap="Mac OS X" first-keystroke="alt BACK_SPACE"/>
+            <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="alt BACK_SPACE"/>
+        </action>
+
+        <action id="jp.titze.intellij.helix.deleteWordForward"
+                class="jp.titze.intellij.helix.editor.HelixDeleteWordForwardAction"
+                text="Helix Delete Word Forward"
+                description="Delete next word forward (Alt+Delete)">
+            <keyboard-shortcut keymap="$default" first-keystroke="alt DELETE"/>
+            <keyboard-shortcut keymap="Mac OS X" first-keystroke="alt DELETE"/>
+            <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="alt DELETE"/>
+        </action>
+
+        <action id="jp.titze.intellij.helix.killToLineEnd"
+                class="jp.titze.intellij.helix.editor.HelixKillToLineEndAction"
+                text="Helix Kill to Line End"
+                description="Delete from cursor to line end (Ctrl+k)">
+            <keyboard-shortcut keymap="$default" first-keystroke="control K"/>
+            <keyboard-shortcut keymap="Mac OS X" first-keystroke="control K"/>
+            <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="control K"/>
+        </action>
+
+        <action id="jp.titze.intellij.helix.insertRegister"
+                class="jp.titze.intellij.helix.editor.HelixInsertRegisterAction"
+                text="Helix Insert Register"
+                description="Insert contents of register while typing (Ctrl+r)">
+            <keyboard-shortcut keymap="$default" first-keystroke="control R"/>
+            <keyboard-shortcut keymap="Mac OS X" first-keystroke="control R"/>
+            <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="control R"/>
+        </action>
     </actions>
 </idea-plugin>
 

@@ -242,6 +242,31 @@ object HelixCommands {
         HelixCommandItem("cd", emptyList(), "Change working directory") { editor ->
             HelixDirectoryManager.changeDirectory("", editor)
         },
+        HelixCommandItem(
+            "delete-word-backward",
+            listOf("delete_word_backward"),
+            "Delete previous word (Ctrl+w, Alt+Backspace)",
+        ) { editor -> HelixActions.deleteWordBackward(editor) },
+        HelixCommandItem(
+            "delete-word-forward",
+            listOf("delete_word_forward"),
+            "Delete next word (Alt+d, Alt+Delete)",
+        ) { editor -> HelixActions.deleteWordForward(editor) },
+        HelixCommandItem(
+            "kill-to-line-start",
+            listOf("kill_to_line_start"),
+            "Delete from cursor to line start (Ctrl+u)",
+        ) { editor -> HelixActions.killToLineStart(editor) },
+        HelixCommandItem(
+            "kill-to-line-end",
+            listOf("kill_to_line_end"),
+            "Delete from cursor to line end (Ctrl+k)",
+        ) { editor -> HelixActions.killToLineEnd(editor) },
+        HelixCommandItem(
+            "completion",
+            listOf("complete"),
+            "Trigger code completion menu (Ctrl+x)",
+        ) { editor -> HelixActionDelegate.executeAction("CodeCompletion", editor) },
     )
 
     fun execute(cmd: String, editor: Editor) {

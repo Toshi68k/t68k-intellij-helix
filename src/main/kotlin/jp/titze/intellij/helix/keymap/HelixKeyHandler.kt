@@ -368,11 +368,48 @@ object HelixKeyHandler {
     }
 
     private fun handleInsertableKey(charTyped: Char, editor: Editor): Boolean {
-        if (charTyped == '\u0013') {
-            HelixActions.commitUndoCheckpoint(editor)
+        val state = HelixStateManager.getOrCreate(editor)
+        if (state.pendingSequence == "C-r") {
+            HelixWhichKeyPopup.hide()
+            state.clearPendingSequence()
+            HelixActions.insertRegister(editor, charTyped)
             return true
         }
-        return false
+
+        return when (charTyped) {
+            '\u0013' -> {
+                HelixActions.commitUndoCheckpoint(editor)
+                true
+            }
+
+            '\u0017' -> {
+                HelixActions.deleteWordBackward(editor)
+                true
+            }
+
+            '\u0015' -> {
+                HelixActions.killToLineStart(editor)
+                true
+            }
+
+            '\u000b' -> {
+                HelixActions.killToLineEnd(editor)
+                true
+            }
+
+            '\u0012' -> {
+                state.setPendingSequence("C-r")
+                HelixWhichKeyPopup.show(editor, "C-r")
+                true
+            }
+
+            '\u0018' -> {
+                HelixActionDelegate.executeAction("CodeCompletion", editor)
+                true
+            }
+
+            else -> false
+        }
     }
 
     private fun isValidRegisterChar(ch: Char): Boolean = ch == '_' || ch == '+' || ch == '*' || ch == '"' ||

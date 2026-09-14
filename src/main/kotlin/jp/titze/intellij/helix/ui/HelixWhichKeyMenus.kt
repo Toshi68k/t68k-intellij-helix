@@ -143,6 +143,7 @@ object HelixWhichKeyMenus {
         "Z" -> "STICKY VIEW MENU" to viewItems
         "C-w", "Ctrl+w", "\u0017" -> "WINDOW MENU" to windowItems
         "\"" -> "REGISTERS" to registerItems
+        "C-r", "Ctrl+r", "\u0012" -> "INSERT REGISTER" to registerItems
         else -> null
     }
 }

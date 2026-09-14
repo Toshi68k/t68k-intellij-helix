@@ -403,4 +403,14 @@ object HelixActions {
         HelixRegexActions.filterSelections(editor, pattern, keepMatching)
 
     fun sortLines(editor: Editor, reverse: Boolean = false) = HelixSortActions.sortLines(editor, reverse)
+
+    fun deleteWordBackward(editor: Editor) = HelixInsertActions.deleteWordBackward(editor)
+
+    fun deleteWordForward(editor: Editor) = HelixInsertActions.deleteWordForward(editor)
+
+    fun killToLineStart(editor: Editor) = HelixInsertActions.killToLineStart(editor)
+
+    fun killToLineEnd(editor: Editor) = HelixInsertActions.killToLineEnd(editor)
+
+    fun insertRegister(editor: Editor, register: Char) = HelixInsertActions.insertRegister(editor, register)
 }

@@ -46,13 +46,18 @@ class HelixEventDispatcher : IdeEventQueue.EventDispatcher {
 
         val state = HelixStateManager.getOrCreate(editor)
 
-        if (isCtrl && e.keyCode == KeyEvent.VK_S && state.mode.isInsertable) {
-            HelixActions.commitUndoCheckpoint(editor)
-            e.consume()
-            return true
+        if (state.mode.isInsertable) {
+            val handledInsert = when {
+                isCtrl -> handleCtrlInsertShortcut(e, editor, state)
+                isAlt -> handleAltInsertShortcut(e, editor)
+                else -> false
+            }
+            if (handledInsert) {
+                e.consume()
+                return true
+            }
+            return false
         }
-
-        if (state.mode.isInsertable) return false
 
         val handled = when {
             isCtrl -> handleCtrlShortcut(e, editor, state)
@@ -68,6 +73,63 @@ class HelixEventDispatcher : IdeEventQueue.EventDispatcher {
 
         return false
     }
+
+    private fun handleCtrlInsertShortcut(
+        e: KeyEvent,
+        editor: Editor,
+        state: jp.titze.intellij.helix.state.HelixEditorState,
+    ): Boolean = when (e.keyCode) {
+        KeyEvent.VK_S -> {
+            HelixActions.commitUndoCheckpoint(editor)
+            true
+        }
+
+        KeyEvent.VK_W -> {
+            HelixActions.deleteWordBackward(editor)
+            true
+        }
+
+        KeyEvent.VK_U -> {
+            HelixActions.killToLineStart(editor)
+            true
+        }
+
+        KeyEvent.VK_K -> {
+            HelixActions.killToLineEnd(editor)
+            true
+        }
+
+        KeyEvent.VK_R -> {
+            state.setPendingSequence("C-r")
+            HelixWhichKeyPopup.show(editor, "C-r")
+            true
+        }
+
+        KeyEvent.VK_X -> {
+            HelixActionDelegate.executeAction("CodeCompletion", editor)
+            true
+        }
+
+        else -> false
+    }
+
+    private fun handleAltInsertShortcut(e: KeyEvent, editor: Editor): Boolean = when {
+        e.keyCode == KeyEvent.VK_BACK_SPACE -> {
+            HelixActions.deleteWordBackward(editor)
+            true
+        }
+
+        isAltForwardDelete(e) -> {
+            HelixActions.deleteWordForward(editor)
+            true
+        }
+
+        else -> false
+    }
+
+    private fun isAltForwardDelete(e: KeyEvent): Boolean = e.keyCode == KeyEvent.VK_DELETE || isAltD(e)
+
+    private fun isAltD(e: KeyEvent): Boolean = !e.isShiftDown && (e.keyCode == KeyEvent.VK_D || e.keyChar == 'd')
 
     private fun handleCtrlShortcut(
         e: KeyEvent,

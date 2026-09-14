@@ -21,6 +21,12 @@ object HelixInsertTracker {
         }
     }
 
+    fun recordText(text: String) {
+        if (isRecording) {
+            currentBuffer.append(text)
+        }
+    }
+
     fun finishInsert() {
         if (isRecording) {
             if (currentBuffer.isNotEmpty()) {
