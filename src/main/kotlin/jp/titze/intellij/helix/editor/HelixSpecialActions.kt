@@ -136,15 +136,17 @@ class HelixHalfPageUpAction : AnAction() {
     override fun actionPerformed(e: AnActionEvent) {
         val editor = e.getData(CommonDataKeys.EDITOR) ?: return
         val state = HelixStateManager.getOrCreate(editor)
-        if (state.mode.isInsertable) return
+        if (state.mode.isInsertable) {
+            HelixActions.killToLineStart(editor)
+            return
+        }
         val count = state.takeCount() ?: 1
         HelixMotions.halfPageUp(editor, count)
     }
 
     override fun update(e: AnActionEvent) {
         val editor = e.getData(CommonDataKeys.EDITOR)
-        val state = editor?.let { HelixStateManager.getOrCreate(it) }
-        e.presentation.isEnabled = editor != null && state != null && !state.mode.isInsertable
+        e.presentation.isEnabled = editor != null
     }
 
     override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT
@@ -435,15 +437,17 @@ class HelixDecrementAction : AnAction() {
     override fun actionPerformed(e: AnActionEvent) {
         val editor = e.getData(CommonDataKeys.EDITOR) ?: return
         val state = HelixStateManager.getOrCreate(editor)
-        if (state.mode.isInsertable) return
+        if (state.mode.isInsertable) {
+            HelixActionDelegate.executeAction("CodeCompletion", editor)
+            return
+        }
         val count = state.takeCount() ?: 1
         HelixActions.decrement(editor, count)
     }
 
     override fun update(e: AnActionEvent) {
         val editor = e.getData(CommonDataKeys.EDITOR)
-        val state = editor?.let { HelixStateManager.getOrCreate(it) }
-        e.presentation.isEnabled = editor != null && state != null && !state.mode.isInsertable
+        e.presentation.isEnabled = editor != null
     }
 
     override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT
@@ -453,14 +457,16 @@ class HelixWindowChordAction : AnAction() {
     override fun actionPerformed(e: AnActionEvent) {
         val editor = e.getData(CommonDataKeys.EDITOR) ?: return
         val state = HelixStateManager.getOrCreate(editor)
-        if (state.mode.isInsertable) return
+        if (state.mode.isInsertable) {
+            HelixActions.deleteWordBackward(editor)
+            return
+        }
         HelixKeyHandler.startWindowChord(editor)
     }
 
     override fun update(e: AnActionEvent) {
         val editor = e.getData(CommonDataKeys.EDITOR)
-        val state = editor?.let { HelixStateManager.getOrCreate(it) }
-        e.presentation.isEnabled = editor != null && state != null && !state.mode.isInsertable
+        e.presentation.isEnabled = editor != null
     }
 
     override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT
@@ -659,15 +665,17 @@ class HelixDeleteNoYankAction : AnAction() {
     override fun actionPerformed(e: AnActionEvent) {
         val editor = e.getData(CommonDataKeys.EDITOR) ?: return
         val state = HelixStateManager.getOrCreate(editor)
-        if (state.mode.isInsertable) return
+        if (state.mode.isInsertable) {
+            HelixActions.deleteWordForward(editor)
+            return
+        }
         val count = state.takeCount() ?: 1
         HelixActions.deleteSelectionNoYank(editor, count)
     }
 
     override fun update(e: AnActionEvent) {
         val editor = e.getData(CommonDataKeys.EDITOR)
-        val state = editor?.let { HelixStateManager.getOrCreate(it) }
-        e.presentation.isEnabled = editor != null && state != null && !state.mode.isInsertable
+        e.presentation.isEnabled = editor != null
     }
 
     override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT

@@ -4,8 +4,10 @@ import com.intellij.openapi.actionSystem.DataContext
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.actionSystem.TypedAction
 import com.intellij.openapi.editor.actionSystem.TypedActionHandler
+import jp.titze.intellij.helix.action.HelixActions
 import jp.titze.intellij.helix.keymap.HelixKeyHandler
 import jp.titze.intellij.helix.state.HelixStateManager
+import jp.titze.intellij.helix.ui.HelixWhichKeyPopup
 
 class HelixTypedActionHandler(private val originalHandler: TypedActionHandler?) : TypedActionHandler {
 
@@ -19,6 +21,13 @@ class HelixTypedActionHandler(private val originalHandler: TypedActionHandler?) 
 
         if (!state.mode.isInsertable) {
             HelixKeyHandler.handleKey(charTyped, editor)
+            return
+        }
+
+        if (state.pendingSequence == "C-r") {
+            state.clearPendingSequence()
+            HelixWhichKeyPopup.hide()
+            HelixActions.insertRegister(editor, charTyped)
             return
         }
 

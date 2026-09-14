@@ -19,11 +19,13 @@ class HelixEditingActionsTest : BasePlatformTestCase() {
     override fun setUp() {
         super.setUp()
         HelixRegisterManager.clear()
+        jp.titze.intellij.helix.motion.HelixMotionHistory.lastMotion = null
         HelixInsertTracker.reset()
     }
 
     override fun tearDown() {
         HelixRegisterManager.clear()
+        jp.titze.intellij.helix.motion.HelixMotionHistory.lastMotion = null
         HelixInsertTracker.reset()
         super.tearDown()
     }
@@ -685,5 +687,241 @@ class HelixEditingActionsTest : BasePlatformTestCase() {
         caret.selectedText shouldBe " "
         caret.selectionStart shouldBe 5
         caret.selectionEnd shouldBe 6
+    }
+
+    private fun dispatchKey(
+        editor: com.intellij.openapi.editor.Editor,
+        keyCode: Int,
+        modifiers: Int = 0,
+        keyChar: Char = java.awt.event.KeyEvent.CHAR_UNDEFINED,
+    ): Boolean {
+        val dispatcher = jp.titze.intellij.helix.editor.HelixEventDispatcher()
+        val event = java.awt.event.KeyEvent(
+            editor.contentComponent,
+            java.awt.event.KeyEvent.KEY_PRESSED,
+            System.currentTimeMillis(),
+            modifiers,
+            keyCode,
+            keyChar,
+        )
+        val handled = dispatcher.dispatch(event)
+        return handled && event.isConsumed
+    }
+
+    fun testDeleteWordBackwardCtrlWAndAltBackspace() {
+        myFixture.configureByText("test.txt", "val foo = hello_world.test")
+        val editor = myFixture.editor
+        val state = HelixStateManager.getOrCreate(editor)
+        state.setMode(HelixMode.INSERT)
+
+        // Cursor at end: "val foo = hello_world.test|"
+        editor.caretModel.primaryCaret.moveToOffset(editor.document.textLength)
+
+        // Delete "test" via Ctrl-w
+        val ctrlWHandled = dispatchKey(
+            editor,
+            java.awt.event.KeyEvent.VK_W,
+            java.awt.event.InputEvent.CTRL_DOWN_MASK,
+        )
+        ctrlWHandled.shouldBeTrue()
+        editor.document.text shouldBe "val foo = hello_world."
+        editor.caretModel.offset shouldBe "val foo = hello_world.".length
+
+        // Delete "." via Alt-Backspace
+        val altBsHandled = dispatchKey(
+            editor,
+            java.awt.event.KeyEvent.VK_BACK_SPACE,
+            java.awt.event.InputEvent.ALT_DOWN_MASK,
+        )
+        altBsHandled.shouldBeTrue()
+        editor.document.text shouldBe "val foo = hello_world"
+
+        // Delete "hello_world" via KeyHandler \u0017 (Ctrl-w)
+        HelixKeyHandler.handleKey('\u0017', editor).shouldBeTrue()
+        editor.document.text shouldBe "val foo = "
+
+        // Delete " = "
+        HelixKeyHandler.handleKey('\u0017', editor).shouldBeTrue()
+        editor.document.text shouldBe "val foo "
+
+        // Delete " foo"
+        HelixKeyHandler.handleKey('\u0017', editor).shouldBeTrue()
+        editor.document.text shouldBe "val "
+    }
+
+    fun testDeleteWordBackwardMultiCaret() {
+        myFixture.configureByText("test.txt", "apple banana\ncat doggy")
+        val editor = myFixture.editor
+        val state = HelixStateManager.getOrCreate(editor)
+        state.setMode(HelixMode.INSERT)
+
+        val doc = editor.document
+        val line0End = doc.getLineEndOffset(0)
+        val line1End = doc.getLineEndOffset(1)
+
+        editor.caretModel.primaryCaret.moveToOffset(line0End)
+        editor.caretModel.addCaret(editor.offsetToVisualPosition(line1End), true)
+
+        HelixActions.deleteWordBackward(editor)
+
+        editor.document.text shouldBe "apple \ncat "
+    }
+
+    fun testDeleteWordForwardAltDAndAltDelete() {
+        myFixture.configureByText("test.txt", "first second.third fourth")
+        val editor = myFixture.editor
+        val state = HelixStateManager.getOrCreate(editor)
+        state.setMode(HelixMode.INSERT)
+
+        // Cursor at start: "|first second.third fourth"
+        editor.caretModel.primaryCaret.moveToOffset(0)
+
+        // Delete "first" via Alt-d
+        val altDHandled = dispatchKey(
+            editor,
+            java.awt.event.KeyEvent.VK_D,
+            java.awt.event.InputEvent.ALT_DOWN_MASK,
+            'd',
+        )
+        altDHandled.shouldBeTrue()
+        editor.document.text shouldBe " second.third fourth"
+        editor.caretModel.offset shouldBe 0
+
+        // Delete " second" via Alt-Delete
+        val altDelHandled = dispatchKey(
+            editor,
+            java.awt.event.KeyEvent.VK_DELETE,
+            java.awt.event.InputEvent.ALT_DOWN_MASK,
+        )
+        altDelHandled.shouldBeTrue()
+        editor.document.text shouldBe ".third fourth"
+
+        // Multi-caret delete word forward
+        myFixture.configureByText("test.txt", "alpha beta\ngamma delta")
+        val editor2 = myFixture.editor
+        val state2 = HelixStateManager.getOrCreate(editor2)
+        state2.setMode(HelixMode.INSERT)
+
+        editor2.caretModel.primaryCaret.moveToOffset(0)
+        val line1Start = editor2.document.getLineStartOffset(1)
+        editor2.caretModel.addCaret(editor2.offsetToVisualPosition(line1Start), true)
+
+        HelixActions.deleteWordForward(editor2)
+        editor2.document.text shouldBe " beta\n delta"
+    }
+
+    fun testKillToLineStartCtrlU() {
+        myFixture.configureByText("test.txt", "    val result = 42")
+        val editor = myFixture.editor
+        val state = HelixStateManager.getOrCreate(editor)
+        state.setMode(HelixMode.INSERT)
+
+        editor.caretModel.primaryCaret.moveToOffset(15) // after "val result "
+        val ctrlUHandled = dispatchKey(
+            editor,
+            java.awt.event.KeyEvent.VK_U,
+            java.awt.event.InputEvent.CTRL_DOWN_MASK,
+        )
+        ctrlUHandled.shouldBeTrue()
+        editor.document.text shouldBe "= 42"
+        editor.caretModel.offset shouldBe 0
+
+        // Test via KeyHandler '\u0015'
+        myFixture.configureByText("test.txt", "prefix content")
+        val editor2 = myFixture.editor
+        val state2 = HelixStateManager.getOrCreate(editor2)
+        state2.setMode(HelixMode.INSERT)
+        editor2.caretModel.primaryCaret.moveToOffset(7)
+        HelixKeyHandler.handleKey('\u0015', editor2).shouldBeTrue()
+        editor2.document.text shouldBe "content"
+        editor2.caretModel.offset shouldBe 0
+    }
+
+    fun testKillToLineEndCtrlK() {
+        myFixture.configureByText("test.txt", "first line\nsecond line")
+        val editor = myFixture.editor
+        val state = HelixStateManager.getOrCreate(editor)
+        state.setMode(HelixMode.INSERT)
+
+        editor.caretModel.primaryCaret.moveToOffset(5) // after "first"
+        val ctrlKHandled = dispatchKey(
+            editor,
+            java.awt.event.KeyEvent.VK_K,
+            java.awt.event.InputEvent.CTRL_DOWN_MASK,
+        )
+        ctrlKHandled.shouldBeTrue()
+        editor.document.text shouldBe "first\nsecond line"
+        editor.caretModel.offset shouldBe 5
+
+        // Cursor at line end deletes newline
+        val ctrlKNewline = dispatchKey(
+            editor,
+            java.awt.event.KeyEvent.VK_K,
+            java.awt.event.InputEvent.CTRL_DOWN_MASK,
+        )
+        ctrlKNewline.shouldBeTrue()
+        editor.document.text shouldBe "firstsecond line"
+        editor.caretModel.offset shouldBe 5
+    }
+
+    fun testInsertRegisterCtrlR() {
+        myFixture.configureByText("test.txt", "start | end")
+        val editor = myFixture.editor
+        val state = HelixStateManager.getOrCreate(editor)
+
+        HelixRegisterManager.set('a', jp.titze.intellij.helix.register.HelixRegisterEntry("INSERTED_VAL"))
+
+        state.setMode(HelixMode.INSERT)
+        editor.caretModel.primaryCaret.moveToOffset(6)
+
+        // Press Ctrl-r
+        val ctrlRHandled = dispatchKey(
+            editor,
+            java.awt.event.KeyEvent.VK_R,
+            java.awt.event.InputEvent.CTRL_DOWN_MASK,
+        )
+        ctrlRHandled.shouldBeTrue()
+        state.pendingSequence shouldBe "C-r"
+
+        // Type register char 'a' via HelixTypedActionHandler
+        val typedHandler = jp.titze.intellij.helix.editor.HelixTypedActionHandler(null)
+        val dataContext = com.intellij.ide.DataManager.getInstance().getDataContext(editor.contentComponent)
+        typedHandler.execute(editor, 'a', dataContext)
+
+        editor.document.text shouldBe "start INSERTED_VAL| end"
+        state.pendingSequence shouldBe ""
+
+        // Escape to normal and test repeat insert via '.'
+        jp.titze.intellij.helix.editor.HelixEscapeHandler.handleEscape(editor)
+        state.mode shouldBe HelixMode.NORMAL
+
+        editor.caretModel.primaryCaret.moveToOffset(0)
+        HelixKeyHandler.handleKey('.', editor)
+        editor.document.text shouldBe "INSERTED_VALstart INSERTED_VAL| end"
+    }
+
+    fun testInsertModeCompletionCtrlX() {
+        myFixture.configureByText("test.txt", "hello")
+        val editor = myFixture.editor
+        val state = HelixStateManager.getOrCreate(editor)
+        state.setMode(HelixMode.INSERT)
+
+        val executedActions = mutableListOf<String>()
+        jp.titze.intellij.helix.action.HelixActionDelegate.actionExecutor = { actionId, _ ->
+            executedActions.add(actionId)
+            true
+        }
+
+        try {
+            val ctrlXHandled = dispatchKey(
+                editor,
+                java.awt.event.KeyEvent.VK_X,
+                java.awt.event.InputEvent.CTRL_DOWN_MASK,
+            )
+            ctrlXHandled.shouldBeTrue()
+            executedActions shouldBe listOf("CodeCompletion")
+        } finally {
+            jp.titze.intellij.helix.action.HelixActionDelegate.actionExecutor = null
+        }
     }
 }

@@ -143,6 +143,21 @@ The goal of this plugin is to provide a more complete and polished Helix-like ex
 | `Ctrl+x` | Decrement integer under cursor or within selection (`decrement`, supports `[count]`) |
 | `Escape` | Return to `Normal` mode / clear pending chords |
 
+### Insert Mode & Terminal / Readline Shortcuts
+
+Essential insert-mode operations matching standard Helix and terminal/readline workflows:
+
+| Key | Helix Command | Description |
+|---|---|---|
+| `Ctrl+w` / `Alt+Backspace` | `delete_word_backward` | Delete previous word backward without triggering IntelliJ's expand selection |
+| `Alt+d` / `Alt+Delete` | `delete_word_forward` | Delete next word forward |
+| `Ctrl+u` | `kill_to_line_start` | Delete from cursor to start of current line |
+| `Ctrl+k` | `kill_to_line_end` | Delete from cursor to end of current line (deletes newline if at line end) |
+| `Ctrl+r <char>` | `insert_register` | Insert contents of specified register while typing |
+| `Ctrl+x` | `completion` | Trigger explicit code completion menu (`CodeCompletion`) |
+| `Ctrl+s` | `commit-undo-checkpoint` | Commit undo checkpoint to break typing history |
+
+
 ### Surround & Match Mode (`m` menu)
 
 Built-in surround and textobject functionality matching [Helix Surround](https://docs.helix-editor.com/surround.html) and [Helix Textobjects](https://docs.helix-editor.com/textobjects.html):
