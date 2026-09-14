@@ -352,4 +352,113 @@ class HelixUiPopupsTest : BasePlatformTestCase() {
         homeEvent.isConsumed.shouldBeTrue()
         scrollBar.value shouldBe 0
     }
+
+    fun testWhichKeyItemDataModelAndSnakeCaseCommands() {
+        val (spaceTitle, spaceItems) = HelixWhichKeyMenus.getMenu(" ") ?: error("Missing space menu")
+        spaceTitle shouldBe "SPACE MENU"
+        val filePicker = spaceItems.first { it.key == "f" }
+        filePicker.label shouldBe "File picker"
+        filePicker.helixCommand shouldBe "file_picker"
+        filePicker.intelliJAction shouldBe "GotoFile"
+        filePicker.description shouldBe "file_picker"
+
+        // Ensure all commands follow Helix snake_case convention
+        val regex = Regex("^[a-z0-9_]+( <[a-z0-9_]+>)*$")
+        for (item in spaceItems) {
+            if (item.helixCommand.isNotEmpty()) {
+                val matches = regex.matches(item.helixCommand)
+                matches.shouldBeTrue()
+            }
+        }
+    }
+
+    fun testHelixSettingsWhichKeyOptions() {
+        val settings = HelixSettings.instance
+        val originalEnabled = settings.enableWhichKeyPopups
+        val originalMode = settings.whichKeyHintMode
+
+        try {
+            settings.enableWhichKeyPopups = false
+            settings.enableWhichKeyPopups.shouldBeFalse()
+            settings.enableWhichKeyPopups = true
+            settings.enableWhichKeyPopups.shouldBeTrue()
+
+            settings.whichKeyHintMode = jp.titze.intellij.helix.settings.WhichKeyHintMode.INTELLIJ_ACTION
+            settings.whichKeyHintMode shouldBe jp.titze.intellij.helix.settings.WhichKeyHintMode.INTELLIJ_ACTION
+
+            settings.whichKeyHintMode = jp.titze.intellij.helix.settings.WhichKeyHintMode.HELIX_COMMAND
+            settings.whichKeyHintMode shouldBe jp.titze.intellij.helix.settings.WhichKeyHintMode.HELIX_COMMAND
+        } finally {
+            settings.enableWhichKeyPopups = originalEnabled
+            settings.whichKeyHintMode = originalMode
+        }
+    }
+
+    fun testWhichKeyPanelTabKeyTogglesHintMode() {
+        myFixture.configureByText("test.txt", "test")
+        val editor = myFixture.editor
+
+        val (spaceTitle, spaceItems) = HelixWhichKeyMenus.getMenu(" ") ?: return
+        val panel = HelixWhichKeyPopup.createWhichKeyPanel(spaceTitle, spaceItems, editor)
+
+        val keyListener = panel.keyListeners.first()
+        val tabEvent = java.awt.event.KeyEvent(
+            panel,
+            java.awt.event.KeyEvent.KEY_PRESSED,
+            System.currentTimeMillis(),
+            0,
+            java.awt.event.KeyEvent.VK_TAB,
+            '\t',
+        )
+        keyListener.keyPressed(tabEvent)
+        tabEvent.isConsumed.shouldBeTrue()
+    }
+
+    fun testHelixWhichKeyDisabledSetting() {
+        myFixture.configureByText("test.txt", "test")
+        val editor = myFixture.editor
+        val settings = HelixSettings.instance
+        val original = settings.enableWhichKeyPopups
+
+        try {
+            settings.enableWhichKeyPopups = false
+            HelixWhichKeyPopup.show(editor, " ")
+            HelixWhichKeyPopup.isShowing().shouldBeFalse()
+        } finally {
+            settings.enableWhichKeyPopups = original
+        }
+    }
+
+    fun testHelixWhichKeyPopupToggleHintModeMethod() {
+        myFixture.configureByText("test.txt", "test")
+        val editor = myFixture.editor
+
+        val (spaceTitle, spaceItems) = HelixWhichKeyMenus.getMenu(" ") ?: return
+        val panel = HelixWhichKeyPopup.createWhichKeyPanel(spaceTitle, spaceItems, editor)
+        panel.shouldNotBeNull()
+
+        // Calling toggleHintMode invokes the registered action
+        HelixWhichKeyPopup.toggleHintMode().shouldBeTrue()
+        HelixWhichKeyPopup.toggleHintMode().shouldBeTrue()
+    }
+
+    fun testWhichKeyColumnLayoutSettingAndPanelDimensions() {
+        myFixture.configureByText("test.txt", "test")
+        val editor = myFixture.editor
+        val settings = HelixSettings.instance
+        val original = settings.whichKeyColumnLayout
+
+        try {
+            settings.whichKeyColumnLayout = jp.titze.intellij.helix.settings.WhichKeyColumnLayout.TWO_COLUMNS
+            val (spaceTitle, spaceItems) = HelixWhichKeyMenus.getMenu(" ") ?: return
+            val panel2Cols = HelixWhichKeyPopup.createWhichKeyPanel(spaceTitle, spaceItems, editor)
+            (panel2Cols.preferredSize.width in 500..700).shouldBeTrue()
+
+            settings.whichKeyColumnLayout = jp.titze.intellij.helix.settings.WhichKeyColumnLayout.THREE_COLUMNS
+            val panel3Cols = HelixWhichKeyPopup.createWhichKeyPanel(spaceTitle, spaceItems, editor)
+            (panel3Cols.preferredSize.width >= 700).shouldBeTrue()
+        } finally {
+            settings.whichKeyColumnLayout = original
+        }
+    }
 }

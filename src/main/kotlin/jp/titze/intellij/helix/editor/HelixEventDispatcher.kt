@@ -22,9 +22,9 @@ import javax.swing.SwingUtilities
 class HelixEventDispatcher : IdeEventQueue.EventDispatcher {
 
     override fun dispatch(e: AWTEvent): Boolean {
-        if (e !is KeyEvent || e.id != KeyEvent.KEY_PRESSED) {
-            return false
-        }
+        if (e !is KeyEvent) return false
+        if (handleWhichKeyPopupEvent(e)) return true
+        if (e.id != KeyEvent.KEY_PRESSED) return false
 
         val editor = findFocusedEditor(e) ?: return false
         if (editor.isOneLineMode || editor.isViewer) return false
@@ -33,16 +33,7 @@ class HelixEventDispatcher : IdeEventQueue.EventDispatcher {
         val isAlt = e.isAltDown && !e.isControlDown && !e.isMetaDown
         val isNoModifiers = !e.isControlDown && !e.isMetaDown && !e.isAltDown && !e.isShiftDown
 
-        val isEscape = (isNoModifiers && e.keyCode == KeyEvent.VK_ESCAPE) ||
-            (isCtrl && e.keyCode == KeyEvent.VK_OPEN_BRACKET)
-
-        if (isEscape) {
-            val lookup = com.intellij.codeInsight.lookup.LookupManager.getActiveLookup(editor)
-            if (lookup != null) return false
-            HelixEscapeHandler.handleEscape(editor)
-            e.consume()
-            return true
-        }
+        if (handleEscapeEvent(e, editor, isNoModifiers, isCtrl)) return true
 
         val state = HelixStateManager.getOrCreate(editor)
 
@@ -72,6 +63,31 @@ class HelixEventDispatcher : IdeEventQueue.EventDispatcher {
         }
 
         return false
+    }
+
+    private fun handleWhichKeyPopupEvent(e: KeyEvent): Boolean {
+        if (!HelixWhichKeyPopup.isShowing()) return false
+        if (e.id == KeyEvent.KEY_PRESSED && e.keyCode == KeyEvent.VK_TAB) {
+            HelixWhichKeyPopup.toggleHintMode()
+            e.consume()
+            return true
+        }
+        if (e.id == KeyEvent.KEY_TYPED && e.keyChar == '\t') {
+            e.consume()
+            return true
+        }
+        return false
+    }
+
+    private fun handleEscapeEvent(e: KeyEvent, editor: Editor, isNoModifiers: Boolean, isCtrl: Boolean): Boolean {
+        val isEscape = (isNoModifiers && e.keyCode == KeyEvent.VK_ESCAPE) ||
+            (isCtrl && e.keyCode == KeyEvent.VK_OPEN_BRACKET)
+        if (!isEscape) return false
+        val lookup = com.intellij.codeInsight.lookup.LookupManager.getActiveLookup(editor)
+        if (lookup != null) return false
+        HelixEscapeHandler.handleEscape(editor)
+        e.consume()
+        return true
     }
 
     private fun handleCtrlInsertShortcut(

@@ -196,78 +196,81 @@ Built-in surround and textobject functionality matching [Helix Surround](https:/
 ### Deep IntelliJ IDE Integrations
 
 #### Navigation (`g` menu)
-- `gd` &rarr; `GotoDeclaration`
-- `gi` &rarr; `GotoImplementation`
-- `gy` &rarr; `GotoTypeDeclaration`
-- `gr` &rarr; `FindUsages`
-- `gn` &rarr; Next buffer / tab (`NextTab`)
-- `gp` &rarr; Previous buffer / tab (`PreviousTab`)
-- `g.` &rarr; Goto last modification point (`JumpToLastChange`)
-- `gh` &rarr; Line start (first character)
-- `gs` &rarr; First non-whitespace character
-- `gl` &rarr; Line end
-- `gt` &rarr; Goto window top (top visible line in viewport)
-- `gc` &rarr; Goto window center (middle visible line in viewport)
-- `gb` &rarr; Goto window bottom (bottom visible line in viewport)
-- `gf` &rarr; Goto file at caret (open file under cursor)
-- `g|` &rarr; Goto column within line (1-indexed, default line start)
-- `gw` &rarr; Jump to word on screen (`goto_word`) with overlay badges
-- `ge` &rarr; Goto end of buffer
-- `gg` &rarr; Goto start of buffer
-- `ga` &rarr; Goto last accessed file / alternate buffer (`goto_last_accessed_file`, similar to Vim `Ctrl+^`)
-- `gm` &rarr; Goto last modified file in project (`goto_last_modified_file`)
-- `gj` &rarr; Move down by visual screen line (`move_visual_line_down`, soft-wrap aware)
-- `gk` &rarr; Move up by visual screen line (`move_visual_line_up`, soft-wrap aware)
+- `gd` &rarr; `goto_definition` (`GotoDeclaration`)
+- `gi` &rarr; `goto_implementation` (`GotoImplementation`)
+- `gy` &rarr; `goto_type_definition` (`GotoTypeDeclaration`)
+- `gr` &rarr; `goto_reference` (`FindUsages`)
+- `gn` &rarr; `goto_next_buffer` (`NextTab`)
+- `gp` &rarr; `goto_previous_buffer` (`PreviousTab`)
+- `g.` &rarr; `goto_last_change` (`JumpToLastChange`)
+- `gh` &rarr; `goto_line_start` (Line start)
+- `gs` &rarr; `goto_first_nonwhitespace` (First non-whitespace character)
+- `gl` &rarr; `goto_line_end` (Line end)
+- `gt` &rarr; `goto_window_top` (Top visible line in viewport)
+- `gc` &rarr; `goto_window_center` (Middle visible line in viewport)
+- `gb` &rarr; `goto_window_bottom` (Bottom visible line in viewport)
+- `gf` &rarr; `goto_file` (Goto file at caret)
+- `g|` &rarr; `goto_column <count>` (Goto column within line)
+- `gw` &rarr; `goto_word` (Jump to word on screen with overlay badges)
+- `ge` &rarr; `goto_last_line` (Goto end of buffer)
+- `gg` &rarr; `goto_line_start_file` (Goto start of buffer)
+- `ga` &rarr; `goto_last_accessed_file` (Last accessed file / alternate buffer)
+- `gm` &rarr; `goto_last_modified_file` (Last modified file in project)
+- `gj` &rarr; `move_visual_line_down` (Move down by visual screen line)
+- `gk` &rarr; `move_visual_line_up` (Move up by visual screen line)
 
 #### Interactive Which-Key Floating Menu
 Whenever a chord prefix key (<kbd>Space</kbd>, `Ctrl+w`, `g`, `m`, `[`, or `]`) is pressed in Normal mode, an interactive, non-intrusive **Which-Key popup** appears in authentic Helix cyan:
 - **Zero latency**: Muscle memory stays instant—typing the follow-up key immediately executes the command without waiting.
-- **Visual discoverability**: Pausing on any chord reveals all available pickers and actions.
+- **Visual discoverability**: Pausing on any chord reveals all available pickers and actions in authentic Helix `snake_case`.
+- **Interactive hint toggle**: Pressing <kbd>Tab</kbd> or clicking the header badge dynamically toggles between Helix commands and IntelliJ Action IDs in real time.
+- **Action inspection on hover**: Hovering over any row displays a tooltip with the underlying IntelliJ Action ID.
+- **Configurable**: Can be enabled/disabled or configured for default hint mode via **Settings &rarr; Helix Keymap**.
 - **Single-key & click dispatch**: Pressing any highlighted key or clicking any option directly executes the action.
 - **Cancelable**: Pressing <kbd>Esc</kbd> or clicking outside dismisses the menu and restores `Normal` mode.
 
 #### Window & Split Management (`Ctrl+w`)
-| Key | Action | Description |
-|-----|--------|-------------|
-| `Ctrl+w v` | `SplitVertically` | Vertical editor split |
-| `Ctrl+w s` | `SplitHorizontally` | Horizontal editor split |
-| `Ctrl+w h` | `PrevSplitter` | Focus split to the left |
-| `Ctrl+w j` | `NextSplitter` | Focus split below |
-| `Ctrl+w k` | `PrevSplitter` | Focus split above |
-| `Ctrl+w l` | `NextSplitter` | Focus split to the right |
-| `Ctrl+w w` | `NextSplitter` | Cycle focus to next split window |
-| `Ctrl+w q` / `Ctrl+w c` | `Unsplit` | Close active split |
-| `Ctrl+w o` | `UnsplitAll` | Close all other splits |
+| Key | Helix Command | IntelliJ Action | Description |
+|-----|---------------|-----------------|-------------|
+| `Ctrl+w v` | `vsplit` | `SplitVertically` | Vertical editor split |
+| `Ctrl+w s` | `hsplit` | `SplitHorizontally` | Horizontal editor split |
+| `Ctrl+w h` | `jump_view_left` | `PrevSplitter` | Focus split to the left |
+| `Ctrl+w j` | `jump_view_down` | `NextSplitter` | Focus split below |
+| `Ctrl+w k` | `jump_view_up` | `PrevSplitter` | Focus split above |
+| `Ctrl+w l` | `jump_view_right` | `NextSplitter` | Focus split to the right |
+| `Ctrl+w w` | `jump_next_view` | `NextSplitter` | Cycle focus to next split window |
+| `Ctrl+w q` / `Ctrl+w c` | `wclose` | `Unsplit` | Close active split |
+| `Ctrl+w o` | `wonly` | `UnsplitAll` | Close all other splits |
 
 *(Holding Ctrl during chords, e.g. `Ctrl+w Ctrl+v`, `Ctrl+w Ctrl+w`, etc. is also fully supported.)*
 
 #### Pickers & Space Menu (`space`)
-| Key | Action | Description |
-|-----|--------|-------------|
-| `space + f` | `GotoFile` / `SearchEverywhere` | Dedicated fuzzy file picker |
-| `space + b` | `RecentFiles` | Open buffer / tab switcher |
-| `space + /` | `FindInPath` | Live project-wide text search (live grep) with preview |
-| `space + j` | `HelixJumplistPopup` | Open interactive jumplist picker popup |
-| `space + e` | `ActivateProjectToolWindow` | Open / toggle project file explorer tool window |
-| `space + .` | `SelectInProjectView` | Reveal active buffer file in project explorer tree |
-| `space + g` | `ActivateVersionControlToolWindow` | Open / toggle Git version control changes window |
-| `space + s` | `FileStructurePopup` | Document symbols / outline picker |
-| `space + S` | `GotoSymbol` | Workspace-wide symbol picker across AST |
-| `space + d` | `ShowErrorDescription` | Diagnostic error inspection under caret |
-| `space + D` | `ActivateProblemsViewToolWindow` | Workspace diagnostics (IntelliJ Problems panel) |
-| `space + a` | `ShowIntentionActions` | Code actions & quick-fixes (Alt+Enter) |
-| `space + r` | `RenameElement` | Refactor rename symbol |
-| `space + c` | `CommentByLineComment` | Toggle line comments on selection or line |
-| `space + C` | `CommentByBlockComment` | Toggle block comments on selection |
-| `space + h` | `FindUsages` | Find symbol references / usages across project |
-| `space + w` | `SaveAll` | Save all modified buffers |
-| `space + y` | `yank_main_selection` | Yank active selection to system clipboard |
-| `space + p` | `paste_clipboard_after` | Paste system clipboard after cursor / selection |
-| `space + P` | `paste_clipboard_before` | Paste system clipboard before cursor / selection |
-| `space + R` | `replace_with_clipboard` | Replace current selections with system clipboard |
-| `space + k` | `QuickJavaDoc` | Hover documentation popup |
-| `space + '` | `last_picker` | Re-open last active space picker |
-| `space + ?` | `GotoAction` | Action / command palette picker |
+| Key | Helix Command | IntelliJ Action | Description |
+|-----|---------------|-----------------|-------------|
+| `space + f` | `file_picker` | `GotoFile` | Dedicated fuzzy file picker |
+| `space + b` | `buffer_picker` | `RecentFiles` | Open buffer / tab switcher |
+| `space + /` | `global_search` | `FindInPath` | Live project-wide text search (live grep) with preview |
+| `space + j` | `jumplist_picker` | — | Open interactive jumplist picker popup |
+| `space + e` | `file_explorer` | `ActivateProjectToolWindow` | Open / toggle project file explorer tool window |
+| `space + .` | `file_explorer_buffer` | `SelectInProjectView` | Reveal active buffer file in project explorer tree |
+| `space + g` | `changed_file_picker` | `ActivateVersionControlToolWindow` | Open / toggle Git version control changes window |
+| `space + s` | `symbol_picker` | `FileStructurePopup` | Document symbols / outline picker |
+| `space + S` | `workspace_symbol_picker` | `GotoSymbol` | Workspace-wide symbol picker across AST |
+| `space + d` | `diagnostics_picker` | `ShowErrorDescription` | Diagnostic error inspection under caret |
+| `space + D` | `workspace_diagnostics_picker` | `ActivateProblemsViewToolWindow` | Workspace diagnostics (IntelliJ Problems panel) |
+| `space + a` | `code_action` | `ShowIntentionActions` | Code actions & quick-fixes (Alt+Enter) |
+| `space + r` | `rename_symbol` | `RenameElement` | Refactor rename symbol |
+| `space + c` | `toggle_comments` | `CommentByLineComment` | Toggle line comments on selection or line |
+| `space + C` | `toggle_block_comments` | `CommentByBlockComment` | Toggle block comments on selection |
+| `space + h` | `select_references_to_symbol_under_cursor` | `FindUsages` | Find symbol references / usages across project |
+| `space + w` | `w` | `SaveAll` | Save all modified buffers |
+| `space + y` | `yank_main_selection_to_clipboard` | — | Yank active selection to system clipboard |
+| `space + p` | `paste_clipboard_after` | — | Paste system clipboard after cursor / selection |
+| `space + P` | `paste_clipboard_before` | — | Paste system clipboard before cursor / selection |
+| `space + R` | `replace_selections_with_clipboard` | — | Replace current selections with system clipboard |
+| `space + k` | `hover` | `QuickJavaDoc` | Hover documentation popup |
+| `space + '` | `last_picker` | — | Re-open last active space picker |
+| `space + ?` | `command_palette` | `GotoAction` | Action / command palette picker |
 
 #### Unimpaired Navigation (`[` / `]`)
 | Forward (`]`) | Backward (`[`) | Helix Command | Description |
@@ -350,6 +353,7 @@ Helix Keymap supports two switchable search and regex prompt styles:
 
 #### Editor Behavior Settings
 Configure Helix Keymap preferences under **Preferences / Settings &rarr; Tools &rarr; Helix Keymap**:
+- **Which-Key Chord Menus**: Enable or disable Which-Key chord popups on chord prefixes (`Space`, `g`, `m`, `[`, `]`, `z`, `Ctrl+w`), choose default hint display style (Helix command names vs IntelliJ Action IDs), and set maximum columns (3 columns compact vs 2 columns classic).
 - **Reset to Normal mode on tab switch / file open** *(default: enabled)*: Ensures each tab starts in **Normal** mode with block cursor whenever a file is opened or tabs are switched. Can be disabled if you prefer retaining active modes (such as Insert mode) across tabs.
 - **Search and Selection Prompt UI**: Toggle between Stock Helix inline bottom bar or Popup dialog.
 - **Jump List Capacity**: Set maximum recorded jump entries (10–1000).
