@@ -83,6 +83,36 @@
             <keyboard-shortcut keymap="$default" first-keystroke="alt I"/>
         </action>
 
+        <action id="jp.titze.intellij.helix.selectPrevSibling"
+                class="jp.titze.intellij.helix.editor.HelixSelectPrevSiblingAction"
+                text="Helix Select Previous Sibling"
+                description="Select previous sibling AST element">
+            <keyboard-shortcut keymap="$default" first-keystroke="alt P"/>
+            <keyboard-shortcut keymap="Mac OS X" first-keystroke="alt P"/>
+            <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="alt P"/>
+            <keyboard-shortcut keymap="$default" first-keystroke="alt LEFT"/>
+            <keyboard-shortcut keymap="Mac OS X" first-keystroke="alt LEFT"/>
+            <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="alt LEFT"/>
+        </action>
+
+        <action id="jp.titze.intellij.helix.selectAllSiblings"
+                class="jp.titze.intellij.helix.editor.HelixSelectAllSiblingsAction"
+                text="Helix Select All Siblings"
+                description="Select all sibling AST elements">
+            <keyboard-shortcut keymap="$default" first-keystroke="alt A"/>
+            <keyboard-shortcut keymap="Mac OS X" first-keystroke="alt A"/>
+            <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="alt A"/>
+        </action>
+
+        <action id="jp.titze.intellij.helix.selectAllChildren"
+                class="jp.titze.intellij.helix.editor.HelixSelectAllChildrenAction"
+                text="Helix Select All Children"
+                description="Select all direct children nodes">
+            <keyboard-shortcut keymap="$default" first-keystroke="alt shift I"/>
+            <keyboard-shortcut keymap="Mac OS X" first-keystroke="alt shift I"/>
+            <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="alt shift I"/>
+        </action>
+
         <action id="jp.titze.intellij.helix.selectNextOccurrence"
                 class="jp.titze.intellij.helix.editor.HelixSelectNextOccurrenceAction"
                 text="Helix Select Next Occurrence"

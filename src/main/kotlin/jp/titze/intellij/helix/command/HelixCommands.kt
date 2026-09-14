@@ -267,6 +267,21 @@ object HelixCommands {
             listOf("complete"),
             "Trigger code completion menu (Ctrl+x)",
         ) { editor -> HelixActionDelegate.executeAction("CodeCompletion", editor) },
+        HelixCommandItem(
+            "select_prev_sibling",
+            listOf("select-prev-sibling"),
+            "Select previous sibling AST element (Alt+p, Alt+Left)",
+        ) { editor -> HelixActions.selectPrevSibling(editor) },
+        HelixCommandItem(
+            "select_all_siblings",
+            listOf("select-all-siblings"),
+            "Select all sibling AST elements (Alt+a)",
+        ) { editor -> HelixActions.selectAllSiblings(editor) },
+        HelixCommandItem(
+            "select_all_children",
+            listOf("select-all-children"),
+            "Select all direct children nodes (Alt+I)",
+        ) { editor -> HelixActions.selectAllChildren(editor) },
     )
 
     fun execute(cmd: String, editor: Editor) {

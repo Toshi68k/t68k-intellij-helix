@@ -413,4 +413,10 @@ object HelixActions {
     fun killToLineEnd(editor: Editor) = HelixInsertActions.killToLineEnd(editor)
 
     fun insertRegister(editor: Editor, register: Char) = HelixInsertActions.insertRegister(editor, register)
+
+    fun selectPrevSibling(editor: Editor): Boolean = HelixAstActions.selectPrevSibling(editor)
+
+    fun selectAllSiblings(editor: Editor): Boolean = HelixAstActions.selectAllSiblings(editor)
+
+    fun selectAllChildren(editor: Editor): Boolean = HelixAstActions.selectAllChildren(editor)
 }

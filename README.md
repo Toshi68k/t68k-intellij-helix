@@ -182,6 +182,9 @@ Built-in surround and textobject functionality matching [Helix Surround](https:/
 - **`a`** &rarr; Argument / parameter (`mia` inside parameter; `maa` includes delimiter/comma)
 - **`f`** &rarr; Function / method (PSI-aware; falls back to enclosing `{...}`)
 - **`t`** &rarr; Type / class (PSI-aware; falls back to enclosing `{...}`)
+- **`T`** &rarr; Test method (PSI-aware; `miT` selects body, `maT` includes annotations/signature)
+- **`x`** &rarr; XML / HTML element (`mix` inside tag content, `max` around full tag)
+- **`g`** &rarr; VCS change / diff hunk (`mig` inside change lines, `mag` around change hunk)
 - **`c`** &rarr; Comment (PSI-aware comment node or line comment)
 
 #### Supported Delimiters & Aliases
@@ -285,6 +288,9 @@ Whenever a chord prefix key (<kbd>Space</kbd>, `Ctrl+w`, `g`, `m`, `[`, or `]`) 
 #### Code AST & Inspection
 - `Alt+o` &rarr; Expand structural selection via PSI hierarchy (`SelectWordAtCaret`)
 - `Alt+i` &rarr; Shrink structural selection (`UnselectWordAtCaret`)
+- `Alt+p` / `Alt+Left` &rarr; Select previous sibling AST element (`select_prev_sibling`)
+- `Alt+a` &rarr; Select all sibling AST elements (`select_all_siblings`)
+- `Alt+I` &rarr; Select all direct children AST elements (`select_all_children`)
 - `Alt+n` &rarr; Select next occurrence (`SelectNextOccurrence`)
 - `Ctrl+c` &rarr; Toggle line comment (`CommentByLineComment`)
 - `K` &rarr; Quick documentation hover (`QuickJavaDoc`)
