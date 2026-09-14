@@ -275,7 +275,7 @@ object HelixJumplistPopup {
         scrollPane.horizontalScrollBarPolicy = javax.swing.ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER
         mainPanel.add(scrollPane, BorderLayout.CENTER)
 
-        mainPanel.preferredSize = Dimension(JBUI.scale(560), JBUI.scale(320))
+        mainPanel.preferredSize = Dimension(JBUI.scale(560), JBUI.scale(380))
 
         val popup = JBPopupFactory.getInstance()
             .createComponentPopupBuilder(mainPanel, textField)
@@ -342,6 +342,41 @@ object HelixJumplistPopup {
                         e.consume()
                     }
 
+                    KeyEvent.VK_PAGE_DOWN -> {
+                        if (listModel.size > 0) {
+                            val next = (list.selectedIndex + 6).coerceAtMost(listModel.size - 1)
+                            list.selectedIndex = next
+                            list.ensureIndexIsVisible(next)
+                        }
+                        e.consume()
+                    }
+
+                    KeyEvent.VK_PAGE_UP -> {
+                        if (listModel.size > 0) {
+                            val prev = (list.selectedIndex - 6).coerceAtLeast(0)
+                            list.selectedIndex = prev
+                            list.ensureIndexIsVisible(prev)
+                        }
+                        e.consume()
+                    }
+
+                    KeyEvent.VK_HOME -> {
+                        if (listModel.size > 0) {
+                            list.selectedIndex = 0
+                            list.ensureIndexIsVisible(0)
+                        }
+                        e.consume()
+                    }
+
+                    KeyEvent.VK_END -> {
+                        if (listModel.size > 0) {
+                            val last = listModel.size - 1
+                            list.selectedIndex = last
+                            list.ensureIndexIsVisible(last)
+                        }
+                        e.consume()
+                    }
+
                     KeyEvent.VK_N -> {
                         if (e.isControlDown && listModel.size > 0) {
                             val next = (list.selectedIndex + 1).coerceAtMost(listModel.size - 1)
@@ -354,6 +389,24 @@ object HelixJumplistPopup {
                     KeyEvent.VK_P -> {
                         if (e.isControlDown && listModel.size > 0) {
                             val prev = (list.selectedIndex - 1).coerceAtLeast(0)
+                            list.selectedIndex = prev
+                            list.ensureIndexIsVisible(prev)
+                            e.consume()
+                        }
+                    }
+
+                    KeyEvent.VK_D -> {
+                        if (e.isControlDown && listModel.size > 0) {
+                            val next = (list.selectedIndex + 6).coerceAtMost(listModel.size - 1)
+                            list.selectedIndex = next
+                            list.ensureIndexIsVisible(next)
+                            e.consume()
+                        }
+                    }
+
+                    KeyEvent.VK_U -> {
+                        if (e.isControlDown && listModel.size > 0) {
+                            val prev = (list.selectedIndex - 6).coerceAtLeast(0)
                             list.selectedIndex = prev
                             list.ensureIndexIsVisible(prev)
                             e.consume()

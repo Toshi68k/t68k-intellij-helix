@@ -13,6 +13,7 @@ import jp.titze.intellij.helix.settings.HelixSettings
 import jp.titze.intellij.helix.state.HelixStateManager
 import jp.titze.intellij.helix.ui.HelixPromptBar
 import jp.titze.intellij.helix.ui.HelixPromptType
+import jp.titze.intellij.helix.ui.HelixWhichKeyMenus
 import jp.titze.intellij.helix.ui.HelixWhichKeyPopup
 
 class HelixUiPopupsTest : BasePlatformTestCase() {
@@ -280,5 +281,75 @@ class HelixUiPopupsTest : BasePlatformTestCase() {
         } finally {
             jp.titze.intellij.helix.action.HelixActionDelegate.actionExecutor = null
         }
+    }
+
+    fun testWhichKeyMultiColumnLayoutForLargeMenus() {
+        myFixture.configureByText("test.txt", "test")
+        val editor = myFixture.editor
+
+        val (spaceTitle, spaceItems) = HelixWhichKeyMenus.getMenu(" ") ?: return
+        val panel = HelixWhichKeyPopup.createWhichKeyPanel(spaceTitle, spaceItems, editor, maxHeight = 400)
+        panel.shouldNotBeNull()
+        (panel.preferredSize.width >= 500).shouldBeTrue()
+    }
+
+    fun testWhichKeySingleColumnLayoutForSmallMenus() {
+        myFixture.configureByText("test.txt", "test")
+        val editor = myFixture.editor
+
+        val (matchTitle, matchItems) = HelixWhichKeyMenus.getMenu("m") ?: return
+        val panel = HelixWhichKeyPopup.createWhichKeyPanel(matchTitle, matchItems, editor, maxHeight = 600)
+        panel.shouldNotBeNull()
+        (panel.preferredSize.width < 500).shouldBeTrue()
+    }
+
+    fun testWhichKeyKeyboardScrolling() {
+        myFixture.configureByText("test.txt", "test")
+        val editor = myFixture.editor
+
+        val (spaceTitle, spaceItems) = HelixWhichKeyMenus.getMenu(" ") ?: return
+        val panel = HelixWhichKeyPopup.createWhichKeyPanel(spaceTitle, spaceItems, editor, maxHeight = 200)
+
+        val scrollPane = panel.components.filterIsInstance<com.intellij.ui.components.JBScrollPane>().first()
+        val scrollBar = scrollPane.verticalScrollBar
+
+        val keyListener = panel.keyListeners.first()
+
+        // Down arrow
+        val downEvent = java.awt.event.KeyEvent(
+            panel,
+            java.awt.event.KeyEvent.KEY_PRESSED,
+            System.currentTimeMillis(),
+            0,
+            java.awt.event.KeyEvent.VK_DOWN,
+            java.awt.event.KeyEvent.CHAR_UNDEFINED,
+        )
+        keyListener.keyPressed(downEvent)
+        downEvent.isConsumed.shouldBeTrue()
+
+        // Page down
+        val pageDownEvent = java.awt.event.KeyEvent(
+            panel,
+            java.awt.event.KeyEvent.KEY_PRESSED,
+            System.currentTimeMillis(),
+            0,
+            java.awt.event.KeyEvent.VK_PAGE_DOWN,
+            java.awt.event.KeyEvent.CHAR_UNDEFINED,
+        )
+        keyListener.keyPressed(pageDownEvent)
+        pageDownEvent.isConsumed.shouldBeTrue()
+
+        // Home
+        val homeEvent = java.awt.event.KeyEvent(
+            panel,
+            java.awt.event.KeyEvent.KEY_PRESSED,
+            System.currentTimeMillis(),
+            0,
+            java.awt.event.KeyEvent.VK_HOME,
+            java.awt.event.KeyEvent.CHAR_UNDEFINED,
+        )
+        keyListener.keyPressed(homeEvent)
+        homeEvent.isConsumed.shouldBeTrue()
+        scrollBar.value shouldBe 0
     }
 }
