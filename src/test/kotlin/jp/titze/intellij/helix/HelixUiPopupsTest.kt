@@ -241,4 +241,44 @@ class HelixUiPopupsTest : BasePlatformTestCase() {
 
         jp.titze.intellij.helix.command.HelixDirectoryManager.reset()
     }
+
+    fun testSpaceMenuNewParityChords() {
+        myFixture.configureByText("test.txt", "test content")
+        val editor = myFixture.editor
+
+        val executedActions = mutableListOf<String>()
+        jp.titze.intellij.helix.action.HelixActionDelegate.actionExecutor = { actionId, _ ->
+            executedActions.add(actionId)
+            true
+        }
+
+        try {
+            // Space + 'c' (toggle comment)
+            jp.titze.intellij.helix.keymap.HelixSpaceKeymap.handle('c', editor).shouldBeTrue()
+            executedActions.contains("CommentByLineComment").shouldBeTrue()
+
+            // Space + 'C' (toggle block comment)
+            jp.titze.intellij.helix.keymap.HelixSpaceKeymap.handle('C', editor).shouldBeTrue()
+            executedActions.contains("CommentByBlockComment").shouldBeTrue()
+
+            // Space + 'h' (usages)
+            jp.titze.intellij.helix.keymap.HelixSpaceKeymap.handle('h', editor).shouldBeTrue()
+
+            // Space + 'e' (project tree)
+            jp.titze.intellij.helix.keymap.HelixSpaceKeymap.handle('e', editor).shouldBeTrue()
+            executedActions.contains("ActivateProjectToolWindow").shouldBeTrue()
+
+            // Space + '.' (select in project)
+            jp.titze.intellij.helix.keymap.HelixSpaceKeymap.handle('.', editor).shouldBeTrue()
+            executedActions.contains("SelectInProjectView").shouldBeTrue()
+
+            // Space + 'g' (git changes)
+            jp.titze.intellij.helix.keymap.HelixSpaceKeymap.handle('g', editor).shouldBeTrue()
+
+            // Space + ''' (last picker)
+            jp.titze.intellij.helix.keymap.HelixSpaceKeymap.handle('\'', editor).shouldBeTrue()
+        } finally {
+            jp.titze.intellij.helix.action.HelixActionDelegate.actionExecutor = null
+        }
+    }
 }

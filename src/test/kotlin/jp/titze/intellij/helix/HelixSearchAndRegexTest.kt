@@ -5,6 +5,7 @@ import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.shouldBe
 import jp.titze.intellij.helix.action.HelixActions
+import jp.titze.intellij.helix.action.HelixSearchActions
 import jp.titze.intellij.helix.keymap.HelixKeyHandler
 
 class HelixSearchAndRegexTest : BasePlatformTestCase() {
@@ -306,5 +307,16 @@ class HelixSearchAndRegexTest : BasePlatformTestCase() {
         HelixActions.restoreCarets(editor, snapshot)
         editor.caretModel.caretCount shouldBe 1
         editor.caretModel.primaryCaret.selectedText shouldBe text
+    }
+
+    fun testSearchSelectionRaw() {
+        myFixture.configureByText("test.txt", "my-var other my-var-extra")
+        val editor = myFixture.editor
+
+        val caret = editor.caretModel.primaryCaret
+        caret.setSelection(0, 6) // "my-var" (contains hyphen)
+        HelixActions.searchSelection(editor, detectWordBoundaries = false)
+
+        HelixSearchActions.lastSearchPattern shouldBe "\\Qmy-var\\E"
     }
 }

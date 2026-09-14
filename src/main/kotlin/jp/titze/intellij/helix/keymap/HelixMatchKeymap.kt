@@ -17,6 +17,7 @@ internal object HelixMatchKeymap {
 
             'm' -> {
                 state.clearPendingSequence()
+                jp.titze.intellij.helix.motion.HelixMotionHistory.recordMatchBracket()
                 return HelixMotions.matchBrackets(editor, count ?: 1)
             }
 

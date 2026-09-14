@@ -4,6 +4,7 @@ import com.intellij.openapi.editor.Editor
 import jp.titze.intellij.helix.action.HelixActionDelegate
 import jp.titze.intellij.helix.action.HelixActions
 import jp.titze.intellij.helix.command.HelixCommandPopup
+import jp.titze.intellij.helix.editor.HelixInsertTracker
 import jp.titze.intellij.helix.jumplist.HelixJumpListService
 import jp.titze.intellij.helix.motion.HelixJumpToWord
 import jp.titze.intellij.helix.motion.HelixMotions
@@ -117,6 +118,7 @@ object HelixKeyHandler {
 
             "f", "t", "F", "T" -> {
                 state.clearPendingSequence()
+                jp.titze.intellij.helix.motion.HelixMotionHistory.recordFindChar(prefix[0], ch)
                 HelixMotions.findCharMotion(editor, prefix[0], ch, count ?: 1)
             }
 
@@ -132,11 +134,13 @@ object HelixKeyHandler {
 
             "[" -> {
                 state.clearPendingSequence()
+                jp.titze.intellij.helix.motion.HelixMotionHistory.recordBracket(isOpen = true, targetChar = ch)
                 HelixBracketKeymap.handleOpen(ch, editor, count ?: 1)
             }
 
             "]" -> {
                 state.clearPendingSequence()
+                jp.titze.intellij.helix.motion.HelixMotionHistory.recordBracket(isOpen = false, targetChar = ch)
                 HelixBracketKeymap.handleClose(ch, editor, count ?: 1)
             }
 
@@ -355,6 +359,8 @@ object HelixKeyHandler {
                 recordJump(editor)
                 HelixActions.searchSelection(editor)
             }
+
+            '.' -> HelixInsertTracker.repeatLastInsert(editor, count)
 
             else -> return false
         }

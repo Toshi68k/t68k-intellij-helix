@@ -165,6 +165,31 @@ object HelixCommands {
             "Merge contiguous or overlapping selections (Alt+_)",
         ) { editor -> HelixActions.mergeSelections(editor) },
         HelixCommandItem(
+            "merge-all-selections",
+            listOf("merge_all_selections"),
+            "Merge all selections into single span (Alt+-)",
+        ) { editor -> HelixActions.mergeAllSelections(editor) },
+        HelixCommandItem(
+            "join-selections-space",
+            listOf("join_selections_space"),
+            "Join lines and select inserted space (Alt+J)",
+        ) { editor -> HelixActions.joinLines(editor, selectSpace = true) },
+        HelixCommandItem(
+            "delete-noyank",
+            listOf("delete_noyank"),
+            "Delete selection without yanking (Alt+d)",
+        ) { editor -> HelixActions.deleteSelectionNoYank(editor) },
+        HelixCommandItem(
+            "change-noyank",
+            listOf("change_noyank"),
+            "Change selection without yanking (Alt+c)",
+        ) { editor -> HelixActions.changeSelectionNoYank(editor) },
+        HelixCommandItem(
+            "repeat-last-motion",
+            listOf("repeat_last_motion"),
+            "Repeat last motion (Alt+.)",
+        ) { editor -> HelixActions.repeatLastMotion(editor) },
+        HelixCommandItem(
             "rotate-selection-contents-forward",
             listOf("rotate_selections_contents_forward"),
             "Cycle text contents forward without moving carets (Alt+))",

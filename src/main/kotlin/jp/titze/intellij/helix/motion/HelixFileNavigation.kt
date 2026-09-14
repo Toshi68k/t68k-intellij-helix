@@ -142,4 +142,39 @@ object HelixFileNavigation {
         if (oldFile == null || newFile == null) return false
         return oldFile != newFile && oldFile.isValid
     }
+
+    fun gotoFileAtCaret(editor: Editor): Boolean {
+        val primary = editor.caretModel.primaryCaret
+        val project = editor.project ?: return false
+        val textToFind = if (primary.hasSelection()) {
+            primary.selectedText?.trim()
+        } else {
+            val doc = editor.document
+            val text = doc.charsSequence
+            val offset = primary.offset.coerceIn(0, (text.length - 1).coerceAtLeast(0))
+            if (text.isEmpty()) {
+                null
+            } else {
+                var start = offset
+                while (start > 0 && !text[start - 1].isWhitespace() && text[start - 1] !in "\"'`()<>{}[],") start--
+                var end = offset
+                while (end < text.length && !text[end].isWhitespace() && text[end] !in "\"'`()<>{}[],") end++
+                if (start < end) text.substring(start, end) else null
+            }
+        }
+
+        if (!textToFind.isNullOrEmpty()) {
+            val fileName = textToFind.substringAfterLast('/')
+            val found = com.intellij.psi.search.FilenameIndex.getVirtualFilesByName(
+                fileName,
+                com.intellij.psi.search.GlobalSearchScope.projectScope(project),
+            ).firstOrNull { it.path.endsWith(textToFind) || it.name == fileName }
+
+            if (found != null && found.isValid) {
+                return openFile(project, found)
+            }
+        }
+
+        return jp.titze.intellij.helix.action.HelixActionDelegate.executeAction("GotoDeclaration", editor)
+    }
 }

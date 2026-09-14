@@ -156,10 +156,15 @@ object HelixSearchActions {
         return search(editor, pattern, backward = !lastSearchBackward, count = count, updateDirection = false)
     }
 
-    fun searchSelection(editor: Editor): Boolean {
+    fun searchSelection(editor: Editor, detectWordBoundaries: Boolean = true): Boolean {
         val primary = editor.caretModel.primaryCaret
         val pattern = if (primary.hasSelection()) {
-            Regex.escape(primary.selectedText ?: "")
+            val selected = primary.selectedText ?: ""
+            if (detectWordBoundaries && isWord(selected)) {
+                """\b${Regex.escape(selected)}\b"""
+            } else {
+                Regex.escape(selected)
+            }
         } else {
             val doc = editor.document
             val text = doc.charsSequence
@@ -170,9 +175,12 @@ object HelixSearchActions {
             while (start > 0 && (text[start - 1].isLetterOrDigit() || text[start - 1] == '_')) start--
             var end = offset
             while (end < text.length && (text[end].isLetterOrDigit() || text[end] == '_')) end++
-            """\b${Regex.escape(text.substring(start, end))}\b"""
+            val word = text.substring(start, end)
+            if (detectWordBoundaries) """\b${Regex.escape(word)}\b""" else Regex.escape(word)
         }
         if (pattern.isEmpty()) return false
         return search(editor, pattern, backward = false, count = 1)
     }
+
+    private fun isWord(s: String): Boolean = s.isNotEmpty() && s.all { it.isLetterOrDigit() || it == '_' }
 }

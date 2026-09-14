@@ -6,12 +6,28 @@ import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
 import jp.titze.intellij.helix.action.HelixActions
+import jp.titze.intellij.helix.editor.HelixEscapeHandler
+import jp.titze.intellij.helix.editor.HelixInsertTracker
 import jp.titze.intellij.helix.keymap.HelixKeyHandler
 import jp.titze.intellij.helix.motion.HelixMotions
+import jp.titze.intellij.helix.register.HelixRegisterManager
 import jp.titze.intellij.helix.state.HelixMode
 import jp.titze.intellij.helix.state.HelixStateManager
 
 class HelixEditingActionsTest : BasePlatformTestCase() {
+
+    override fun setUp() {
+        super.setUp()
+        HelixRegisterManager.clear()
+        HelixInsertTracker.reset()
+    }
+
+    override fun tearDown() {
+        HelixRegisterManager.clear()
+        HelixInsertTracker.reset()
+        super.tearDown()
+    }
+
     fun testInitialModeIsNormal() {
         myFixture.configureByText("test.txt", "hello world")
         val editor = myFixture.editor
@@ -604,5 +620,70 @@ class HelixEditingActionsTest : BasePlatformTestCase() {
 
         undoManager.undo(fileEditor)
         editor.document.text shouldBe "foo "
+    }
+
+    fun testDeleteAndChangeNoYank() {
+        myFixture.configureByText("test.txt", "keep_me replace_me")
+        val editor = myFixture.editor
+
+        // Yank "keep_me" into default register
+        val caret = editor.caretModel.primaryCaret
+        caret.setSelection(0, 7)
+        HelixActions.yankSelection(editor)
+        HelixRegisterManager.defaultRegister?.text shouldBe "keep_me"
+
+        // Select "replace_me" and delete with no-yank
+        caret.setSelection(8, 18)
+        HelixActions.deleteSelectionNoYank(editor)
+
+        editor.document.text shouldBe "keep_me "
+        // Verify default register still holds "keep_me"
+        HelixRegisterManager.defaultRegister?.text shouldBe "keep_me"
+
+        // Change no-yank
+        caret.moveToOffset(8)
+        caret.setSelection(0, 7)
+        HelixActions.changeSelectionNoYank(editor)
+        HelixStateManager.getOrCreate(editor).mode shouldBe HelixMode.INSERT
+        editor.document.text shouldBe " "
+        HelixRegisterManager.defaultRegister?.text shouldBe "keep_me"
+    }
+
+    fun testRepeatLastInsert() {
+        myFixture.configureByText("test.txt", "start end")
+        val editor = myFixture.editor
+        val state = HelixStateManager.getOrCreate(editor)
+
+        // Enter insert mode
+        state.setMode(HelixMode.INSERT)
+        HelixInsertTracker.recordChar('X')
+        HelixInsertTracker.recordChar('Y')
+        HelixEscapeHandler.handleEscape(editor)
+
+        state.mode shouldBe HelixMode.NORMAL
+        HelixInsertTracker.lastInsertedText shouldBe "XY"
+
+        // Move caret and repeat insert via '.'
+        editor.caretModel.primaryCaret.moveToOffset(5)
+        HelixKeyHandler.handleKey('.', editor)
+        editor.document.text shouldBe "startXY end"
+
+        // Repeat with count
+        HelixKeyHandler.handleKey('2', editor)
+        HelixKeyHandler.handleKey('.', editor)
+        editor.document.text shouldBe "startXYXYXY end"
+    }
+
+    fun testJoinSelectionsSpace() {
+        myFixture.configureByText("test.txt", "line1\nline2\nline3")
+        val editor = myFixture.editor
+
+        HelixActions.joinLines(editor, count = 1, selectSpace = true)
+        editor.document.text shouldBe "line1 line2\nline3"
+        val caret = editor.caretModel.primaryCaret
+        caret.hasSelection().shouldBeTrue()
+        caret.selectedText shouldBe " "
+        caret.selectionStart shouldBe 5
+        caret.selectionEnd shouldBe 6
     }
 }

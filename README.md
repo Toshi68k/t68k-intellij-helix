@@ -41,6 +41,9 @@ The goal of this plugin is to provide a more complete and polished Helix-like ex
 | `t<char>` | Move till next occurrence of `<char>` (exclusive, stops before `<char>`, supports `<Enter>`) |
 | `F<char>` | Move to previous occurrence of `<char>` (backward, inclusive) |
 | `T<char>` | Move till previous occurrence of `<char>` (backward, exclusive, stops after `<char>`) |
+| `Alt+.` | Repeat last motion (`f`, `t`, `F`, `T`, `mm`, `[`/`]`) (`repeat_last_motion`) |
+| `*` | Search for selection or word under cursor with word boundaries (`search_selection`) |
+| `Alt+*` | Search for selection or word under cursor without word boundaries |
 | `w` | Advance to the start of the next word |
 | `b` | Move backward to the start of the previous word |
 | `e` | Advance to the end of the current/next word |
@@ -59,6 +62,10 @@ The goal of this plugin is to provide a more complete and polished Helix-like ex
 | `gw` | Jump to visible word with 2-letter badge overlays (`goto_word`) |
 | `gg` | Move to the top of the buffer |
 | `ge` *(in `g` menu)* | Move to the end of the buffer |
+| `gt` | Move to top line of visible window viewport (`goto_window_top`) |
+| `gc` | Move to center line of visible window viewport (`goto_window_center`) |
+| `gb` | Move to bottom line of visible window viewport (`goto_window_bottom`) |
+| `g\|` / `<count>\|` | Move to column within line (1-indexed, default start) (`goto_column`) |
 | `Ctrl+f` / `PageDown` | Move page down |
 | `Ctrl+b` / `PageUp` | Move page up |
 | `Ctrl+d` | Move half page down |
@@ -83,6 +90,8 @@ The goal of this plugin is to provide a more complete and polished Helix-like ex
 | `Alt+K` | Prompt for regex pattern and remove matching selections (`remove_selections`) |
 | `Alt+:` | Ensure selections are oriented forward with anchor $\le$ cursor (`ensure_selections_forward`) |
 | `Alt+_` | Merge contiguous (touching) or overlapping selections into single spans (`merge_consecutive_selections`) |
+| `Alt+-` | Merge all active selections from earliest to latest into a single selection (`merge_all_selections`) |
+| `Alt+J` | Join lines inside selection and select the joined space (`join_selections_space`) |
 | `Alt+)` | Rotate text contents forward between multi-carets without moving caret positions (`rotate_selections_contents_forward`) |
 | `Alt+(` | Rotate text contents backward between multi-carets without moving caret positions (`rotate_selections_contents_backward`) |
 | `C` | Copy selection to next line (duplicate selection and add caret below) |
@@ -104,13 +113,16 @@ The goal of this plugin is to provide a more complete and polished Helix-like ex
 | Key | Description |
 |-----|-------------|
 | `d` | Delete active selection & copy to clipboard |
+| `Alt+d` | Delete active selection without copying to clipboard (`delete_selection_noyank`) |
 | `c` | Delete active selection, copy to clipboard, and enter `Insert` mode |
+| `Alt+c` | Delete active selection without copying to clipboard, and enter `Insert` mode (`change_selection_noyank`) |
 | `y` | Yank (copy) active selection to clipboard |
 | `p` | Paste clipboard after selection / caret |
 | `P` | Paste clipboard before selection / caret |
 | `r<char>` | Replace each selected character (or character under cursor) with `<char>` |
 | `R` | Replace selection (or character under cursor) with clipboard / yanked text |
 | `J` | Join lines inside selection, or join current line with line below |
+| `.` | Repeat last insert sequence across all active carets (`repeat_last_insert`) |
 | `i` | Enter `Insert` mode at start of selection |
 | `a` | Enter `Insert` mode after caret / selection |
 | `I` | Enter `Insert` mode at line start (first non-blank) |
@@ -166,7 +178,8 @@ Built-in surround and textobject functionality matching [Helix Surround](https:/
 ### Deep IntelliJ IDE Integrations
 
 #### Navigation (`g` menu)
-- `gd` &rarr; `GotoDeclaration` / `GotoImplementation`
+- `gd` &rarr; `GotoDeclaration`
+- `gi` &rarr; `GotoImplementation`
 - `gy` &rarr; `GotoTypeDeclaration`
 - `gr` &rarr; `FindUsages`
 - `gn` &rarr; Next buffer / tab (`NextTab`)
@@ -175,6 +188,11 @@ Built-in surround and textobject functionality matching [Helix Surround](https:/
 - `gh` &rarr; Line start (first character)
 - `gs` &rarr; First non-whitespace character
 - `gl` &rarr; Line end
+- `gt` &rarr; Goto window top (top visible line in viewport)
+- `gc` &rarr; Goto window center (middle visible line in viewport)
+- `gb` &rarr; Goto window bottom (bottom visible line in viewport)
+- `gf` &rarr; Goto file at caret (open file under cursor)
+- `g|` &rarr; Goto column within line (1-indexed, default line start)
 - `gw` &rarr; Jump to word on screen (`goto_word`) with overlay badges
 - `ge` &rarr; Goto end of buffer
 - `gg` &rarr; Goto start of buffer
@@ -212,18 +230,25 @@ Whenever a chord prefix key (<kbd>Space</kbd>, `Ctrl+w`, `g`, `m`, `[`, or `]`) 
 | `space + b` | `RecentFiles` | Open buffer / tab switcher |
 | `space + /` | `FindInPath` | Live project-wide text search (live grep) with preview |
 | `space + j` | `HelixJumplistPopup` | Open interactive jumplist picker popup |
+| `space + e` | `ActivateProjectToolWindow` | Open / toggle project file explorer tool window |
+| `space + .` | `SelectInProjectView` | Reveal active buffer file in project explorer tree |
+| `space + g` | `ActivateVersionControlToolWindow` | Open / toggle Git version control changes window |
 | `space + s` | `FileStructurePopup` | Document symbols / outline picker |
 | `space + S` | `GotoSymbol` | Workspace-wide symbol picker across AST |
 | `space + d` | `ShowErrorDescription` | Diagnostic error inspection under caret |
 | `space + D` | `ActivateProblemsViewToolWindow` | Workspace diagnostics (IntelliJ Problems panel) |
 | `space + a` | `ShowIntentionActions` | Code actions & quick-fixes (Alt+Enter) |
 | `space + r` | `RenameElement` | Refactor rename symbol |
+| `space + c` | `CommentByLineComment` | Toggle line comments on selection or line |
+| `space + C` | `CommentByBlockComment` | Toggle block comments on selection |
+| `space + h` | `FindUsages` | Find symbol references / usages across project |
 | `space + w` | `SaveAll` | Save all modified buffers |
 | `space + y` | `yank_main_selection` | Yank active selection to system clipboard |
 | `space + p` | `paste_clipboard_after` | Paste system clipboard after cursor / selection |
 | `space + P` | `paste_clipboard_before` | Paste system clipboard before cursor / selection |
 | `space + R` | `replace_with_clipboard` | Replace current selections with system clipboard |
 | `space + k` | `QuickJavaDoc` | Hover documentation popup |
+| `space + '` | `last_picker` | Re-open last active space picker |
 | `space + ?` | `GotoAction` | Action / command palette picker |
 
 #### Unimpaired Navigation (`[` / `]`)
@@ -278,6 +303,11 @@ Press `:` in Normal mode to open the interactive **Helix Command Picker**, style
 - `:remove-selections` / `:remove_selections` &rarr; Filter selections by regex, removing matching (`Alt+K`)
 - `:ensure-selections-forward` / `:ensure_selections_forward` &rarr; Flip backward selections forward (`Alt+:`)
 - `:merge-selections` / `:merge_consecutive_selections` &rarr; Merge contiguous or overlapping selections (`Alt+_`)
+- `:merge-all-selections` &rarr; Merge all active selections from earliest to latest into a single selection (`Alt+-`)
+- `:join-selections-space` &rarr; Join lines inside selection and select the joined space (`Alt+J`)
+- `:delete-noyank` / `:d!` &rarr; Delete selection without copying to clipboard (`Alt+d`)
+- `:change-noyank` / `:c!` &rarr; Change selection without copying to clipboard (`Alt+c`)
+- `:repeat-last-motion` &rarr; Repeat the last recorded motion (`Alt+.`)
 - `:rotate-selection-contents-forward` &rarr; Cycle text contents forward without moving carets (`Alt+)`)
 - `:rotate-selection-contents-backward` &rarr; Cycle text contents backward without moving carets (`Alt+(`)
 - `:extend-to-line-bounds` / `:extend_to_line_bounds` &rarr; Extend selection to whole line bounds (`X`)

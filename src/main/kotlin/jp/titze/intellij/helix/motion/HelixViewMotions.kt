@@ -111,4 +111,42 @@ object HelixViewMotions {
         val full = getPageSize(editor) * count.coerceAtLeast(1)
         scrollViewUp(editor, full)
     }
+
+    /**
+     * gt: Move caret to the top visible line in the viewport.
+     */
+    fun gotoWindowTop(editor: Editor) {
+        moveCaretToViewportLine(editor) { visibleArea -> visibleArea.y }
+    }
+
+    /**
+     * gc: Move caret to the middle visible line in the viewport.
+     */
+    fun gotoWindowCenter(editor: Editor) {
+        moveCaretToViewportLine(editor) { visibleArea -> visibleArea.y + visibleArea.height / 2 }
+    }
+
+    /**
+     * gb: Move caret to the bottom visible line in the viewport.
+     */
+    fun gotoWindowBottom(editor: Editor) {
+        moveCaretToViewportLine(editor) { visibleArea ->
+            (visibleArea.y + visibleArea.height - editor.lineHeight).coerceAtLeast(visibleArea.y)
+        }
+    }
+
+    private inline fun moveCaretToViewportLine(editor: Editor, getY: (java.awt.Rectangle) -> Int) {
+        val state = jp.titze.intellij.helix.state.HelixStateManager.getOrCreate(editor)
+        val isSelect = state.mode == jp.titze.intellij.helix.state.HelixMode.SELECT
+        val visibleArea = editor.scrollingModel.visibleArea
+        val y = getY(visibleArea)
+        val visualLine = editor.yToVisualLine(y)
+        val logicalPos = editor.visualToLogicalPosition(com.intellij.openapi.editor.VisualPosition(visualLine, 0))
+        val targetOffset = editor.logicalPositionToOffset(logicalPos)
+        HelixMotionUtils.runForEachCaret(editor) { caret ->
+            val anchor = if (isSelect && caret.hasSelection()) caret.leadSelectionOffset else caret.offset
+            HelixMotionUtils.applyMotion(caret, anchor, targetOffset, isSelect)
+        }
+        editor.scrollingModel.scrollToCaret(ScrollType.MAKE_VISIBLE)
+    }
 }

@@ -22,6 +22,7 @@ class HelixTypedActionHandler(private val originalHandler: TypedActionHandler?) 
             return
         }
 
+        HelixInsertTracker.recordChar(charTyped)
         originalHandler?.execute(editor, charTyped, dataContext)
     }
 

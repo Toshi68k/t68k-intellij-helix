@@ -29,6 +29,17 @@ object HelixActions {
         HelixRegisterActions.deleteSelection(editor, enterInsert, count, targetRegister)
     }
 
+    fun deleteSelectionNoYank(editor: Editor, count: Int = 1) {
+        HelixRegisterActions.deleteSelection(editor, enterInsert = false, count = count, register = '_')
+    }
+
+    fun changeSelectionNoYank(editor: Editor, count: Int = 1) {
+        HelixRegisterActions.deleteSelection(editor, enterInsert = true, count = count, register = '_')
+    }
+
+    fun repeatLastMotion(editor: Editor, count: Int = 1): Boolean =
+        jp.titze.intellij.helix.motion.HelixMotionHistory.repeatLastMotion(editor, count)
+
     fun yankSelection(editor: Editor, count: Int = 1, register: Char? = null) {
         val targetRegister = register ?: HelixStateManager.getOrCreate(editor).selectedRegister
         HelixRegisterActions.yankSelection(editor, count, targetRegister)
@@ -106,7 +117,7 @@ object HelixActions {
         }
     }
 
-    fun joinLines(editor: Editor, count: Int = 1) {
+    fun joinLines(editor: Editor, count: Int = 1, selectSpace: Boolean = false) {
         val project = editor.project
         val doc = editor.document
         if (doc.lineCount <= 1) return
@@ -177,7 +188,12 @@ object HelixActions {
                     replaceStart
                 }
 
-                if (state.mode == HelixMode.SELECT) {
+                if (selectSpace && joinOffsetInResult != -1) {
+                    val spaceStart = (replaceStart + joinOffsetInResult).coerceAtMost(replaceStart + replacement.length)
+                    val spaceEnd = (spaceStart + 1).coerceAtMost(replaceStart + replacement.length)
+                    caret.setSelection(spaceStart, spaceEnd)
+                    caret.moveToOffset(spaceEnd)
+                } else if (state.mode == HelixMode.SELECT) {
                     caret.setSelection(replaceStart, replaceStart + replacement.length)
                     caret.moveToOffset(replaceStart + replacement.length)
                 } else {
@@ -341,7 +357,8 @@ object HelixActions {
 
     fun searchPrev(editor: Editor, count: Int = 1): Boolean = HelixSearchActions.searchPrev(editor, count)
 
-    fun searchSelection(editor: Editor): Boolean = HelixSearchActions.searchSelection(editor)
+    fun searchSelection(editor: Editor, detectWordBoundaries: Boolean = true): Boolean =
+        HelixSearchActions.searchSelection(editor, detectWordBoundaries)
 
     fun previewSearch(
         editor: Editor,
@@ -362,6 +379,8 @@ object HelixActions {
     fun ensureSelectionsForward(editor: Editor) = HelixSelectionActions.ensureSelectionsForward(editor)
 
     fun mergeSelections(editor: Editor) = HelixSelectionActions.mergeSelections(editor)
+
+    fun mergeAllSelections(editor: Editor) = HelixSelectionActions.mergeAllSelections(editor)
 
     fun rotateSelectionsContents(editor: Editor, forward: Boolean) =
         HelixSelectionActions.rotateSelectionsContents(editor, forward)

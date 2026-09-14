@@ -318,4 +318,30 @@ class HelixSelectionGroomingTest : BasePlatformTestCase() {
         caret.selectionStart shouldBe 0
         caret.selectionEnd shouldBe 8
     }
+
+    fun testMergeAllSelections() {
+        myFixture.configureByText("test.txt", "alpha beta gamma delta")
+        val editor = myFixture.editor
+
+        val states = listOf(
+            CaretState(
+                editor.offsetToLogicalPosition(5),
+                editor.offsetToLogicalPosition(0),
+                editor.offsetToLogicalPosition(5),
+            ),
+            CaretState(
+                editor.offsetToLogicalPosition(16),
+                editor.offsetToLogicalPosition(11),
+                editor.offsetToLogicalPosition(16),
+            ),
+        )
+        editor.caretModel.setCaretsAndSelections(states)
+        editor.caretModel.caretCount shouldBe 2
+
+        HelixActions.mergeAllSelections(editor)
+        editor.caretModel.caretCount shouldBe 1
+        val primary = editor.caretModel.primaryCaret
+        primary.selectionStart shouldBe 0
+        primary.selectionEnd shouldBe 16
+    }
 }
