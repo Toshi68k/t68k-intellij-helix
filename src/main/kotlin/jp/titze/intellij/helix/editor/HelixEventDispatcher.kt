@@ -248,6 +248,21 @@ class HelixEventDispatcher : IdeEventQueue.EventDispatcher {
             true
         }
 
+        !e.isShiftDown && (e.keyCode == KeyEvent.VK_P || e.keyCode == KeyEvent.VK_LEFT) -> {
+            HelixActions.selectPrevSibling(editor)
+            true
+        }
+
+        !e.isShiftDown && (e.keyCode == KeyEvent.VK_A || e.keyChar == 'a') -> {
+            HelixActions.selectAllSiblings(editor)
+            true
+        }
+
+        e.isShiftDown && (e.keyCode == KeyEvent.VK_I || e.keyChar == 'I') -> {
+            HelixActions.selectAllChildren(editor)
+            true
+        }
+
         !e.isShiftDown && (e.keyCode == KeyEvent.VK_K || e.keyChar == 'k') -> {
             HelixSearchManager.startKeepSelections(editor)
             true

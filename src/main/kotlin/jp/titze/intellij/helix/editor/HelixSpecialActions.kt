@@ -52,6 +52,45 @@ class HelixShrinkSelectionAction : AnAction() {
     override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT
 }
 
+class HelixSelectPrevSiblingAction : AnAction() {
+    override fun actionPerformed(e: AnActionEvent) {
+        val editor = e.getData(CommonDataKeys.EDITOR) ?: return
+        HelixActions.selectPrevSibling(editor)
+    }
+
+    override fun update(e: AnActionEvent) {
+        e.presentation.isEnabled = e.getData(CommonDataKeys.EDITOR) != null
+    }
+
+    override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT
+}
+
+class HelixSelectAllSiblingsAction : AnAction() {
+    override fun actionPerformed(e: AnActionEvent) {
+        val editor = e.getData(CommonDataKeys.EDITOR) ?: return
+        HelixActions.selectAllSiblings(editor)
+    }
+
+    override fun update(e: AnActionEvent) {
+        e.presentation.isEnabled = e.getData(CommonDataKeys.EDITOR) != null
+    }
+
+    override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT
+}
+
+class HelixSelectAllChildrenAction : AnAction() {
+    override fun actionPerformed(e: AnActionEvent) {
+        val editor = e.getData(CommonDataKeys.EDITOR) ?: return
+        HelixActions.selectAllChildren(editor)
+    }
+
+    override fun update(e: AnActionEvent) {
+        e.presentation.isEnabled = e.getData(CommonDataKeys.EDITOR) != null
+    }
+
+    override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT
+}
+
 class HelixSelectNextOccurrenceAction : AnAction() {
     override fun actionPerformed(e: AnActionEvent) {
         val editor = e.getData(CommonDataKeys.EDITOR) ?: return

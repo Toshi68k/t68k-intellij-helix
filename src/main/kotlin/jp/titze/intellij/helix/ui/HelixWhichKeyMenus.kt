@@ -133,10 +133,28 @@ object HelixWhichKeyMenus {
         WhichKeyItem("%", "Buffer name", "Current file path"),
     )
 
+    val textObjectItems = listOf(
+        WhichKeyItem("w", "Word", "Word textobject"),
+        WhichKeyItem("W", "WORD", "Big word textobject"),
+        WhichKeyItem("p", "Paragraph", "Paragraph textobject"),
+        WhichKeyItem("c", "Comment", "Comment textobject"),
+        WhichKeyItem("f", "Function", "Function textobject"),
+        WhichKeyItem("t", "Type / Class", "Class/Type textobject"),
+        WhichKeyItem("T", "Test", "Test method textobject"),
+        WhichKeyItem("a", "Argument", "Parameter/argument textobject"),
+        WhichKeyItem("x", "XML/HTML element", "XML/HTML element textobject"),
+        WhichKeyItem("g", "VCS change", "VCS diff hunk textobject"),
+        WhichKeyItem("i", "Indentation", "Indentation textobject"),
+        WhichKeyItem("e", "Entire buffer", "Entire file textobject"),
+        WhichKeyItem("m", "Closest pair", "Closest enclosing pair"),
+    )
+
     fun getMenu(prefix: String): Pair<String, List<WhichKeyItem>>? = when (prefix) {
         " " -> "SPACE MENU" to spaceItems
         "g" -> "GOTO MENU" to gotoItems
         "m" -> "MATCH MENU" to matchItems
+        "ma" -> "SELECT AROUND" to textObjectItems
+        "mi" -> "SELECT INSIDE" to textObjectItems
         "[" -> "JUMP BACK MENU" to bracketOpenItems
         "]" -> "JUMP FORWARD MENU" to bracketCloseItems
         "z" -> "VIEW MENU" to viewItems
