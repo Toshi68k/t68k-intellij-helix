@@ -14,6 +14,11 @@ internal object HelixGotoKeymap {
             HelixActionDelegate.executeAction("GotoDeclaration", editor)
         }
 
+        'i' -> {
+            HelixKeyHandler.recordJump(editor)
+            HelixActionDelegate.executeAction("GotoImplementation", editor)
+        }
+
         'y' -> {
             HelixKeyHandler.recordJump(editor)
             HelixActionDelegate.executeAction("GotoTypeDeclaration", editor)
@@ -22,6 +27,31 @@ internal object HelixGotoKeymap {
         'r' -> {
             HelixKeyHandler.recordJump(editor)
             HelixActionDelegate.executeAction("FindUsages", editor)
+        }
+
+        't' -> {
+            jp.titze.intellij.helix.motion.HelixViewMotions.gotoWindowTop(editor)
+            true
+        }
+
+        'c' -> {
+            jp.titze.intellij.helix.motion.HelixViewMotions.gotoWindowCenter(editor)
+            true
+        }
+
+        'b' -> {
+            jp.titze.intellij.helix.motion.HelixViewMotions.gotoWindowBottom(editor)
+            true
+        }
+
+        'f' -> {
+            HelixKeyHandler.recordJump(editor)
+            HelixFileNavigation.gotoFileAtCaret(editor)
+        }
+
+        '|' -> {
+            HelixMotions.gotoColumn(editor, count)
+            true
         }
 
         'n' -> {

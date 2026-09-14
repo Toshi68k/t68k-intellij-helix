@@ -7,12 +7,24 @@ import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import jp.titze.intellij.helix.action.HelixActions
+import jp.titze.intellij.helix.keymap.HelixGotoKeymap
 import jp.titze.intellij.helix.keymap.HelixKeyHandler
+import jp.titze.intellij.helix.motion.HelixMotionHistory
 import jp.titze.intellij.helix.motion.HelixMotions
 import jp.titze.intellij.helix.state.HelixMode
 import jp.titze.intellij.helix.state.HelixStateManager
 
 class HelixMotionsTest : BasePlatformTestCase() {
+
+    override fun setUp() {
+        super.setUp()
+        HelixMotionHistory.lastMotion = null
+    }
+
+    override fun tearDown() {
+        HelixMotionHistory.lastMotion = null
+        super.tearDown()
+    }
     fun testWordMotions() {
         myFixture.configureByText("test.txt", "hello world next")
         val editor = myFixture.editor
@@ -921,5 +933,58 @@ class HelixMotionsTest : BasePlatformTestCase() {
         // Press Escape to exit sticky view mode
         jp.titze.intellij.helix.editor.HelixEscapeHandler.handleEscape(editor).shouldBeTrue()
         state.pendingSequence shouldBe ""
+    }
+
+    fun testRepeatLastMotionFindChar() {
+        myFixture.configureByText("test.txt", "alpha beta gamma delta")
+        val editor = myFixture.editor
+
+        // 'f' then 'a'
+        HelixKeyHandler.handleKey('f', editor)
+        HelixKeyHandler.handleKey('a', editor)
+        editor.caretModel.primaryCaret.offset shouldBe 5
+
+        // Repeat with Alt-.
+        HelixActions.repeatLastMotion(editor, 1)
+        editor.caretModel.primaryCaret.offset shouldBe 10
+
+        // Repeat again with count 2
+        HelixActions.repeatLastMotion(editor, 2)
+        editor.caretModel.primaryCaret.offset shouldBe 16
+    }
+
+    fun testRepeatLastMotionBracket() {
+        myFixture.configureByText("test.txt", "line 1\n\nline 2\n\nline 3")
+        val editor = myFixture.editor
+
+        // ']' then 'p' (next paragraph)
+        HelixKeyHandler.handleKey(']', editor)
+        HelixKeyHandler.handleKey('p', editor)
+        editor.caretModel.primaryCaret.offset shouldBe 7
+
+        // Repeat with Alt-.
+        HelixActions.repeatLastMotion(editor, 1)
+        editor.caretModel.primaryCaret.offset shouldBe 15
+    }
+
+    fun testGotoColumnAndWindowMotions() {
+        myFixture.configureByText("test.txt", "0123456789\nabcdefghij")
+        val editor = myFixture.editor
+        val caret = editor.caretModel.primaryCaret
+
+        // Goto column 5
+        HelixGotoKeymap.handle('|', editor, count = 5)
+        caret.offset shouldBe 4 // 1-based column 5 is offset 4
+
+        // Goto column 1
+        HelixGotoKeymap.handle('|', editor, count = 1)
+        caret.offset shouldBe 0
+
+        // Viewport motions
+        HelixGotoKeymap.handle('t', editor)
+        caret.offset shouldBe 0
+
+        HelixGotoKeymap.handle('b', editor)
+        (caret.offset >= 0).shouldBeTrue()
     }
 }

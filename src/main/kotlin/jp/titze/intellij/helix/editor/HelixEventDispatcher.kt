@@ -201,6 +201,37 @@ class HelixEventDispatcher : IdeEventQueue.EventDispatcher {
             true
         }
 
+        e.keyCode == KeyEvent.VK_PERIOD || e.keyChar == '.' -> {
+            HelixActions.repeatLastMotion(editor, state.takeCount() ?: 1)
+            true
+        }
+
+        !e.isShiftDown && (e.keyCode == KeyEvent.VK_D || e.keyChar == 'd') -> {
+            HelixActions.deleteSelectionNoYank(editor, state.takeCount() ?: 1)
+            true
+        }
+
+        !e.isShiftDown && (e.keyCode == KeyEvent.VK_C || e.keyChar == 'c') -> {
+            HelixActions.changeSelectionNoYank(editor, state.takeCount() ?: 1)
+            true
+        }
+
+        !e.isShiftDown && (e.keyCode == KeyEvent.VK_MINUS || e.keyChar == '-') -> {
+            HelixActions.mergeAllSelections(editor)
+            true
+        }
+
+        e.keyChar == 'J' || (e.isShiftDown && e.keyCode == KeyEvent.VK_J) -> {
+            HelixActions.joinLines(editor, state.takeCount() ?: 1, selectSpace = true)
+            true
+        }
+
+        e.keyChar == '*' || (e.isShiftDown && e.keyCode == KeyEvent.VK_8) -> {
+            HelixKeyHandler.recordJump(editor)
+            HelixActions.searchSelection(editor, detectWordBoundaries = false)
+            true
+        }
+
         e.keyChar == '_' || (e.isShiftDown && e.keyCode == KeyEvent.VK_MINUS) -> {
             HelixActions.mergeSelections(editor)
             true

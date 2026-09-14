@@ -361,6 +361,60 @@
             <keyboard-shortcut keymap="Mac OS X" first-keystroke="alt X"/>
             <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="alt X"/>
         </action>
+
+        <action id="jp.titze.intellij.helix.repeatLastMotion"
+                class="jp.titze.intellij.helix.editor.HelixRepeatLastMotionAction"
+                text="Helix Repeat Last Motion"
+                description="Repeat last motion (f, t, m, [, ]) (Alt+.)">
+            <keyboard-shortcut keymap="$default" first-keystroke="alt PERIOD"/>
+            <keyboard-shortcut keymap="Mac OS X" first-keystroke="alt PERIOD"/>
+            <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="alt PERIOD"/>
+        </action>
+
+        <action id="jp.titze.intellij.helix.deleteNoYank"
+                class="jp.titze.intellij.helix.editor.HelixDeleteNoYankAction"
+                text="Helix Delete Without Yanking"
+                description="Delete selection without yanking (Alt+d)">
+            <keyboard-shortcut keymap="$default" first-keystroke="alt D"/>
+            <keyboard-shortcut keymap="Mac OS X" first-keystroke="alt D"/>
+            <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="alt D"/>
+        </action>
+
+        <action id="jp.titze.intellij.helix.changeNoYank"
+                class="jp.titze.intellij.helix.editor.HelixChangeNoYankAction"
+                text="Helix Change Without Yanking"
+                description="Delete selection and enter insert without yanking (Alt+c)">
+            <keyboard-shortcut keymap="$default" first-keystroke="alt C"/>
+            <keyboard-shortcut keymap="Mac OS X" first-keystroke="alt C"/>
+            <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="alt C"/>
+        </action>
+
+        <action id="jp.titze.intellij.helix.mergeAllSelections"
+                class="jp.titze.intellij.helix.editor.HelixMergeAllSelectionsAction"
+                text="Helix Merge All Selections"
+                description="Merge all selections into single span (Alt+-)">
+            <keyboard-shortcut keymap="$default" first-keystroke="alt MINUS"/>
+            <keyboard-shortcut keymap="Mac OS X" first-keystroke="alt MINUS"/>
+            <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="alt MINUS"/>
+        </action>
+
+        <action id="jp.titze.intellij.helix.joinSelectionsSpace"
+                class="jp.titze.intellij.helix.editor.HelixJoinSelectionsSpaceAction"
+                text="Helix Join Selections Space"
+                description="Join lines and select inserted space (Alt+J)">
+            <keyboard-shortcut keymap="$default" first-keystroke="alt shift J"/>
+            <keyboard-shortcut keymap="Mac OS X" first-keystroke="alt shift J"/>
+            <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="alt shift J"/>
+        </action>
+
+        <action id="jp.titze.intellij.helix.searchSelectionRaw"
+                class="jp.titze.intellij.helix.editor.HelixSearchSelectionRawAction"
+                text="Helix Search Selection Raw"
+                description="Use current selection as search pattern without word boundaries (Alt+*)">
+            <keyboard-shortcut keymap="$default" first-keystroke="alt shift 8"/>
+            <keyboard-shortcut keymap="Mac OS X" first-keystroke="alt shift 8"/>
+            <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="alt shift 8"/>
+        </action>
     </actions>
 </idea-plugin>
 

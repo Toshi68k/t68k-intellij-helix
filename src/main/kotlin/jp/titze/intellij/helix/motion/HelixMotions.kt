@@ -269,6 +269,25 @@ object HelixMotions {
         editor.scrollingModel.scrollToCaret(ScrollType.MAKE_VISIBLE)
     }
 
+    /**
+     * g|: Move to column <count> (1-based, defaulting to line start)
+     */
+    fun gotoColumn(editor: Editor, count: Int? = null) {
+        val state = HelixStateManager.getOrCreate(editor)
+        val isSelect = state.mode == HelixMode.SELECT
+        val doc = editor.document
+        val col = ((count ?: 1) - 1).coerceAtLeast(0)
+        runForEachCaret(editor) { caret ->
+            val anchor = if (isSelect && caret.hasSelection()) caret.leadSelectionOffset else caret.offset
+            val line = doc.getLineNumber(caret.offset)
+            val lineStart = doc.getLineStartOffset(line)
+            val lineEnd = doc.getLineEndOffset(line)
+            val targetOffset = (lineStart + col).coerceAtMost(lineEnd)
+            applyMotion(caret, anchor, targetOffset, isSelect)
+        }
+        editor.scrollingModel.scrollToCaret(ScrollType.MAKE_VISIBLE)
+    }
+
     private fun applyMotion(caret: Caret, anchor: Int, targetOffset: Int, isSelect: Boolean) {
         HelixMotionUtils.applyMotion(caret, anchor, targetOffset, isSelect)
     }

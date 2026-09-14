@@ -26,7 +26,13 @@ class HelixEditorState(val editor: Editor) {
 
     fun setMode(newMode: HelixMode) {
         if (mode != newMode) {
+            val oldMode = mode
             mode = newMode
+            if (newMode == HelixMode.INSERT) {
+                jp.titze.intellij.helix.editor.HelixInsertTracker.startInsert()
+            } else if (oldMode == HelixMode.INSERT) {
+                jp.titze.intellij.helix.editor.HelixInsertTracker.finishInsert()
+            }
             clearPendingSequence()
             clearCount()
             clearSelectedRegister()

@@ -217,6 +217,14 @@ object HelixSelectionActions {
         }
     }
 
+    fun mergeAllSelections(editor: Editor) {
+        val carets = editor.caretModel.allCarets
+        if (carets.size <= 1) return
+        val minStart = carets.minOf { if (it.hasSelection()) it.selectionStart else it.offset }
+        val maxEnd = carets.maxOf { if (it.hasSelection()) it.selectionEnd else it.offset }
+        HelixCaretUtils.applyCarets(editor, listOf(Pair(minStart, maxEnd)))
+    }
+
     fun rotateSelectionsContents(editor: Editor, forward: Boolean) {
         val allCarets = editor.caretModel.allCarets
         if (allCarets.size <= 1) return
