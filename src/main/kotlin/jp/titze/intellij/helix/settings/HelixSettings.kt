@@ -22,6 +22,11 @@ enum class WhichKeyHintMode(val displayName: String) {
     INTELLIJ_ACTION("IntelliJ Action ID (PascalCase)"),
 }
 
+enum class WhichKeyColumnLayout(val displayName: String, val maxColumns: Int) {
+    THREE_COLUMNS("Up to 3 columns (Compact / Shorter)", 3),
+    TWO_COLUMNS("Up to 2 columns (Classic / Narrower)", 2),
+}
+
 class HelixSettingsState {
     var searchUiMode: String = HelixSearchUiMode.STOCK_HELIX.name
     var jumpListMaxEntries: Int = HelixSettings.DEFAULT_JUMP_LIST_MAX_ENTRIES
@@ -30,6 +35,7 @@ class HelixSettingsState {
     var syncClipboardWithDefaultRegister: Boolean = true
     var enableWhichKeyPopups: Boolean = true
     var whichKeyHintMode: String = WhichKeyHintMode.HELIX_COMMAND.name
+    var whichKeyColumnLayout: String = WhichKeyColumnLayout.THREE_COLUMNS.name
 }
 
 @Service(Service.Level.APP)
@@ -99,6 +105,16 @@ class HelixSettings : PersistentStateComponent<HelixSettingsState> {
         }
         set(value) {
             myState.whichKeyHintMode = value.name
+        }
+
+    var whichKeyColumnLayout: WhichKeyColumnLayout
+        get() = try {
+            WhichKeyColumnLayout.valueOf(myState.whichKeyColumnLayout)
+        } catch (e: Exception) {
+            WhichKeyColumnLayout.THREE_COLUMNS
+        }
+        set(value) {
+            myState.whichKeyColumnLayout = value.name
         }
 
     override fun getState(): HelixSettingsState = myState

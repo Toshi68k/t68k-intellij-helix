@@ -174,20 +174,29 @@ object HelixWhichKeyPopup {
         editor: Editor,
         maxHeight: Int = 600,
     ): JPanel {
-        val numColumns = if (items.size > 14) 2 else 1
-        val cardMinWidth = if (numColumns > 1) JBUI.scale(560) else JBUI.scale(290)
+        val settings = HelixSettings.instance
+        val maxCols = settings.whichKeyColumnLayout.maxColumns
+        val numColumns = when {
+            maxCols >= 3 && items.size > 18 -> 3
+            items.size > 8 -> 2
+            else -> 1
+        }
+        val cardMinWidth = when (numColumns) {
+            3 -> JBUI.scale(760)
+            2 -> JBUI.scale(520)
+            else -> JBUI.scale(280)
+        }
         val mainPanel = RoundedCardPanel(BorderLayout(), minWidth = cardMinWidth)
         mainPanel.isFocusable = true
         mainPanel.focusTraversalKeysEnabled = false
 
-        val settings = HelixSettings.instance
         var activeHintMode = settings.whichKeyHintMode
 
         val headerPanel = JPanel(BorderLayout(JBUI.scale(12), 0))
         headerPanel.isOpaque = false
         headerPanel.border = BorderFactory.createCompoundBorder(
             BorderFactory.createMatteBorder(0, 0, 1, 0, DIVIDER_COLOR),
-            JBUI.Borders.empty(12, 14, 10, 14),
+            JBUI.Borders.empty(8, 12, 6, 12),
         )
 
         val titleLabel = JBLabel(title)
@@ -270,40 +279,32 @@ object HelixWhichKeyPopup {
 
         val itemsPanel = JPanel()
         itemsPanel.isOpaque = false
-        itemsPanel.border = JBUI.Borders.empty(6, 6, 8, 6)
+        itemsPanel.border = JBUI.Borders.empty(4, 6, 6, 6)
 
+        val rowsPerCol = (items.size + numColumns - 1) / numColumns
         if (numColumns == 1) {
             itemsPanel.layout = javax.swing.BoxLayout(itemsPanel, javax.swing.BoxLayout.Y_AXIS)
             for (item in items) {
                 itemsPanel.add(createRow(item))
-                itemsPanel.add(javax.swing.Box.createVerticalStrut(JBUI.scale(2)))
+                itemsPanel.add(javax.swing.Box.createVerticalStrut(JBUI.scale(1)))
             }
         } else {
-            itemsPanel.layout = java.awt.GridLayout(1, 2, JBUI.scale(12), 0)
-            val mid = (items.size + 1) / 2
-            val col1Items = items.subList(0, mid)
-            val col2Items = items.subList(mid, items.size)
-
-            val col1Panel = JPanel().apply {
-                layout = javax.swing.BoxLayout(this, javax.swing.BoxLayout.Y_AXIS)
-                isOpaque = false
+            itemsPanel.layout = java.awt.GridLayout(1, numColumns, JBUI.scale(10), 0)
+            for (col in 0 until numColumns) {
+                val colPanel = JPanel().apply {
+                    layout = javax.swing.BoxLayout(this, javax.swing.BoxLayout.Y_AXIS)
+                    isOpaque = false
+                }
+                val start = col * rowsPerCol
+                val end = minOf(start + rowsPerCol, items.size)
+                if (start < items.size) {
+                    for (item in items.subList(start, end)) {
+                        colPanel.add(createRow(item))
+                        colPanel.add(javax.swing.Box.createVerticalStrut(JBUI.scale(1)))
+                    }
+                }
+                itemsPanel.add(colPanel)
             }
-            for (item in col1Items) {
-                col1Panel.add(createRow(item))
-                col1Panel.add(javax.swing.Box.createVerticalStrut(JBUI.scale(2)))
-            }
-
-            val col2Panel = JPanel().apply {
-                layout = javax.swing.BoxLayout(this, javax.swing.BoxLayout.Y_AXIS)
-                isOpaque = false
-            }
-            for (item in col2Items) {
-                col2Panel.add(createRow(item))
-                col2Panel.add(javax.swing.Box.createVerticalStrut(JBUI.scale(2)))
-            }
-
-            itemsPanel.add(col1Panel)
-            itemsPanel.add(col2Panel)
         }
 
         val scrollPane = com.intellij.ui.components.JBScrollPane(itemsPanel)
@@ -485,16 +486,16 @@ object HelixWhichKeyPopup {
         init {
             isOpaque = false
             val label = JBLabel(key, javax.swing.SwingConstants.CENTER)
-            label.font = Font(Font.MONOSPACED, Font.BOLD, JBUI.scaleFontSize(11.5f))
+            label.font = Font(Font.MONOSPACED, Font.BOLD, JBUI.scaleFontSize(10.5f))
             label.foreground = KEYCAP_FG
             add(label, BorderLayout.CENTER)
-            border = JBUI.Borders.empty(1, 5)
+            border = JBUI.Borders.empty(1, 4)
         }
 
         override fun getPreferredSize(): java.awt.Dimension {
             val pref = super.getPreferredSize()
-            val minWidth = JBUI.scale(22)
-            val h = JBUI.scale(22)
+            val minWidth = JBUI.scale(20)
+            val h = JBUI.scale(20)
             return java.awt.Dimension(maxOf(pref.width, minWidth), h)
         }
 
@@ -512,18 +513,18 @@ object HelixWhichKeyPopup {
     }
 
     private class WhichKeyRow(val item: WhichKeyItem, initialMode: WhichKeyHintMode, val onClick: () -> Unit) :
-        JPanel(BorderLayout(JBUI.scale(10), 0)) {
+        JPanel(BorderLayout(JBUI.scale(8), 0)) {
         private var isHovered = false
         private val descLabel = JBLabel().apply {
             font = JBUI.Fonts.smallFont()
             foreground = ITEM_DESC_COLOR
-            border = JBUI.Borders.emptyLeft(8)
+            border = JBUI.Borders.emptyLeft(6)
         }
 
         init {
             isOpaque = false
             cursor = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
-            border = JBUI.Borders.empty(4, 8)
+            border = JBUI.Borders.empty(2, 6)
 
             val badge = KeycapBadge(item.key)
             add(badge, BorderLayout.WEST)
@@ -532,7 +533,7 @@ object HelixWhichKeyPopup {
             textPanel.isOpaque = false
 
             val label = JBLabel(item.label)
-            label.font = JBUI.Fonts.label().deriveFont(Font.PLAIN, JBUI.scaleFontSize(12.5f).toFloat())
+            label.font = JBUI.Fonts.label().deriveFont(Font.PLAIN, JBUI.scaleFontSize(11.5f).toFloat())
             label.foreground = ITEM_TEXT_COLOR
             textPanel.add(label, BorderLayout.WEST)
             textPanel.add(descLabel, BorderLayout.EAST)

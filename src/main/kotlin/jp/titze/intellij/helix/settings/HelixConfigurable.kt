@@ -25,6 +25,8 @@ class HelixConfigurable : SearchableConfigurable {
     private var enableWhichKeyCheckBox: JBCheckBox? = null
     private var whichKeyHelixCommandRadio: JBRadioButton? = null
     private var whichKeyIntelliJActionRadio: JBRadioButton? = null
+    private var whichKey3ColsRadio: JBRadioButton? = null
+    private var whichKey2ColsRadio: JBRadioButton? = null
 
     private var jumpListSpinner: JBIntSpinner? = null
 
@@ -124,10 +126,30 @@ class HelixConfigurable : SearchableConfigurable {
         modesPanel.add(helixRadio)
         modesPanel.add(ideaRadio)
 
+        val columnsGroup = ButtonGroup()
+        val cols3Radio = JBRadioButton("Up to 3 columns: Compact height (shorter menu for widescreen monitors)")
+        val cols2Radio = JBRadioButton("Up to 2 columns: Classic width (narrower menu)")
+        whichKey3ColsRadio = cols3Radio
+        whichKey2ColsRadio = cols2Radio
+
+        columnsGroup.add(cols3Radio)
+        columnsGroup.add(cols2Radio)
+
+        val columnsPanel = JPanel(GridLayout(2, 1, 0, 4))
+        columnsPanel.border = JBUI.Borders.empty(4, 24, 4, 0)
+        columnsPanel.add(cols3Radio)
+        columnsPanel.add(cols2Radio)
+
+        val settingsBox = JPanel()
+        settingsBox.layout = BoxLayout(settingsBox, BoxLayout.Y_AXIS)
+        settingsBox.add(modesPanel)
+        settingsBox.add(Box.createVerticalStrut(JBUI.scale(6)))
+        settingsBox.add(columnsPanel)
+
         val optionsPanel = JPanel(BorderLayout(0, 4))
         optionsPanel.border = JBUI.Borders.emptyLeft(12)
         optionsPanel.add(checkBox, BorderLayout.NORTH)
-        optionsPanel.add(modesPanel, BorderLayout.CENTER)
+        optionsPanel.add(settingsBox, BorderLayout.CENTER)
 
         val helpLabel = JBLabel(
             "<html>When enabled, pausing on a chord prefix displays an interactive popup menu with actions.<br/>" +
@@ -289,6 +311,12 @@ class HelixConfigurable : SearchableConfigurable {
         WhichKeyHintMode.HELIX_COMMAND
     }
 
+    private fun getSelectedWhichKeyColumnLayout(): WhichKeyColumnLayout = if (whichKey2ColsRadio?.isSelected == true) {
+        WhichKeyColumnLayout.TWO_COLUMNS
+    } else {
+        WhichKeyColumnLayout.THREE_COLUMNS
+    }
+
     private fun getSelectedColorTheme(): HelixColorTheme = when {
         darkThemeRadio?.isSelected == true -> HelixColorTheme.DARK
         lightThemeRadio?.isSelected == true -> HelixColorTheme.LIGHT
@@ -300,6 +328,7 @@ class HelixConfigurable : SearchableConfigurable {
         if (getSelectedSearchUiMode() != settings.searchUiMode) return true
         if (enableWhichKeyCheckBox?.isSelected != settings.enableWhichKeyPopups) return true
         if (getSelectedWhichKeyHintMode() != settings.whichKeyHintMode) return true
+        if (getSelectedWhichKeyColumnLayout() != settings.whichKeyColumnLayout) return true
         if (jumpListSpinner?.number != settings.jumpListMaxEntries) return true
         if (getSelectedColorTheme() != settings.colorTheme) return true
         if (resetToNormalCheckBox?.isSelected != settings.resetToNormalOnTabSwitch) return true
@@ -312,6 +341,7 @@ class HelixConfigurable : SearchableConfigurable {
         settings.searchUiMode = getSelectedSearchUiMode()
         enableWhichKeyCheckBox?.let { settings.enableWhichKeyPopups = it.isSelected }
         settings.whichKeyHintMode = getSelectedWhichKeyHintMode()
+        settings.whichKeyColumnLayout = getSelectedWhichKeyColumnLayout()
         jumpListSpinner?.let { settings.jumpListMaxEntries = it.number }
         settings.colorTheme = getSelectedColorTheme()
         resetToNormalCheckBox?.let { settings.resetToNormalOnTabSwitch = it.isSelected }
@@ -330,6 +360,8 @@ class HelixConfigurable : SearchableConfigurable {
         enableWhichKeyCheckBox?.isSelected = settings.enableWhichKeyPopups
         whichKeyHelixCommandRadio?.isSelected = (settings.whichKeyHintMode == WhichKeyHintMode.HELIX_COMMAND)
         whichKeyIntelliJActionRadio?.isSelected = (settings.whichKeyHintMode == WhichKeyHintMode.INTELLIJ_ACTION)
+        whichKey3ColsRadio?.isSelected = (settings.whichKeyColumnLayout == WhichKeyColumnLayout.THREE_COLUMNS)
+        whichKey2ColsRadio?.isSelected = (settings.whichKeyColumnLayout == WhichKeyColumnLayout.TWO_COLUMNS)
 
         jumpListSpinner?.value = settings.jumpListMaxEntries
 
@@ -347,6 +379,8 @@ class HelixConfigurable : SearchableConfigurable {
         enableWhichKeyCheckBox = null
         whichKeyHelixCommandRadio = null
         whichKeyIntelliJActionRadio = null
+        whichKey3ColsRadio = null
+        whichKey2ColsRadio = null
         jumpListSpinner = null
         syncThemeRadio = null
         darkThemeRadio = null

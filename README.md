@@ -353,7 +353,7 @@ Helix Keymap supports two switchable search and regex prompt styles:
 
 #### Editor Behavior Settings
 Configure Helix Keymap preferences under **Preferences / Settings &rarr; Tools &rarr; Helix Keymap**:
-- **Which-Key Chord Menus**: Enable or disable Which-Key chord popups on chord prefixes (`Space`, `g`, `m`, `[`, `]`, `z`, `Ctrl+w`), and choose default hint display style (Helix command names vs IntelliJ Action IDs).
+- **Which-Key Chord Menus**: Enable or disable Which-Key chord popups on chord prefixes (`Space`, `g`, `m`, `[`, `]`, `z`, `Ctrl+w`), choose default hint display style (Helix command names vs IntelliJ Action IDs), and set maximum columns (3 columns compact vs 2 columns classic).
 - **Reset to Normal mode on tab switch / file open** *(default: enabled)*: Ensures each tab starts in **Normal** mode with block cursor whenever a file is opened or tabs are switched. Can be disabled if you prefer retaining active modes (such as Insert mode) across tabs.
 - **Search and Selection Prompt UI**: Toggle between Stock Helix inline bottom bar or Popup dialog.
 - **Jump List Capacity**: Set maximum recorded jump entries (10–1000).

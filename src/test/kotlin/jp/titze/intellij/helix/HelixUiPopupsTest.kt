@@ -441,4 +441,24 @@ class HelixUiPopupsTest : BasePlatformTestCase() {
         HelixWhichKeyPopup.toggleHintMode().shouldBeTrue()
         HelixWhichKeyPopup.toggleHintMode().shouldBeTrue()
     }
+
+    fun testWhichKeyColumnLayoutSettingAndPanelDimensions() {
+        myFixture.configureByText("test.txt", "test")
+        val editor = myFixture.editor
+        val settings = HelixSettings.instance
+        val original = settings.whichKeyColumnLayout
+
+        try {
+            settings.whichKeyColumnLayout = jp.titze.intellij.helix.settings.WhichKeyColumnLayout.TWO_COLUMNS
+            val (spaceTitle, spaceItems) = HelixWhichKeyMenus.getMenu(" ") ?: return
+            val panel2Cols = HelixWhichKeyPopup.createWhichKeyPanel(spaceTitle, spaceItems, editor)
+            (panel2Cols.preferredSize.width in 500..700).shouldBeTrue()
+
+            settings.whichKeyColumnLayout = jp.titze.intellij.helix.settings.WhichKeyColumnLayout.THREE_COLUMNS
+            val panel3Cols = HelixWhichKeyPopup.createWhichKeyPanel(spaceTitle, spaceItems, editor)
+            (panel3Cols.preferredSize.width >= 700).shouldBeTrue()
+        } finally {
+            settings.whichKeyColumnLayout = original
+        }
+    }
 }
