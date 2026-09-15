@@ -57,7 +57,7 @@ object HelixDirectoryManager {
         return applyDirectoryChange(target.canonicalPath, editor)
     }
 
-    private fun resolvePath(input: String, cwd: String): String {
+    fun resolvePath(input: String, cwd: String): String {
         val home = System.getProperty("user.home")
         val expanded = when {
             input == "~" -> home
