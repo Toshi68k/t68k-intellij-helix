@@ -311,8 +311,14 @@ Press `:` in Normal mode to open the interactive **Helix Command Picker**, style
 - `:close-split` / `:close` &rarr; Close active split (`Unsplit`)
 - `:format` &rarr; Reformat code (`ReformatCode`)
 - `:reload` / `:e!` &rarr; Reload file from disk (`SynchronizeCurrentFile`)
-- `:open` &rarr; Open fuzzy file picker (`GotoFile`)
+- `:open` / `:edit` / `:e [file]` &rarr; Open fuzzy file picker (`GotoFile`) or open file by path
 - `:buffer` / `:b` &rarr; Open buffer switcher (`RecentFiles`)
+- `:buffer-close` / `:bc` / `:bclose` &rarr; Close active tab (`CloseContent`)
+- `:buffer-close-others` / `:bco` / `:bcloseother` &rarr; Close all other tabs (`CloseAllEditorsButActive`)
+- `:buffer-close-all` / `:bca` / `:bcloseall` &rarr; Close all editor tabs (`CloseAllEditors`)
+- `:buffer-next` / `:bn [count]` &rarr; Switch to next buffer / tab (`NextTab`)
+- `:buffer-previous` / `:bp [count]` &rarr; Switch to previous buffer / tab (`PreviousTab`)
+- `:new` / `:n` &rarr; Create new scratch buffer / file (`NewScratchFile`)
 - `:find` &rarr; Find in project files (`FindInPath`)
 - `:commit-undo-checkpoint` / `:checkpoint` &rarr; Commit undo checkpoint to break typing history
 - `:toggle-search-ui` / `:search-ui` &rarr; Toggle between Stock Helix inline bar and Popup dialog

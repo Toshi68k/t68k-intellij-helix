@@ -461,4 +461,120 @@ class HelixUiPopupsTest : BasePlatformTestCase() {
             settings.whichKeyColumnLayout = original
         }
     }
+
+    fun testOpenAndEditCommands() {
+        myFixture.configureByText("test.txt", "sample")
+        val editor = myFixture.editor
+        val executedActions = mutableListOf<String>()
+        val originalExecutor = jp.titze.intellij.helix.action.HelixActionDelegate.actionExecutor
+
+        try {
+            jp.titze.intellij.helix.action.HelixActionDelegate.actionExecutor = { actionId, _ ->
+                executedActions.add(actionId)
+                true
+            }
+
+            HelixCommandPopup.executeCommand("open", editor)
+            executedActions.last() shouldBe "GotoFile"
+
+            HelixCommandPopup.executeCommand("edit", editor)
+            executedActions.last() shouldBe "GotoFile"
+
+            HelixCommandPopup.executeCommand("e", editor)
+            executedActions.last() shouldBe "GotoFile"
+
+            val openCmd = HelixCommandPopup.COMMANDS.first { it.name == "open" }
+            openCmd.matches("edit").shouldBeTrue()
+            openCmd.matches("e").shouldBeTrue()
+        } finally {
+            jp.titze.intellij.helix.action.HelixActionDelegate.actionExecutor = originalExecutor
+        }
+
+        val testFile = java.io.File.createTempFile("opened_file", ".txt")
+        testFile.writeText("hello opened")
+        com.intellij.openapi.vfs.newvfs.impl.VfsRootAccess.allowRootAccess(testRootDisposable, testFile.canonicalPath)
+        try {
+            HelixCommandPopup.executeCommand("open ${testFile.absolutePath}", editor)
+            testFile.exists().shouldBeTrue()
+        } finally {
+            testFile.delete()
+        }
+    }
+
+    fun testBufferAndFindCommands() {
+        myFixture.configureByText("test.txt", "sample")
+        val editor = myFixture.editor
+        val executedActions = mutableListOf<String>()
+        val originalExecutor = jp.titze.intellij.helix.action.HelixActionDelegate.actionExecutor
+
+        try {
+            jp.titze.intellij.helix.action.HelixActionDelegate.actionExecutor = { actionId, _ ->
+                executedActions.add(actionId)
+                true
+            }
+
+            HelixCommandPopup.executeCommand("buffer", editor)
+            executedActions.last() shouldBe "RecentFiles"
+
+            HelixCommandPopup.executeCommand("b", editor)
+            executedActions.last() shouldBe "RecentFiles"
+
+            HelixCommandPopup.executeCommand("find", editor)
+            executedActions.last() shouldBe "FindInPath"
+
+            val bufCmd = HelixCommandPopup.COMMANDS.first { it.name == "buffer" }
+            bufCmd.matches("b").shouldBeTrue()
+
+            val findCmd = HelixCommandPopup.COMMANDS.first { it.name == "find" }
+            findCmd.matches("find").shouldBeTrue()
+        } finally {
+            jp.titze.intellij.helix.action.HelixActionDelegate.actionExecutor = originalExecutor
+        }
+    }
+
+    fun testBufferLifecycleCommands() {
+        myFixture.configureByText("test.txt", "sample")
+        val editor = myFixture.editor
+        val executedActions = mutableListOf<String>()
+        val originalExecutor = jp.titze.intellij.helix.action.HelixActionDelegate.actionExecutor
+
+        try {
+            jp.titze.intellij.helix.action.HelixActionDelegate.actionExecutor = { actionId, _ ->
+                executedActions.add(actionId)
+                true
+            }
+
+            HelixCommandPopup.executeCommand("buffer-close", editor)
+            executedActions.last() shouldBe "CloseContent"
+            HelixCommandPopup.executeCommand("bc", editor)
+            executedActions.last() shouldBe "CloseContent"
+            HelixCommandPopup.executeCommand("bclose", editor)
+            executedActions.last() shouldBe "CloseContent"
+
+            HelixCommandPopup.executeCommand("buffer-close-others", editor)
+            executedActions.last() shouldBe "CloseAllEditorsButActive"
+            HelixCommandPopup.executeCommand("bco", editor)
+            executedActions.last() shouldBe "CloseAllEditorsButActive"
+
+            HelixCommandPopup.executeCommand("buffer-close-all", editor)
+            executedActions.last() shouldBe "CloseAllEditors"
+            HelixCommandPopup.executeCommand("bca", editor)
+            executedActions.last() shouldBe "CloseAllEditors"
+
+            val preCountNext = executedActions.size
+            HelixCommandPopup.executeCommand("bn 2", editor)
+            executedActions.subList(preCountNext, executedActions.size) shouldBe listOf("NextTab", "NextTab")
+
+            val preCountPrev = executedActions.size
+            HelixCommandPopup.executeCommand("bp 2", editor)
+            executedActions.subList(preCountPrev, executedActions.size) shouldBe listOf("PreviousTab", "PreviousTab")
+
+            HelixCommandPopup.executeCommand("new", editor)
+            executedActions.last() shouldBe "NewScratchFile"
+            HelixCommandPopup.executeCommand("n", editor)
+            executedActions.last() shouldBe "NewScratchFile"
+        } finally {
+            jp.titze.intellij.helix.action.HelixActionDelegate.actionExecutor = originalExecutor
+        }
+    }
 }

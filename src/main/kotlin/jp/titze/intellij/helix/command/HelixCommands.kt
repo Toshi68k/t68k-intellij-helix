@@ -2,6 +2,9 @@ package jp.titze.intellij.helix.command
 
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.editor.Editor
+import com.intellij.openapi.fileEditor.FileEditorManager
+import com.intellij.openapi.fileEditor.OpenFileDescriptor
+import com.intellij.openapi.vfs.LocalFileSystem
 import jp.titze.intellij.helix.action.HelixActionDelegate
 import jp.titze.intellij.helix.action.HelixActions
 import jp.titze.intellij.helix.jumplist.HelixJumpListService
@@ -10,6 +13,7 @@ import jp.titze.intellij.helix.settings.HelixSearchUiMode
 import jp.titze.intellij.helix.settings.HelixSettings
 import jp.titze.intellij.helix.state.HelixStateManager
 import jp.titze.intellij.helix.ui.HelixJumplistPopup
+import java.io.File
 
 data class HelixCommandItem(
     val name: String,
@@ -282,6 +286,42 @@ object HelixCommands {
             listOf("select-all-children"),
             "Select all direct children nodes (Alt+I)",
         ) { editor -> HelixActions.selectAllChildren(editor) },
+        HelixCommandItem(
+            "open",
+            listOf("edit", "e"),
+            "Open file picker or open file by path",
+        ) { editor ->
+            HelixActionDelegate.executeAction("GotoFile", editor) ||
+                HelixActionDelegate.executeAction("SearchEverywhere", editor)
+        },
+        HelixCommandItem("buffer", listOf("b"), "Open buffer switcher (RecentFiles)") { editor ->
+            HelixActionDelegate.executeAction("RecentFiles", editor)
+        },
+        HelixCommandItem("find", emptyList(), "Find in project files (FindInPath)") { editor ->
+            HelixActionDelegate.executeAction("FindInPath", editor)
+        },
+        HelixCommandItem("buffer-close", listOf("bc", "bclose"), "Close active editor tab") { editor ->
+            HelixActionDelegate.executeAction("CloseContent", editor)
+        },
+        HelixCommandItem(
+            "buffer-close-others",
+            listOf("bco", "bcloseother"),
+            "Close all other editor tabs",
+        ) { editor ->
+            HelixActionDelegate.executeAction("CloseAllEditorsButActive", editor)
+        },
+        HelixCommandItem("buffer-close-all", listOf("bca", "bcloseall"), "Close all editor tabs") { editor ->
+            HelixActionDelegate.executeAction("CloseAllEditors", editor)
+        },
+        HelixCommandItem("buffer-next", listOf("bn"), "Switch to next editor tab") { editor ->
+            HelixActionDelegate.executeAction("NextTab", editor)
+        },
+        HelixCommandItem("buffer-previous", listOf("bp"), "Switch to previous editor tab") { editor ->
+            HelixActionDelegate.executeAction("PreviousTab", editor)
+        },
+        HelixCommandItem("new", listOf("n"), "Create new scratch file / buffer") { editor ->
+            HelixActionDelegate.executeAction("NewScratchFile", editor)
+        },
     )
 
     fun execute(cmd: String, editor: Editor) {
@@ -306,6 +346,25 @@ object HelixCommands {
         }
         if (baseCmd == "terminal" || baseCmd == "sh") {
             HelixActionDelegate.executeAction("ActivateTerminalToolWindow", editor)
+            return
+        }
+        if (baseCmd == "open" || baseCmd == "edit" || baseCmd == "e") {
+            if (arg.isEmpty()) {
+                HelixActionDelegate.executeAction("GotoFile", editor) ||
+                    HelixActionDelegate.executeAction("SearchEverywhere", editor)
+            } else {
+                openFile(arg, editor)
+            }
+            return
+        }
+        if (baseCmd == "bn" || baseCmd == "buffer-next") {
+            val count = arg.toIntOrNull() ?: 1
+            repeat(count) { HelixActionDelegate.executeAction("NextTab", editor) }
+            return
+        }
+        if (baseCmd == "bp" || baseCmd == "buffer-previous") {
+            val count = arg.toIntOrNull() ?: 1
+            repeat(count) { HelixActionDelegate.executeAction("PreviousTab", editor) }
             return
         }
 
@@ -359,6 +418,23 @@ object HelixCommands {
 
             "format" -> HelixActionDelegate.executeAction("ReformatCode", editor)
 
+            "b", "buffer" -> HelixActionDelegate.executeAction("RecentFiles", editor)
+
+            "find" -> HelixActionDelegate.executeAction("FindInPath", editor)
+
+            "bc", "bclose", "buffer-close" -> HelixActionDelegate.executeAction("CloseContent", editor)
+
+            "bco", "bcloseother", "buffer-close-others" ->
+                HelixActionDelegate.executeAction("CloseAllEditorsButActive", editor)
+
+            "bca", "bcloseall", "buffer-close-all" -> HelixActionDelegate.executeAction("CloseAllEditors", editor)
+
+            "bn", "buffer-next" -> HelixActionDelegate.executeAction("NextTab", editor)
+
+            "bp", "buffer-previous" -> HelixActionDelegate.executeAction("PreviousTab", editor)
+
+            "n", "new" -> HelixActionDelegate.executeAction("NewScratchFile", editor)
+
             "set search-ui=inline", "set search-ui=stock" -> {
                 HelixSettings.instance.searchUiMode = HelixSearchUiMode.STOCK_HELIX
             }
@@ -379,6 +455,28 @@ object HelixCommands {
                     }
                 HelixSettings.instance.searchUiMode = next
             }
+        }
+    }
+
+    private fun openFile(path: String, editor: Editor) {
+        val project = editor.project ?: return
+        val resolved = HelixDirectoryManager.resolvePath(
+            path,
+            HelixDirectoryManager.getCurrentDirectory(editor),
+        )
+        val targetFile = File(resolved)
+        if (!targetFile.exists()) {
+            try {
+                targetFile.parentFile?.mkdirs()
+                targetFile.createNewFile()
+            } catch (_: Exception) {
+                // Ignore creation failure and let virtual file system handle
+            }
+        }
+        val virtualFile = LocalFileSystem.getInstance().refreshAndFindFileByIoFile(targetFile)
+        if (virtualFile != null) {
+            val descriptor = OpenFileDescriptor(project, virtualFile)
+            FileEditorManager.getInstance(project).openTextEditor(descriptor, true)
         }
     }
 }
