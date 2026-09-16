@@ -10,6 +10,7 @@ import com.intellij.openapi.util.TextRange
 import jp.titze.intellij.helix.state.HelixMode
 import jp.titze.intellij.helix.state.HelixStateManager
 
+@Suppress("TooManyFunctions")
 object HelixActions {
 
     fun commitUndoCheckpoint(editor: Editor) {
@@ -415,6 +416,12 @@ object HelixActions {
     fun insertRegister(editor: Editor, register: Char) = HelixInsertActions.insertRegister(editor, register)
 
     fun selectPrevSibling(editor: Editor): Boolean = HelixAstActions.selectPrevSibling(editor)
+
+    fun selectNextSibling(editor: Editor): Boolean = HelixAstActions.selectNextSibling(editor)
+
+    fun moveParentNodeStart(editor: Editor): Boolean = HelixAstActions.moveParentNodeStart(editor)
+
+    fun moveParentNodeEnd(editor: Editor): Boolean = HelixAstActions.moveParentNodeEnd(editor)
 
     fun selectAllSiblings(editor: Editor): Boolean = HelixAstActions.selectAllSiblings(editor)
 

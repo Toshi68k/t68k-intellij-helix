@@ -10,6 +10,8 @@ import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiWhiteSpace
 import com.intellij.psi.util.PsiTreeUtil
+import jp.titze.intellij.helix.state.HelixMode
+import jp.titze.intellij.helix.state.HelixStateManager
 
 object HelixAstActions {
 
@@ -41,9 +43,128 @@ object HelixAstActions {
             }
         } ?: return false
 
-        if (newCarets.isEmpty()) return false
+        return applyCaretSnapshots(editor, newCarets)
+    }
 
-        val caretStates = newCarets.map {
+    fun selectNextSibling(editor: Editor): Boolean {
+        val project = editor.project ?: return false
+        val doc = editor.document
+        if (doc.textLength == 0) return false
+
+        val newCarets = runReadAction {
+            val psiFile = PsiDocumentManager.getInstance(project).getPsiFile(doc) ?: return@runReadAction null
+            editor.caretModel.allCarets.mapNotNull { caret ->
+                val target = findTargetElement(psiFile, doc.textLength, caret) ?: return@mapNotNull null
+                val next = findNextSignificantSibling(target)
+                if (next != null) {
+                    val range = next.textRange
+                    HelixCaretSnapshot(range.endOffset, range.startOffset, range.endOffset)
+                } else {
+                    null
+                }
+            }
+        } ?: return false
+
+        return applyCaretSnapshots(editor, newCarets)
+    }
+
+    fun moveParentNodeStart(editor: Editor): Boolean {
+        val project = editor.project ?: return false
+        val doc = editor.document
+        if (doc.textLength == 0) return false
+
+        val state = HelixStateManager.getOrCreate(editor)
+        val isSelect = state.mode == HelixMode.SELECT
+
+        val newCarets = runReadAction {
+            val psiFile = PsiDocumentManager.getInstance(project).getPsiFile(doc) ?: return@runReadAction null
+            editor.caretModel.allCarets.mapNotNull { caret ->
+                val curOffset = caret.offset
+                val target = findTargetElement(psiFile, doc.textLength, caret) ?: return@mapNotNull null
+                val parent = findParentNodeForStart(target, curOffset) ?: return@mapNotNull null
+                val targetOffset = parent.textRange.startOffset.coerceIn(0, doc.textLength)
+                val anchor = if (isSelect && caret.hasSelection()) caret.leadSelectionOffset else targetOffset
+                val selStart = if (isSelect) minOf(anchor, targetOffset) else targetOffset
+                val selEnd = if (isSelect) maxOf(anchor, targetOffset) else targetOffset
+                HelixCaretSnapshot(targetOffset, selStart, selEnd)
+            }
+        } ?: return false
+
+        return applyCaretSnapshots(editor, newCarets)
+    }
+
+    fun moveParentNodeEnd(editor: Editor): Boolean {
+        val project = editor.project ?: return false
+        val doc = editor.document
+        if (doc.textLength == 0) return false
+
+        val state = HelixStateManager.getOrCreate(editor)
+        val isSelect = state.mode == HelixMode.SELECT
+
+        val newCarets = runReadAction {
+            val psiFile = PsiDocumentManager.getInstance(project).getPsiFile(doc) ?: return@runReadAction null
+            editor.caretModel.allCarets.mapNotNull { caret ->
+                val curOffset = caret.offset
+                val target = findTargetElement(psiFile, doc.textLength, caret) ?: return@mapNotNull null
+                val parent = findParentNodeForEnd(target, curOffset) ?: return@mapNotNull null
+                val parentEnd = parent.textRange.endOffset.coerceIn(0, doc.textLength)
+                val targetOffset = if (isSelect) {
+                    parentEnd
+                } else {
+                    (parentEnd - 1).coerceAtLeast(parent.textRange.startOffset)
+                }
+                val anchor = if (isSelect && caret.hasSelection()) caret.leadSelectionOffset else targetOffset
+                val selStart = if (isSelect) minOf(anchor, targetOffset) else targetOffset
+                val selEnd = if (isSelect) maxOf(anchor, targetOffset) else targetOffset
+                HelixCaretSnapshot(targetOffset, selStart, selEnd)
+            }
+        } ?: return false
+
+        return applyCaretSnapshots(editor, newCarets)
+    }
+
+    private fun findParentNodeForStart(target: PsiElement, curOffset: Int): PsiElement? {
+        var parent = target.parent
+        while (parent != null && parent !is PsiFile && parent.textRange.startOffset == curOffset) {
+            parent = parent.parent
+        }
+        if (parent == null || parent is PsiFile) return null
+        return parent
+    }
+
+    private fun findParentNodeForEnd(target: PsiElement, curOffset: Int): PsiElement? {
+        var parent = target.parent
+        while (parent != null && parent !is PsiFile && (parent.textRange.endOffset - 1) <= curOffset) {
+            parent = parent.parent
+        }
+        if (parent == null || parent is PsiFile) return null
+        return parent
+    }
+
+    private fun findNextSignificantSibling(target: PsiElement): PsiElement? {
+        var next = target.nextSibling
+        while (next != null && isTriviaOrDelimiter(next)) {
+            next = next.nextSibling
+        }
+        if (next != null) return next
+
+        var parentNode = target.parent
+        while (parentNode != null && parentNode !is PsiFile &&
+            parentNode.textRange.endOffset == target.textRange.endOffset
+        ) {
+            var candidate = parentNode.nextSibling
+            while (candidate != null && isTriviaOrDelimiter(candidate)) {
+                candidate = candidate.nextSibling
+            }
+            if (candidate != null) return candidate
+            parentNode = parentNode.parent
+        }
+        return null
+    }
+
+    private fun applyCaretSnapshots(editor: Editor, snapshots: List<HelixCaretSnapshot>): Boolean {
+        if (snapshots.isEmpty()) return false
+        val caretStates = snapshots.map {
             CaretState(
                 editor.offsetToLogicalPosition(it.offset),
                 editor.offsetToLogicalPosition(it.selectionStart),
@@ -90,18 +211,7 @@ object HelixAstActions {
             collected.distinctBy { it.selectionStart to it.selectionEnd }.sortedBy { it.selectionStart }
         } ?: return false
 
-        if (newCarets.isEmpty()) return false
-
-        val caretStates = newCarets.map {
-            CaretState(
-                editor.offsetToLogicalPosition(it.offset),
-                editor.offsetToLogicalPosition(it.selectionStart),
-                editor.offsetToLogicalPosition(it.selectionEnd),
-            )
-        }
-        editor.caretModel.setCaretsAndSelections(caretStates)
-        editor.scrollingModel.scrollToCaret(ScrollType.MAKE_VISIBLE)
-        return true
+        return applyCaretSnapshots(editor, newCarets)
     }
 
     private fun collectSiblingsForCaret(psiFile: PsiFile, textLength: Int, caret: Caret): List<HelixCaretSnapshot> {
@@ -129,18 +239,7 @@ object HelixAstActions {
             collected.distinctBy { it.selectionStart to it.selectionEnd }.sortedBy { it.selectionStart }
         } ?: return false
 
-        if (newCarets.isEmpty()) return false
-
-        val caretStates = newCarets.map {
-            CaretState(
-                editor.offsetToLogicalPosition(it.offset),
-                editor.offsetToLogicalPosition(it.selectionStart),
-                editor.offsetToLogicalPosition(it.selectionEnd),
-            )
-        }
-        editor.caretModel.setCaretsAndSelections(caretStates)
-        editor.scrollingModel.scrollToCaret(ScrollType.MAKE_VISIBLE)
-        return true
+        return applyCaretSnapshots(editor, newCarets)
     }
 
     private fun collectChildrenForCaret(psiFile: PsiFile, textLength: Int, caret: Caret): List<HelixCaretSnapshot> {

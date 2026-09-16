@@ -260,25 +260,11 @@ class HelixEventDispatcher : IdeEventQueue.EventDispatcher {
         state: jp.titze.intellij.helix.state.HelixEditorState,
     ): Boolean {
         if (handleAltShellShortcut(e, editor)) return true
+        if (handleAltAstShortcut(e, editor)) return true
 
         return when {
             e.keyCode == KeyEvent.VK_BACK_QUOTE || e.keyChar == '`' -> {
                 HelixActions.toUpperCase(editor, state.takeCount() ?: 1)
-                true
-            }
-
-            !e.isShiftDown && (e.keyCode == KeyEvent.VK_P || e.keyCode == KeyEvent.VK_LEFT) -> {
-                HelixActions.selectPrevSibling(editor)
-                true
-            }
-
-            !e.isShiftDown && (e.keyCode == KeyEvent.VK_A || e.keyChar == 'a') -> {
-                HelixActions.selectAllSiblings(editor)
-                true
-            }
-
-            e.isShiftDown && (e.keyCode == KeyEvent.VK_I || e.keyChar == 'I') -> {
-                HelixActions.selectAllChildren(editor)
                 true
             }
 
@@ -352,6 +338,40 @@ class HelixEventDispatcher : IdeEventQueue.EventDispatcher {
         }
     }
 
+    private fun handleAltAstShortcut(e: KeyEvent, editor: Editor): Boolean = when {
+        !e.isShiftDown && (e.keyCode == KeyEvent.VK_P || e.keyCode == KeyEvent.VK_LEFT) -> {
+            HelixActions.selectPrevSibling(editor)
+            true
+        }
+
+        isSelectNextSibling(e) -> {
+            HelixActions.selectNextSibling(editor)
+            true
+        }
+
+        !e.isShiftDown && (e.keyCode == KeyEvent.VK_B || e.keyChar == 'b') -> {
+            HelixActions.moveParentNodeStart(editor)
+            true
+        }
+
+        !e.isShiftDown && (e.keyCode == KeyEvent.VK_E || e.keyChar == 'e') -> {
+            HelixActions.moveParentNodeEnd(editor)
+            true
+        }
+
+        !e.isShiftDown && (e.keyCode == KeyEvent.VK_A || e.keyChar == 'a') -> {
+            HelixActions.selectAllSiblings(editor)
+            true
+        }
+
+        e.isShiftDown && (e.keyCode == KeyEvent.VK_I || e.keyChar == 'I') -> {
+            HelixActions.selectAllChildren(editor)
+            true
+        }
+
+        else -> false
+    }
+
     private fun handleAltShellShortcut(e: KeyEvent, editor: Editor): Boolean = when {
         e.keyChar == '!' || (e.isShiftDown && e.keyCode == KeyEvent.VK_1) -> {
             HelixSearchManager.startShellAppend(editor)
@@ -365,6 +385,9 @@ class HelixEventDispatcher : IdeEventQueue.EventDispatcher {
 
         else -> false
     }
+
+    private fun isSelectNextSibling(e: KeyEvent): Boolean =
+        !e.isShiftDown && (e.keyCode == KeyEvent.VK_N || e.keyCode == KeyEvent.VK_RIGHT || e.keyChar == 'n')
 
     private fun findFocusedEditor(e: KeyEvent): Editor? {
         val allEditors = EditorFactory.getInstance().allEditors
