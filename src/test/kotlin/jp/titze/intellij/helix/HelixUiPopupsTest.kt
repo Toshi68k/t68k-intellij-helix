@@ -969,4 +969,97 @@ class HelixUiPopupsTest : BasePlatformTestCase() {
         items.any { it.key == "e" && it.helixCommand == "dap_edit_condition" }.shouldBeTrue()
         items.any { it.key == "B" && it.helixCommand == "dap_view_breakpoints" }.shouldBeTrue()
     }
+
+    fun testViewFoldingChordsAndExecution() {
+        myFixture.configureByText("test.txt", "fun test() {\n    val x = 1\n}")
+        val editor = myFixture.editor
+        val state = HelixStateManager.getOrCreate(editor)
+
+        val executedActions = mutableListOf<String>()
+        val originalExecutor = jp.titze.intellij.helix.action.HelixActionDelegate.actionExecutor
+        jp.titze.intellij.helix.action.HelixActionDelegate.actionExecutor = { actionId, _ ->
+            executedActions.add(actionId)
+            true
+        }
+
+        try {
+            // zc -> CollapseRegion
+            HelixKeyHandler.handleKey('z', editor)
+            state.pendingSequence shouldBe "z"
+            HelixKeyHandler.handleKey('c', editor)
+            state.pendingSequence.isEmpty().shouldBeTrue()
+            executedActions.last() shouldBe "CollapseRegion"
+
+            // zf -> CollapseRegion
+            HelixKeyHandler.handleKey('z', editor)
+            HelixKeyHandler.handleKey('f', editor)
+            executedActions.last() shouldBe "CollapseRegion"
+
+            // zo -> ExpandRegion
+            HelixKeyHandler.handleKey('z', editor)
+            HelixKeyHandler.handleKey('o', editor)
+            executedActions.last() shouldBe "ExpandRegion"
+
+            // zM -> CollapseAllRegions
+            HelixKeyHandler.handleKey('z', editor)
+            HelixKeyHandler.handleKey('M', editor)
+            executedActions.last() shouldBe "CollapseAllRegions"
+
+            // zR -> ExpandAllRegions
+            HelixKeyHandler.handleKey('z', editor)
+            HelixKeyHandler.handleKey('R', editor)
+            executedActions.last() shouldBe "ExpandAllRegions"
+        } finally {
+            jp.titze.intellij.helix.action.HelixActionDelegate.actionExecutor = originalExecutor
+        }
+    }
+
+    fun testFoldingCommandsExecution() {
+        myFixture.configureByText("test.txt", "class Example {\n    fun method() {}\n}")
+        val editor = myFixture.editor
+
+        val executedActions = mutableListOf<String>()
+        val originalExecutor = jp.titze.intellij.helix.action.HelixActionDelegate.actionExecutor
+        jp.titze.intellij.helix.action.HelixActionDelegate.actionExecutor = { actionId, _ ->
+            executedActions.add(actionId)
+            true
+        }
+
+        try {
+            HelixCommandPopup.executeCommand("fold", editor)
+            executedActions.last() shouldBe "CollapseRegion"
+
+            HelixCommandPopup.executeCommand("unfold", editor)
+            executedActions.last() shouldBe "ExpandRegion"
+
+            HelixCommandPopup.executeCommand("fold-all", editor)
+            executedActions.last() shouldBe "CollapseAllRegions"
+
+            HelixCommandPopup.executeCommand("fold_all", editor)
+            executedActions.last() shouldBe "CollapseAllRegions"
+
+            HelixCommandPopup.executeCommand("unfold-all", editor)
+            executedActions.last() shouldBe "ExpandAllRegions"
+
+            HelixCommandPopup.executeCommand("unfold_all", editor)
+            executedActions.last() shouldBe "ExpandAllRegions"
+        } finally {
+            jp.titze.intellij.helix.action.HelixActionDelegate.actionExecutor = originalExecutor
+        }
+    }
+
+    fun testWhichKeyViewMenuRegistration() {
+        val (title, items) = HelixWhichKeyMenus.getMenu("z") ?: error("View menu not registered")
+        title shouldBe "VIEW MENU"
+        items.any { it.key == "c" && it.helixCommand == "fold" && it.intelliJAction == "CollapseRegion" }.shouldBeTrue()
+        items.any { it.key == "f" && it.helixCommand == "fold" && it.intelliJAction == "CollapseRegion" }.shouldBeTrue()
+        items.any { it.key == "o" && it.helixCommand == "unfold" && it.intelliJAction == "ExpandRegion" }.shouldBeTrue()
+        items.any {
+            it.key == "M" && it.helixCommand == "fold_all" && it.intelliJAction == "CollapseAllRegions"
+        }.shouldBeTrue()
+        items.any {
+            it.key == "R" && it.helixCommand == "unfold_all" && it.intelliJAction == "ExpandAllRegions"
+        }.shouldBeTrue()
+        items.any { it.key == "z" && it.helixCommand == "align_view_center" }.shouldBeTrue()
+    }
 }

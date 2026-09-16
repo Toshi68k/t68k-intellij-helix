@@ -74,6 +74,26 @@ object HelixCommands {
         HelixCommandItem("format", emptyList(), "Format buffer using IDE code formatter") { editor ->
             HelixActionDelegate.executeAction("ReformatCode", editor)
         },
+        HelixCommandItem("fold", listOf("collapse-region"), "Fold block under cursor (CollapseRegion)") { editor ->
+            HelixActionDelegate.executeAction("CollapseRegion", editor)
+        },
+        HelixCommandItem("unfold", listOf("expand-region"), "Unfold block under cursor (ExpandRegion)") { editor ->
+            HelixActionDelegate.executeAction("ExpandRegion", editor)
+        },
+        HelixCommandItem(
+            "fold-all",
+            listOf("fold_all", "collapse-all-regions"),
+            "Fold all methods and classes in file (CollapseAllRegions)",
+        ) { editor ->
+            HelixActionDelegate.executeAction("CollapseAllRegions", editor)
+        },
+        HelixCommandItem(
+            "unfold-all",
+            listOf("unfold_all", "expand-all-regions"),
+            "Expand all folds in file (ExpandAllRegions)",
+        ) { editor ->
+            HelixActionDelegate.executeAction("ExpandAllRegions", editor)
+        },
         HelixCommandItem(
             "optimize-imports",
             listOf("optimize_imports", "oi"),
@@ -548,6 +568,14 @@ object HelixCommands {
             }
 
             "format" -> HelixActionDelegate.executeAction("ReformatCode", editor)
+
+            "fold" -> HelixActionDelegate.executeAction("CollapseRegion", editor)
+
+            "unfold" -> HelixActionDelegate.executeAction("ExpandRegion", editor)
+
+            "fold-all", "fold_all" -> HelixActionDelegate.executeAction("CollapseAllRegions", editor)
+
+            "unfold-all", "unfold_all" -> HelixActionDelegate.executeAction("ExpandAllRegions", editor)
 
             "b", "buffer" -> HelixActionDelegate.executeAction("RecentFiles", editor)
 
