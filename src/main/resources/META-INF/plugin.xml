@@ -481,6 +481,42 @@
             <keyboard-shortcut keymap="Mac OS X" first-keystroke="control R"/>
             <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="control R"/>
         </action>
+
+        <action id="jp.titze.intellij.helix.shellPipe"
+                class="jp.titze.intellij.helix.editor.HelixShellPipeAction"
+                text="Helix Shell Pipe"
+                description="Pipe selections through shell command and replace with output (|)">
+        </action>
+
+        <action id="jp.titze.intellij.helix.shellInsertOutput"
+                class="jp.titze.intellij.helix.editor.HelixShellInsertOutputAction"
+                text="Helix Shell Insert Output"
+                description="Insert output of shell command before selections (!)">
+        </action>
+
+        <action id="jp.titze.intellij.helix.shellAppendOutput"
+                class="jp.titze.intellij.helix.editor.HelixShellAppendOutputAction"
+                text="Helix Shell Append Output"
+                description="Append output of shell command after selections (Alt+!)">
+            <keyboard-shortcut keymap="$default" first-keystroke="alt shift 1"/>
+            <keyboard-shortcut keymap="Mac OS X" first-keystroke="alt shift 1"/>
+            <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="alt shift 1"/>
+        </action>
+
+        <action id="jp.titze.intellij.helix.shellKeepPipe"
+                class="jp.titze.intellij.helix.editor.HelixShellKeepPipeAction"
+                text="Helix Shell Keep Pipe"
+                description="Filter selections by shell command ($)">
+        </action>
+
+        <action id="jp.titze.intellij.helix.shellPipeTo"
+                class="jp.titze.intellij.helix.editor.HelixShellPipeToAction"
+                text="Helix Shell Pipe To"
+                description="Pipe selections into shell command ignoring output (Alt+|)">
+            <keyboard-shortcut keymap="$default" first-keystroke="alt BACK_SLASH"/>
+            <keyboard-shortcut keymap="Mac OS X" first-keystroke="alt BACK_SLASH"/>
+            <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="alt BACK_SLASH"/>
+        </action>
     </actions>
 </idea-plugin>
 

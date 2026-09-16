@@ -43,4 +43,24 @@ object HelixSearchManager {
             HelixPromptBar.show(editor, HelixPromptType.REMOVE, count = 1)
         }
     }
+
+    fun startShellPipe(editor: Editor) {
+        HelixPromptBar.show(editor, HelixPromptType.PIPE, count = 1)
+    }
+
+    fun startShellInsert(editor: Editor) {
+        HelixPromptBar.show(editor, HelixPromptType.INSERT_OUTPUT, count = 1)
+    }
+
+    fun startShellAppend(editor: Editor) {
+        HelixPromptBar.show(editor, HelixPromptType.APPEND_OUTPUT, count = 1)
+    }
+
+    fun startShellKeepPipe(editor: Editor) {
+        HelixPromptBar.show(editor, HelixPromptType.KEEP_PIPE, count = 1)
+    }
+
+    fun startShellPipeTo(editor: Editor) {
+        HelixPromptBar.show(editor, HelixPromptType.PIPE_TO, count = 1)
+    }
 }
