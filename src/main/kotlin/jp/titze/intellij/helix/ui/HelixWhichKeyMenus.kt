@@ -138,6 +138,7 @@ object HelixWhichKeyMenus {
         WhichKeyItem("a-z", "Named registers", "named_registers"),
         WhichKeyItem("/", "Search register", "search_register"),
         WhichKeyItem("%", "Buffer name", "buffer_name_register"),
+        WhichKeyItem("#", "Selection index", "selection_index_register"),
     )
 
     val textObjectItems = listOf(

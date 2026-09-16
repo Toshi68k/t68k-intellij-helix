@@ -70,18 +70,14 @@ object HelixRegisterActions {
     fun yankSelection(editor: Editor, count: Int = 1, register: Char? = null) {
         val state = HelixStateManager.getOrCreate(editor)
         val pieces = mutableListOf<String>()
-        var hasWholeLines = false
         val doc = editor.document
+        val allCaretsWholeLines = editor.caretModel.allCarets.all { isCaretSelectingWholeLines(doc, it) }
 
         editor.caretModel.runForEachCaret { caret ->
             if (caret.hasSelection()) {
                 var text = caret.selectedText ?: ""
-                val isWholeLines = isCaretSelectingWholeLines(doc, caret)
-                if (isWholeLines) {
-                    hasWholeLines = true
-                    if (!text.endsWith("\n")) {
-                        text += "\n"
-                    }
+                if (allCaretsWholeLines && !text.endsWith("\n")) {
+                    text += "\n"
                 }
                 pieces.add(text)
             } else {
@@ -98,7 +94,7 @@ object HelixRegisterActions {
             state.yankRegister = yanked
             HelixRegisterManager.recordYank(
                 text = yanked,
-                isLinewise = hasWholeLines,
+                isLinewise = allCaretsWholeLines,
                 pieces = pieces,
                 register = register,
             )
@@ -108,18 +104,43 @@ object HelixRegisterActions {
     fun paste(editor: Editor, after: Boolean = true, register: Char? = null) {
         val project = editor.project
         val entry = HelixRegisterManager.get(register, editor) ?: return
-        val rawText = entry.text
-        val textToPaste = rawText.replace("\r\n", "\n").replace("\r", "\n")
-        val isLinewise = entry.isLinewise || textToPaste.endsWith("\n") || textToPaste.contains("\n")
         val doc = editor.document
 
         WriteCommandAction.runWriteCommandAction(project) {
-            val carets = editor.caretModel.allCarets.sortedByDescending { it.offset }
-            for (caret in carets) {
-                if (isLinewise) {
-                    pasteLinewise(doc, caret, textToPaste, after)
-                } else {
-                    pasteCharacterwise(doc, caret, textToPaste, after)
+            val caretsAscending = editor.caretModel.allCarets.sortedBy {
+                if (it.hasSelection()) it.selectionStart else it.offset
+            }
+            val usePieces = entry.pieces.isNotEmpty() && entry.pieces.size == caretsAscending.size
+
+            if (usePieces) {
+                val caretPieces = caretsAscending.mapIndexed { idx, caret ->
+                    val cleanPiece = entry.pieces[idx].replace("\r\n", "\n").replace("\r", "\n")
+                    caret to cleanPiece
+                }
+                val descendingPairs = caretPieces.sortedByDescending { (caret, _) ->
+                    if (caret.hasSelection()) caret.selectionStart else caret.offset
+                }
+                for ((caret, piece) in descendingPairs) {
+                    val isPieceLinewise = piece.endsWith("\n") || piece.contains("\n")
+                    if (isPieceLinewise) {
+                        pasteLinewise(doc, caret, piece, after)
+                    } else {
+                        pasteCharacterwise(doc, caret, piece, after)
+                    }
+                }
+            } else {
+                val rawText = entry.text
+                val textToPaste = rawText.replace("\r\n", "\n").replace("\r", "\n")
+                val isLinewise = entry.isLinewise || textToPaste.endsWith("\n") || textToPaste.contains("\n")
+                val carets = editor.caretModel.allCarets.sortedByDescending {
+                    if (it.hasSelection()) it.selectionStart else it.offset
+                }
+                for (caret in carets) {
+                    if (isLinewise) {
+                        pasteLinewise(doc, caret, textToPaste, after)
+                    } else {
+                        pasteCharacterwise(doc, caret, textToPaste, after)
+                    }
                 }
             }
         }
@@ -128,29 +149,54 @@ object HelixRegisterActions {
     fun replaceWithRegister(editor: Editor, register: Char? = null) {
         val project = editor.project
         val entry = HelixRegisterManager.get(register, editor) ?: return
-        val textToPaste = entry.text
+        val doc = editor.document
 
         WriteCommandAction.runWriteCommandAction(project) {
-            val carets = editor.caretModel.allCarets.sortedByDescending { it.offset }
-            for (caret in carets) {
-                if (caret.hasSelection()) {
-                    val start = caret.selectionStart
-                    val end = caret.selectionEnd
-                    editor.document.replaceString(start, end, textToPaste)
-                    caret.setSelection(start, start + textToPaste.length)
-                    caret.moveToOffset(start)
-                } else {
-                    val offset = caret.offset
-                    if (offset < editor.document.textLength) {
-                        editor.document.replaceString(offset, offset + 1, textToPaste)
-                        caret.setSelection(offset, offset + textToPaste.length)
-                        caret.moveToOffset(offset)
-                    } else {
-                        editor.document.insertString(offset, textToPaste)
-                        caret.setSelection(offset, offset + textToPaste.length)
-                        caret.moveToOffset(offset)
-                    }
+            val caretsAscending = editor.caretModel.allCarets.sortedBy {
+                if (it.hasSelection()) it.selectionStart else it.offset
+            }
+            val usePieces = entry.pieces.isNotEmpty() && entry.pieces.size == caretsAscending.size
+
+            if (usePieces) {
+                val caretPieces = caretsAscending.mapIndexed { idx, caret ->
+                    val cleanPiece = entry.pieces[idx].replace("\r\n", "\n").replace("\r", "\n")
+                    caret to cleanPiece
                 }
+                val descendingPairs = caretPieces.sortedByDescending { (caret, _) ->
+                    if (caret.hasSelection()) caret.selectionStart else caret.offset
+                }
+                for ((caret, piece) in descendingPairs) {
+                    replaceCaretText(doc, caret, piece)
+                }
+            } else {
+                val textToPaste = entry.text
+                val carets = editor.caretModel.allCarets.sortedByDescending {
+                    if (it.hasSelection()) it.selectionStart else it.offset
+                }
+                for (caret in carets) {
+                    replaceCaretText(doc, caret, textToPaste)
+                }
+            }
+        }
+    }
+
+    private fun replaceCaretText(doc: Document, caret: Caret, text: String) {
+        if (caret.hasSelection()) {
+            val start = caret.selectionStart
+            val end = caret.selectionEnd
+            doc.replaceString(start, end, text)
+            caret.setSelection(start, start + text.length)
+            caret.moveToOffset(start)
+        } else {
+            val offset = caret.offset
+            if (offset < doc.textLength) {
+                doc.replaceString(offset, offset + 1, text)
+                caret.setSelection(offset, offset + text.length)
+                caret.moveToOffset(offset)
+            } else {
+                doc.insertString(offset, text)
+                caret.setSelection(offset, offset + text.length)
+                caret.moveToOffset(offset)
             }
         }
     }

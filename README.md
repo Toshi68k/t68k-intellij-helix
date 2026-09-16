@@ -125,11 +125,12 @@ The goal of this plugin is to provide a more complete and polished Helix-like ex
 | `Alt+d` | Delete active selection without copying to clipboard (`delete_selection_noyank`) |
 | `c` | Delete active selection, copy to clipboard, and enter `Insert` mode |
 | `Alt+c` | Delete active selection without copying to clipboard, and enter `Insert` mode (`change_selection_noyank`) |
-| `y` | Yank (copy) active selection to clipboard |
-| `p` | Paste clipboard after selection / caret |
-| `P` | Paste clipboard before selection / caret |
+| `y` | Yank (copy) active selection to clipboard / register |
+| `p` | Paste clipboard / register after selection or caret (piece-wise when multi-caret count matches) |
+| `P` | Paste clipboard / register before selection or caret (piece-wise when multi-caret count matches) |
+| `"` `<reg>` | Select a register for subsequent yank, delete, or paste (`select_register`) |
 | `r<char>` | Replace each selected character (or character under cursor) with `<char>` |
-| `R` | Replace selection (or character under cursor) with clipboard / yanked text |
+| `R` | Replace selection (or character under cursor) with clipboard / register (piece-wise supported) |
 | `J` | Join lines inside selection, or join current line with line below |
 | `.` | Repeat last insert sequence across all active carets (`repeat_last_insert`) |
 | `i` | Enter `Insert` mode at start of selection |
@@ -152,6 +153,27 @@ The goal of this plugin is to provide a more complete and polished Helix-like ex
 | `Ctrl+x` | Decrement integer under cursor or within selection (`decrement`, supports `[count]`) |
 | `Escape` | Return to `Normal` mode / clear pending chords |
 
+### Registers & Multi-Caret Piece-Wise Pasting
+
+Helix Keymap provides a full modal register subsystem with authentic multi-caret piece-wise mapping:
+
+| Register | Key | Description |
+|---|---|---|
+| `"` | `""` | Default register (synced with system clipboard if enabled) |
+| `_` | `"_` | Black hole register: deletes/yanks discard silently without touching clipboard |
+| `+` / `*` | `"+` / `"*` | System clipboard register (explicit system copy/paste) |
+| `0` | `"0` | Last yank register |
+| `1`–`9` | `"1`–`"9` | Shifted deletion history ring |
+| `a`–`z` | `"a`–`"z` | Named registers (use uppercase `A`–`Z` to append to register) |
+| `/` | `"/` | Search pattern register (last active search regex) |
+| `%` | `"%` | Current buffer / file name register |
+| `#` | `"#` | Dynamic selection index register (`0`, `1`, `2`, ... across multi-carets) |
+
+- **Piece-wise Multi-Caret Pasting**: When yanking $N$ selections (e.g. across 3 carets), Helix records each selection as an individual piece. When pasting into $N$ carets (`p`, `P`, `R`), each caret in document order receives its corresponding piece (`pieces[i]`). If caret counts differ, it cleanly falls back to pasting the full concatenated block.
+- **Selection Enumeration (`"#`)**:
+  - In `Normal` mode: `"#p` pastes `"0"`, `"1"`, `"2"`, ... across carets.
+  - In `Insert` mode: `Ctrl+r #` inserts the current caret's index directly at each cursor.
+
 ### Insert Mode & Terminal / Readline Shortcuts
 
 Essential insert-mode operations matching standard Helix and terminal/readline workflows:
@@ -162,7 +184,7 @@ Essential insert-mode operations matching standard Helix and terminal/readline w
 | `Alt+d` / `Alt+Delete` | `delete_word_forward` | Delete next word forward |
 | `Ctrl+u` | `kill_to_line_start` | Delete from cursor to start of current line |
 | `Ctrl+k` | `kill_to_line_end` | Delete from cursor to end of current line (deletes newline if at line end) |
-| `Ctrl+r <char>` | `insert_register` | Insert contents of specified register while typing |
+| `Ctrl+r <char>` | `insert_register` | Insert contents of register (e.g. `Ctrl+r #` for selection index) |
 | `Ctrl+x` | `completion` | Trigger explicit code completion menu (`CodeCompletion`) |
 | `Ctrl+s` | `commit-undo-checkpoint` | Commit undo checkpoint to break typing history |
 
