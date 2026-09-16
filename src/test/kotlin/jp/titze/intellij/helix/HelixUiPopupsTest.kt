@@ -901,6 +901,12 @@ class HelixUiPopupsTest : BasePlatformTestCase() {
 
             HelixCommandPopup.executeCommand("breakpoints", editor)
             executedActions.last() shouldBe "ViewBreakpoints"
+
+            HelixCommandPopup.executeCommand("signature-help", editor)
+            executedActions.last() shouldBe "ParameterInfo"
+
+            HelixCommandPopup.executeCommand("param-info", editor)
+            executedActions.last() shouldBe "ParameterInfo"
         } finally {
             jp.titze.intellij.helix.action.HelixActionDelegate.actionExecutor = originalExecutor
         }

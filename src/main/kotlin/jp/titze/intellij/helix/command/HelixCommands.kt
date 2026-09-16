@@ -278,6 +278,11 @@ object HelixCommands {
             "Trigger code completion menu (Ctrl+x)",
         ) { editor -> HelixActionDelegate.executeAction("CodeCompletion", editor) },
         HelixCommandItem(
+            "signature-help",
+            listOf("signature_help", "param-info", "parameter-info"),
+            "Show signature help / parameter info (Ctrl+p)",
+        ) { editor -> HelixActionDelegate.executeAction("ParameterInfo", editor) },
+        HelixCommandItem(
             "select_prev_sibling",
             listOf("select-prev-sibling"),
             "Select previous sibling AST element (Alt+p, Alt+Left)",

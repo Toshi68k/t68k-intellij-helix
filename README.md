@@ -187,6 +187,7 @@ Essential insert-mode operations matching standard Helix and terminal/readline w
 | `Ctrl+k` | `kill_to_line_end` | Delete from cursor to end of current line (deletes newline if at line end) |
 | `Ctrl+r <char>` | `insert_register` | Insert contents of register (e.g. `Ctrl+r #` for selection index) |
 | `Ctrl+x` | `completion` | Trigger explicit code completion menu (`CodeCompletion`) |
+| `Ctrl+p` | `signature_help` | Trigger signature help / parameter info (`ParameterInfo`) |
 | `Ctrl+s` | `commit-undo-checkpoint` | Commit undo checkpoint to break typing history |
 
 
@@ -419,6 +420,7 @@ Press `:` in Normal mode to open the interactive **Helix Command Picker**, style
 - `:dap-evaluate` / `:eval` &rarr; Evaluate expression popup (`space + G k`)
 - `:dap-edit-condition` &rarr; Edit breakpoint condition and log (`space + G e`)
 - `:dap-view-breakpoints` / `:breakpoints` &rarr; View all breakpoints manager (`space + G B`)
+- `:signature-help` / `:param-info` &rarr; Show signature help / parameter info (`Ctrl+p`)
 
 #### Search & Selection UI Modes
 Helix Keymap supports two switchable search and regex prompt styles:

@@ -924,4 +924,35 @@ class HelixEditingActionsTest : BasePlatformTestCase() {
             jp.titze.intellij.helix.action.HelixActionDelegate.actionExecutor = null
         }
     }
+
+    fun testInsertModeSignatureHelpCtrlP() {
+        myFixture.configureByText("test.txt", "myFunction(|)")
+        val editor = myFixture.editor
+        val state = HelixStateManager.getOrCreate(editor)
+        state.setMode(HelixMode.INSERT)
+
+        val executedActions = mutableListOf<String>()
+        jp.titze.intellij.helix.action.HelixActionDelegate.actionExecutor = { actionId, _ ->
+            executedActions.add(actionId)
+            true
+        }
+
+        try {
+            val ctrlPHandled = dispatchKey(
+                editor,
+                java.awt.event.KeyEvent.VK_P,
+                java.awt.event.InputEvent.CTRL_DOWN_MASK,
+            )
+            ctrlPHandled.shouldBeTrue()
+            executedActions shouldBe listOf("ParameterInfo")
+
+            // Also test direct typed control character '\u0010'
+            executedActions.clear()
+            val handledTyped = HelixKeyHandler.handleKey('\u0010', editor)
+            handledTyped.shouldBeTrue()
+            executedActions shouldBe listOf("ParameterInfo")
+        } finally {
+            jp.titze.intellij.helix.action.HelixActionDelegate.actionExecutor = null
+        }
+    }
 }
