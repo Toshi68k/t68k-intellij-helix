@@ -311,7 +311,10 @@ object HelixKeyHandler {
 
             'U' -> repeat(count) { HelixActionDelegate.executeAction("\$Redo", editor) }
 
-            'Q' -> HelixActionDelegate.executeAction("StartStopMacroRecording", editor)
+            'Q' -> {
+                HelixActionDelegate.executeAction("StartStopMacroRecording", editor)
+                state.notifyListeners()
+            }
 
             'q' -> repeat(count) { HelixActionDelegate.executeAction("PlaybackLastMacro", editor) }
 

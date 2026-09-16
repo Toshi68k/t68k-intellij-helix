@@ -103,7 +103,7 @@ class HelixEditorState(val editor: Editor) {
         listeners.remove(listener)
     }
 
-    private fun notifyListeners() {
+    fun notifyListeners() {
         for (listener in listeners) {
             listener(this)
         }

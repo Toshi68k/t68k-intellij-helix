@@ -5,16 +5,22 @@ import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.types.shouldBeSameInstanceAs
 import jp.titze.intellij.helix.command.HelixCommandPopup
 import jp.titze.intellij.helix.keymap.HelixKeyHandler
 import jp.titze.intellij.helix.settings.HelixSearchUiMode
 import jp.titze.intellij.helix.settings.HelixSettings
+import jp.titze.intellij.helix.state.HelixMode
 import jp.titze.intellij.helix.state.HelixStateManager
 import jp.titze.intellij.helix.ui.HelixPromptBar
 import jp.titze.intellij.helix.ui.HelixPromptType
+import jp.titze.intellij.helix.ui.HelixStatusBarWidget
+import jp.titze.intellij.helix.ui.HelixStatusBarWidgetFactory
 import jp.titze.intellij.helix.ui.HelixWhichKeyMenus
 import jp.titze.intellij.helix.ui.HelixWhichKeyPopup
+import java.awt.Component
+import java.awt.event.MouseEvent
 
 class HelixUiPopupsTest : BasePlatformTestCase() {
 
@@ -575,6 +581,154 @@ class HelixUiPopupsTest : BasePlatformTestCase() {
             executedActions.last() shouldBe "NewScratchFile"
         } finally {
             jp.titze.intellij.helix.action.HelixActionDelegate.actionExecutor = originalExecutor
+        }
+    }
+
+    fun testStatusBarWidgetFactoryMetadata() {
+        val factory = HelixStatusBarWidgetFactory()
+        factory.id shouldBe HelixStatusBarWidget.WIDGET_ID
+        factory.displayName shouldBe "Helix Mode"
+        factory.isAvailable(project).shouldBeTrue()
+        val widget = factory.createWidget(project)
+        widget.ID() shouldBe HelixStatusBarWidget.WIDGET_ID
+        factory.disposeWidget(widget)
+    }
+
+    fun testStatusBarWidgetSingleCaretNormalMode() {
+        myFixture.configureByText("test.txt", "line1\nline2")
+        val editor = myFixture.editor
+        val widget = HelixStatusBarWidget(project)
+        try {
+            widget.attachEditor(editor)
+            widget.getText() shouldBe "NOR"
+            widget.getTooltipText() shouldBe "Helix Mode: Normal"
+        } finally {
+            widget.dispose()
+        }
+    }
+
+    fun testStatusBarWidgetMultiCaretIndicator() {
+        myFixture.configureByText("test.txt", "line1\nline2\nline3")
+        val editor = myFixture.editor
+        val caretModel = editor.caretModel
+        val widget = HelixStatusBarWidget(project)
+        try {
+            widget.attachEditor(editor)
+            widget.getText() shouldBe "NOR"
+
+            caretModel.addCaret(editor.offsetToLogicalPosition(6), false)
+            caretModel.caretCount shouldBe 2
+            widget.getText() shouldBe "NOR 2 sel"
+            widget.getTooltipText() shouldContain "2 selections"
+
+            caretModel.addCaret(editor.offsetToLogicalPosition(12), false)
+            caretModel.caretCount shouldBe 3
+            widget.getText() shouldBe "NOR 3 sel"
+            widget.getTooltipText() shouldContain "3 selections"
+
+            HelixKeyHandler.handleKey(',', editor)
+            caretModel.caretCount shouldBe 1
+            widget.getText() shouldBe "NOR"
+        } finally {
+            widget.dispose()
+        }
+    }
+
+    fun testStatusBarWidgetSelectedRegisterIndicator() {
+        myFixture.configureByText("test.txt", "hello world")
+        val editor = myFixture.editor
+        val state = HelixStateManager.getOrCreate(editor)
+        val widget = HelixStatusBarWidget(project)
+        try {
+            widget.attachEditor(editor)
+            widget.getText() shouldBe "NOR"
+
+            state.setSelectedRegister('a')
+            widget.getText() shouldBe "NOR reg: a"
+            widget.getTooltipText() shouldContain "Register: \"a"
+
+            state.setSelectedRegister('_')
+            widget.getText() shouldBe "NOR reg: _"
+
+            state.clearSelectedRegister()
+            widget.getText() shouldBe "NOR"
+        } finally {
+            widget.dispose()
+        }
+    }
+
+    fun testStatusBarWidgetCombinedMultiCaretAndRegister() {
+        myFixture.configureByText("test.txt", "line1\nline2\nline3")
+        val editor = myFixture.editor
+        val caretModel = editor.caretModel
+        caretModel.addCaret(editor.offsetToLogicalPosition(6), false)
+        caretModel.addCaret(editor.offsetToLogicalPosition(12), false)
+
+        val state = HelixStateManager.getOrCreate(editor)
+        val widget = HelixStatusBarWidget(project)
+        try {
+            widget.attachEditor(editor)
+            state.setSelectedRegister('a')
+            state.appendCountDigit('2')
+            state.appendKey('g')
+
+            widget.getText() shouldBe "NOR 3 sel reg: a 2 g-"
+            widget.getTooltipText() shouldContain "3 selections"
+            widget.getTooltipText() shouldContain "Register: \"a"
+            widget.getTooltipText() shouldContain "Count: 2"
+            widget.getTooltipText() shouldContain "Pending: g-"
+
+            state.setMode(HelixMode.SELECT)
+            widget.getText() shouldBe "SEL 3 sel"
+
+            state.setMode(HelixMode.INSERT)
+            widget.getText() shouldBe "INS 3 sel"
+        } finally {
+            widget.dispose()
+        }
+    }
+
+    fun testStatusBarWidgetMacroRecordingIndicator() {
+        myFixture.configureByText("test.txt", "hello")
+        val editor = myFixture.editor
+        val widget = HelixStatusBarWidget(project)
+        try {
+            widget.attachEditor(editor)
+            widget.macroRecordingProvider = { true }
+            widget.getText() shouldBe "NOR [REC]"
+            widget.getTooltipText() shouldContain "Recording Macro"
+
+            widget.macroRecordingProvider = { false }
+            widget.getText() shouldBe "NOR"
+        } finally {
+            widget.dispose()
+        }
+    }
+
+    fun testStatusBarWidgetClickConsumer() {
+        myFixture.configureByText("test.txt", "hello")
+        val editor = myFixture.editor
+        val widget = HelixStatusBarWidget(project)
+        try {
+            widget.attachEditor(editor)
+            val clickConsumer = widget.getClickConsumer()
+            clickConsumer.shouldNotBeNull()
+
+            val dummyComponent = object : Component() {}
+            val dummyEvent = MouseEvent(
+                dummyComponent,
+                MouseEvent.MOUSE_CLICKED,
+                System.currentTimeMillis(),
+                0,
+                10,
+                10,
+                1,
+                false,
+            )
+            // Clicking opens command popup or registers popup safely without throwing
+            clickConsumer.consume(dummyEvent)
+        } finally {
+            widget.dispose()
         }
     }
 }
