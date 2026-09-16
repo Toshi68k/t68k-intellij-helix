@@ -13,6 +13,7 @@ import jp.titze.intellij.helix.keymap.HelixKeyHandler
 import jp.titze.intellij.helix.register.HelixRegisterManager
 import jp.titze.intellij.helix.state.HelixMode
 import jp.titze.intellij.helix.state.HelixStateManager
+import jp.titze.intellij.helix.ui.HelixVisualFeedback
 import java.awt.datatransfer.DataFlavor
 import java.awt.datatransfer.StringSelection
 
@@ -21,10 +22,12 @@ class HelixRegistersTest : BasePlatformTestCase() {
     override fun setUp() {
         super.setUp()
         HelixRegisterManager.clear()
+        HelixVisualFeedback.clearAll()
     }
 
     override fun tearDown() {
         HelixRegisterManager.clear()
+        HelixVisualFeedback.clearAll()
         super.tearDown()
     }
 
@@ -545,5 +548,45 @@ class HelixRegistersTest : BasePlatformTestCase() {
 
         jp.titze.intellij.helix.action.HelixRegisterActions.paste(editor, after = true, register = item.register)
         editor.document.text shouldBe "target: value"
+    }
+
+    fun testYankVisualFeedbackSingleSelection() {
+        myFixture.configureByText("test.txt", "hello world")
+        val editor = myFixture.editor
+        val caret = editor.caretModel.primaryCaret
+        caret.setSelection(0, 5)
+
+        HelixKeyHandler.handleKey('y', editor)
+
+        HelixVisualFeedback.hasActiveFlash(editor).shouldBeTrue()
+        val highlighters = HelixVisualFeedback.getActiveHighlighters(editor)
+        highlighters.size shouldBe 1
+        highlighters[0].startOffset shouldBe 0
+        highlighters[0].endOffset shouldBe 5
+
+        HelixVisualFeedback.clearFlash(editor)
+        HelixVisualFeedback.hasActiveFlash(editor).shouldBeFalse()
+    }
+
+    fun testYankVisualFeedbackMultiCaret() {
+        myFixture.configureByText("test.txt", "line1\nline2\nline3")
+        val editor = myFixture.editor
+        val caretModel = editor.caretModel
+
+        caretModel.primaryCaret.moveToOffset(0)
+        caretModel.primaryCaret.setSelection(0, 5)
+        val caret2 = caretModel.addCaret(editor.offsetToLogicalPosition(6), false)
+        caret2?.setSelection(6, 11)
+
+        caretModel.caretCount shouldBe 2
+
+        HelixKeyHandler.handleKey('y', editor)
+
+        HelixVisualFeedback.hasActiveFlash(editor).shouldBeTrue()
+        val highlighters = HelixVisualFeedback.getActiveHighlighters(editor)
+        highlighters.size shouldBe 2
+
+        HelixVisualFeedback.clearFlash(editor)
+        HelixVisualFeedback.hasActiveFlash(editor).shouldBeFalse()
     }
 }

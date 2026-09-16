@@ -26,7 +26,8 @@ The goal of this plugin is to provide a more complete and polished Helix-like ex
   - **Normal** (`NOR`): Block cursor, selection motions, action triggers.
   - **Insert** (`INS`): Standard bar cursor, raw typing delegated to IntelliJ.
   - **Select** (`SEL`): Block cursor, motions extend selections from anchor.
-  - **Status Bar Widget**: Displays active mode and pending key chords (e.g., `NOR`, `NOR g-`, `NOR  -`).
+  - **Status Bar Widget**: Displays active mode, macro recording indicator (`[REC]`), multi-caret count (`3 sel`), active register (`reg: a`), and pending key chords (e.g., `NOR 3 sel reg: a 2 g-`). Clicking the widget opens the interactive Command Palette or Registers picker.
+  - **Flash-on-Yank**: Instant, subtle Helix-themed visual feedback highlight across single and multiple carets when yanking selections.
 - **Command Palette (`:`)**: Lightweight command prompt supporting standard Helix buffer commands (`:w`, `:q`, `:wq`, `:wa`, `:qa`, `:vsp`, `:sp`, `:format`, `:increment`, `:decrement`).
 
 ---

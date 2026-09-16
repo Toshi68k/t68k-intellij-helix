@@ -224,6 +224,7 @@ object HelixCommands {
             "Start or stop recording a keyboard macro (Q)",
         ) { editor ->
             HelixActionDelegate.executeAction("StartStopMacroRecording", editor)
+            HelixStateManager.getOrCreate(editor).notifyListeners()
         },
         HelixCommandItem(
             "replay-macro",

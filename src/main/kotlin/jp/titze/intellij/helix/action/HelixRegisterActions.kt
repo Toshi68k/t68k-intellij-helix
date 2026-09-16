@@ -8,6 +8,7 @@ import com.intellij.openapi.util.TextRange
 import jp.titze.intellij.helix.register.HelixRegisterManager
 import jp.titze.intellij.helix.state.HelixMode
 import jp.titze.intellij.helix.state.HelixStateManager
+import jp.titze.intellij.helix.ui.HelixVisualFeedback
 
 object HelixRegisterActions {
 
@@ -70,6 +71,7 @@ object HelixRegisterActions {
     fun yankSelection(editor: Editor, count: Int = 1, register: Char? = null) {
         val state = HelixStateManager.getOrCreate(editor)
         val pieces = mutableListOf<String>()
+        val ranges = mutableListOf<TextRange>()
         val doc = editor.document
         val allCaretsWholeLines = editor.caretModel.allCarets.all { isCaretSelectingWholeLines(doc, it) }
 
@@ -80,11 +82,13 @@ object HelixRegisterActions {
                     text += "\n"
                 }
                 pieces.add(text)
+                ranges.add(TextRange(caret.selectionStart, caret.selectionEnd))
             } else {
                 val offset = caret.offset
                 if (offset < editor.document.textLength) {
                     val endOffset = (offset + count).coerceAtMost(editor.document.textLength)
                     pieces.add(editor.document.getText(TextRange(offset, endOffset)))
+                    ranges.add(TextRange(offset, endOffset))
                 }
             }
         }
@@ -98,6 +102,7 @@ object HelixRegisterActions {
                 pieces = pieces,
                 register = register,
             )
+            HelixVisualFeedback.flashYank(editor, ranges)
         }
     }
 
