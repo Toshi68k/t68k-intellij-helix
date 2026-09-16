@@ -104,7 +104,12 @@ object HelixWhichKeyMenus {
     )
 
     val viewItems = listOf(
-        WhichKeyItem("c", "Center view", "align_view_center"),
+        WhichKeyItem("z", "Center view", "align_view_center"),
+        WhichKeyItem("c", "Collapse region", "fold", "CollapseRegion"),
+        WhichKeyItem("f", "Collapse region", "fold", "CollapseRegion"),
+        WhichKeyItem("o", "Expand region", "unfold", "ExpandRegion"),
+        WhichKeyItem("M", "Collapse all regions", "fold_all", "CollapseAllRegions"),
+        WhichKeyItem("R", "Expand all regions", "unfold_all", "ExpandAllRegions"),
         WhichKeyItem("t", "Align view top", "align_view_top"),
         WhichKeyItem("b", "Align view bottom", "align_view_bottom"),
         WhichKeyItem("m", "Align view middle (horiz)", "align_view_middle"),
@@ -112,9 +117,7 @@ object HelixWhichKeyMenus {
         WhichKeyItem("k", "Scroll view up", "scroll_up"),
         WhichKeyItem("d", "Scroll half page down", "half_page_down"),
         WhichKeyItem("u", "Scroll half page up", "half_page_up"),
-        WhichKeyItem("f", "Scroll page down", "page_down"),
         WhichKeyItem("F", "Scroll page up", "page_up"),
-        WhichKeyItem("z", "Center view", "align_view_center"),
     )
 
     val windowItems = listOf(

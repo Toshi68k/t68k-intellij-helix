@@ -1,6 +1,7 @@
 package jp.titze.intellij.helix.keymap
 
 import com.intellij.openapi.editor.Editor
+import jp.titze.intellij.helix.action.HelixActionDelegate
 import jp.titze.intellij.helix.motion.HelixViewMotions
 
 internal object HelixViewKeymap {
@@ -8,7 +9,27 @@ internal object HelixViewKeymap {
     fun handle(ch: Char, editor: Editor, count: Int? = null): Boolean {
         val lines = count ?: 1
         return when (ch) {
-            'c', 'z' -> {
+            'c', 'f' -> {
+                HelixActionDelegate.executeAction("CollapseRegion", editor)
+                true
+            }
+
+            'o' -> {
+                HelixActionDelegate.executeAction("ExpandRegion", editor)
+                true
+            }
+
+            'M' -> {
+                HelixActionDelegate.executeAction("CollapseAllRegions", editor)
+                true
+            }
+
+            'R' -> {
+                HelixActionDelegate.executeAction("ExpandAllRegions", editor)
+                true
+            }
+
+            'z' -> {
                 HelixViewMotions.alignViewCenter(editor)
                 true
             }
@@ -45,11 +66,6 @@ internal object HelixViewKeymap {
 
             'u' -> {
                 HelixViewMotions.scrollHalfPageUp(editor, lines)
-                true
-            }
-
-            'f' -> {
-                HelixViewMotions.scrollPageDown(editor, lines)
                 true
             }
 
