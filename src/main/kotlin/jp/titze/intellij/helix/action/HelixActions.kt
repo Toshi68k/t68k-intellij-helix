@@ -438,4 +438,6 @@ object HelixActions {
     fun pipeToSelections(editor: Editor, command: String): Boolean = HelixShellActions.pipeToSelections(editor, command)
 
     fun runShellCommand(editor: Editor, command: String) = HelixShellActions.runShellCommand(editor, command)
+
+    fun showRegistersPicker(editor: Editor) = jp.titze.intellij.helix.ui.HelixRegistersPopup.show(editor)
 }

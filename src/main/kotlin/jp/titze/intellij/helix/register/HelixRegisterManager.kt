@@ -3,6 +3,7 @@ package jp.titze.intellij.helix.register
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.ide.CopyPasteManager
 import jp.titze.intellij.helix.action.HelixSearchActions
+import jp.titze.intellij.helix.editor.HelixInsertTracker
 import jp.titze.intellij.helix.settings.HelixSettings
 import java.awt.datatransfer.DataFlavor
 import java.awt.datatransfer.StringSelection
@@ -41,13 +42,15 @@ object HelixRegisterManager {
 
             '#' -> getSelectionIndexEntry(editor)
 
+            '.' -> HelixInsertTracker.lastInsertedText?.let { HelixRegisterEntry(text = it) }
+
             else -> null
         }
     }
 
     fun set(register: Char, entry: HelixRegisterEntry) {
         when (register) {
-            '_', '#' -> { /* Black hole and selection index discard silently */ }
+            '_', '#', '.', '%', '/' -> { /* Discard silently */ }
 
             '+', '*' -> setClipboard(entry.text)
 
@@ -149,6 +152,37 @@ object HelixRegisterManager {
             isLinewise = false,
             pieces = pieces,
         )
+    }
+
+    fun getAllRegisters(editor: Editor? = null): List<HelixRegisterItem> {
+        val list = mutableListOf<HelixRegisterItem>()
+        list.add(HelixRegisterItem('"', "Default", get('"', editor)))
+        list.add(HelixRegisterItem('0', "Last Yank", get('0', editor)))
+
+        for (i in 0 until DELETE_REGISTER_COUNT) {
+            val entry = deleteRegisters[i]
+            if (entry != null) {
+                list.add(HelixRegisterItem(('1'.code + i).toChar(), "Delete ${i + 1}", entry))
+            }
+        }
+
+        for ((char, entry) in namedRegisters.toSortedMap()) {
+            list.add(HelixRegisterItem(char, "Named '$char'", entry))
+        }
+
+        list.add(HelixRegisterItem('+', "Clipboard", getFromClipboard()))
+        HelixSearchActions.lastSearchPattern?.let {
+            list.add(HelixRegisterItem('/', "Search Pattern", HelixRegisterEntry(text = it)))
+        }
+        HelixInsertTracker.lastInsertedText?.let {
+            list.add(HelixRegisterItem('.', "Last Insert", HelixRegisterEntry(text = it)))
+        }
+        getBufferName(editor)?.let {
+            list.add(HelixRegisterItem('%', "Current Buffer", HelixRegisterEntry(text = it)))
+        }
+        list.add(HelixRegisterItem('#', "Selection Index", get('#', editor)))
+        list.add(HelixRegisterItem('_', "Black Hole", null))
+        return list
     }
 
     fun clear() {

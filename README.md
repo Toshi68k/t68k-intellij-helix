@@ -358,6 +358,7 @@ Press `:` in Normal mode to open the interactive **Helix Command Picker**, style
 - `:set search-ui=inline` / `:set search-ui=stock` &rarr; Set search UI to Stock Helix inline bar
 - `:set search-ui=popup` &rarr; Set search UI to Popup dialog
 - `:jumps` &rarr; Open interactive jumplist picker
+- `:reg` / `:registers` &rarr; Open interactive registers picker popup
 - `:increment` / `:inc` &rarr; Increment integer under cursor or within selection (`Ctrl+a`)
 - `:decrement` / `:dec` &rarr; Decrement integer under cursor or within selection (`Ctrl+x`)
 - `:trim-selections` / `:trim_selections` &rarr; Trim whitespace from selections (`_`)

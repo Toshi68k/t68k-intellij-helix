@@ -292,6 +292,12 @@
                 description="Open jumplist picker popup">
         </action>
 
+        <action id="jp.titze.intellij.helix.registersPicker"
+                class="jp.titze.intellij.helix.editor.HelixRegistersPickerAction"
+                text="Helix Registers Picker"
+                description="Open registers picker popup">
+        </action>
+
         <action id="jp.titze.intellij.helix.switchCase"
                 class="jp.titze.intellij.helix.editor.HelixSwitchCaseAction"
                 text="Helix Switch Case"
