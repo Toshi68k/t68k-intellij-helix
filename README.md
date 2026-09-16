@@ -142,6 +142,8 @@ The goal of this plugin is to provide a more complete and polished Helix-like ex
 | `O` | Insert new line above (`EditorStartNewLineBefore`) and enter `Insert` mode |
 | `u` | Undo (`$Undo`) |
 | `U` | Redo (`$Redo`) |
+| `Alt+u` | Move backward in history (`earlier`, `$Undo`) |
+| `Alt+U` | Move forward in history (`later`, `$Redo`) |
 | `Q` | Start / stop recording keyboard macro (`StartStopMacroRecording`, `record-macro`) |
 | `q` | Replay last recorded macro (`PlaybackLastMacro`, `replay-macro`, supports `[count]`) |
 | `Ctrl+s` *(in `Insert` mode)* | Commit undo checkpoint (`commit-undo-checkpoint`) |
@@ -363,6 +365,10 @@ Press `:` in Normal mode to open the interactive **Helix Command Picker**, style
 - `:unsplit` / `:only` &rarr; Close all other splits (`UnsplitAll`)
 - `:close-split` / `:close` &rarr; Close active split (`Unsplit`)
 - `:format` &rarr; Reformat code (`ReformatCode`)
+- `:optimize-imports` / `:oi` &rarr; Optimize imports (`OptimizeImports`)
+- `:goto-test` / `:test` &rarr; Jump to test or code under test (`GotoTest`)
+- `:earlier` / `:undo-earlier` &rarr; Move backward in history (`Alt+u`)
+- `:later` / `:redo-later` &rarr; Move forward in history (`Alt+U`)
 - `:reload` / `:e!` &rarr; Reload file from disk (`SynchronizeCurrentFile`)
 - `:open` / `:edit` / `:e [file]` &rarr; Open fuzzy file picker (`GotoFile`) or open file by path
 - `:buffer` / `:b` &rarr; Open buffer switcher (`RecentFiles`)

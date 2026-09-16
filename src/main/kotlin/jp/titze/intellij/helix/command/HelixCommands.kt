@@ -74,11 +74,23 @@ object HelixCommands {
         HelixCommandItem("format", emptyList(), "Format buffer using IDE code formatter") { editor ->
             HelixActionDelegate.executeAction("ReformatCode", editor)
         },
-        HelixCommandItem("earlier", emptyList(), "Undo earlier changes") { editor ->
-            HelixActionDelegate.executeAction("\$Undo", editor)
+        HelixCommandItem(
+            "optimize-imports",
+            listOf("optimize_imports", "oi"),
+            "Optimize and clean imports in current file",
+        ) { editor -> HelixActionDelegate.executeAction("OptimizeImports", editor) },
+        HelixCommandItem(
+            "goto-test",
+            listOf("goto_test", "test"),
+            "Navigate to or create test for current class (GotoTest)",
+        ) { editor -> HelixActionDelegate.executeAction("GotoTest", editor) },
+        HelixCommandItem("earlier", listOf("undo-earlier"), "Undo earlier changes (Alt+u)") { editor ->
+            val count = HelixStateManager.getOrCreate(editor).takeCount() ?: 1
+            repeat(count) { HelixActionDelegate.executeAction("\$Undo", editor) }
         },
-        HelixCommandItem("later", emptyList(), "Redo later changes") { editor ->
-            HelixActionDelegate.executeAction("\$Redo", editor)
+        HelixCommandItem("later", listOf("redo-later"), "Redo later changes (Alt+U)") { editor ->
+            val count = HelixStateManager.getOrCreate(editor).takeCount() ?: 1
+            repeat(count) { HelixActionDelegate.executeAction("\$Redo", editor) }
         },
         HelixCommandItem(
             "commit-undo-checkpoint",

@@ -912,6 +912,46 @@ class HelixUiPopupsTest : BasePlatformTestCase() {
         }
     }
 
+    fun testProductivityCommandsExecution() {
+        myFixture.configureByText("test.txt", "class Foo {}")
+        val editor = myFixture.editor
+
+        val executedActions = mutableListOf<String>()
+        val originalExecutor = jp.titze.intellij.helix.action.HelixActionDelegate.actionExecutor
+        jp.titze.intellij.helix.action.HelixActionDelegate.actionExecutor = { actionId, _ ->
+            executedActions.add(actionId)
+            true
+        }
+
+        try {
+            HelixCommandPopup.executeCommand("optimize-imports", editor)
+            executedActions.last() shouldBe "OptimizeImports"
+
+            HelixCommandPopup.executeCommand("oi", editor)
+            executedActions.last() shouldBe "OptimizeImports"
+
+            HelixCommandPopup.executeCommand("goto-test", editor)
+            executedActions.last() shouldBe "GotoTest"
+
+            HelixCommandPopup.executeCommand("test", editor)
+            executedActions.last() shouldBe "GotoTest"
+
+            HelixCommandPopup.executeCommand("earlier", editor)
+            executedActions.last() shouldBe "\$Undo"
+
+            HelixCommandPopup.executeCommand("undo-earlier", editor)
+            executedActions.last() shouldBe "\$Undo"
+
+            HelixCommandPopup.executeCommand("later", editor)
+            executedActions.last() shouldBe "\$Redo"
+
+            HelixCommandPopup.executeCommand("redo-later", editor)
+            executedActions.last() shouldBe "\$Redo"
+        } finally {
+            jp.titze.intellij.helix.action.HelixActionDelegate.actionExecutor = originalExecutor
+        }
+    }
+
     fun testWhichKeyDebugMenuRegistration() {
         val (title, items) = HelixWhichKeyMenus.getMenu(" G") ?: error("Debug menu not registered")
         title shouldBe "DEBUG (DAP) MENU"

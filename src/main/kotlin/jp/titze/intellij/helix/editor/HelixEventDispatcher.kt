@@ -273,6 +273,18 @@ class HelixEventDispatcher : IdeEventQueue.EventDispatcher {
                 true
             }
 
+            !e.isShiftDown && (e.keyCode == KeyEvent.VK_U || e.keyChar == 'u') -> {
+                val count = state.takeCount() ?: 1
+                repeat(count) { HelixActionDelegate.executeAction("\$Undo", editor) }
+                true
+            }
+
+            (e.isShiftDown && e.keyCode == KeyEvent.VK_U) || e.keyChar == 'U' -> {
+                val count = state.takeCount() ?: 1
+                repeat(count) { HelixActionDelegate.executeAction("\$Redo", editor) }
+                true
+            }
+
             !e.isShiftDown && (e.keyCode == KeyEvent.VK_K || e.keyChar == 'k') -> {
                 HelixSearchManager.startKeepSelections(editor)
                 true
