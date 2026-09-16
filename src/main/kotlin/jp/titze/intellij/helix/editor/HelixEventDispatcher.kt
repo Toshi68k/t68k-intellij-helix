@@ -258,90 +258,108 @@ class HelixEventDispatcher : IdeEventQueue.EventDispatcher {
         e: KeyEvent,
         editor: Editor,
         state: jp.titze.intellij.helix.state.HelixEditorState,
-    ): Boolean = when {
-        e.keyCode == KeyEvent.VK_BACK_QUOTE || e.keyChar == '`' -> {
-            HelixActions.toUpperCase(editor, state.takeCount() ?: 1)
+    ): Boolean {
+        if (handleAltShellShortcut(e, editor)) return true
+
+        return when {
+            e.keyCode == KeyEvent.VK_BACK_QUOTE || e.keyChar == '`' -> {
+                HelixActions.toUpperCase(editor, state.takeCount() ?: 1)
+                true
+            }
+
+            !e.isShiftDown && (e.keyCode == KeyEvent.VK_P || e.keyCode == KeyEvent.VK_LEFT) -> {
+                HelixActions.selectPrevSibling(editor)
+                true
+            }
+
+            !e.isShiftDown && (e.keyCode == KeyEvent.VK_A || e.keyChar == 'a') -> {
+                HelixActions.selectAllSiblings(editor)
+                true
+            }
+
+            e.isShiftDown && (e.keyCode == KeyEvent.VK_I || e.keyChar == 'I') -> {
+                HelixActions.selectAllChildren(editor)
+                true
+            }
+
+            !e.isShiftDown && (e.keyCode == KeyEvent.VK_K || e.keyChar == 'k') -> {
+                HelixSearchManager.startKeepSelections(editor)
+                true
+            }
+
+            e.isShiftDown && (e.keyCode == KeyEvent.VK_K || e.keyChar == 'K') -> {
+                HelixSearchManager.startRemoveSelections(editor)
+                true
+            }
+
+            e.keyChar == ':' || (e.isShiftDown && e.keyCode == KeyEvent.VK_SEMICOLON) -> {
+                HelixActions.ensureSelectionsForward(editor)
+                true
+            }
+
+            e.keyCode == KeyEvent.VK_PERIOD || e.keyChar == '.' -> {
+                HelixActions.repeatLastMotion(editor, state.takeCount() ?: 1)
+                true
+            }
+
+            !e.isShiftDown && (e.keyCode == KeyEvent.VK_D || e.keyChar == 'd') -> {
+                HelixActions.deleteSelectionNoYank(editor, state.takeCount() ?: 1)
+                true
+            }
+
+            !e.isShiftDown && (e.keyCode == KeyEvent.VK_C || e.keyChar == 'c') -> {
+                HelixActions.changeSelectionNoYank(editor, state.takeCount() ?: 1)
+                true
+            }
+
+            !e.isShiftDown && (e.keyCode == KeyEvent.VK_MINUS || e.keyChar == '-') -> {
+                HelixActions.mergeAllSelections(editor)
+                true
+            }
+
+            e.keyChar == 'J' || (e.isShiftDown && e.keyCode == KeyEvent.VK_J) -> {
+                HelixActions.joinLines(editor, state.takeCount() ?: 1, selectSpace = true)
+                true
+            }
+
+            e.keyChar == '*' || (e.isShiftDown && e.keyCode == KeyEvent.VK_8) -> {
+                HelixKeyHandler.recordJump(editor)
+                HelixActions.searchSelection(editor, detectWordBoundaries = false)
+                true
+            }
+
+            e.keyChar == '_' || (e.isShiftDown && e.keyCode == KeyEvent.VK_MINUS) -> {
+                HelixActions.mergeSelections(editor)
+                true
+            }
+
+            e.keyChar == '(' || (e.isShiftDown && e.keyCode == KeyEvent.VK_9) -> {
+                HelixActions.rotateSelectionsContents(editor, forward = false)
+                true
+            }
+
+            e.keyChar == ')' || (e.isShiftDown && e.keyCode == KeyEvent.VK_0) -> {
+                HelixActions.rotateSelectionsContents(editor, forward = true)
+                true
+            }
+
+            !e.isShiftDown && (e.keyCode == KeyEvent.VK_X || e.keyChar == 'x') -> {
+                HelixMotions.shrinkToLineBounds(editor)
+                true
+            }
+
+            else -> false
+        }
+    }
+
+    private fun handleAltShellShortcut(e: KeyEvent, editor: Editor): Boolean = when {
+        e.keyChar == '!' || (e.isShiftDown && e.keyCode == KeyEvent.VK_1) -> {
+            HelixSearchManager.startShellAppend(editor)
             true
         }
 
-        !e.isShiftDown && (e.keyCode == KeyEvent.VK_P || e.keyCode == KeyEvent.VK_LEFT) -> {
-            HelixActions.selectPrevSibling(editor)
-            true
-        }
-
-        !e.isShiftDown && (e.keyCode == KeyEvent.VK_A || e.keyChar == 'a') -> {
-            HelixActions.selectAllSiblings(editor)
-            true
-        }
-
-        e.isShiftDown && (e.keyCode == KeyEvent.VK_I || e.keyChar == 'I') -> {
-            HelixActions.selectAllChildren(editor)
-            true
-        }
-
-        !e.isShiftDown && (e.keyCode == KeyEvent.VK_K || e.keyChar == 'k') -> {
-            HelixSearchManager.startKeepSelections(editor)
-            true
-        }
-
-        e.isShiftDown && (e.keyCode == KeyEvent.VK_K || e.keyChar == 'K') -> {
-            HelixSearchManager.startRemoveSelections(editor)
-            true
-        }
-
-        e.keyChar == ':' || (e.isShiftDown && e.keyCode == KeyEvent.VK_SEMICOLON) -> {
-            HelixActions.ensureSelectionsForward(editor)
-            true
-        }
-
-        e.keyCode == KeyEvent.VK_PERIOD || e.keyChar == '.' -> {
-            HelixActions.repeatLastMotion(editor, state.takeCount() ?: 1)
-            true
-        }
-
-        !e.isShiftDown && (e.keyCode == KeyEvent.VK_D || e.keyChar == 'd') -> {
-            HelixActions.deleteSelectionNoYank(editor, state.takeCount() ?: 1)
-            true
-        }
-
-        !e.isShiftDown && (e.keyCode == KeyEvent.VK_C || e.keyChar == 'c') -> {
-            HelixActions.changeSelectionNoYank(editor, state.takeCount() ?: 1)
-            true
-        }
-
-        !e.isShiftDown && (e.keyCode == KeyEvent.VK_MINUS || e.keyChar == '-') -> {
-            HelixActions.mergeAllSelections(editor)
-            true
-        }
-
-        e.keyChar == 'J' || (e.isShiftDown && e.keyCode == KeyEvent.VK_J) -> {
-            HelixActions.joinLines(editor, state.takeCount() ?: 1, selectSpace = true)
-            true
-        }
-
-        e.keyChar == '*' || (e.isShiftDown && e.keyCode == KeyEvent.VK_8) -> {
-            HelixKeyHandler.recordJump(editor)
-            HelixActions.searchSelection(editor, detectWordBoundaries = false)
-            true
-        }
-
-        e.keyChar == '_' || (e.isShiftDown && e.keyCode == KeyEvent.VK_MINUS) -> {
-            HelixActions.mergeSelections(editor)
-            true
-        }
-
-        e.keyChar == '(' || (e.isShiftDown && e.keyCode == KeyEvent.VK_9) -> {
-            HelixActions.rotateSelectionsContents(editor, forward = false)
-            true
-        }
-
-        e.keyChar == ')' || (e.isShiftDown && e.keyCode == KeyEvent.VK_0) -> {
-            HelixActions.rotateSelectionsContents(editor, forward = true)
-            true
-        }
-
-        !e.isShiftDown && (e.keyCode == KeyEvent.VK_X || e.keyChar == 'x') -> {
-            HelixMotions.shrinkToLineBounds(editor)
+        e.keyChar == '|' || (e.isShiftDown && e.keyCode == KeyEvent.VK_BACK_SLASH) -> {
+            HelixSearchManager.startShellPipeTo(editor)
             true
         }
 

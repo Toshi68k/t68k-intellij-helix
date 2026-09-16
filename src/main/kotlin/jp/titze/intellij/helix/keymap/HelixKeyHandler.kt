@@ -362,6 +362,12 @@ object HelixKeyHandler {
 
             '.' -> HelixInsertTracker.repeatLastInsert(editor, count)
 
+            '|' -> HelixSearchManager.startShellPipe(editor)
+
+            '!' -> HelixSearchManager.startShellInsert(editor)
+
+            '$' -> HelixSearchManager.startShellKeepPipe(editor)
+
             else -> return false
         }
         return true

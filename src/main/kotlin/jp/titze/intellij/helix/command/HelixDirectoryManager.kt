@@ -82,7 +82,7 @@ object HelixDirectoryManager {
         return msg
     }
 
-    private fun setStatus(editor: Editor, message: String) {
+    fun setStatus(editor: Editor, message: String) {
         val project = editor.project ?: return
         val statusBar = WindowManager.getInstance().getStatusBar(project)
         statusBar?.info = message

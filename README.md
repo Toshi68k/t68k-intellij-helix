@@ -107,6 +107,15 @@ The goal of this plugin is to provide a more complete and polished Helix-like ex
 | `S` | Split selection into subselections on regex matches |
 | `v` | Toggle between `Normal` and `Select` mode |
 
+### Shell Filtering & Piping
+
+| Key | Helix Action | Command | Description |
+|---|---|---|---|
+| `\|` | `shell_pipe` | `:pipe [cmd]` | Pipe each selection into an external shell command and replace with its stdout |
+| `!` | `shell_insert_output` | `:insert-output [cmd]` | Execute a shell command and insert its stdout before selections |
+| `Alt+!` | `shell_append_output` | `:append-output [cmd]` | Execute a shell command and insert its stdout after selections |
+| `$` | `shell_keep_pipe` | `:keep-pipe [cmd]` | Filter selections by piping into a shell command, keeping only exit code 0 |
+| `Alt+\|` | `shell_pipe_to` | `:pipe-to [cmd]` | Pipe each selection into a shell command ignoring its output |
 
 ### Actions on Selection
 
@@ -345,12 +354,18 @@ Press `:` in Normal mode to open the interactive **Helix Command Picker**, style
 - `:record-macro` / `:macro-record` &rarr; Start or stop recording a keyboard macro (`Q`)
 - `:replay-macro` / `:macro-play` &rarr; Replay the last recorded keyboard macro (`q`)
 - `:sort` / `:sort -r` &rarr; Sort selected lines alphabetically or in reverse (whole buffer if no selection)
-- `:sh` / `:terminal` &rarr; Open / toggle IntelliJ's built-in terminal tool window (`ActivateTerminalToolWindow`)
+- `:pipe [cmd]` &rarr; Pipe each selection into external shell command and replace with stdout (`|`)
+- `:pipe-to [cmd]` &rarr; Pipe each selection into external shell command ignoring stdout (`Alt+|`)
+- `:insert-output [cmd]` &rarr; Execute shell command and insert stdout before selections (`!`)
+- `:append-output [cmd]` &rarr; Execute shell command and insert stdout after selections (`Alt+!`)
+- `:keep-pipe [cmd]` &rarr; Filter selections through shell command exit code (`$`)
+- `:sh [cmd]` / `:run-shell-command [cmd]` / `:! [cmd]` &rarr; Run shell command asynchronously or toggle terminal (`ActivateTerminalToolWindow`)
+- `:terminal` &rarr; Open / toggle IntelliJ's built-in terminal tool window
 - `:cd [path]` / `:pwd` &rarr; Change or display current working directory (supports `~`, `-`, relative paths)
 
 #### Search & Selection UI Modes
 Helix Keymap supports two switchable search and regex prompt styles:
-1. **Stock Helix Mode (Default)**: Single-line prompt bar docked at the bottom of the active editor (`search: `, `rsearch: `, `select: `, `split: `, `keep: `, `remove: `). Matches and selections update **live in the editor buffer as you type**. Pressing <kbd>Enter</kbd> confirms, while pressing <kbd>Esc</kbd> (or <kbd>Backspace</kbd> on empty query) cancels and reverts all carets and selections to their pre-search snapshot.
+1. **Stock Helix Mode (Default)**: Single-line prompt bar docked at the bottom of the active editor (`search: `, `rsearch: `, `select: `, `split: `, `keep: `, `remove: `, `pipe: `, `insert-output: `, `append-output: `, `keep-pipe: `, `pipe-to: `). Matches and selections update live in the editor buffer as you type for search/regex modes, while shell operations execute safely upon pressing <kbd>Enter</kbd>. Pressing <kbd>Esc</kbd> (or <kbd>Backspace</kbd> on empty query) cancels and reverts all carets and selections to their pre-search snapshot.
 
 2. **Popup Dialog Mode**: Centered floating dialog window with match counter badge, useful for users preferring a separate floating modal window.
 

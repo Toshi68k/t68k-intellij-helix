@@ -7,12 +7,14 @@ import com.intellij.openapi.fileEditor.OpenFileDescriptor
 import com.intellij.openapi.vfs.LocalFileSystem
 import jp.titze.intellij.helix.action.HelixActionDelegate
 import jp.titze.intellij.helix.action.HelixActions
+import jp.titze.intellij.helix.action.HelixShellActions
 import jp.titze.intellij.helix.jumplist.HelixJumpListService
 import jp.titze.intellij.helix.motion.HelixMotions
 import jp.titze.intellij.helix.settings.HelixSearchUiMode
 import jp.titze.intellij.helix.settings.HelixSettings
 import jp.titze.intellij.helix.state.HelixStateManager
 import jp.titze.intellij.helix.ui.HelixJumplistPopup
+import jp.titze.intellij.helix.ui.HelixSearchManager
 import java.io.File
 
 data class HelixCommandItem(
@@ -322,6 +324,36 @@ object HelixCommands {
         HelixCommandItem("new", listOf("n"), "Create new scratch file / buffer") { editor ->
             HelixActionDelegate.executeAction("NewScratchFile", editor)
         },
+        HelixCommandItem(
+            "pipe",
+            listOf("shell-pipe", "shell_pipe"),
+            "Pipe selections into shell command and replace",
+        ) { editor -> HelixSearchManager.startShellPipe(editor) },
+        HelixCommandItem(
+            "pipe-to",
+            listOf("shell-pipe-to", "shell_pipe_to"),
+            "Pipe selections into shell command ignoring output",
+        ) { editor -> HelixSearchManager.startShellPipeTo(editor) },
+        HelixCommandItem(
+            "insert-output",
+            listOf("insert_output", "shell_insert_output"),
+            "Insert shell output before selections",
+        ) { editor -> HelixSearchManager.startShellInsert(editor) },
+        HelixCommandItem(
+            "append-output",
+            listOf("append_output", "shell_append_output"),
+            "Append shell output after selections",
+        ) { editor -> HelixSearchManager.startShellAppend(editor) },
+        HelixCommandItem(
+            "keep-pipe",
+            listOf("keep_pipe", "shell_keep_pipe"),
+            "Filter selections through shell command exit code",
+        ) { editor -> HelixSearchManager.startShellKeepPipe(editor) },
+        HelixCommandItem(
+            "run-shell-command",
+            listOf("run_shell_command"),
+            "Run a shell command asynchronously",
+        ) { editor -> HelixActionDelegate.executeAction("ActivateTerminalToolWindow", editor) },
     )
 
     fun execute(cmd: String, editor: Editor) {
@@ -331,20 +363,16 @@ object HelixCommands {
         val baseCmd = parts[0].lowercase()
         val arg = if (parts.size > 1) parts[1].trim() else ""
 
-        if (baseCmd == "cd") {
-            HelixDirectoryManager.changeDirectory(arg, editor)
+        if (executeSpecialCommand(cleanCmd, baseCmd, arg, editor)) {
             return
         }
-        if (baseCmd == "pwd") {
-            HelixDirectoryManager.printWorkingDirectory(editor)
-            return
-        }
+
         if (baseCmd == "sort") {
             val isReverse = arg == "-r" || arg == "--reverse" || arg == "reverse"
             HelixActions.sortLines(editor, isReverse)
             return
         }
-        if (baseCmd == "terminal" || baseCmd == "sh") {
+        if (baseCmd == "terminal") {
             HelixActionDelegate.executeAction("ActivateTerminalToolWindow", editor)
             return
         }
@@ -478,5 +506,84 @@ object HelixCommands {
             val descriptor = OpenFileDescriptor(project, virtualFile)
             FileEditorManager.getInstance(project).openTextEditor(descriptor, true)
         }
+    }
+
+    private fun executeSpecialCommand(cleanCmd: String, baseCmd: String, arg: String, editor: Editor): Boolean {
+        if (cleanCmd.startsWith("!")) {
+            val shellCmd = cleanCmd.removePrefix("!").trim()
+            if (shellCmd.isEmpty()) {
+                HelixSearchManager.startShellInsert(editor)
+            } else {
+                HelixShellActions.runShellCommand(editor, shellCmd)
+            }
+            return true
+        }
+        if (baseCmd == "cd") {
+            HelixDirectoryManager.changeDirectory(arg, editor)
+            return true
+        }
+        if (baseCmd == "pwd") {
+            HelixDirectoryManager.printWorkingDirectory(editor)
+            return true
+        }
+        return executeShellCommand(baseCmd, arg, editor)
+    }
+
+    private fun executeShellCommand(baseCmd: String, arg: String, editor: Editor): Boolean = when (baseCmd) {
+        "pipe", "shell-pipe", "shell_pipe" -> {
+            if (arg.isEmpty()) {
+                HelixSearchManager.startShellPipe(editor)
+            } else {
+                HelixShellActions.pipeSelections(editor, arg)
+            }
+            true
+        }
+
+        "pipe-to", "shell-pipe-to", "shell_pipe_to" -> {
+            if (arg.isEmpty()) {
+                HelixSearchManager.startShellPipeTo(editor)
+            } else {
+                HelixShellActions.pipeToSelections(editor, arg)
+            }
+            true
+        }
+
+        "insert-output", "insert_output", "shell_insert_output" -> {
+            if (arg.isEmpty()) {
+                HelixSearchManager.startShellInsert(editor)
+            } else {
+                HelixShellActions.insertOutput(editor, arg, append = false)
+            }
+            true
+        }
+
+        "append-output", "append_output", "shell_append_output" -> {
+            if (arg.isEmpty()) {
+                HelixSearchManager.startShellAppend(editor)
+            } else {
+                HelixShellActions.insertOutput(editor, arg, append = true)
+            }
+            true
+        }
+
+        "keep-pipe", "keep_pipe", "shell_keep_pipe" -> {
+            if (arg.isEmpty()) {
+                HelixSearchManager.startShellKeepPipe(editor)
+            } else {
+                HelixShellActions.keepPipeSelections(editor, arg)
+            }
+            true
+        }
+
+        "sh", "run-shell-command", "run_shell_command" -> {
+            if (arg.isEmpty()) {
+                HelixActionDelegate.executeAction("ActivateTerminalToolWindow", editor)
+            } else {
+                HelixShellActions.runShellCommand(editor, arg)
+            }
+            true
+        }
+
+        else -> false
     }
 }

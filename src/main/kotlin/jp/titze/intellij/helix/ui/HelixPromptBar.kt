@@ -8,6 +8,7 @@ import com.intellij.ui.components.JBTextField
 import com.intellij.util.ui.JBUI
 import jp.titze.intellij.helix.action.HelixActions
 import jp.titze.intellij.helix.action.HelixCaretSnapshot
+import jp.titze.intellij.helix.action.HelixShellActions
 import java.awt.BorderLayout
 import java.awt.Dimension
 import java.awt.Font
@@ -32,6 +33,15 @@ enum class HelixPromptType(val badge: String) {
     SPLIT("split"),
     KEEP("keep"),
     REMOVE("remove"),
+    PIPE("pipe"),
+    INSERT_OUTPUT("insert-output"),
+    APPEND_OUTPUT("append-output"),
+    KEEP_PIPE("keep-pipe"),
+    PIPE_TO("pipe-to"),
+    ;
+
+    val isShellType: Boolean
+        get() = this in setOf(PIPE, INSERT_OUTPUT, APPEND_OUTPUT, KEEP_PIPE, PIPE_TO)
 }
 
 class HelixPromptBar(private val editor: Editor) : JPanel(BorderLayout(JBUI.scale(8), 0)) {
@@ -157,6 +167,12 @@ class HelixPromptBar(private val editor: Editor) : JPanel(BorderLayout(JBUI.scal
         if (isUpdatingPreview) return
         val query = textField.text
 
+        if (currentType.isShellType) {
+            statusLabel.text = if (query.isEmpty()) "" else "press Enter to execute"
+            statusLabel.foreground = HINT_FG
+            return
+        }
+
         if (query.isEmpty()) {
             HelixActions.restoreCarets(editor, baseSnapshot)
             statusLabel.text = ""
@@ -233,6 +249,8 @@ class HelixPromptBar(private val editor: Editor) : JPanel(BorderLayout(JBUI.scal
                     )
                     updateStatusSelectionCount(count)
                 }
+
+                else -> Unit
             }
         } catch (e: Exception) {
             statusLabel.text = "invalid regex"
@@ -262,16 +280,21 @@ class HelixPromptBar(private val editor: Editor) : JPanel(BorderLayout(JBUI.scal
 
     fun commitAndClose() {
         val query = textField.text
+        val type = currentType
+        val snapshot = baseSnapshot
+        hideBar()
+
         if (query.isNotEmpty()) {
-            if (currentType == HelixPromptType.SEARCH) {
+            if (type == HelixPromptType.SEARCH) {
                 HelixActions.lastSearchPattern = query
                 HelixActions.lastSearchBackward = false
-            } else if (currentType == HelixPromptType.RSEARCH) {
+            } else if (type == HelixPromptType.RSEARCH) {
                 HelixActions.lastSearchPattern = query
                 HelixActions.lastSearchBackward = true
+            } else if (type.isShellType) {
+                HelixShellActions.executePromptCommand(editor, type, query, snapshot)
             }
         }
-        hideBar()
     }
 
     fun cancelAndClose() {

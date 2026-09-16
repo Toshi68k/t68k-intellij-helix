@@ -419,4 +419,16 @@ object HelixActions {
     fun selectAllSiblings(editor: Editor): Boolean = HelixAstActions.selectAllSiblings(editor)
 
     fun selectAllChildren(editor: Editor): Boolean = HelixAstActions.selectAllChildren(editor)
+
+    fun pipeSelections(editor: Editor, command: String): Boolean = HelixShellActions.pipeSelections(editor, command)
+
+    fun insertShellOutput(editor: Editor, command: String, append: Boolean = false): Boolean =
+        HelixShellActions.insertOutput(editor, command, append)
+
+    fun keepPipeSelections(editor: Editor, command: String): Boolean =
+        HelixShellActions.keepPipeSelections(editor, command)
+
+    fun pipeToSelections(editor: Editor, command: String): Boolean = HelixShellActions.pipeToSelections(editor, command)
+
+    fun runShellCommand(editor: Editor, command: String) = HelixShellActions.runShellCommand(editor, command)
 }
