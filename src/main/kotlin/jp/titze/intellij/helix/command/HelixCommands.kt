@@ -279,6 +279,21 @@ object HelixCommands {
             "Select previous sibling AST element (Alt+p, Alt+Left)",
         ) { editor -> HelixActions.selectPrevSibling(editor) },
         HelixCommandItem(
+            "select_next_sibling",
+            listOf("select-next-sibling"),
+            "Select next sibling AST element (Alt+n, Alt+Right)",
+        ) { editor -> HelixActions.selectNextSibling(editor) },
+        HelixCommandItem(
+            "move_parent_node_start",
+            listOf("move-parent-node-start"),
+            "Move or extend to start of parent AST node (Alt+b)",
+        ) { editor -> HelixActions.moveParentNodeStart(editor) },
+        HelixCommandItem(
+            "move_parent_node_end",
+            listOf("move-parent-node-end"),
+            "Move or extend to end of parent AST node (Alt+e)",
+        ) { editor -> HelixActions.moveParentNodeEnd(editor) },
+        HelixCommandItem(
             "select_all_siblings",
             listOf("select-all-siblings"),
             "Select all sibling AST elements (Alt+a)",

@@ -95,6 +95,36 @@
             <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="alt LEFT"/>
         </action>
 
+        <action id="jp.titze.intellij.helix.selectNextSibling"
+                class="jp.titze.intellij.helix.editor.HelixSelectNextSiblingAction"
+                text="Helix Select Next Sibling"
+                description="Select next sibling AST element">
+            <keyboard-shortcut keymap="$default" first-keystroke="alt N"/>
+            <keyboard-shortcut keymap="Mac OS X" first-keystroke="alt N"/>
+            <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="alt N"/>
+            <keyboard-shortcut keymap="$default" first-keystroke="alt RIGHT"/>
+            <keyboard-shortcut keymap="Mac OS X" first-keystroke="alt RIGHT"/>
+            <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="alt RIGHT"/>
+        </action>
+
+        <action id="jp.titze.intellij.helix.moveParentNodeStart"
+                class="jp.titze.intellij.helix.editor.HelixMoveParentNodeStartAction"
+                text="Helix Move to Parent Node Start"
+                description="Move caret or expand selection to start of parent AST node">
+            <keyboard-shortcut keymap="$default" first-keystroke="alt B"/>
+            <keyboard-shortcut keymap="Mac OS X" first-keystroke="alt B"/>
+            <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="alt B"/>
+        </action>
+
+        <action id="jp.titze.intellij.helix.moveParentNodeEnd"
+                class="jp.titze.intellij.helix.editor.HelixMoveParentNodeEndAction"
+                text="Helix Move to Parent Node End"
+                description="Move caret or expand selection to end of parent AST node">
+            <keyboard-shortcut keymap="$default" first-keystroke="alt E"/>
+            <keyboard-shortcut keymap="Mac OS X" first-keystroke="alt E"/>
+            <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="alt E"/>
+        </action>
+
         <action id="jp.titze.intellij.helix.selectAllSiblings"
                 class="jp.titze.intellij.helix.editor.HelixSelectAllSiblingsAction"
                 text="Helix Select All Siblings"
@@ -117,7 +147,6 @@
                 class="jp.titze.intellij.helix.editor.HelixSelectNextOccurrenceAction"
                 text="Helix Select Next Occurrence"
                 description="Select next occurrence of current selection">
-            <keyboard-shortcut keymap="$default" first-keystroke="alt N"/>
         </action>
 
         <action id="jp.titze.intellij.helix.copySelectionOnNextLine"

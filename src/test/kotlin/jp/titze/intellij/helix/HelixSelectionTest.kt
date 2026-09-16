@@ -1,6 +1,7 @@
 package jp.titze.intellij.helix
 
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
+import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
@@ -857,5 +858,157 @@ class HelixSelectionTest : BasePlatformTestCase() {
         )
         dispatcher.dispatch(altShiftI).shouldBeTrue()
         editor.caretModel.caretCount shouldBe 3
+
+        // Test Alt-N on "b: String"
+        editor.caretModel.removeSecondaryCarets()
+        val curCaret = editor.caretModel.primaryCaret
+        curCaret.removeSelection()
+        curCaret.moveToOffset(text.indexOf("b: String"))
+        val altN = java.awt.event.KeyEvent(
+            editor.contentComponent,
+            java.awt.event.KeyEvent.KEY_PRESSED,
+            System.currentTimeMillis(),
+            java.awt.event.InputEvent.ALT_DOWN_MASK,
+            java.awt.event.KeyEvent.VK_N,
+            'n',
+        )
+        dispatcher.dispatch(altN).shouldBeTrue()
+        editor.caretModel.primaryCaret.selectedText shouldBe "c: Boolean"
+
+        // Test Alt-Right on "a: Int"
+        val nextCaret = editor.caretModel.primaryCaret
+        nextCaret.removeSelection()
+        nextCaret.moveToOffset(text.indexOf("a: Int"))
+        val altRight = java.awt.event.KeyEvent(
+            editor.contentComponent,
+            java.awt.event.KeyEvent.KEY_PRESSED,
+            System.currentTimeMillis(),
+            java.awt.event.InputEvent.ALT_DOWN_MASK,
+            java.awt.event.KeyEvent.VK_RIGHT,
+            java.awt.event.KeyEvent.CHAR_UNDEFINED,
+        )
+        dispatcher.dispatch(altRight).shouldBeTrue()
+        editor.caretModel.primaryCaret.selectedText shouldBe "b: String"
+
+        // Test Alt-B (move parent node start)
+        val bCaret = editor.caretModel.primaryCaret
+        bCaret.removeSelection()
+        bCaret.moveToOffset(text.indexOf("b: String"))
+        val altB = java.awt.event.KeyEvent(
+            editor.contentComponent,
+            java.awt.event.KeyEvent.KEY_PRESSED,
+            System.currentTimeMillis(),
+            java.awt.event.InputEvent.ALT_DOWN_MASK,
+            java.awt.event.KeyEvent.VK_B,
+            'b',
+        )
+        dispatcher.dispatch(altB).shouldBeTrue()
+        editor.caretModel.primaryCaret.offset shouldBe text.indexOf('(')
+
+        // Test Alt-E (move parent node end)
+        val eCaret = editor.caretModel.primaryCaret
+        eCaret.moveToOffset(text.indexOf("b: String"))
+        val altE = java.awt.event.KeyEvent(
+            editor.contentComponent,
+            java.awt.event.KeyEvent.KEY_PRESSED,
+            System.currentTimeMillis(),
+            java.awt.event.InputEvent.ALT_DOWN_MASK,
+            java.awt.event.KeyEvent.VK_E,
+            'e',
+        )
+        dispatcher.dispatch(altE).shouldBeTrue()
+        editor.caretModel.primaryCaret.offset shouldBe text.indexOf(')')
+    }
+
+    fun testAstNextSiblingSelection() {
+        val text = "fun process(a: Int, b: String, c: Boolean) {}\n"
+        myFixture.configureByText("test.kt", text)
+        val editor = myFixture.editor
+        val caret = editor.caretModel.primaryCaret
+
+        caret.moveToOffset(text.indexOf("a: Int"))
+        HelixActions.selectNextSibling(editor).shouldBeTrue()
+        caret.hasSelection().shouldBeTrue()
+        caret.selectedText shouldBe "b: String"
+
+        HelixActions.selectNextSibling(editor).shouldBeTrue()
+        caret.hasSelection().shouldBeTrue()
+        caret.selectedText shouldBe "c: Boolean"
+    }
+
+    fun testAstParentNodeMotionsNormalMode() {
+        val text = "fun process(a: Int, b: String, c: Boolean) {}\n"
+        myFixture.configureByText("test.kt", text)
+        val editor = myFixture.editor
+        val caret = editor.caretModel.primaryCaret
+
+        // Put caret on b: String
+        caret.moveToOffset(text.indexOf("b: String"))
+
+        // Move to start of parameter list '('
+        HelixActions.moveParentNodeStart(editor).shouldBeTrue()
+        caret.hasSelection().shouldBeFalse()
+        caret.offset shouldBe text.indexOf('(')
+
+        // Move again -> climb to start of function 'fun' (offset 0)
+        HelixActions.moveParentNodeStart(editor).shouldBeTrue()
+        caret.hasSelection().shouldBeFalse()
+        caret.offset shouldBe 0
+
+        // Move back to b: String
+        caret.moveToOffset(text.indexOf("b: String"))
+
+        // Move to end of parameter list ')'
+        HelixActions.moveParentNodeEnd(editor).shouldBeTrue()
+        caret.hasSelection().shouldBeFalse()
+        caret.offset shouldBe text.indexOf(')')
+
+        // Move again -> climb to end of function '}'
+        HelixActions.moveParentNodeEnd(editor).shouldBeTrue()
+        caret.hasSelection().shouldBeFalse()
+        caret.offset shouldBe text.indexOf('}')
+    }
+
+    fun testAstParentNodeMotionsSelectMode() {
+        val text = "fun process(a: Int, b: String, c: Boolean) {}\n"
+        myFixture.configureByText("test.kt", text)
+        val editor = myFixture.editor
+        val caret = editor.caretModel.primaryCaret
+
+        val bOffset = text.indexOf("b: String")
+        caret.moveToOffset(bOffset)
+        caret.setSelection(bOffset, bOffset + "b: String".length)
+        HelixStateManager.getOrCreate(editor).setMode(HelixMode.SELECT)
+
+        // Extend to start of parameter list
+        HelixActions.moveParentNodeStart(editor).shouldBeTrue()
+        caret.hasSelection().shouldBeTrue()
+        caret.selectionStart shouldBe text.indexOf('(')
+        caret.offset shouldBe text.indexOf('(')
+
+        // Reset caret selection and extend to end of parameter list
+        caret.setSelection(bOffset, bOffset + "b: String".length)
+        HelixActions.moveParentNodeEnd(editor).shouldBeTrue()
+        caret.hasSelection().shouldBeTrue()
+        caret.selectionEnd shouldBe text.indexOf(')') + 1
+        caret.offset shouldBe text.indexOf(')') + 1
+    }
+
+    fun testAstCommandsExecution() {
+        val text = "fun process(a: Int, b: String, c: Boolean) {}\n"
+        myFixture.configureByText("test.kt", text)
+        val editor = myFixture.editor
+        val caret = editor.caretModel.primaryCaret
+
+        caret.moveToOffset(text.indexOf("a: Int"))
+        jp.titze.intellij.helix.command.HelixCommands.execute("select_next_sibling", editor)
+        caret.selectedText shouldBe "b: String"
+
+        jp.titze.intellij.helix.command.HelixCommands.execute("move_parent_node_start", editor)
+        caret.offset shouldBe text.indexOf('(')
+
+        caret.moveToOffset(text.indexOf("b: String"))
+        jp.titze.intellij.helix.command.HelixCommands.execute("move_parent_node_end", editor)
+        caret.offset shouldBe text.indexOf(')')
     }
 }
