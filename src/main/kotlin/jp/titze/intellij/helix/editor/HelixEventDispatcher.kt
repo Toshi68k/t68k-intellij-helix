@@ -126,6 +126,11 @@ class HelixEventDispatcher : IdeEventQueue.EventDispatcher {
             true
         }
 
+        KeyEvent.VK_P -> {
+            HelixActionDelegate.executeAction("ParameterInfo", editor)
+            true
+        }
+
         else -> false
     }
 

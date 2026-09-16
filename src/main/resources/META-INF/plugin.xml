@@ -552,6 +552,15 @@
             <keyboard-shortcut keymap="Mac OS X" first-keystroke="alt BACK_SLASH"/>
             <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="alt BACK_SLASH"/>
         </action>
+
+        <action id="jp.titze.intellij.helix.signatureHelp"
+                class="jp.titze.intellij.helix.editor.HelixSignatureHelpAction"
+                text="Helix Signature Help"
+                description="Show signature help / parameter info (Ctrl+p)">
+            <keyboard-shortcut keymap="$default" first-keystroke="control P"/>
+            <keyboard-shortcut keymap="Mac OS X" first-keystroke="control P"/>
+            <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="control P"/>
+        </action>
     </actions>
 </idea-plugin>
 

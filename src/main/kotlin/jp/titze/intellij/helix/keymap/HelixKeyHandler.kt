@@ -428,6 +428,11 @@ object HelixKeyHandler {
                 true
             }
 
+            '\u0010' -> {
+                HelixActionDelegate.executeAction("ParameterInfo", editor)
+                true
+            }
+
             else -> false
         }
     }
