@@ -39,13 +39,15 @@ object HelixRegisterManager {
 
             '%' -> getBufferName(editor)?.let { HelixRegisterEntry(text = it) }
 
+            '#' -> getSelectionIndexEntry(editor)
+
             else -> null
         }
     }
 
     fun set(register: Char, entry: HelixRegisterEntry) {
         when (register) {
-            '_' -> { /* Black hole discards silently */ }
+            '_', '#' -> { /* Black hole and selection index discard silently */ }
 
             '+', '*' -> setClipboard(entry.text)
 
@@ -79,6 +81,7 @@ object HelixRegisterManager {
     }
 
     fun recordYank(text: String, isLinewise: Boolean, pieces: List<String>, register: Char? = null) {
+        if (register == '#') return
         val entry = HelixRegisterEntry(text, isLinewise, pieces)
         if (register == null || register == '"') {
             defaultRegister = entry
@@ -92,8 +95,8 @@ object HelixRegisterManager {
     }
 
     fun recordDelete(text: String, isLinewise: Boolean, pieces: List<String>, register: Char? = null) {
-        if (register == '_') {
-            // Black hole register: NEVER write to clipboard or registers
+        if (register == '_' || register == '#') {
+            // Black hole and selection index registers: NEVER write to clipboard or registers
             return
         }
         val entry = HelixRegisterEntry(text, isLinewise, pieces)
@@ -136,6 +139,16 @@ object HelixRegisterManager {
     private fun getBufferName(editor: Editor?): String? {
         val virtualFile = editor?.virtualFile ?: return null
         return virtualFile.name
+    }
+
+    private fun getSelectionIndexEntry(editor: Editor?): HelixRegisterEntry {
+        val count = editor?.caretModel?.caretCount ?: 1
+        val pieces = (0 until count).map { it.toString() }
+        return HelixRegisterEntry(
+            text = pieces.joinToString("\n"),
+            isLinewise = false,
+            pieces = pieces,
+        )
     }
 
     fun clear() {

@@ -193,23 +193,46 @@ object HelixInsertActions {
         val doc = editor.document
 
         WriteCommandAction.runWriteCommandAction(project) {
-            val carets = editor.caretModel.allCarets.sortedByDescending {
+            val caretsAscending = editor.caretModel.allCarets.sortedBy {
                 if (it.hasSelection()) it.selectionStart else it.offset
             }
-            for (caret in carets) {
-                if (caret.hasSelection()) {
-                    val start = caret.selectionStart
-                    val end = caret.selectionEnd
-                    doc.replaceString(start, end, textToInsert)
-                    caret.removeSelection()
-                    caret.moveToOffset(start + textToInsert.length)
-                } else {
-                    val offset = caret.offset.coerceIn(0, doc.textLength)
-                    doc.insertString(offset, textToInsert)
-                    caret.moveToOffset(offset + textToInsert.length)
+            val usePieces = entry.pieces.isNotEmpty() && entry.pieces.size == caretsAscending.size
+
+            if (usePieces) {
+                val caretPieces = caretsAscending.mapIndexed { idx, caret ->
+                    caret to entry.pieces[idx]
                 }
+                val descendingPairs = caretPieces.sortedByDescending { (caret, _) ->
+                    if (caret.hasSelection()) caret.selectionStart else caret.offset
+                }
+                for ((caret, piece) in descendingPairs) {
+                    insertCaretText(doc, caret, piece)
+                }
+                val primaryIndex = caretsAscending.indexOf(editor.caretModel.primaryCaret).coerceAtLeast(0)
+                HelixInsertTracker.recordText(entry.pieces[primaryIndex])
+            } else {
+                val carets = editor.caretModel.allCarets.sortedByDescending {
+                    if (it.hasSelection()) it.selectionStart else it.offset
+                }
+                for (caret in carets) {
+                    insertCaretText(doc, caret, textToInsert)
+                }
+                HelixInsertTracker.recordText(textToInsert)
             }
-            HelixInsertTracker.recordText(textToInsert)
+        }
+    }
+
+    private fun insertCaretText(doc: Document, caret: Caret, text: String) {
+        if (caret.hasSelection()) {
+            val start = caret.selectionStart
+            val end = caret.selectionEnd
+            doc.replaceString(start, end, text)
+            caret.removeSelection()
+            caret.moveToOffset(start + text.length)
+        } else {
+            val offset = caret.offset.coerceIn(0, doc.textLength)
+            doc.insertString(offset, text)
+            caret.moveToOffset(offset + text.length)
         }
     }
 }
