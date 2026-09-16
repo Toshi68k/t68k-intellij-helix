@@ -955,4 +955,60 @@ class HelixEditingActionsTest : BasePlatformTestCase() {
             jp.titze.intellij.helix.action.HelixActionDelegate.actionExecutor = null
         }
     }
+
+    fun testEarlierAndLaterShortcuts() {
+        myFixture.configureByText("test.txt", "sample text")
+        val editor = myFixture.editor
+        val state = HelixStateManager.getOrCreate(editor)
+
+        val executedActions = mutableListOf<String>()
+        jp.titze.intellij.helix.action.HelixActionDelegate.actionExecutor = { actionId, _ ->
+            executedActions.add(actionId)
+            true
+        }
+
+        try {
+            // Alt+u -> earlier / $Undo
+            val altUHandled = dispatchKey(
+                editor,
+                java.awt.event.KeyEvent.VK_U,
+                java.awt.event.InputEvent.ALT_DOWN_MASK,
+            )
+            altUHandled.shouldBeTrue()
+            executedActions shouldBe listOf("\$Undo")
+
+            // Count 3 with Alt+u -> 3x $Undo
+            executedActions.clear()
+            HelixKeyHandler.handleKey('3', editor)
+            state.hasCount.shouldBeTrue()
+            dispatchKey(
+                editor,
+                java.awt.event.KeyEvent.VK_U,
+                java.awt.event.InputEvent.ALT_DOWN_MASK,
+            )
+            executedActions shouldBe listOf("\$Undo", "\$Undo", "\$Undo")
+
+            // Alt+Shift+U -> later / $Redo
+            executedActions.clear()
+            val altShiftUHandled = dispatchKey(
+                editor,
+                java.awt.event.KeyEvent.VK_U,
+                java.awt.event.InputEvent.ALT_DOWN_MASK or java.awt.event.InputEvent.SHIFT_DOWN_MASK,
+            )
+            altShiftUHandled.shouldBeTrue()
+            executedActions shouldBe listOf("\$Redo")
+
+            // Count 2 with Alt+Shift+U -> 2x $Redo
+            executedActions.clear()
+            HelixKeyHandler.handleKey('2', editor)
+            dispatchKey(
+                editor,
+                java.awt.event.KeyEvent.VK_U,
+                java.awt.event.InputEvent.ALT_DOWN_MASK or java.awt.event.InputEvent.SHIFT_DOWN_MASK,
+            )
+            executedActions shouldBe listOf("\$Redo", "\$Redo")
+        } finally {
+            jp.titze.intellij.helix.action.HelixActionDelegate.actionExecutor = null
+        }
+    }
 }
