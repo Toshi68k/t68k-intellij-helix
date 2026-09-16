@@ -3,6 +3,7 @@ package jp.titze.intellij.helix
 import com.intellij.openapi.editor.CaretState
 import com.intellij.openapi.ide.CopyPasteManager
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
+import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
@@ -444,5 +445,105 @@ class HelixRegistersTest : BasePlatformTestCase() {
         val menu = jp.titze.intellij.helix.ui.HelixWhichKeyMenus.getMenu("\"")
         menu?.first shouldBe "REGISTERS"
         menu?.second?.any { it.key == "#" && it.label == "Selection index" }?.shouldBeTrue()
+    }
+
+    fun testGetAllRegistersIncludesStandardRegisters() {
+        myFixture.configureByText("sample.txt", "hello world")
+        val editor = myFixture.editor
+
+        // Populate a named register and a delete register
+        HelixRegisterManager.set('a', jp.titze.intellij.helix.register.HelixRegisterEntry("named_content"))
+        HelixRegisterManager.recordDelete("deleted_line\n", isLinewise = true, pieces = emptyList())
+
+        val registers = HelixRegisterManager.getAllRegisters(editor)
+        val symbols = registers.map { it.register }
+
+        symbols.contains('"').shouldBeTrue()
+        symbols.contains('0').shouldBeTrue()
+        symbols.contains('1').shouldBeTrue()
+        symbols.contains('a').shouldBeTrue()
+        symbols.contains('+').shouldBeTrue()
+        symbols.contains('%').shouldBeTrue()
+        symbols.contains('#').shouldBeTrue()
+        symbols.contains('_').shouldBeTrue()
+
+        val aItem = registers.first { it.register == 'a' }
+        aItem.description shouldBe "Named 'a'"
+        aItem.entry?.text shouldBe "named_content"
+        aItem.previewText shouldBe "named_content"
+
+        val bufferItem = registers.first { it.register == '%' }
+        bufferItem.entry?.text shouldBe "sample.txt"
+    }
+
+    fun testRegisterItemFilteringAndTagText() {
+        val item1 = jp.titze.intellij.helix.register.HelixRegisterItem(
+            register = 'x',
+            description = "Named 'x'",
+            entry = jp.titze.intellij.helix.register.HelixRegisterEntry(
+                text = "line 1\nline 2",
+                isLinewise = true,
+            ),
+        )
+        item1.matches("named").shouldBeTrue()
+        item1.matches("x").shouldBeTrue()
+        item1.matches("line 2").shouldBeTrue()
+        item1.matches("nonexistent").shouldBeFalse()
+        item1.previewText shouldBe "line 1⏎ line 2"
+        item1.tagText shouldBe "[linewise]"
+
+        val multiItem = jp.titze.intellij.helix.register.HelixRegisterItem(
+            register = 'm',
+            description = "Multi Piece",
+            entry = jp.titze.intellij.helix.register.HelixRegisterEntry(
+                text = "p1\np2\np3",
+                pieces = listOf("p1", "p2", "p3"),
+            ),
+        )
+        multiItem.tagText shouldBe "[3 pieces]"
+    }
+
+    fun testLastInsertRegisterDot() {
+        myFixture.configureByText("insert.txt", "")
+        val editor = myFixture.editor
+
+        jp.titze.intellij.helix.editor.HelixInsertTracker.reset()
+        jp.titze.intellij.helix.editor.HelixInsertTracker.startInsert()
+        jp.titze.intellij.helix.editor.HelixInsertTracker.recordText("inserted_value")
+        jp.titze.intellij.helix.editor.HelixInsertTracker.finishInsert()
+
+        val dotEntry = HelixRegisterManager.get('.')
+        dotEntry?.text shouldBe "inserted_value"
+
+        val allRegs = HelixRegisterManager.getAllRegisters(editor)
+        val dotItem = allRegs.firstOrNull { it.register == '.' }
+        dotItem?.entry?.text shouldBe "inserted_value"
+        dotItem?.description shouldBe "Last Insert"
+    }
+
+    fun testRegistersCommandExecution() {
+        myFixture.configureByText("cmd.txt", "abc")
+        val editor = myFixture.editor
+
+        val commands = jp.titze.intellij.helix.command.HelixCommands.COMMANDS
+        commands.any { it.name == "registers" && it.aliases.contains("reg") }.shouldBeTrue()
+
+        // Execute :reg and :registers in headless test (safely returns without throwing)
+        jp.titze.intellij.helix.command.HelixCommands.execute("reg", editor)
+        jp.titze.intellij.helix.command.HelixCommands.execute("registers", editor)
+        jp.titze.intellij.helix.action.HelixActions.showRegistersPicker(editor)
+    }
+
+    fun testRegistersPickerPasteAction() {
+        myFixture.configureByText("test.txt", "target: ")
+        val editor = myFixture.editor
+        val caret = editor.caretModel.primaryCaret
+        caret.moveToOffset(8)
+
+        HelixRegisterManager.set('v', jp.titze.intellij.helix.register.HelixRegisterEntry("value"))
+        val item = HelixRegisterManager.getAllRegisters(editor).first { it.register == 'v' }
+
+        jp.titze.intellij.helix.action.HelixRegisterActions.paste(editor, after = true, register = item.register)
+        editor.document.text shouldBe "target: value"
     }
 }

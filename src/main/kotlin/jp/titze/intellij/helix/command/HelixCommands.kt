@@ -109,6 +109,9 @@ object HelixCommands {
         HelixCommandItem("jumps", emptyList(), "Open jumplist picker") { editor ->
             HelixJumplistPopup.show(editor)
         },
+        HelixCommandItem("registers", listOf("reg"), "Open registers picker popup") { editor ->
+            jp.titze.intellij.helix.ui.HelixRegistersPopup.show(editor)
+        },
         HelixCommandItem("switch-case", listOf("switch_case"), "Switch case of selected text (~)") { editor ->
             HelixActions.toggleCase(editor)
         },
@@ -432,6 +435,8 @@ object HelixCommands {
         // Fallbacks for standard vim/helix commands
         when (cleanCmd) {
             "jumps" -> HelixJumplistPopup.show(editor)
+
+            "reg", "registers" -> jp.titze.intellij.helix.ui.HelixRegistersPopup.show(editor)
 
             "w", "write" -> HelixActionDelegate.executeAction("SaveAll", editor)
 
