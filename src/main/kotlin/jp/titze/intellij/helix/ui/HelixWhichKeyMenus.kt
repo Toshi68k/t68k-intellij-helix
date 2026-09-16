@@ -35,6 +35,7 @@ object HelixWhichKeyMenus {
         WhichKeyItem("P", "Paste clipboard before", "paste_clipboard_before"),
         WhichKeyItem("R", "Replace with clipboard", "replace_clipboard"),
         WhichKeyItem("k", "Hover / Documentation", "hover", "QuickJavaDoc"),
+        WhichKeyItem("G", "Debug (DAP) menu", "dap"),
         WhichKeyItem("?", "Command palette", "command_palette", "GotoAction"),
     )
 
@@ -157,8 +158,25 @@ object HelixWhichKeyMenus {
         WhichKeyItem("m", "Closest pair", "enclosing_pair_textobject"),
     )
 
+    val debugItems = listOf(
+        WhichKeyItem("b", "Toggle breakpoint", "dap_toggle_breakpoint", "ToggleLineBreakpoint"),
+        WhichKeyItem("c", "Continue / Resume", "dap_continue", "Resume"),
+        WhichKeyItem("s", "Step in", "dap_step_in", "StepInto"),
+        WhichKeyItem("n", "Step over (next)", "dap_next", "StepOver"),
+        WhichKeyItem("o", "Step out", "dap_step_out", "StepOut"),
+        WhichKeyItem("p", "Pause", "dap_pause", "Pause"),
+        WhichKeyItem("l", "Launch debug", "dap_launch", "Debug"),
+        WhichKeyItem("r", "Restart", "dap_restart", "Rerun"),
+        WhichKeyItem("t", "Terminate", "dap_terminate", "Stop"),
+        WhichKeyItem("v", "Variables / Debug window", "dap_variables", "ActivateDebugToolWindow"),
+        WhichKeyItem("k", "Evaluate expression", "dap_evaluate", "EvaluateExpression"),
+        WhichKeyItem("e", "Edit breakpoint", "dap_edit_condition", "EditBreakpoint"),
+        WhichKeyItem("B", "View breakpoints", "dap_view_breakpoints", "ViewBreakpoints"),
+    )
+
     fun getMenu(prefix: String): Pair<String, List<WhichKeyItem>>? = when (prefix) {
         " " -> "SPACE MENU" to spaceItems
+        " G", "space G", "G", "dap" -> "DEBUG (DAP) MENU" to debugItems
         "g" -> "GOTO MENU" to gotoItems
         "m" -> "MATCH MENU" to matchItems
         "ma" -> "SELECT AROUND" to textObjectItems

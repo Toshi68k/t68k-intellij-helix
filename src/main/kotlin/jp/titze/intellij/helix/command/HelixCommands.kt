@@ -373,6 +373,71 @@ object HelixCommands {
             listOf("run_shell_command"),
             "Run a shell command asynchronously",
         ) { editor -> HelixActionDelegate.executeAction("ActivateTerminalToolWindow", editor) },
+        HelixCommandItem(
+            "dap-toggle-breakpoint",
+            listOf("dap_toggle_breakpoint", "breakpoint", "toggle-breakpoint"),
+            "Toggle line breakpoint (space + G b)",
+        ) { editor -> HelixActionDelegate.executeAction("ToggleLineBreakpoint", editor) },
+        HelixCommandItem(
+            "dap-continue",
+            listOf("dap_continue", "continue", "resume"),
+            "Continue / resume program execution (space + G c)",
+        ) { editor -> HelixActionDelegate.executeAction("Resume", editor) },
+        HelixCommandItem(
+            "dap-step-in",
+            listOf("dap_step_in", "step-in"),
+            "Step into function / method (space + G s)",
+        ) { editor -> HelixActionDelegate.executeAction("StepInto", editor) },
+        HelixCommandItem(
+            "dap-next",
+            listOf("dap_next", "step-over", "next"),
+            "Step over next statement (space + G n)",
+        ) { editor -> HelixActionDelegate.executeAction("StepOver", editor) },
+        HelixCommandItem(
+            "dap-step-out",
+            listOf("dap_step_out", "step-out"),
+            "Step out of current stack frame (space + G o)",
+        ) { editor -> HelixActionDelegate.executeAction("StepOut", editor) },
+        HelixCommandItem(
+            "dap-terminate",
+            listOf("dap_terminate", "stop", "terminate"),
+            "Terminate debug session (space + G t)",
+        ) { editor -> HelixActionDelegate.executeAction("Stop", editor) },
+        HelixCommandItem(
+            "dap-restart",
+            listOf("dap_restart", "restart", "rerun"),
+            "Restart debugging session (space + G r)",
+        ) { editor -> HelixActionDelegate.executeAction("Rerun", editor) },
+        HelixCommandItem(
+            "dap-pause",
+            listOf("dap_pause", "pause"),
+            "Pause program execution (space + G p)",
+        ) { editor -> HelixActionDelegate.executeAction("Pause", editor) },
+        HelixCommandItem(
+            "dap-launch",
+            listOf("dap_launch", "debug"),
+            "Launch active debug target (space + G l)",
+        ) { editor -> HelixActionDelegate.executeAction("Debug", editor) },
+        HelixCommandItem(
+            "dap-variables",
+            listOf("dap_variables", "variables", "dap-ui"),
+            "Show debug panel and variables (space + G v)",
+        ) { editor -> HelixActionDelegate.executeAction("ActivateDebugToolWindow", editor) },
+        HelixCommandItem(
+            "dap-evaluate",
+            listOf("dap_evaluate", "evaluate", "eval"),
+            "Evaluate expression popup (space + G k)",
+        ) { editor -> HelixActionDelegate.executeAction("EvaluateExpression", editor) },
+        HelixCommandItem(
+            "dap-edit-condition",
+            listOf("dap_edit_condition", "edit-breakpoint"),
+            "Edit breakpoint condition and log (space + G e)",
+        ) { editor -> HelixActionDelegate.executeAction("EditBreakpoint", editor) },
+        HelixCommandItem(
+            "dap-view-breakpoints",
+            listOf("dap_view_breakpoints", "breakpoints", "list-breakpoints"),
+            "View all breakpoints (space + G B)",
+        ) { editor -> HelixActionDelegate.executeAction("ViewBreakpoints", editor) },
     )
 
     fun execute(cmd: String, editor: Editor) {

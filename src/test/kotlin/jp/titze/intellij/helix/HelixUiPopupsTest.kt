@@ -731,4 +731,196 @@ class HelixUiPopupsTest : BasePlatformTestCase() {
             widget.dispose()
         }
     }
+
+    fun testSpaceDebugMenuChordsAndExecution() {
+        myFixture.configureByText("test.txt", "fun main() {\n    println(\"debug\")\n}")
+        val editor = myFixture.editor
+        val state = HelixStateManager.getOrCreate(editor)
+
+        val executedActions = mutableListOf<String>()
+        val originalExecutor = jp.titze.intellij.helix.action.HelixActionDelegate.actionExecutor
+        jp.titze.intellij.helix.action.HelixActionDelegate.actionExecutor = { actionId, _ ->
+            executedActions.add(actionId)
+            true
+        }
+
+        try {
+            // Space followed by G transitions to pending debug chord
+            HelixKeyHandler.handleKey(' ', editor)
+            state.pendingSequence shouldBe " "
+
+            HelixKeyHandler.handleKey('G', editor)
+            state.pendingSequence shouldBe " G"
+
+            // b toggles line breakpoint
+            HelixKeyHandler.handleKey('b', editor)
+            state.pendingSequence.isEmpty().shouldBeTrue()
+            executedActions.last() shouldBe "ToggleLineBreakpoint"
+
+            // Test step in
+            HelixKeyHandler.handleKey(' ', editor)
+            HelixKeyHandler.handleKey('G', editor)
+            HelixKeyHandler.handleKey('s', editor)
+            executedActions.last() shouldBe "StepInto"
+
+            // Test step over (next)
+            HelixKeyHandler.handleKey(' ', editor)
+            HelixKeyHandler.handleKey('G', editor)
+            HelixKeyHandler.handleKey('n', editor)
+            executedActions.last() shouldBe "StepOver"
+
+            // Test step out
+            HelixKeyHandler.handleKey(' ', editor)
+            HelixKeyHandler.handleKey('G', editor)
+            HelixKeyHandler.handleKey('o', editor)
+            executedActions.last() shouldBe "StepOut"
+
+            // Test continue / resume
+            HelixKeyHandler.handleKey(' ', editor)
+            HelixKeyHandler.handleKey('G', editor)
+            HelixKeyHandler.handleKey('c', editor)
+            executedActions.last() shouldBe "Resume"
+
+            // Test terminate / stop
+            HelixKeyHandler.handleKey(' ', editor)
+            HelixKeyHandler.handleKey('G', editor)
+            HelixKeyHandler.handleKey('t', editor)
+            executedActions.last() shouldBe "Stop"
+
+            // Test restart / rerun
+            HelixKeyHandler.handleKey(' ', editor)
+            HelixKeyHandler.handleKey('G', editor)
+            HelixKeyHandler.handleKey('r', editor)
+            executedActions.last() shouldBe "Rerun"
+
+            // Test pause
+            HelixKeyHandler.handleKey(' ', editor)
+            HelixKeyHandler.handleKey('G', editor)
+            HelixKeyHandler.handleKey('p', editor)
+            executedActions.last() shouldBe "Pause"
+
+            // Test launch debug
+            HelixKeyHandler.handleKey(' ', editor)
+            HelixKeyHandler.handleKey('G', editor)
+            HelixKeyHandler.handleKey('l', editor)
+            executedActions.last() shouldBe "Debug"
+
+            // Test evaluate expression
+            HelixKeyHandler.handleKey(' ', editor)
+            HelixKeyHandler.handleKey('G', editor)
+            HelixKeyHandler.handleKey('k', editor)
+            executedActions.last() shouldBe "EvaluateExpression"
+
+            // Test edit breakpoint
+            HelixKeyHandler.handleKey(' ', editor)
+            HelixKeyHandler.handleKey('G', editor)
+            HelixKeyHandler.handleKey('e', editor)
+            executedActions.last() shouldBe "EditBreakpoint"
+
+            // Test view breakpoints
+            HelixKeyHandler.handleKey(' ', editor)
+            HelixKeyHandler.handleKey('G', editor)
+            HelixKeyHandler.handleKey('B', editor)
+            executedActions.last() shouldBe "ViewBreakpoints"
+
+            // Test variables / debug panel
+            HelixKeyHandler.handleKey(' ', editor)
+            HelixKeyHandler.handleKey('G', editor)
+            HelixKeyHandler.handleKey('v', editor)
+            executedActions.last() shouldBe "ActivateDebugToolWindow"
+        } finally {
+            jp.titze.intellij.helix.action.HelixActionDelegate.actionExecutor = originalExecutor
+        }
+    }
+
+    fun testDapCommandsExecution() {
+        myFixture.configureByText("test.txt", "sample code")
+        val editor = myFixture.editor
+
+        val executedActions = mutableListOf<String>()
+        val originalExecutor = jp.titze.intellij.helix.action.HelixActionDelegate.actionExecutor
+        jp.titze.intellij.helix.action.HelixActionDelegate.actionExecutor = { actionId, _ ->
+            executedActions.add(actionId)
+            true
+        }
+
+        try {
+            HelixCommandPopup.executeCommand("dap-toggle-breakpoint", editor)
+            executedActions.last() shouldBe "ToggleLineBreakpoint"
+
+            HelixCommandPopup.executeCommand("breakpoint", editor)
+            executedActions.last() shouldBe "ToggleLineBreakpoint"
+
+            HelixCommandPopup.executeCommand("dap-continue", editor)
+            executedActions.last() shouldBe "Resume"
+
+            HelixCommandPopup.executeCommand("continue", editor)
+            executedActions.last() shouldBe "Resume"
+
+            HelixCommandPopup.executeCommand("dap-step-in", editor)
+            executedActions.last() shouldBe "StepInto"
+
+            HelixCommandPopup.executeCommand("step-in", editor)
+            executedActions.last() shouldBe "StepInto"
+
+            HelixCommandPopup.executeCommand("dap-next", editor)
+            executedActions.last() shouldBe "StepOver"
+
+            HelixCommandPopup.executeCommand("step-over", editor)
+            executedActions.last() shouldBe "StepOver"
+
+            HelixCommandPopup.executeCommand("dap-step-out", editor)
+            executedActions.last() shouldBe "StepOut"
+
+            HelixCommandPopup.executeCommand("dap-terminate", editor)
+            executedActions.last() shouldBe "Stop"
+
+            HelixCommandPopup.executeCommand("dap-restart", editor)
+            executedActions.last() shouldBe "Rerun"
+
+            HelixCommandPopup.executeCommand("dap-pause", editor)
+            executedActions.last() shouldBe "Pause"
+
+            HelixCommandPopup.executeCommand("dap-launch", editor)
+            executedActions.last() shouldBe "Debug"
+
+            HelixCommandPopup.executeCommand("dap-variables", editor)
+            executedActions.last() shouldBe "ActivateDebugToolWindow"
+
+            HelixCommandPopup.executeCommand("dap-evaluate", editor)
+            executedActions.last() shouldBe "EvaluateExpression"
+
+            HelixCommandPopup.executeCommand("eval", editor)
+            executedActions.last() shouldBe "EvaluateExpression"
+
+            HelixCommandPopup.executeCommand("dap-edit-condition", editor)
+            executedActions.last() shouldBe "EditBreakpoint"
+
+            HelixCommandPopup.executeCommand("dap-view-breakpoints", editor)
+            executedActions.last() shouldBe "ViewBreakpoints"
+
+            HelixCommandPopup.executeCommand("breakpoints", editor)
+            executedActions.last() shouldBe "ViewBreakpoints"
+        } finally {
+            jp.titze.intellij.helix.action.HelixActionDelegate.actionExecutor = originalExecutor
+        }
+    }
+
+    fun testWhichKeyDebugMenuRegistration() {
+        val (title, items) = HelixWhichKeyMenus.getMenu(" G") ?: error("Debug menu not registered")
+        title shouldBe "DEBUG (DAP) MENU"
+        items.any { it.key == "b" && it.helixCommand == "dap_toggle_breakpoint" }.shouldBeTrue()
+        items.any { it.key == "c" && it.helixCommand == "dap_continue" }.shouldBeTrue()
+        items.any { it.key == "s" && it.helixCommand == "dap_step_in" }.shouldBeTrue()
+        items.any { it.key == "n" && it.helixCommand == "dap_next" }.shouldBeTrue()
+        items.any { it.key == "o" && it.helixCommand == "dap_step_out" }.shouldBeTrue()
+        items.any { it.key == "p" && it.helixCommand == "dap_pause" }.shouldBeTrue()
+        items.any { it.key == "l" && it.helixCommand == "dap_launch" }.shouldBeTrue()
+        items.any { it.key == "r" && it.helixCommand == "dap_restart" }.shouldBeTrue()
+        items.any { it.key == "t" && it.helixCommand == "dap_terminate" }.shouldBeTrue()
+        items.any { it.key == "v" && it.helixCommand == "dap_variables" }.shouldBeTrue()
+        items.any { it.key == "k" && it.helixCommand == "dap_evaluate" }.shouldBeTrue()
+        items.any { it.key == "e" && it.helixCommand == "dap_edit_condition" }.shouldBeTrue()
+        items.any { it.key == "B" && it.helixCommand == "dap_view_breakpoints" }.shouldBeTrue()
+    }
 }
