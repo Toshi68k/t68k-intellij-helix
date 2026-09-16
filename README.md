@@ -301,8 +301,26 @@ Whenever a chord prefix key (<kbd>Space</kbd>, `Ctrl+w`, `g`, `m`, `[`, or `]`) 
 | `space + P` | `paste_clipboard_before` | — | Paste system clipboard before cursor / selection |
 | `space + R` | `replace_selections_with_clipboard` | — | Replace current selections with system clipboard |
 | `space + k` | `hover` | `QuickJavaDoc` | Hover documentation popup |
+| `space + G` | `dap` | — | Open interactive Debug (DAP) submenu |
 | `space + '` | `last_picker` | — | Re-open last active space picker |
 | `space + ?` | `command_palette` | `GotoAction` | Action / command palette picker |
+
+#### Debugging & DAP (`space + G`)
+| Key | Helix Command | IntelliJ Action | Description |
+|---|---|---|---|
+| `space + G b` | `dap_toggle_breakpoint` | `ToggleLineBreakpoint` | Toggle breakpoint on current line |
+| `space + G c` | `dap_continue` | `Resume` | Continue / resume program execution |
+| `space + G s` | `dap_step_in` | `StepInto` | Step into function or method |
+| `space + G n` | `dap_next` | `StepOver` | Step over next statement |
+| `space + G o` | `dap_step_out` | `StepOut` | Step out of current stack frame |
+| `space + G p` | `dap_pause` | `Pause` | Pause program execution |
+| `space + G l` | `dap_launch` | `Debug` | Launch active debug target |
+| `space + G r` | `dap_restart` | `Rerun` | Restart debugging session |
+| `space + G t` | `dap_terminate` | `Stop` | Terminate debug session |
+| `space + G v` | `dap_variables` | `ActivateDebugToolWindow` | Focus debug panel & variables |
+| `space + G k` | `dap_evaluate` | `EvaluateExpression` | Evaluate expression popup |
+| `space + G e` | `dap_edit_condition` | `EditBreakpoint` | Edit breakpoint condition and log |
+| `space + G B` | `dap_view_breakpoints` | `ViewBreakpoints` | View all breakpoints manager |
 
 #### Unimpaired Navigation (`[` / `]`)
 | Forward (`]`) | Backward (`[`) | Helix Command | Description |
@@ -388,6 +406,19 @@ Press `:` in Normal mode to open the interactive **Helix Command Picker**, style
 - `:sh [cmd]` / `:run-shell-command [cmd]` / `:! [cmd]` &rarr; Run shell command asynchronously or toggle terminal (`ActivateTerminalToolWindow`)
 - `:terminal` &rarr; Open / toggle IntelliJ's built-in terminal tool window
 - `:cd [path]` / `:pwd` &rarr; Change or display current working directory (supports `~`, `-`, relative paths)
+- `:dap-toggle-breakpoint` / `:breakpoint` &rarr; Toggle breakpoint on current line (`space + G b`)
+- `:dap-continue` / `:continue` / `:resume` &rarr; Resume program execution (`space + G c`)
+- `:dap-step-in` / `:step-in` &rarr; Step into function (`space + G s`)
+- `:dap-next` / `:step-over` / `:next` &rarr; Step over next statement (`space + G n`)
+- `:dap-step-out` / `:step-out` &rarr; Step out of current stack frame (`space + G o`)
+- `:dap-terminate` / `:stop` &rarr; Terminate active debug session (`space + G t`)
+- `:dap-restart` / `:restart` &rarr; Restart active debug configuration (`space + G r`)
+- `:dap-pause` / `:pause` &rarr; Pause program execution (`space + G p`)
+- `:dap-launch` / `:debug` &rarr; Launch active debug target (`space + G l`)
+- `:dap-variables` / `:variables` &rarr; Focus debug panel & variables (`space + G v`)
+- `:dap-evaluate` / `:eval` &rarr; Evaluate expression popup (`space + G k`)
+- `:dap-edit-condition` &rarr; Edit breakpoint condition and log (`space + G e`)
+- `:dap-view-breakpoints` / `:breakpoints` &rarr; View all breakpoints manager (`space + G B`)
 
 #### Search & Selection UI Modes
 Helix Keymap supports two switchable search and regex prompt styles:

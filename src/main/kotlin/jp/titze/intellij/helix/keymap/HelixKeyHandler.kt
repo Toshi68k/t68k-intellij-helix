@@ -128,8 +128,19 @@ object HelixKeyHandler {
             }
 
             " " -> {
+                if (ch == 'G') {
+                    state.setPendingSequence(" G")
+                    HelixWhichKeyPopup.show(editor, " G")
+                    true
+                } else {
+                    state.clearPendingSequence()
+                    HelixSpaceKeymap.handle(ch, editor)
+                }
+            }
+
+            " G" -> {
                 state.clearPendingSequence()
-                HelixSpaceKeymap.handle(ch, editor)
+                HelixDebugKeymap.handle(ch, editor)
             }
 
             "[" -> {
