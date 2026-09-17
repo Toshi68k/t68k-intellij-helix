@@ -397,6 +397,26 @@ object HelixKeyHandler {
         }
 
         return when (charTyped) {
+            '\u0001' -> {
+                HelixActionDelegate.executeAction("EditorLineStart", editor)
+                true
+            }
+
+            '\u0005' -> {
+                HelixActionDelegate.executeAction("EditorLineEnd", editor)
+                true
+            }
+
+            '\u0008' -> {
+                HelixActionDelegate.executeAction("EditorBackSpace", editor)
+                true
+            }
+
+            '\u0004' -> {
+                HelixActionDelegate.executeAction("EditorDelete", editor)
+                true
+            }
+
             '\u0013' -> {
                 HelixActions.commitUndoCheckpoint(editor)
                 true

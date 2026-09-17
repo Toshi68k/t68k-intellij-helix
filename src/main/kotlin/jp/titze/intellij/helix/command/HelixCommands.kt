@@ -301,6 +301,26 @@ object HelixCommands {
             HelixDirectoryManager.changeDirectory("", editor)
         },
         HelixCommandItem(
+            "goto-line-start",
+            listOf("goto_line_start", "line-start"),
+            "Move cursor to line start (Ctrl+a, gh)",
+        ) { editor -> HelixActionDelegate.executeAction("EditorLineStart", editor) },
+        HelixCommandItem(
+            "goto-line-end",
+            listOf("goto_line_end", "line-end"),
+            "Move cursor to line end (Ctrl+e, gl)",
+        ) { editor -> HelixActionDelegate.executeAction("EditorLineEnd", editor) },
+        HelixCommandItem(
+            "delete-char-backward",
+            listOf("delete_char_backward"),
+            "Delete character backward (Ctrl+h, Backspace)",
+        ) { editor -> HelixActionDelegate.executeAction("EditorBackSpace", editor) },
+        HelixCommandItem(
+            "delete-char-forward",
+            listOf("delete_char_forward"),
+            "Delete character forward (Ctrl+d, Delete)",
+        ) { editor -> HelixActionDelegate.executeAction("EditorDelete", editor) },
+        HelixCommandItem(
             "delete-word-backward",
             listOf("delete_word_backward"),
             "Delete previous word (Ctrl+w, Alt+Backspace)",
