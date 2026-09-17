@@ -4,6 +4,7 @@ import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import jp.titze.intellij.helix.action.HelixActionDelegate
 import jp.titze.intellij.helix.action.HelixActions
 import jp.titze.intellij.helix.keymap.HelixKeyHandler
 
@@ -449,5 +450,39 @@ class HelixCodeNavigationTest : BasePlatformTestCase() {
             "ModA.txt"
 
         jp.titze.intellij.helix.motion.HelixFileNavigation.reset()
+    }
+
+    fun testGotoDeclarationGD() {
+        myFixture.configureByText("Test.kt", "class Foo { val x = 1 }")
+        val editor = myFixture.editor
+        val executedActions = mutableListOf<String>()
+        HelixActionDelegate.actionExecutor = { actionId, _ ->
+            executedActions.add(actionId)
+            true
+        }
+        try {
+            HelixKeyHandler.handleKey('g', editor).shouldBeTrue()
+            HelixKeyHandler.handleKey('D', editor).shouldBeTrue()
+            executedActions shouldBe listOf("GotoDeclarationOnly")
+        } finally {
+            HelixActionDelegate.actionExecutor = null
+        }
+    }
+
+    fun testGotoDeclarationGDFallback() {
+        myFixture.configureByText("Test.kt", "class Foo { val x = 1 }")
+        val editor = myFixture.editor
+        val executedActions = mutableListOf<String>()
+        HelixActionDelegate.actionExecutor = { actionId, _ ->
+            executedActions.add(actionId)
+            actionId != "GotoDeclarationOnly"
+        }
+        try {
+            HelixKeyHandler.handleKey('g', editor).shouldBeTrue()
+            HelixKeyHandler.handleKey('D', editor).shouldBeTrue()
+            executedActions shouldBe listOf("GotoDeclarationOnly", "GotoDeclaration")
+        } finally {
+            HelixActionDelegate.actionExecutor = null
+        }
     }
 }

@@ -41,6 +41,7 @@ object HelixWhichKeyMenus {
 
     val gotoItems = listOf(
         WhichKeyItem("d", "Goto definition", "goto_definition", "GotoDeclaration"),
+        WhichKeyItem("D", "Goto declaration", "goto_declaration", "GotoDeclarationOnly"),
         WhichKeyItem("i", "Goto implementation", "goto_implementation", "GotoImplementation"),
         WhichKeyItem("y", "Goto type definition", "goto_type_definition", "GotoTypeDeclaration"),
         WhichKeyItem("r", "Goto reference", "goto_reference", "FindUsages"),

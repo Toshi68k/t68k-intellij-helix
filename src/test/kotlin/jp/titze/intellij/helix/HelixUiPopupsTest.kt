@@ -378,6 +378,20 @@ class HelixUiPopupsTest : BasePlatformTestCase() {
         }
     }
 
+    fun testGotoWhichKeyMenuContainsDeclarationAndDefinition() {
+        val (title, items) = HelixWhichKeyMenus.getMenu("g") ?: error("Missing goto menu")
+        title shouldBe "GOTO MENU"
+        val defItem = items.first { it.key == "d" }
+        defItem.label shouldBe "Goto definition"
+        defItem.helixCommand shouldBe "goto_definition"
+        defItem.intelliJAction shouldBe "GotoDeclaration"
+
+        val declItem = items.first { it.key == "D" }
+        declItem.label shouldBe "Goto declaration"
+        declItem.helixCommand shouldBe "goto_declaration"
+        declItem.intelliJAction shouldBe "GotoDeclarationOnly"
+    }
+
     fun testHelixSettingsWhichKeyOptions() {
         val settings = HelixSettings.instance
         val originalEnabled = settings.enableWhichKeyPopups
@@ -935,6 +949,18 @@ class HelixUiPopupsTest : BasePlatformTestCase() {
 
             HelixCommandPopup.executeCommand("test", editor)
             executedActions.last() shouldBe "GotoTest"
+
+            HelixCommandPopup.executeCommand("goto-declaration", editor)
+            executedActions.last() shouldBe "GotoDeclarationOnly"
+
+            HelixCommandPopup.executeCommand("declaration", editor)
+            executedActions.last() shouldBe "GotoDeclarationOnly"
+
+            HelixCommandPopup.executeCommand("goto-definition", editor)
+            executedActions.last() shouldBe "GotoDeclaration"
+
+            HelixCommandPopup.executeCommand("definition", editor)
+            executedActions.last() shouldBe "GotoDeclaration"
 
             HelixCommandPopup.executeCommand("earlier", editor)
             executedActions.last() shouldBe "\$Undo"
