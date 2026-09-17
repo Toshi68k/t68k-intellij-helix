@@ -517,6 +517,24 @@
             <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="control R"/>
         </action>
 
+        <action id="jp.titze.intellij.helix.insertLineEnd"
+                class="jp.titze.intellij.helix.editor.HelixInsertLineEndAction"
+                text="Helix Insert Move to Line End"
+                description="Move cursor to line end in insert mode (Ctrl+e)">
+            <keyboard-shortcut keymap="$default" first-keystroke="control E"/>
+            <keyboard-shortcut keymap="Mac OS X" first-keystroke="control E"/>
+            <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="control E"/>
+        </action>
+
+        <action id="jp.titze.intellij.helix.insertDeleteCharBackward"
+                class="jp.titze.intellij.helix.editor.HelixInsertDeleteCharBackwardAction"
+                text="Helix Insert Delete Char Backward"
+                description="Delete previous character in insert mode (Ctrl+h)">
+            <keyboard-shortcut keymap="$default" first-keystroke="control H"/>
+            <keyboard-shortcut keymap="Mac OS X" first-keystroke="control H"/>
+            <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="control H"/>
+        </action>
+
         <action id="jp.titze.intellij.helix.shellPipe"
                 class="jp.titze.intellij.helix.editor.HelixShellPipeAction"
                 text="Helix Shell Pipe"

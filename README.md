@@ -183,6 +183,10 @@ Essential insert-mode operations matching standard Helix and terminal/readline w
 
 | Key | Helix Command | Description |
 |---|---|---|
+| `Ctrl+a` | `goto_line_start` | Move cursor to start of current line (`EditorLineStart`) |
+| `Ctrl+e` | `goto_line_end` | Move cursor to end of current line (`EditorLineEnd`) |
+| `Ctrl+h` | `delete_char_backward` | Delete character backward / Backspace (`EditorBackSpace`) |
+| `Ctrl+d` | `delete_char_forward` | Delete character forward / Delete (`EditorDelete`) |
 | `Ctrl+w` / `Alt+Backspace` | `delete_word_backward` | Delete previous word backward without triggering IntelliJ's expand selection |
 | `Alt+d` / `Alt+Delete` | `delete_word_forward` | Delete next word forward |
 | `Ctrl+u` | `kill_to_line_start` | Delete from cursor to start of current line |

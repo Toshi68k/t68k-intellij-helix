@@ -95,6 +95,26 @@ class HelixEventDispatcher : IdeEventQueue.EventDispatcher {
         editor: Editor,
         state: jp.titze.intellij.helix.state.HelixEditorState,
     ): Boolean = when (e.keyCode) {
+        KeyEvent.VK_A -> {
+            HelixActionDelegate.executeAction("EditorLineStart", editor)
+            true
+        }
+
+        KeyEvent.VK_E -> {
+            HelixActionDelegate.executeAction("EditorLineEnd", editor)
+            true
+        }
+
+        KeyEvent.VK_H -> {
+            HelixActionDelegate.executeAction("EditorBackSpace", editor)
+            true
+        }
+
+        KeyEvent.VK_D -> {
+            HelixActionDelegate.executeAction("EditorDelete", editor)
+            true
+        }
+
         KeyEvent.VK_S -> {
             HelixActions.commitUndoCheckpoint(editor)
             true

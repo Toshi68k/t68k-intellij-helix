@@ -956,6 +956,142 @@ class HelixEditingActionsTest : BasePlatformTestCase() {
         }
     }
 
+    fun testInsertModeLineStartCtrlA() {
+        myFixture.configureByText("test.txt", "val foo = hello_world.test")
+        val editor = myFixture.editor
+        val state = HelixStateManager.getOrCreate(editor)
+        state.setMode(HelixMode.INSERT)
+
+        val executedActions = mutableListOf<String>()
+        jp.titze.intellij.helix.action.HelixActionDelegate.actionExecutor = { actionId, _ ->
+            executedActions.add(actionId)
+            true
+        }
+
+        try {
+            val ctrlAHandled = dispatchKey(
+                editor,
+                java.awt.event.KeyEvent.VK_A,
+                java.awt.event.InputEvent.CTRL_DOWN_MASK,
+            )
+            ctrlAHandled.shouldBeTrue()
+            executedActions shouldBe listOf("EditorLineStart")
+
+            executedActions.clear()
+            val handledTyped = HelixKeyHandler.handleKey('\u0001', editor)
+            handledTyped.shouldBeTrue()
+            executedActions shouldBe listOf("EditorLineStart")
+        } finally {
+            jp.titze.intellij.helix.action.HelixActionDelegate.actionExecutor = null
+        }
+    }
+
+    fun testInsertModeLineEndCtrlE() {
+        myFixture.configureByText("test.txt", "val foo = hello_world.test")
+        val editor = myFixture.editor
+        val state = HelixStateManager.getOrCreate(editor)
+        state.setMode(HelixMode.INSERT)
+
+        val executedActions = mutableListOf<String>()
+        jp.titze.intellij.helix.action.HelixActionDelegate.actionExecutor = { actionId, _ ->
+            executedActions.add(actionId)
+            true
+        }
+
+        try {
+            val ctrlEHandled = dispatchKey(
+                editor,
+                java.awt.event.KeyEvent.VK_E,
+                java.awt.event.InputEvent.CTRL_DOWN_MASK,
+            )
+            ctrlEHandled.shouldBeTrue()
+            executedActions shouldBe listOf("EditorLineEnd")
+
+            executedActions.clear()
+            val handledTyped = HelixKeyHandler.handleKey('\u0005', editor)
+            handledTyped.shouldBeTrue()
+            executedActions shouldBe listOf("EditorLineEnd")
+        } finally {
+            jp.titze.intellij.helix.action.HelixActionDelegate.actionExecutor = null
+        }
+    }
+
+    fun testInsertModeDeleteCharBackwardCtrlH() {
+        myFixture.configureByText("test.txt", "val foo = hello_world.test")
+        val editor = myFixture.editor
+        val state = HelixStateManager.getOrCreate(editor)
+        state.setMode(HelixMode.INSERT)
+
+        val executedActions = mutableListOf<String>()
+        jp.titze.intellij.helix.action.HelixActionDelegate.actionExecutor = { actionId, _ ->
+            executedActions.add(actionId)
+            true
+        }
+
+        try {
+            val ctrlHHandled = dispatchKey(
+                editor,
+                java.awt.event.KeyEvent.VK_H,
+                java.awt.event.InputEvent.CTRL_DOWN_MASK,
+            )
+            ctrlHHandled.shouldBeTrue()
+            executedActions shouldBe listOf("EditorBackSpace")
+
+            executedActions.clear()
+            val handledTyped = HelixKeyHandler.handleKey('\u0008', editor)
+            handledTyped.shouldBeTrue()
+            executedActions shouldBe listOf("EditorBackSpace")
+        } finally {
+            jp.titze.intellij.helix.action.HelixActionDelegate.actionExecutor = null
+        }
+    }
+
+    fun testInsertModeDeleteCharForwardCtrlD() {
+        myFixture.configureByText("test.txt", "val foo = hello_world.test")
+        val editor = myFixture.editor
+        val state = HelixStateManager.getOrCreate(editor)
+        state.setMode(HelixMode.INSERT)
+
+        val executedActions = mutableListOf<String>()
+        jp.titze.intellij.helix.action.HelixActionDelegate.actionExecutor = { actionId, _ ->
+            executedActions.add(actionId)
+            true
+        }
+
+        try {
+            val ctrlDHandled = dispatchKey(
+                editor,
+                java.awt.event.KeyEvent.VK_D,
+                java.awt.event.InputEvent.CTRL_DOWN_MASK,
+            )
+            ctrlDHandled.shouldBeTrue()
+            executedActions shouldBe listOf("EditorDelete")
+
+            executedActions.clear()
+            val handledTyped = HelixKeyHandler.handleKey('\u0004', editor)
+            handledTyped.shouldBeTrue()
+            executedActions shouldBe listOf("EditorDelete")
+        } finally {
+            jp.titze.intellij.helix.action.HelixActionDelegate.actionExecutor = null
+        }
+    }
+
+    fun testNormalModeCtrlAAndCtrlDRemainIntact() {
+        myFixture.configureByText("test.txt", "val count = 41")
+        val editor = myFixture.editor
+        editor.caretModel.moveToOffset(13)
+        val state = HelixStateManager.getOrCreate(editor)
+        state.setMode(HelixMode.NORMAL)
+
+        val ctrlAHandled = dispatchKey(
+            editor,
+            java.awt.event.KeyEvent.VK_A,
+            java.awt.event.InputEvent.CTRL_DOWN_MASK,
+        )
+        ctrlAHandled.shouldBeTrue()
+        editor.document.text shouldBe "val count = 42"
+    }
+
     fun testEarlierAndLaterShortcuts() {
         myFixture.configureByText("test.txt", "sample text")
         val editor = myFixture.editor
