@@ -3,6 +3,7 @@ package jp.titze.intellij.helix.keymap
 import com.intellij.openapi.editor.Editor
 import jp.titze.intellij.helix.action.HelixActionDelegate
 import jp.titze.intellij.helix.action.HelixActions
+import jp.titze.intellij.helix.ui.HelixDirectoryFilePickerPopup
 import jp.titze.intellij.helix.ui.HelixJumplistPopup
 
 internal object HelixSpaceKeymap {
@@ -25,10 +26,8 @@ internal object HelixSpaceKeymap {
 
             'F' -> {
                 HelixKeyHandler.recordJump(editor)
-                HelixActionDelegate.executeAction(
-                    "ShowNavBar",
-                    editor,
-                ) || HelixActionDelegate.executeAction("SelectInProjectView", editor)
+                HelixDirectoryFilePickerPopup.show(editor)
+                true
             }
 
             'b' -> {

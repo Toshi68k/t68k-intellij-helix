@@ -13,6 +13,7 @@ import jp.titze.intellij.helix.settings.HelixSearchUiMode
 import jp.titze.intellij.helix.settings.HelixSettings
 import jp.titze.intellij.helix.state.HelixMode
 import jp.titze.intellij.helix.state.HelixStateManager
+import jp.titze.intellij.helix.ui.HelixDirectoryFilePickerPopup
 import jp.titze.intellij.helix.ui.HelixPromptBar
 import jp.titze.intellij.helix.ui.HelixPromptType
 import jp.titze.intellij.helix.ui.HelixStatusBarWidget
@@ -288,13 +289,15 @@ class HelixUiPopupsTest : BasePlatformTestCase() {
             jp.titze.intellij.helix.keymap.HelixSpaceKeymap.lastPickerChar shouldBe 'f'
 
             // Space + 'F' (file picker in current directory)
+            HelixDirectoryFilePickerPopup.isShowing = false
             jp.titze.intellij.helix.keymap.HelixSpaceKeymap.handle('F', editor).shouldBeTrue()
-            executedActions.contains("ShowNavBar").shouldBeTrue()
+            HelixDirectoryFilePickerPopup.isShowing.shouldBeTrue()
             jp.titze.intellij.helix.keymap.HelixSpaceKeymap.lastPickerChar shouldBe 'F'
 
             // Space + ''' (last picker - repeats 'F')
+            HelixDirectoryFilePickerPopup.isShowing = false
             jp.titze.intellij.helix.keymap.HelixSpaceKeymap.handle('\'', editor).shouldBeTrue()
-            executedActions.last() shouldBe "ShowNavBar"
+            HelixDirectoryFilePickerPopup.isShowing.shouldBeTrue()
         } finally {
             jp.titze.intellij.helix.action.HelixActionDelegate.actionExecutor = null
         }
@@ -382,7 +385,7 @@ class HelixUiPopupsTest : BasePlatformTestCase() {
         val filePickerCurDir = spaceItems.first { it.key == "F" }
         filePickerCurDir.label shouldBe "Current dir file picker"
         filePickerCurDir.helixCommand shouldBe "file_picker_in_current_directory"
-        filePickerCurDir.intelliJAction shouldBe "ShowNavBar"
+        filePickerCurDir.intelliJAction shouldBe ""
         filePickerCurDir.description shouldBe "file_picker_in_current_directory"
 
         // Ensure all commands follow Helix snake_case convention
@@ -526,11 +529,13 @@ class HelixUiPopupsTest : BasePlatformTestCase() {
             HelixCommandPopup.executeCommand("file_picker", editor)
             executedActions.last() shouldBe "GotoFile"
 
+            HelixDirectoryFilePickerPopup.isShowing = false
             HelixCommandPopup.executeCommand("file-picker-in-current-directory", editor)
-            executedActions.last() shouldBe "ShowNavBar"
+            HelixDirectoryFilePickerPopup.isShowing.shouldBeTrue()
 
+            HelixDirectoryFilePickerPopup.isShowing = false
             HelixCommandPopup.executeCommand("file_picker_in_current_directory", editor)
-            executedActions.last() shouldBe "ShowNavBar"
+            HelixDirectoryFilePickerPopup.isShowing.shouldBeTrue()
 
             val openCmd = HelixCommandPopup.COMMANDS.first { it.name == "open" }
             openCmd.matches("edit").shouldBeTrue()
@@ -1118,5 +1123,36 @@ class HelixUiPopupsTest : BasePlatformTestCase() {
             it.key == "R" && it.helixCommand == "unfold_all" && it.intelliJAction == "ExpandAllRegions"
         }.shouldBeTrue()
         items.any { it.key == "z" && it.helixCommand == "align_view_center" }.shouldBeTrue()
+    }
+
+    fun testDirectoryFilePickerPopupScanFilterAndOpen() {
+        myFixture.configureByText("test.txt", "sample")
+        val rootDir = myFixture.tempDirFixture.findOrCreateDir("picker_test")
+        val fileA = myFixture.addFileToProject("picker_test/alpha.kt", "fun a() {}").virtualFile
+        myFixture.tempDirFixture.findOrCreateDir("picker_test/nested")
+        val fileB = myFixture.addFileToProject("picker_test/nested/beta.kt", "fun b() {}").virtualFile
+        myFixture.tempDirFixture.findOrCreateDir("picker_test/build")
+        myFixture.addFileToProject("picker_test/build/ignored.txt", "repo")
+
+        val items = HelixDirectoryFilePickerPopup.collectFiles(rootDir)
+        items.any { it.fileName == "alpha.kt" }.shouldBeTrue()
+        items.any { it.fileName == "beta.kt" }.shouldBeTrue()
+        items.any { it.relativePath.contains("build") }.shouldBeFalse()
+
+        val alphaItem = items.first { it.fileName == "alpha.kt" }
+        alphaItem.matches("").shouldBeTrue()
+        alphaItem.matches("alp").shouldBeTrue()
+        alphaItem.matches("beta").shouldBeFalse()
+        alphaItem.matches("ak").shouldBeTrue()
+
+        val editor = myFixture.editor
+        var openedFile: com.intellij.openapi.vfs.VirtualFile? = null
+        HelixDirectoryFilePickerPopup.fileOpener = { _, f -> openedFile = f }
+        try {
+            HelixDirectoryFilePickerPopup.openSelectedFile(editor, fileA)
+            openedFile shouldBe fileA
+        } finally {
+            HelixDirectoryFilePickerPopup.fileOpener = null
+        }
     }
 }

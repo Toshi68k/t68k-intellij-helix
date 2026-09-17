@@ -14,6 +14,7 @@ import jp.titze.intellij.helix.motion.HelixMotions
 import jp.titze.intellij.helix.settings.HelixSearchUiMode
 import jp.titze.intellij.helix.settings.HelixSettings
 import jp.titze.intellij.helix.state.HelixStateManager
+import jp.titze.intellij.helix.ui.HelixDirectoryFilePickerPopup
 import jp.titze.intellij.helix.ui.HelixJumplistPopup
 import jp.titze.intellij.helix.ui.HelixSearchManager
 import java.io.File
@@ -391,11 +392,10 @@ object HelixCommands {
         HelixCommandItem(
             "file-picker-in-current-directory",
             listOf("file_picker_in_current_directory"),
-            "Open file picker in current directory (ShowNavBar)",
+            "Open file picker in current directory",
         ) { editor ->
             HelixKeyHandler.recordJump(editor)
-            HelixActionDelegate.executeAction("ShowNavBar", editor) ||
-                HelixActionDelegate.executeAction("SelectInProjectView", editor)
+            HelixDirectoryFilePickerPopup.show(editor)
         },
         HelixCommandItem("buffer", listOf("b"), "Open buffer switcher (RecentFiles)") { editor ->
             HelixActionDelegate.executeAction("RecentFiles", editor)
