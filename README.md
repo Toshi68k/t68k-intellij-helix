@@ -232,6 +232,7 @@ Built-in surround and textobject functionality matching [Helix Surround](https:/
 
 #### Navigation (`g` menu)
 - `gd` &rarr; `goto_definition` (`GotoDeclaration`)
+- `gD` &rarr; `goto_declaration` (`GotoDeclarationOnly`)
 - `gi` &rarr; `goto_implementation` (`GotoImplementation`)
 - `gy` &rarr; `goto_type_definition` (`GotoTypeDeclaration`)
 - `gr` &rarr; `goto_reference` (`FindUsages`)
@@ -390,6 +391,8 @@ Press `:` in Normal mode to open the interactive **Helix Command Picker**, style
 - `:unfold-all` / `:unfold_all` &rarr; Expand all folds in file (`ExpandAllRegions`)
 - `:optimize-imports` / `:oi` &rarr; Optimize imports (`OptimizeImports`)
 - `:goto-test` / `:test` &rarr; Jump to test or code under test (`GotoTest`)
+- `:goto-declaration` / `:declaration` &rarr; Jump to declaration (`GotoDeclarationOnly`)
+- `:goto-definition` / `:definition` &rarr; Jump to definition or declaration (`GotoDeclaration`)
 - `:earlier` / `:undo-earlier` &rarr; Move backward in history (`Alt+u`)
 - `:later` / `:redo-later` &rarr; Move forward in history (`Alt+U`)
 - `:reload` / `:e!` &rarr; Reload file from disk (`SynchronizeCurrentFile`)

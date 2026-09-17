@@ -14,6 +14,12 @@ internal object HelixGotoKeymap {
             HelixActionDelegate.executeAction("GotoDeclaration", editor)
         }
 
+        'D' -> {
+            HelixKeyHandler.recordJump(editor)
+            HelixActionDelegate.executeAction("GotoDeclarationOnly", editor) ||
+                HelixActionDelegate.executeAction("GotoDeclaration", editor)
+        }
+
         'i' -> {
             HelixKeyHandler.recordJump(editor)
             HelixActionDelegate.executeAction("GotoImplementation", editor)

@@ -104,6 +104,21 @@ object HelixCommands {
             listOf("goto_test", "test"),
             "Navigate to or create test for current class (GotoTest)",
         ) { editor -> HelixActionDelegate.executeAction("GotoTest", editor) },
+        HelixCommandItem(
+            "goto-declaration",
+            listOf("goto_declaration", "declaration"),
+            "Jump to declaration (GotoDeclarationOnly)",
+        ) { editor ->
+            HelixActionDelegate.executeAction("GotoDeclarationOnly", editor) ||
+                HelixActionDelegate.executeAction("GotoDeclaration", editor)
+        },
+        HelixCommandItem(
+            "goto-definition",
+            listOf("goto_definition", "definition"),
+            "Jump to definition or declaration (GotoDeclaration)",
+        ) { editor ->
+            HelixActionDelegate.executeAction("GotoDeclaration", editor)
+        },
         HelixCommandItem("earlier", listOf("undo-earlier"), "Undo earlier changes (Alt+u)") { editor ->
             val count = HelixStateManager.getOrCreate(editor).takeCount() ?: 1
             repeat(count) { HelixActionDelegate.executeAction("\$Undo", editor) }
