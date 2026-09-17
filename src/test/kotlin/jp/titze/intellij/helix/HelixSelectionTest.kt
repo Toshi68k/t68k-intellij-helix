@@ -6,6 +6,7 @@ import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import jp.titze.intellij.helix.action.HelixActions
+import jp.titze.intellij.helix.editor.HelixEscapeHandler
 import jp.titze.intellij.helix.keymap.HelixKeyHandler
 import jp.titze.intellij.helix.motion.HelixMotions
 import jp.titze.intellij.helix.state.HelixMode
@@ -1010,5 +1011,57 @@ class HelixSelectionTest : BasePlatformTestCase() {
         caret.moveToOffset(text.indexOf("b: String"))
         jp.titze.intellij.helix.command.HelixCommands.execute("move_parent_node_end", editor)
         caret.offset shouldBe text.indexOf(')')
+    }
+
+    fun testProgressiveEscapeMultiCaretWithSelection() {
+        val text = "alpha beta gamma\n"
+        myFixture.configureByText("test.txt", text)
+        val editor = myFixture.editor
+        val caretModel = editor.caretModel
+
+        val primary = caretModel.primaryCaret
+        primary.moveToOffset(0)
+        primary.setSelection(0, 5) // select "alpha"
+
+        val secondary = caretModel.addCaret(editor.offsetToVisualPosition(6), false)
+        secondary.shouldNotBeNull()
+        secondary.setSelection(6, 10) // select "beta"
+
+        caretModel.caretCount shouldBe 2
+        primary.hasSelection().shouldBeTrue()
+        secondary.hasSelection().shouldBeTrue()
+
+        // 1st Escape: collapses selections, carets remain
+        HelixEscapeHandler.handleEscape(editor).shouldBeTrue()
+        caretModel.caretCount shouldBe 2
+        primary.hasSelection().shouldBeFalse()
+        secondary.hasSelection().shouldBeFalse()
+
+        // 2nd Escape: removes secondary caret, keeping only primary
+        HelixEscapeHandler.handleEscape(editor).shouldBeTrue()
+        caretModel.caretCount shouldBe 1
+        caretModel.primaryCaret.offset shouldBe 0
+    }
+
+    fun testProgressiveEscapeMultiCaretWithoutSelection() {
+        val text = "alpha beta gamma\n"
+        myFixture.configureByText("test.txt", text)
+        val editor = myFixture.editor
+        val caretModel = editor.caretModel
+
+        val primary = caretModel.primaryCaret
+        primary.moveToOffset(0)
+
+        val secondary = caretModel.addCaret(editor.offsetToVisualPosition(6), false)
+        secondary.shouldNotBeNull()
+
+        caretModel.caretCount shouldBe 2
+        primary.hasSelection().shouldBeFalse()
+        secondary.hasSelection().shouldBeFalse()
+
+        // 1st Escape: already collapsed, immediately removes secondary caret
+        HelixEscapeHandler.handleEscape(editor).shouldBeTrue()
+        caretModel.caretCount shouldBe 1
+        caretModel.primaryCaret.offset shouldBe 0
     }
 }
