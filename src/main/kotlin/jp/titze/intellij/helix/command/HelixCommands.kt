@@ -73,6 +73,13 @@ object HelixCommands {
             HelixActionDelegate.executeAction("Unsplit", editor) ||
                 HelixActionDelegate.executeAction("CloseContent", editor)
         },
+        HelixCommandItem(
+            "swap-split",
+            listOf("change-split-orientation"),
+            "Swap current split view direction (ChangeSplitOrientation)",
+        ) { editor ->
+            HelixActionDelegate.executeAction("ChangeSplitOrientation", editor)
+        },
         HelixCommandItem("format", emptyList(), "Format buffer using IDE code formatter") { editor ->
             HelixActionDelegate.executeAction("ReformatCode", editor)
         },
@@ -610,6 +617,10 @@ object HelixCommands {
             "close-split", "close", "clo" -> {
                 HelixActionDelegate.executeAction("Unsplit", editor) ||
                     HelixActionDelegate.executeAction("CloseContent", editor)
+            }
+
+            "swap-split", "change-split-orientation" -> {
+                HelixActionDelegate.executeAction("ChangeSplitOrientation", editor)
             }
 
             "format" -> HelixActionDelegate.executeAction("ReformatCode", editor)

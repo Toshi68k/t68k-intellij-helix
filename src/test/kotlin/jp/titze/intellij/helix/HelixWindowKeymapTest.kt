@@ -22,7 +22,7 @@ class HelixWindowKeymapTest : BasePlatformTestCase() {
         menu.first shouldBe "WINDOW MENU"
 
         val keys = menu.second.map { it.key }
-        keys shouldBe listOf("v", "s", "h", "j", "k", "l", "w", "q", "c", "o")
+        keys shouldBe listOf("v", "s", "h", "j", "k", "l", "w", "W", "H", "J", "K", "L", "q", "c", "o")
 
         // Also verify aliases
         HelixWhichKeyMenus.getMenu("Ctrl+w").shouldNotBeNull()
@@ -33,14 +33,58 @@ class HelixWindowKeymapTest : BasePlatformTestCase() {
         myFixture.configureByText("test.txt", "hello window split")
         val editor = myFixture.editor
 
-        val validKeys = listOf('v', 's', 'h', 'j', 'k', 'l', 'w', 'q', 'c', 'o')
+        val validKeys = listOf('v', 's', 'h', 'j', 'k', 'l', 'w', 'W', 'H', 'J', 'K', 'L', 'q', 'c', 'o')
         for (k in validKeys) {
             HelixWindowKeymap.handle(k, editor).shouldBeTrue()
-            HelixWindowKeymap.handle(k.uppercaseChar(), editor).shouldBeTrue()
         }
 
         HelixWindowKeymap.handle('x', editor).shouldBeFalse()
         HelixWindowKeymap.handle('z', editor).shouldBeFalse()
+    }
+
+    fun testWindowKeymapActionRouting() {
+        myFixture.configureByText("test.txt", "split test")
+        val editor = myFixture.editor
+        val executed = mutableListOf<String>()
+        jp.titze.intellij.helix.action.HelixActionDelegate.actionExecutor = { actionId, _ ->
+            executed.add(actionId)
+            true
+        }
+        try {
+            HelixWindowKeymap.handle('w', editor).shouldBeTrue()
+            executed.last() shouldBe "NextSplitter"
+
+            HelixWindowKeymap.handle('W', editor).shouldBeTrue()
+            executed.last() shouldBe "PrevSplitter"
+
+            HelixWindowKeymap.handle('h', editor).shouldBeTrue()
+            executed.last() shouldBe "PrevSplitter"
+
+            HelixWindowKeymap.handle('j', editor).shouldBeTrue()
+            executed.last() shouldBe "NextSplitter"
+
+            HelixWindowKeymap.handle('k', editor).shouldBeTrue()
+            executed.last() shouldBe "PrevSplitter"
+
+            HelixWindowKeymap.handle('l', editor).shouldBeTrue()
+            executed.last() shouldBe "NextSplitter"
+
+            for (ch in listOf('H', 'J', 'K', 'L')) {
+                HelixWindowKeymap.handle(ch, editor).shouldBeTrue()
+                executed.last() shouldBe "ChangeSplitOrientation"
+            }
+
+            HelixWindowKeymap.handle('v', editor).shouldBeTrue()
+            executed.last() shouldBe "SplitVertically"
+
+            HelixWindowKeymap.handle('s', editor).shouldBeTrue()
+            executed.last() shouldBe "SplitHorizontally"
+
+            HelixWindowKeymap.handle('o', editor).shouldBeTrue()
+            executed.last() shouldBe "UnsplitAll"
+        } finally {
+            jp.titze.intellij.helix.action.HelixActionDelegate.actionExecutor = null
+        }
     }
 
     fun testCtrlWChordInitiationAndKeyExecution() {
@@ -92,10 +136,17 @@ class HelixWindowKeymapTest : BasePlatformTestCase() {
         closeSplitCmd.matches("close").shouldBeTrue()
         closeSplitCmd.matches("clo").shouldBeTrue()
 
+        val swapSplitCmd = HelixCommandPopup.COMMANDS.firstOrNull { it.name == "swap-split" }
+        swapSplitCmd.shouldNotBeNull()
+        swapSplitCmd.matches("change-split-orientation").shouldBeTrue()
+        swapSplitCmd.matches("swap").shouldBeTrue()
+
         HelixCommandPopup.executeCommand("unsplit", editor)
         HelixCommandPopup.executeCommand("only", editor)
         HelixCommandPopup.executeCommand("close-split", editor)
         HelixCommandPopup.executeCommand("close", editor)
+        HelixCommandPopup.executeCommand("swap-split", editor)
+        HelixCommandPopup.executeCommand("change-split-orientation", editor)
     }
 
     fun testEventDispatcherWindowChord() {
@@ -127,5 +178,63 @@ class HelixWindowKeymapTest : BasePlatformTestCase() {
         )
         dispatcher.dispatch(ctrlVEvent).shouldBeTrue()
         state.pendingSequence.isEmpty().shouldBeTrue()
+    }
+
+    fun testEventDispatcherShiftWindowChord() {
+        myFixture.configureByText("test.txt", "hello dispatcher shift")
+        val editor = myFixture.editor
+        val state = HelixStateManager.getOrCreate(editor)
+        val dispatcher = HelixEventDispatcher()
+
+        val executed = mutableListOf<String>()
+        jp.titze.intellij.helix.action.HelixActionDelegate.actionExecutor = { actionId, _ ->
+            executed.add(actionId)
+            true
+        }
+        try {
+            // Dispatch Ctrl+w
+            val ctrlWEvent = KeyEvent(
+                editor.contentComponent,
+                KeyEvent.KEY_PRESSED,
+                System.currentTimeMillis(),
+                KeyEvent.CTRL_DOWN_MASK,
+                KeyEvent.VK_W,
+                'w',
+            )
+            dispatcher.dispatch(ctrlWEvent).shouldBeTrue()
+            state.pendingSequence shouldBe "C-w"
+
+            // Dispatch Ctrl+Shift+W -> PrevSplitter
+            val ctrlShiftWEvent = KeyEvent(
+                editor.contentComponent,
+                KeyEvent.KEY_PRESSED,
+                System.currentTimeMillis(),
+                KeyEvent.CTRL_DOWN_MASK or KeyEvent.SHIFT_DOWN_MASK,
+                KeyEvent.VK_W,
+                'W',
+            )
+            dispatcher.dispatch(ctrlShiftWEvent).shouldBeTrue()
+            state.pendingSequence.isEmpty().shouldBeTrue()
+            executed.last() shouldBe "PrevSplitter"
+
+            // Dispatch Ctrl+w again
+            dispatcher.dispatch(ctrlWEvent).shouldBeTrue()
+            state.pendingSequence shouldBe "C-w"
+
+            // Dispatch Ctrl+Shift+H -> ChangeSplitOrientation
+            val ctrlShiftHEvent = KeyEvent(
+                editor.contentComponent,
+                KeyEvent.KEY_PRESSED,
+                System.currentTimeMillis(),
+                KeyEvent.CTRL_DOWN_MASK or KeyEvent.SHIFT_DOWN_MASK,
+                KeyEvent.VK_H,
+                'H',
+            )
+            dispatcher.dispatch(ctrlShiftHEvent).shouldBeTrue()
+            state.pendingSequence.isEmpty().shouldBeTrue()
+            executed.last() shouldBe "ChangeSplitOrientation"
+        } finally {
+            jp.titze.intellij.helix.action.HelixActionDelegate.actionExecutor = null
+        }
     }
 }
