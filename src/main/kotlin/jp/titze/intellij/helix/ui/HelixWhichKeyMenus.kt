@@ -14,6 +14,7 @@ object HelixWhichKeyMenus {
     val spaceItems = listOf(
         WhichKeyItem("b", "Buffer / Tab picker", "buffer_picker", "RecentFiles"),
         WhichKeyItem("f", "File picker", "file_picker", "GotoFile"),
+        WhichKeyItem("F", "Current dir file picker", "file_picker_in_current_directory", "ShowNavBar"),
         WhichKeyItem("e", "File explorer", "file_explorer", "ActivateProjectToolWindow"),
         WhichKeyItem(".", "Buffer directory explorer", "buffer_dir_picker", "SelectInProjectView"),
         WhichKeyItem("g", "Changed file picker", "changed_file_picker", "ActivateVersionControlToolWindow"),

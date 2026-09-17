@@ -10,7 +10,7 @@ internal object HelixSpaceKeymap {
     var lastPickerChar: Char? = null
 
     fun handle(ch: Char, editor: Editor): Boolean {
-        if (ch in listOf('f', 'b', '/', 'j', 's', 'S', 'd', 'D', 'g', '?')) {
+        if (ch in listOf('f', 'F', 'b', '/', 'j', 's', 'S', 'd', 'D', 'g', '?')) {
             lastPickerChar = ch
         }
 
@@ -21,6 +21,14 @@ internal object HelixSpaceKeymap {
                     "GotoFile",
                     editor,
                 ) || HelixActionDelegate.executeAction("SearchEverywhere", editor)
+            }
+
+            'F' -> {
+                HelixKeyHandler.recordJump(editor)
+                HelixActionDelegate.executeAction(
+                    "ShowNavBar",
+                    editor,
+                ) || HelixActionDelegate.executeAction("SelectInProjectView", editor)
             }
 
             'b' -> {

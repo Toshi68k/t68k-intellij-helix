@@ -303,6 +303,7 @@ Whenever a chord prefix key (<kbd>Space</kbd>, `Ctrl+w`, `g`, `m`, `[`, or `]`) 
 | Key | Helix Command | IntelliJ Action | Description |
 |-----|---------------|-----------------|-------------|
 | `space + f` | `file_picker` | `GotoFile` | Dedicated fuzzy file picker |
+| `space + F` | `file_picker_in_current_directory` | `ShowNavBar` | File picker in current / focused directory |
 | `space + b` | `buffer_picker` | `RecentFiles` | Open buffer / tab switcher |
 | `space + /` | `global_search` | `FindInPath` | Live project-wide text search (live grep) with preview |
 | `space + j` | `jumplist_picker` | — | Open interactive jumplist picker popup |
@@ -396,7 +397,8 @@ Press `:` in Normal mode to open the interactive **Helix Command Picker**, style
 - `:earlier` / `:undo-earlier` &rarr; Move backward in history (`Alt+u`)
 - `:later` / `:redo-later` &rarr; Move forward in history (`Alt+U`)
 - `:reload` / `:e!` &rarr; Reload file from disk (`SynchronizeCurrentFile`)
-- `:open` / `:edit` / `:e [file]` &rarr; Open fuzzy file picker (`GotoFile`) or open file by path
+- `:open` / `:edit` / `:e [file]` / `:file-picker` &rarr; Open fuzzy file picker (`GotoFile`) or open file by path
+- `:file-picker-in-current-directory` &rarr; Open file picker in current directory (`ShowNavBar`)
 - `:buffer` / `:b` &rarr; Open buffer switcher (`RecentFiles`)
 - `:buffer-close` / `:bc` / `:bclose` &rarr; Close active tab (`CloseContent`)
 - `:buffer-close-others` / `:bco` / `:bcloseother` &rarr; Close all other tabs (`CloseAllEditorsButActive`)
