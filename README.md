@@ -279,6 +279,8 @@ Whenever a chord prefix key (<kbd>Space</kbd>, `Ctrl+w`, `g`, `m`, `[`, or `]`) 
 | `Ctrl+w k` | `jump_view_up` | `PrevSplitter` | Focus split above |
 | `Ctrl+w l` | `jump_view_right` | `NextSplitter` | Focus split to the right |
 | `Ctrl+w w` | `jump_next_view` | `NextSplitter` | Cycle focus to next split window |
+| `Ctrl+w W` | `jump_prev_view` | `PrevSplitter` | Cycle focus to previous split window |
+| `Ctrl+w H` / `J` / `K` / `L` | `swap_view_*` | `ChangeSplitOrientation` | Swap split orientation |
 | `Ctrl+w q` / `Ctrl+w c` | `wclose` | `Unsplit` | Close active split |
 | `Ctrl+w o` | `wonly` | `UnsplitAll` | Close all other splits |
 
@@ -389,6 +391,7 @@ Press `:` in Normal mode to open the interactive **Helix Command Picker**, style
 - `:sp` / `:hsplit` &rarr; Split editor horizontally
 - `:unsplit` / `:only` &rarr; Close all other splits (`UnsplitAll`)
 - `:close-split` / `:close` &rarr; Close active split (`Unsplit`)
+- `:swap-split` / `:change-split-orientation` &rarr; Swap split orientation (`ChangeSplitOrientation`)
 - `:format` &rarr; Reformat code (`ReformatCode`)
 - `:fold` &rarr; Fold block under cursor (`CollapseRegion`)
 - `:unfold` &rarr; Unfold block under cursor (`ExpandRegion`)

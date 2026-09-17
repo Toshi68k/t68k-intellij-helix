@@ -10,15 +10,19 @@ internal object HelixWindowKeymap {
 
         's', 'S' -> HelixActionDelegate.executeAction("SplitHorizontally", editor)
 
-        'h', 'H' -> HelixActionDelegate.executeAction("PrevSplitter", editor)
+        'h' -> HelixActionDelegate.executeAction("PrevSplitter", editor)
 
-        'j', 'J' -> HelixActionDelegate.executeAction("NextSplitter", editor)
+        'j' -> HelixActionDelegate.executeAction("NextSplitter", editor)
 
-        'k', 'K' -> HelixActionDelegate.executeAction("PrevSplitter", editor)
+        'k' -> HelixActionDelegate.executeAction("PrevSplitter", editor)
 
-        'l', 'L' -> HelixActionDelegate.executeAction("NextSplitter", editor)
+        'l' -> HelixActionDelegate.executeAction("NextSplitter", editor)
 
-        'w', 'W' -> HelixActionDelegate.executeAction("NextSplitter", editor)
+        'w' -> HelixActionDelegate.executeAction("NextSplitter", editor)
+
+        'W' -> HelixActionDelegate.executeAction("PrevSplitter", editor)
+
+        'H', 'J', 'K', 'L' -> HelixActionDelegate.executeAction("ChangeSplitOrientation", editor)
 
         'q', 'Q', 'c', 'C' -> {
             HelixActionDelegate.executeAction("Unsplit", editor) ||
