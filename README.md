@@ -453,7 +453,7 @@ Press `:` in Normal mode to open the interactive **Helix Command Picker**, style
 
 #### Search & Selection UI Modes
 Helix Keymap supports two switchable search and regex prompt styles:
-1. **Stock Helix Mode (Default)**: Single-line prompt bar docked at the bottom of the active editor (`search: `, `rsearch: `, `select: `, `split: `, `keep: `, `remove: `, `pipe: `, `insert-output: `, `append-output: `, `keep-pipe: `, `pipe-to: `). Matches and selections update live in the editor buffer as you type for search/regex modes, while shell operations execute safely upon pressing <kbd>Enter</kbd>. Pressing <kbd>Esc</kbd> (or <kbd>Backspace</kbd> on empty query) cancels and reverts all carets and selections to their pre-search snapshot.
+1. **Stock Helix Mode (Default)**: Single-line prompt bar docked at the bottom of the active editor (`search: `, `rsearch: `, `select: `, `split: `, `keep: `, `remove: `, `pipe: `, `insert-output: `, `append-output: `, `keep-pipe: `, `pipe-to: `). Matches and selections update live in the editor buffer as you type for search/regex modes, while shell operations execute safely upon pressing <kbd>Enter</kbd>. Pressing <kbd>↑</kbd> / <kbd>↓</kbd> (or <kbd>Ctrl+p</kbd> / <kbd>Ctrl+n</kbd>) navigates through the category history ring (search, regex, and shell). Pressing <kbd>Esc</kbd> (or <kbd>Backspace</kbd> on empty query) cancels and reverts all carets and selections to their pre-search snapshot.
 
 2. **Popup Dialog Mode**: Centered floating dialog window with match counter badge, useful for users preferring a separate floating modal window.
 
@@ -465,6 +465,7 @@ Configure Helix Keymap preferences under **Preferences / Settings &rarr; Tools &
 - **Which-Key Chord Menus**: Enable or disable Which-Key chord popups on chord prefixes (`Space`, `g`, `m`, `[`, `]`, `z`, `Ctrl+w`), choose default hint display style (Helix command names vs IntelliJ Action IDs), and set maximum columns (3 columns compact vs 2 columns classic).
 - **Reset to Normal mode on tab switch / file open** *(default: enabled)*: Ensures each tab starts in **Normal** mode with block cursor whenever a file is opened or tabs are switched. Can be disabled if you prefer retaining active modes (such as Insert mode) across tabs.
 - **Search and Selection Prompt UI**: Toggle between Stock Helix inline bottom bar or Popup dialog.
+- **Prompt History Capacity**: Set maximum remembered prompt history entries per category (10–500, default: 100).
 - **Jump List Capacity**: Set maximum recorded jump entries (10–1000).
 - **Color Theme**: Choose between Sync with IDE, Dark, or Light themes for all Helix overlays.
 

@@ -54,6 +54,7 @@ class HelixPromptBar(private val editor: Editor) : JPanel(BorderLayout(JBUI.scal
     private var currentCount: Int = 1
     private var baseSnapshot: List<HelixCaretSnapshot> = emptyList()
     private var isUpdatingPreview = false
+    private var historyNavigator = HelixPromptHistoryNavigator(HelixPromptCategory.SEARCH)
 
     private class KeycapBadge(keyText: String) : JPanel(BorderLayout()) {
         private val label = JBLabel(keyText, SwingConstants.CENTER)
@@ -115,22 +116,38 @@ class HelixPromptBar(private val editor: Editor) : JPanel(BorderLayout(JBUI.scal
 
         textField.addKeyListener(object : KeyAdapter() {
             override fun keyPressed(e: KeyEvent) {
-                when (e.keyCode) {
-                    KeyEvent.VK_ENTER -> {
+                when {
+                    e.keyCode == KeyEvent.VK_ENTER -> {
                         commitAndClose()
                         e.consume()
                     }
 
-                    KeyEvent.VK_ESCAPE -> {
+                    e.keyCode == KeyEvent.VK_ESCAPE -> {
                         cancelAndClose()
                         e.consume()
                     }
 
-                    KeyEvent.VK_BACK_SPACE -> {
+                    e.keyCode == KeyEvent.VK_BACK_SPACE -> {
                         if (textField.text.isEmpty()) {
                             cancelAndClose()
                             e.consume()
                         }
+                    }
+
+                    isHistoryUp(e) -> {
+                        val prev = historyNavigator.onUp(textField.text)
+                        if (prev != null) {
+                            setTextFromHistory(prev)
+                        }
+                        e.consume()
+                    }
+
+                    isHistoryDown(e) -> {
+                        val next = historyNavigator.onDown()
+                        if (next != null) {
+                            setTextFromHistory(next)
+                        }
+                        e.consume()
                     }
                 }
             }
@@ -148,6 +165,7 @@ class HelixPromptBar(private val editor: Editor) : JPanel(BorderLayout(JBUI.scal
         currentCount = count
         baseSnapshot = HelixActions.captureCarets(editor)
         badgeBadge.setText(type.badge)
+        historyNavigator = HelixPromptHistoryNavigator(type.toCategory())
 
         isUpdatingPreview = true
         textField.text = ""
@@ -285,6 +303,7 @@ class HelixPromptBar(private val editor: Editor) : JPanel(BorderLayout(JBUI.scal
         hideBar()
 
         if (query.isNotEmpty()) {
+            HelixPromptHistory.add(type.toCategory(), query)
             if (type == HelixPromptType.SEARCH) {
                 HelixActions.lastSearchPattern = query
                 HelixActions.lastSearchBackward = false
@@ -298,8 +317,20 @@ class HelixPromptBar(private val editor: Editor) : JPanel(BorderLayout(JBUI.scal
     }
 
     fun cancelAndClose() {
+        historyNavigator.reset()
         HelixActions.restoreCarets(editor, baseSnapshot)
         hideBar()
+    }
+
+    private fun isHistoryUp(e: KeyEvent): Boolean =
+        e.keyCode == KeyEvent.VK_UP || (e.isControlDown && e.keyCode == KeyEvent.VK_P)
+
+    private fun isHistoryDown(e: KeyEvent): Boolean =
+        e.keyCode == KeyEvent.VK_DOWN || (e.isControlDown && e.keyCode == KeyEvent.VK_N)
+
+    private fun setTextFromHistory(text: String) {
+        textField.text = text
+        textField.caretPosition = text.length
     }
 
     private fun hideBar() {
