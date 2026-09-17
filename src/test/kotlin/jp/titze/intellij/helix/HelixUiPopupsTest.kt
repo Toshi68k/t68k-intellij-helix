@@ -282,8 +282,19 @@ class HelixUiPopupsTest : BasePlatformTestCase() {
             // Space + 'g' (git changes)
             jp.titze.intellij.helix.keymap.HelixSpaceKeymap.handle('g', editor).shouldBeTrue()
 
-            // Space + ''' (last picker)
+            // Space + 'f' (file picker)
+            jp.titze.intellij.helix.keymap.HelixSpaceKeymap.handle('f', editor).shouldBeTrue()
+            executedActions.contains("GotoFile").shouldBeTrue()
+            jp.titze.intellij.helix.keymap.HelixSpaceKeymap.lastPickerChar shouldBe 'f'
+
+            // Space + 'F' (file picker in current directory)
+            jp.titze.intellij.helix.keymap.HelixSpaceKeymap.handle('F', editor).shouldBeTrue()
+            executedActions.contains("ShowNavBar").shouldBeTrue()
+            jp.titze.intellij.helix.keymap.HelixSpaceKeymap.lastPickerChar shouldBe 'F'
+
+            // Space + ''' (last picker - repeats 'F')
             jp.titze.intellij.helix.keymap.HelixSpaceKeymap.handle('\'', editor).shouldBeTrue()
+            executedActions.last() shouldBe "ShowNavBar"
         } finally {
             jp.titze.intellij.helix.action.HelixActionDelegate.actionExecutor = null
         }
@@ -367,6 +378,12 @@ class HelixUiPopupsTest : BasePlatformTestCase() {
         filePicker.helixCommand shouldBe "file_picker"
         filePicker.intelliJAction shouldBe "GotoFile"
         filePicker.description shouldBe "file_picker"
+
+        val filePickerCurDir = spaceItems.first { it.key == "F" }
+        filePickerCurDir.label shouldBe "Current dir file picker"
+        filePickerCurDir.helixCommand shouldBe "file_picker_in_current_directory"
+        filePickerCurDir.intelliJAction shouldBe "ShowNavBar"
+        filePickerCurDir.description shouldBe "file_picker_in_current_directory"
 
         // Ensure all commands follow Helix snake_case convention
         val regex = Regex("^[a-z0-9_]+( <[a-z0-9_]+>)*$")
@@ -503,9 +520,23 @@ class HelixUiPopupsTest : BasePlatformTestCase() {
             HelixCommandPopup.executeCommand("e", editor)
             executedActions.last() shouldBe "GotoFile"
 
+            HelixCommandPopup.executeCommand("file-picker", editor)
+            executedActions.last() shouldBe "GotoFile"
+
+            HelixCommandPopup.executeCommand("file_picker", editor)
+            executedActions.last() shouldBe "GotoFile"
+
+            HelixCommandPopup.executeCommand("file-picker-in-current-directory", editor)
+            executedActions.last() shouldBe "ShowNavBar"
+
+            HelixCommandPopup.executeCommand("file_picker_in_current_directory", editor)
+            executedActions.last() shouldBe "ShowNavBar"
+
             val openCmd = HelixCommandPopup.COMMANDS.first { it.name == "open" }
             openCmd.matches("edit").shouldBeTrue()
             openCmd.matches("e").shouldBeTrue()
+            openCmd.matches("file-picker").shouldBeTrue()
+            openCmd.matches("file_picker").shouldBeTrue()
         } finally {
             jp.titze.intellij.helix.action.HelixActionDelegate.actionExecutor = originalExecutor
         }

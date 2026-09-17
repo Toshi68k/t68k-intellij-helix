@@ -9,6 +9,7 @@ import jp.titze.intellij.helix.action.HelixActionDelegate
 import jp.titze.intellij.helix.action.HelixActions
 import jp.titze.intellij.helix.action.HelixShellActions
 import jp.titze.intellij.helix.jumplist.HelixJumpListService
+import jp.titze.intellij.helix.keymap.HelixKeyHandler
 import jp.titze.intellij.helix.motion.HelixMotions
 import jp.titze.intellij.helix.settings.HelixSearchUiMode
 import jp.titze.intellij.helix.settings.HelixSettings
@@ -361,11 +362,20 @@ object HelixCommands {
         ) { editor -> HelixActions.selectAllChildren(editor) },
         HelixCommandItem(
             "open",
-            listOf("edit", "e"),
+            listOf("edit", "e", "file-picker", "file_picker"),
             "Open file picker or open file by path",
         ) { editor ->
             HelixActionDelegate.executeAction("GotoFile", editor) ||
                 HelixActionDelegate.executeAction("SearchEverywhere", editor)
+        },
+        HelixCommandItem(
+            "file-picker-in-current-directory",
+            listOf("file_picker_in_current_directory"),
+            "Open file picker in current directory (ShowNavBar)",
+        ) { editor ->
+            HelixKeyHandler.recordJump(editor)
+            HelixActionDelegate.executeAction("ShowNavBar", editor) ||
+                HelixActionDelegate.executeAction("SelectInProjectView", editor)
         },
         HelixCommandItem("buffer", listOf("b"), "Open buffer switcher (RecentFiles)") { editor ->
             HelixActionDelegate.executeAction("RecentFiles", editor)
@@ -512,7 +522,7 @@ object HelixCommands {
             HelixActionDelegate.executeAction("ActivateTerminalToolWindow", editor)
             return
         }
-        if (baseCmd == "open" || baseCmd == "edit" || baseCmd == "e") {
+        if (baseCmd in listOf("open", "edit", "e", "file-picker", "file_picker")) {
             if (arg.isEmpty()) {
                 HelixActionDelegate.executeAction("GotoFile", editor) ||
                     HelixActionDelegate.executeAction("SearchEverywhere", editor)
