@@ -3,12 +3,26 @@ package jp.titze.intellij.helix
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.booleans.shouldBeTrue
+import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
 import jp.titze.intellij.helix.action.HelixActions
 import jp.titze.intellij.helix.action.HelixSearchActions
 import jp.titze.intellij.helix.keymap.HelixKeyHandler
+import jp.titze.intellij.helix.ui.HelixPromptCategory
+import jp.titze.intellij.helix.ui.HelixPromptHistory
+import jp.titze.intellij.helix.ui.HelixPromptHistoryNavigator
 
 class HelixSearchAndRegexTest : BasePlatformTestCase() {
+
+    override fun setUp() {
+        super.setUp()
+        HelixPromptHistory.clear()
+    }
+
+    override fun tearDown() {
+        HelixPromptHistory.clear()
+        super.tearDown()
+    }
 
     fun testSelectRegexWholeBufferPercentS() {
         val text = "apple banana apple orange apple grape"
@@ -318,5 +332,75 @@ class HelixSearchAndRegexTest : BasePlatformTestCase() {
         HelixActions.searchSelection(editor, detectWordBoundaries = false)
 
         HelixSearchActions.lastSearchPattern shouldBe "\\Qmy-var\\E"
+    }
+
+    fun testPromptHistoryRingCapacityAndDeduplication() {
+        HelixPromptHistory.add(HelixPromptCategory.SEARCH, "foo")
+        HelixPromptHistory.add(HelixPromptCategory.SEARCH, "bar")
+        HelixPromptHistory.add(HelixPromptCategory.SEARCH, "bar") // consecutive duplicate ignored
+        HelixPromptHistory.add(HelixPromptCategory.SEARCH, "baz")
+        HelixPromptHistory.add(HelixPromptCategory.SEARCH, "foo") // moved to most recent
+
+        val list = HelixPromptHistory.get(HelixPromptCategory.SEARCH)
+        list shouldBe listOf("bar", "baz", "foo")
+
+        // Test capacity cap (100)
+        repeat(150) { i ->
+            HelixPromptHistory.add(HelixPromptCategory.SEARCH, "query-$i")
+        }
+        val capped = HelixPromptHistory.get(HelixPromptCategory.SEARCH)
+        capped.size shouldBe 100
+        capped.last() shouldBe "query-149"
+    }
+
+    fun testPromptHistoryNavigatorUpDownCycling() {
+        HelixPromptHistory.add(HelixPromptCategory.SEARCH, "pattern-1")
+        HelixPromptHistory.add(HelixPromptCategory.SEARCH, "pattern-2")
+        HelixPromptHistory.add(HelixPromptCategory.SEARCH, "pattern-3")
+
+        val navigator = HelixPromptHistoryNavigator(HelixPromptCategory.SEARCH)
+
+        // 1st Up: returns newest entry ("pattern-3") and saves current draft
+        navigator.onUp("draft-text") shouldBe "pattern-3"
+
+        // 2nd Up: returns older entry ("pattern-2")
+        navigator.onUp("pattern-3") shouldBe "pattern-2"
+
+        // 3rd Up: returns oldest entry ("pattern-1")
+        navigator.onUp("pattern-2") shouldBe "pattern-1"
+
+        // 4th Up: already at oldest entry, returns null
+        navigator.onUp("pattern-1").shouldBeNull()
+
+        // 1st Down: steps forward to "pattern-2"
+        navigator.onDown() shouldBe "pattern-2"
+
+        // 2nd Down: steps forward to "pattern-3"
+        navigator.onDown() shouldBe "pattern-3"
+
+        // 3rd Down: steps past newest entry, restores initial draft
+        navigator.onDown() shouldBe "draft-text"
+
+        // 4th Down: already at draft, returns null
+        navigator.onDown().shouldBeNull()
+    }
+
+    fun testPromptCategoryIsolation() {
+        HelixPromptHistory.add(HelixPromptCategory.SEARCH, "mySearch")
+        HelixPromptHistory.add(HelixPromptCategory.REGEX, "myRegex")
+        HelixPromptHistory.add(HelixPromptCategory.SHELL, "myShell")
+
+        HelixPromptHistory.get(HelixPromptCategory.SEARCH) shouldBe listOf("mySearch")
+        HelixPromptHistory.get(HelixPromptCategory.REGEX) shouldBe listOf("myRegex")
+        HelixPromptHistory.get(HelixPromptCategory.SHELL) shouldBe listOf("myShell")
+    }
+
+    fun testSearchSelectionUpdatesPromptHistory() {
+        myFixture.configureByText("test.txt", "hello world")
+        val editor = myFixture.editor
+        HelixActions.search(editor, "hello")
+
+        val history = HelixPromptHistory.get(HelixPromptCategory.SEARCH)
+        history.contains("hello").shouldBeTrue()
     }
 }

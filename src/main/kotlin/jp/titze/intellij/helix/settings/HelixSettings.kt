@@ -30,12 +30,16 @@ enum class WhichKeyColumnLayout(val displayName: String, val maxColumns: Int) {
 class HelixSettingsState {
     var searchUiMode: String = HelixSearchUiMode.STOCK_HELIX.name
     var jumpListMaxEntries: Int = HelixSettings.DEFAULT_JUMP_LIST_MAX_ENTRIES
+    var promptHistoryMaxEntries: Int = HelixSettings.DEFAULT_PROMPT_HISTORY_MAX_ENTRIES
     var colorTheme: String = HelixColorTheme.SYNC.name
     var resetToNormalOnTabSwitch: Boolean = true
     var syncClipboardWithDefaultRegister: Boolean = true
     var enableWhichKeyPopups: Boolean = true
     var whichKeyHintMode: String = WhichKeyHintMode.HELIX_COMMAND.name
     var whichKeyColumnLayout: String = WhichKeyColumnLayout.THREE_COLUMNS.name
+    var searchHistory: MutableList<String> = mutableListOf()
+    var regexHistory: MutableList<String> = mutableListOf()
+    var shellHistory: MutableList<String> = mutableListOf()
 }
 
 @Service(Service.Level.APP)
@@ -67,6 +71,27 @@ class HelixSettings : PersistentStateComponent<HelixSettingsState> {
         }
         set(value) {
             myState.jumpListMaxEntries = value.coerceIn(MIN_JUMP_LIST_ENTRIES, MAX_JUMP_LIST_ENTRIES)
+        }
+
+    var promptHistoryMaxEntries: Int
+        get() {
+            val entries = myState.promptHistoryMaxEntries
+            return if (entries <= 0) {
+                DEFAULT_PROMPT_HISTORY_MAX_ENTRIES
+            } else {
+                entries.coerceIn(MIN_PROMPT_HISTORY_ENTRIES, MAX_PROMPT_HISTORY_ENTRIES)
+            }
+        }
+        set(value) {
+            myState.promptHistoryMaxEntries =
+                value.coerceIn(MIN_PROMPT_HISTORY_ENTRIES, MAX_PROMPT_HISTORY_ENTRIES)
+        }
+
+    fun getPromptHistoryList(category: jp.titze.intellij.helix.ui.HelixPromptCategory): MutableList<String> =
+        when (category) {
+            jp.titze.intellij.helix.ui.HelixPromptCategory.SEARCH -> myState.searchHistory
+            jp.titze.intellij.helix.ui.HelixPromptCategory.REGEX -> myState.regexHistory
+            jp.titze.intellij.helix.ui.HelixPromptCategory.SHELL -> myState.shellHistory
         }
 
     var colorTheme: HelixColorTheme
@@ -127,6 +152,10 @@ class HelixSettings : PersistentStateComponent<HelixSettingsState> {
         const val DEFAULT_JUMP_LIST_MAX_ENTRIES = 100
         const val MIN_JUMP_LIST_ENTRIES = 10
         const val MAX_JUMP_LIST_ENTRIES = 1000
+
+        const val DEFAULT_PROMPT_HISTORY_MAX_ENTRIES = 100
+        const val MIN_PROMPT_HISTORY_ENTRIES = 10
+        const val MAX_PROMPT_HISTORY_ENTRIES = 500
 
         val instance: HelixSettings
             get() {

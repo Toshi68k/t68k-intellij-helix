@@ -9,6 +9,7 @@ import com.intellij.ui.components.JBRadioButton
 import com.intellij.util.ui.JBUI
 import com.intellij.util.ui.UIUtil
 import jp.titze.intellij.helix.jumplist.HelixJumpListService
+import jp.titze.intellij.helix.ui.HelixPromptHistory
 import java.awt.BorderLayout
 import java.awt.GridLayout
 import javax.swing.Box
@@ -21,6 +22,7 @@ class HelixConfigurable : SearchableConfigurable {
 
     private var stockHelixRadio: JBRadioButton? = null
     private var popupRadio: JBRadioButton? = null
+    private var promptHistorySpinner: JBIntSpinner? = null
 
     private var enableWhichKeyCheckBox: JBCheckBox? = null
     private var whichKeyHelixCommandRadio: JBRadioButton? = null
@@ -86,10 +88,29 @@ class HelixConfigurable : SearchableConfigurable {
         optionsPanel.add(stock)
         optionsPanel.add(popup)
 
+        val spinner = JBIntSpinner(
+            HelixSettings.DEFAULT_PROMPT_HISTORY_MAX_ENTRIES,
+            HelixSettings.MIN_PROMPT_HISTORY_ENTRIES,
+            HelixSettings.MAX_PROMPT_HISTORY_ENTRIES,
+        )
+        promptHistorySpinner = spinner
+
+        val spinnerPanel = JPanel(BorderLayout(8, 0))
+        spinnerPanel.border = JBUI.Borders.empty(6, 12, 0, 0)
+        val spinnerLabel = JBLabel("Maximum prompt history entries per category (10 - 500):")
+        spinnerPanel.add(spinnerLabel, BorderLayout.WEST)
+        spinnerPanel.add(spinner, BorderLayout.CENTER)
+
+        val searchOptionsBox = JPanel()
+        searchOptionsBox.layout = BoxLayout(searchOptionsBox, BoxLayout.Y_AXIS)
+        searchOptionsBox.add(optionsPanel)
+        searchOptionsBox.add(spinnerPanel)
+
         val helpLabel = JBLabel(
             "<html>Applies to <code>/</code> (search), <code>?</code> (reverse search), " +
                 "<code>s</code> (regex select), and <code>S</code> (regex split).<br/>" +
                 "In Stock Helix mode, matches and selections update live in the editor buffer as you type.<br/>" +
+                "Pressing <b>↑</b> / <b>↓</b> cycles through previously entered queries from the history ring.<br/>" +
                 "Pressing <b>Esc</b> cancels and restores original selections.</html>",
         )
         helpLabel.font = JBUI.Fonts.smallFont()
@@ -97,7 +118,7 @@ class HelixConfigurable : SearchableConfigurable {
         helpLabel.border = JBUI.Borders.emptyLeft(12)
 
         val box = JPanel(BorderLayout(0, 8))
-        box.add(optionsPanel, BorderLayout.NORTH)
+        box.add(searchOptionsBox, BorderLayout.NORTH)
         box.add(helpLabel, BorderLayout.CENTER)
         section.add(box, BorderLayout.CENTER)
         return section
@@ -326,6 +347,7 @@ class HelixConfigurable : SearchableConfigurable {
     override fun isModified(): Boolean {
         val settings = HelixSettings.instance
         if (getSelectedSearchUiMode() != settings.searchUiMode) return true
+        if (promptHistorySpinner?.number != settings.promptHistoryMaxEntries) return true
         if (enableWhichKeyCheckBox?.isSelected != settings.enableWhichKeyPopups) return true
         if (getSelectedWhichKeyHintMode() != settings.whichKeyHintMode) return true
         if (getSelectedWhichKeyColumnLayout() != settings.whichKeyColumnLayout) return true
@@ -339,6 +361,10 @@ class HelixConfigurable : SearchableConfigurable {
     override fun apply() {
         val settings = HelixSettings.instance
         settings.searchUiMode = getSelectedSearchUiMode()
+        promptHistorySpinner?.let {
+            settings.promptHistoryMaxEntries = it.number
+            HelixPromptHistory.trimToCapacity()
+        }
         enableWhichKeyCheckBox?.let { settings.enableWhichKeyPopups = it.isSelected }
         settings.whichKeyHintMode = getSelectedWhichKeyHintMode()
         settings.whichKeyColumnLayout = getSelectedWhichKeyColumnLayout()
@@ -356,6 +382,7 @@ class HelixConfigurable : SearchableConfigurable {
         val settings = HelixSettings.instance
         stockHelixRadio?.isSelected = (settings.searchUiMode == HelixSearchUiMode.STOCK_HELIX)
         popupRadio?.isSelected = (settings.searchUiMode == HelixSearchUiMode.POPUP)
+        promptHistorySpinner?.value = settings.promptHistoryMaxEntries
 
         enableWhichKeyCheckBox?.isSelected = settings.enableWhichKeyPopups
         whichKeyHelixCommandRadio?.isSelected = (settings.whichKeyHintMode == WhichKeyHintMode.HELIX_COMMAND)
@@ -376,6 +403,7 @@ class HelixConfigurable : SearchableConfigurable {
     override fun disposeUIResources() {
         stockHelixRadio = null
         popupRadio = null
+        promptHistorySpinner = null
         enableWhichKeyCheckBox = null
         whichKeyHelixCommandRadio = null
         whichKeyIntelliJActionRadio = null

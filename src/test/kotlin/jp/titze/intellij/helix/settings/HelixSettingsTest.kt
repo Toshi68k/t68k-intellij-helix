@@ -14,8 +14,10 @@ class HelixSettingsTest : BasePlatformTestCase() {
         val settings = HelixSettings.instance
         settings.searchUiMode = HelixSearchUiMode.STOCK_HELIX
         settings.jumpListMaxEntries = HelixSettings.DEFAULT_JUMP_LIST_MAX_ENTRIES
+        settings.promptHistoryMaxEntries = HelixSettings.DEFAULT_PROMPT_HISTORY_MAX_ENTRIES
         settings.colorTheme = HelixColorTheme.SYNC
         settings.resetToNormalOnTabSwitch = true
+        jp.titze.intellij.helix.ui.HelixPromptHistory.clear()
         super.tearDown()
     }
 
@@ -23,6 +25,7 @@ class HelixSettingsTest : BasePlatformTestCase() {
         val settings = HelixSettings.instance
         settings.searchUiMode shouldBe HelixSearchUiMode.STOCK_HELIX
         settings.jumpListMaxEntries shouldBe 100
+        settings.promptHistoryMaxEntries shouldBe 100
         settings.colorTheme shouldBe HelixColorTheme.SYNC
         settings.resetToNormalOnTabSwitch.shouldBeTrue()
     }
@@ -71,6 +74,12 @@ class HelixSettingsTest : BasePlatformTestCase() {
         configurable.reset()
         configurable.isModified.shouldBeFalse()
 
+        settings.promptHistoryMaxEntries = 50
+        configurable.isModified.shouldBeTrue()
+
+        configurable.reset()
+        configurable.isModified.shouldBeFalse()
+
         settings.resetToNormalOnTabSwitch = false
         configurable.isModified.shouldBeTrue()
 
@@ -100,5 +109,41 @@ class HelixSettingsTest : BasePlatformTestCase() {
         settings.jumpListMaxEntries = 12
         jumpService.trimToCapacity()
         jumpService.getEntries().size shouldBe 12
+    }
+
+    fun testPromptHistoryMaxEntriesClamping() {
+        val settings = HelixSettings.instance
+
+        settings.promptHistoryMaxEntries = 50
+        settings.promptHistoryMaxEntries shouldBe 50
+
+        settings.promptHistoryMaxEntries = 5
+        settings.promptHistoryMaxEntries shouldBe HelixSettings.MIN_PROMPT_HISTORY_ENTRIES
+
+        settings.promptHistoryMaxEntries = 5000
+        settings.promptHistoryMaxEntries shouldBe HelixSettings.MAX_PROMPT_HISTORY_ENTRIES
+    }
+
+    fun testPromptHistoryCapacityAndTrim() {
+        val settings = HelixSettings.instance
+        settings.promptHistoryMaxEntries = 15
+
+        repeat(25) { i ->
+            jp.titze.intellij.helix.ui.HelixPromptHistory.add(
+                jp.titze.intellij.helix.ui.HelixPromptCategory.SEARCH,
+                "pattern-$i",
+            )
+        }
+        val history = jp.titze.intellij.helix.ui.HelixPromptHistory.get(
+            jp.titze.intellij.helix.ui.HelixPromptCategory.SEARCH,
+        )
+        history.size shouldBe 15
+
+        settings.promptHistoryMaxEntries = 10
+        jp.titze.intellij.helix.ui.HelixPromptHistory.trimToCapacity()
+        val trimmed = jp.titze.intellij.helix.ui.HelixPromptHistory.get(
+            jp.titze.intellij.helix.ui.HelixPromptCategory.SEARCH,
+        )
+        trimmed.size shouldBe 10
     }
 }

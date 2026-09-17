@@ -93,6 +93,10 @@ object HelixSearchActions {
         if (updateDirection) {
             lastSearchBackward = backward
         }
+        jp.titze.intellij.helix.ui.HelixPromptHistory.add(
+            jp.titze.intellij.helix.ui.HelixPromptCategory.SEARCH,
+            pattern,
+        )
 
         val doc = editor.document
         val text = doc.charsSequence
