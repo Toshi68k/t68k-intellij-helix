@@ -154,7 +154,7 @@ The goal of this plugin is to provide a more complete and polished Helix-like ex
 | `Alt+` `` | Switch selection to uppercase (`switch_to_uppercase`) |
 | `Ctrl+a` | Increment integer under cursor or within selection (`increment`, supports `[count]`) |
 | `Ctrl+x` | Decrement integer under cursor or within selection (`decrement`, supports `[count]`) |
-| `Escape` | Return to `Normal` mode / clear pending chords |
+| `Escape` | Return to `Normal` mode / clear pending chords / progressive Escape (collapse selections, then drop secondary carets) |
 
 ### Registers & Multi-Caret Piece-Wise Pasting
 

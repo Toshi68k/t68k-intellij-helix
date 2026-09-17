@@ -41,7 +41,14 @@ object HelixEscapeHandler {
             }
 
             HelixMode.NORMAL -> {
-                HelixMotions.collapseSelection(editor)
+                val hasSelection = editor.caretModel.allCarets.any { it.hasSelection() }
+                if (hasSelection) {
+                    HelixMotions.collapseSelection(editor)
+                } else if (editor.caretModel.caretCount > 1) {
+                    HelixMotions.keepOnlyPrimaryCaret(editor)
+                } else {
+                    HelixMotions.collapseSelection(editor)
+                }
             }
         }
         return true
