@@ -128,6 +128,40 @@ object HelixCommands {
         ) { editor ->
             HelixActionDelegate.executeAction("GotoDeclaration", editor)
         },
+        HelixCommandItem(
+            "goto-prev-spelling-error",
+            listOf("goto_prev_spelling_error", "prev-spelling-error"),
+            "Jump to previous spelling error ([s)",
+        ) { editor ->
+            val count = HelixStateManager.getOrCreate(editor).takeCount() ?: 1
+            HelixKeyHandler.recordJump(editor)
+            repeat(count) { HelixActionDelegate.executeAction("GotoPreviousSpellingError", editor) }
+        },
+        HelixCommandItem(
+            "goto-next-spelling-error",
+            listOf("goto_next_spelling_error", "next-spelling-error"),
+            "Jump to next spelling error (]s)",
+        ) { editor ->
+            val count = HelixStateManager.getOrCreate(editor).takeCount() ?: 1
+            HelixKeyHandler.recordJump(editor)
+            repeat(count) { HelixActionDelegate.executeAction("GotoNextSpellingError", editor) }
+        },
+        HelixCommandItem(
+            "move-line-up",
+            listOf("move_line_up"),
+            "Move active line or selection up ([e)",
+        ) { editor ->
+            val count = HelixStateManager.getOrCreate(editor).takeCount() ?: 1
+            repeat(count) { HelixActionDelegate.executeAction("MoveLineUp", editor) }
+        },
+        HelixCommandItem(
+            "move-line-down",
+            listOf("move_line_down"),
+            "Move active line or selection down (]e)",
+        ) { editor ->
+            val count = HelixStateManager.getOrCreate(editor).takeCount() ?: 1
+            repeat(count) { HelixActionDelegate.executeAction("MoveLineDown", editor) }
+        },
         HelixCommandItem("earlier", listOf("undo-earlier"), "Undo earlier changes (Alt+u)") { editor ->
             val count = HelixStateManager.getOrCreate(editor).takeCount() ?: 1
             repeat(count) { HelixActionDelegate.executeAction("\$Undo", editor) }

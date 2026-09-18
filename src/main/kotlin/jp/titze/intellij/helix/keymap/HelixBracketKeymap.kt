@@ -54,6 +54,15 @@ internal object HelixBracketKeymap {
             HelixMotions.moveChange(editor, forward = false, count = count, toEnd = true)
         }
 
+        'e' -> {
+            repeat(count) { HelixActionDelegate.executeAction("MoveLineUp", editor) }.let { true }
+        }
+
+        's' -> {
+            HelixKeyHandler.recordJump(editor)
+            repeat(count) { HelixActionDelegate.executeAction("GotoPreviousSpellingError", editor) }.let { true }
+        }
+
         ' ' -> {
             HelixMotions.addNewline(editor, below = false, count = count)
             true
@@ -108,6 +117,15 @@ internal object HelixBracketKeymap {
         'G' -> {
             HelixKeyHandler.recordJump(editor)
             HelixMotions.moveChange(editor, forward = true, count = count, toEnd = true)
+        }
+
+        'e' -> {
+            repeat(count) { HelixActionDelegate.executeAction("MoveLineDown", editor) }.let { true }
+        }
+
+        's' -> {
+            HelixKeyHandler.recordJump(editor)
+            repeat(count) { HelixActionDelegate.executeAction("GotoNextSpellingError", editor) }.let { true }
         }
 
         ' ' -> {
