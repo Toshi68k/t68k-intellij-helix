@@ -86,6 +86,8 @@ object HelixWhichKeyMenus {
         WhichKeyItem("p", "Previous paragraph", "goto_prev_paragraph"),
         WhichKeyItem("g", "Previous change", "goto_prev_change", "VcsShowPrevChangeMarker"),
         WhichKeyItem("G", "First change", "goto_first_change"),
+        WhichKeyItem("e", "Move line up", "move_line_up", "MoveLineUp"),
+        WhichKeyItem("s", "Previous spelling error", "goto_prev_spelling_error", "GotoPreviousSpellingError"),
         WhichKeyItem("Space", "Add newline above", "add_newline_above"),
         WhichKeyItem("b", "Previous buffer / tab", "goto_previous_buffer", "PreviousTab"),
     )
@@ -101,6 +103,8 @@ object HelixWhichKeyMenus {
         WhichKeyItem("p", "Next paragraph", "goto_next_paragraph"),
         WhichKeyItem("g", "Next change", "goto_next_change", "VcsShowNextChangeMarker"),
         WhichKeyItem("G", "Last change", "goto_last_change"),
+        WhichKeyItem("e", "Move line down", "move_line_down", "MoveLineDown"),
+        WhichKeyItem("s", "Next spelling error", "goto_next_spelling_error", "GotoNextSpellingError"),
         WhichKeyItem("Space", "Add newline below", "add_newline_below"),
         WhichKeyItem("b", "Next buffer / tab", "goto_next_buffer", "NextTab"),
     )

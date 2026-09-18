@@ -10,6 +10,20 @@ import jp.titze.intellij.helix.keymap.HelixKeyHandler
 
 class HelixCodeNavigationTest : BasePlatformTestCase() {
 
+    override fun setUp() {
+        super.setUp()
+        jp.titze.intellij.helix.register.HelixRegisterManager.clear()
+        jp.titze.intellij.helix.motion.HelixMotionHistory.lastMotion = null
+        jp.titze.intellij.helix.editor.HelixInsertTracker.reset()
+    }
+
+    override fun tearDown() {
+        jp.titze.intellij.helix.register.HelixRegisterManager.clear()
+        jp.titze.intellij.helix.motion.HelixMotionHistory.lastMotion = null
+        jp.titze.intellij.helix.editor.HelixInsertTracker.reset()
+        super.tearDown()
+    }
+
     fun testParagraphNavigationForwardAndBackward() {
         val text = "p1 line 1\np1 line 2\n\np2 line 1\np2 line 2\n\np3 line 1\n"
         myFixture.configureByText("test.txt", text)
@@ -481,6 +495,139 @@ class HelixCodeNavigationTest : BasePlatformTestCase() {
             HelixKeyHandler.handleKey('g', editor).shouldBeTrue()
             HelixKeyHandler.handleKey('D', editor).shouldBeTrue()
             executedActions shouldBe listOf("GotoDeclarationOnly", "GotoDeclaration")
+        } finally {
+            HelixActionDelegate.actionExecutor = null
+        }
+    }
+
+    fun testMoveLinesUpAndDownKeymap() {
+        myFixture.configureByText("Test.txt", "line 1\nline 2\nline 3\n")
+        val editor = myFixture.editor
+        val executedActions = mutableListOf<String>()
+        HelixActionDelegate.actionExecutor = { actionId, _ ->
+            executedActions.add(actionId)
+            true
+        }
+        try {
+            // [e -> MoveLineUp
+            HelixKeyHandler.handleKey('[', editor).shouldBeTrue()
+            HelixKeyHandler.handleKey('e', editor).shouldBeTrue()
+            executedActions shouldBe listOf("MoveLineUp")
+
+            // ]e -> MoveLineDown
+            HelixKeyHandler.handleKey(']', editor).shouldBeTrue()
+            HelixKeyHandler.handleKey('e', editor).shouldBeTrue()
+            executedActions shouldBe listOf("MoveLineUp", "MoveLineDown")
+
+            // With count prefix: 2[e
+            HelixKeyHandler.handleKey('2', editor).shouldBeTrue()
+            HelixKeyHandler.handleKey('[', editor).shouldBeTrue()
+            HelixKeyHandler.handleKey('e', editor).shouldBeTrue()
+            executedActions shouldBe listOf("MoveLineUp", "MoveLineDown", "MoveLineUp", "MoveLineUp")
+
+            // With count prefix: 2]e
+            HelixKeyHandler.handleKey('2', editor).shouldBeTrue()
+            HelixKeyHandler.handleKey(']', editor).shouldBeTrue()
+            HelixKeyHandler.handleKey('e', editor).shouldBeTrue()
+            executedActions shouldBe listOf(
+                "MoveLineUp",
+                "MoveLineDown",
+                "MoveLineUp",
+                "MoveLineUp",
+                "MoveLineDown",
+                "MoveLineDown",
+            )
+        } finally {
+            HelixActionDelegate.actionExecutor = null
+        }
+    }
+
+    fun testSpellingErrorNavigationKeymap() {
+        myFixture.configureByText("Test.txt", "Some text with spelling errors\n")
+        val editor = myFixture.editor
+        val executedActions = mutableListOf<String>()
+        HelixActionDelegate.actionExecutor = { actionId, _ ->
+            executedActions.add(actionId)
+            true
+        }
+        try {
+            // [s -> GotoPreviousSpellingError
+            HelixKeyHandler.handleKey('[', editor).shouldBeTrue()
+            HelixKeyHandler.handleKey('s', editor).shouldBeTrue()
+            executedActions shouldBe listOf("GotoPreviousSpellingError")
+
+            // ]s -> GotoNextSpellingError
+            HelixKeyHandler.handleKey(']', editor).shouldBeTrue()
+            HelixKeyHandler.handleKey('s', editor).shouldBeTrue()
+            executedActions shouldBe listOf("GotoPreviousSpellingError", "GotoNextSpellingError")
+
+            // With count prefix: 2[s
+            HelixKeyHandler.handleKey('2', editor).shouldBeTrue()
+            HelixKeyHandler.handleKey('[', editor).shouldBeTrue()
+            HelixKeyHandler.handleKey('s', editor).shouldBeTrue()
+            executedActions shouldBe listOf(
+                "GotoPreviousSpellingError",
+                "GotoNextSpellingError",
+                "GotoPreviousSpellingError",
+                "GotoPreviousSpellingError",
+            )
+
+            // With count prefix: 2]s
+            HelixKeyHandler.handleKey('2', editor).shouldBeTrue()
+            HelixKeyHandler.handleKey(']', editor).shouldBeTrue()
+            HelixKeyHandler.handleKey('s', editor).shouldBeTrue()
+            executedActions shouldBe listOf(
+                "GotoPreviousSpellingError",
+                "GotoNextSpellingError",
+                "GotoPreviousSpellingError",
+                "GotoPreviousSpellingError",
+                "GotoNextSpellingError",
+                "GotoNextSpellingError",
+            )
+        } finally {
+            HelixActionDelegate.actionExecutor = null
+        }
+    }
+
+    fun testSpellingAndMoveLineCommandsExecution() {
+        myFixture.configureByText("Test.txt", "Sample text\n")
+        val editor = myFixture.editor
+        val executedActions = mutableListOf<String>()
+        HelixActionDelegate.actionExecutor = { actionId, _ ->
+            executedActions.add(actionId)
+            true
+        }
+        try {
+            jp.titze.intellij.helix.command.HelixCommands.execute("move-line-up", editor)
+            jp.titze.intellij.helix.command.HelixCommands.execute("move-line-down", editor)
+            jp.titze.intellij.helix.command.HelixCommands.execute("goto-prev-spelling-error", editor)
+            jp.titze.intellij.helix.command.HelixCommands.execute("goto-next-spelling-error", editor)
+            executedActions shouldBe listOf(
+                "MoveLineUp",
+                "MoveLineDown",
+                "GotoPreviousSpellingError",
+                "GotoNextSpellingError",
+            )
+        } finally {
+            HelixActionDelegate.actionExecutor = null
+        }
+    }
+
+    fun testRepeatLastMotionMoveLineAndSpelling() {
+        myFixture.configureByText("Test.txt", "line 1\nline 2\n")
+        val editor = myFixture.editor
+        val executedActions = mutableListOf<String>()
+        HelixActionDelegate.actionExecutor = { actionId, _ ->
+            executedActions.add(actionId)
+            true
+        }
+        try {
+            HelixKeyHandler.handleKey('[', editor).shouldBeTrue()
+            HelixKeyHandler.handleKey('e', editor).shouldBeTrue()
+            executedActions shouldBe listOf("MoveLineUp")
+
+            HelixActions.repeatLastMotion(editor, 2)
+            executedActions shouldBe listOf("MoveLineUp", "MoveLineUp", "MoveLineUp")
         } finally {
             HelixActionDelegate.actionExecutor = null
         }
