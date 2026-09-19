@@ -329,6 +329,8 @@ object HelixMotions {
         HelixJumpMotions.moveType(editor, forward, count)
     fun moveParameter(editor: Editor, forward: Boolean, count: Int = 1): Boolean =
         HelixJumpMotions.moveParameter(editor, forward, count)
+    fun moveEntry(editor: Editor, forward: Boolean, count: Int = 1): Boolean =
+        HelixJumpMotions.moveEntry(editor, forward, count)
     fun moveTest(editor: Editor, forward: Boolean, count: Int = 1): Boolean =
         HelixJumpMotions.moveTest(editor, forward, count)
     fun moveDiagnostic(editor: Editor, forward: Boolean, count: Int = 1, toEnd: Boolean = false): Boolean =

@@ -55,7 +55,8 @@ internal object HelixBracketKeymap {
         }
 
         'e' -> {
-            repeat(count) { HelixActionDelegate.executeAction("MoveLineUp", editor) }.let { true }
+            HelixKeyHandler.recordJump(editor)
+            HelixMotions.moveEntry(editor, forward = false, count = count)
         }
 
         's' -> {
@@ -120,7 +121,8 @@ internal object HelixBracketKeymap {
         }
 
         'e' -> {
-            repeat(count) { HelixActionDelegate.executeAction("MoveLineDown", editor) }.let { true }
+            HelixKeyHandler.recordJump(editor)
+            HelixMotions.moveEntry(editor, forward = true, count = count)
         }
 
         's' -> {
