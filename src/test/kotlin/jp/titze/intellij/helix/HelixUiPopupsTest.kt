@@ -446,6 +446,12 @@ class HelixUiPopupsTest : BasePlatformTestCase() {
         filePickerCurDir.intelliJAction shouldBe ""
         filePickerCurDir.description shouldBe "file_picker_in_current_directory"
 
+        val yankToClipboard = spaceItems.first { it.key == "y" }
+        yankToClipboard.helixCommand shouldBe "yank_to_clipboard"
+
+        val yankMain = spaceItems.first { it.key == "Y" }
+        yankMain.helixCommand shouldBe "yank_main_selection_to_clipboard"
+
         // Ensure all commands follow Helix snake_case convention
         val regex = Regex("^[a-z0-9_]+( <[a-z0-9_]+>)*$")
         for (item in spaceItems) {

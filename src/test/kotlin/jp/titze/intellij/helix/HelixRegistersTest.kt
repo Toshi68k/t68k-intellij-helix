@@ -589,4 +589,53 @@ class HelixRegistersTest : BasePlatformTestCase() {
         HelixVisualFeedback.clearFlash(editor)
         HelixVisualFeedback.hasActiveFlash(editor).shouldBeFalse()
     }
+
+    fun testSpaceYankToClipboardMultipleSelections() {
+        myFixture.configureByText("test.txt", "alpha\nbeta\ngamma")
+        val editor = myFixture.editor
+        val caretModel = editor.caretModel
+
+        caretModel.primaryCaret.moveToOffset(0)
+        caretModel.primaryCaret.setSelection(0, 5) // "alpha"
+        val caret2 = caretModel.addCaret(editor.offsetToLogicalPosition(6), false)
+        caret2?.setSelection(6, 10) // "beta"
+
+        HelixKeyHandler.handleKey(' ', editor)
+        HelixKeyHandler.handleKey('y', editor)
+
+        getClipboardText() shouldBe "alpha\nbeta"
+    }
+
+    fun testSpaceYankMainSelectionToClipboardOnlyYanksPrimarySelection() {
+        myFixture.configureByText("test.txt", "alpha\nbeta\ngamma")
+        val editor = myFixture.editor
+        val caretModel = editor.caretModel
+
+        caretModel.primaryCaret.moveToOffset(0)
+        caretModel.primaryCaret.setSelection(0, 5) // "alpha"
+        val caret2 = caretModel.addCaret(editor.offsetToLogicalPosition(6), false)
+        caret2?.setSelection(6, 10) // "beta"
+
+        HelixKeyHandler.handleKey(' ', editor)
+        HelixKeyHandler.handleKey('Y', editor)
+
+        getClipboardText() shouldBe "alpha"
+    }
+
+    fun testClipboardYankCommands() {
+        myFixture.configureByText("test.txt", "first\nsecond")
+        val editor = myFixture.editor
+        val caretModel = editor.caretModel
+
+        caretModel.primaryCaret.moveToOffset(0)
+        caretModel.primaryCaret.setSelection(0, 5) // "first"
+        val caret2 = caretModel.addCaret(editor.offsetToLogicalPosition(6), false)
+        caret2?.setSelection(6, 12) // "second"
+
+        jp.titze.intellij.helix.command.HelixCommands.execute("yank-to-clipboard", editor)
+        getClipboardText() shouldBe "first\nsecond"
+
+        jp.titze.intellij.helix.command.HelixCommands.execute("yank-main-selection-to-clipboard", editor)
+        getClipboardText() shouldBe "first"
+    }
 }

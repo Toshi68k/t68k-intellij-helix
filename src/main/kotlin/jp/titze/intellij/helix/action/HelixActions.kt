@@ -41,9 +41,13 @@ object HelixActions {
     fun repeatLastMotion(editor: Editor, count: Int = 1): Boolean =
         jp.titze.intellij.helix.motion.HelixMotionHistory.repeatLastMotion(editor, count)
 
-    fun yankSelection(editor: Editor, count: Int = 1, register: Char? = null) {
+    fun yankSelection(editor: Editor, count: Int = 1, register: Char? = null, primaryOnly: Boolean = false) {
         val targetRegister = register ?: HelixStateManager.getOrCreate(editor).selectedRegister
-        HelixRegisterActions.yankSelection(editor, count, targetRegister)
+        HelixRegisterActions.yankSelection(editor, count, targetRegister, primaryOnly = primaryOnly)
+    }
+
+    fun yankMainSelection(editor: Editor, count: Int = 1, register: Char? = null) {
+        yankSelection(editor, count, register, primaryOnly = true)
     }
 
     fun paste(editor: Editor, after: Boolean = true, register: Char? = null) {
