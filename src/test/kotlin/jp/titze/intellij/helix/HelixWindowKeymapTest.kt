@@ -27,6 +27,12 @@ class HelixWindowKeymapTest : BasePlatformTestCase() {
         // Also verify aliases
         HelixWhichKeyMenus.getMenu("Ctrl+w").shouldNotBeNull()
         HelixWhichKeyMenus.getMenu("\u0017").shouldNotBeNull()
+        HelixWhichKeyMenus.getMenu(" w").shouldNotBeNull()
+        HelixWhichKeyMenus.getMenu("space w").shouldNotBeNull()
+
+        val spaceItem = HelixWhichKeyMenus.spaceItems.first { it.key == "w" }
+        spaceItem.label shouldBe "Window mode"
+        spaceItem.helixCommand shouldBe "window_mode"
     }
 
     fun testWindowKeymapHandlerValidAndInvalidKeys() {
@@ -236,5 +242,61 @@ class HelixWindowKeymapTest : BasePlatformTestCase() {
         } finally {
             jp.titze.intellij.helix.action.HelixActionDelegate.actionExecutor = null
         }
+    }
+
+    fun testSpaceWChordInitiationAndExecution() {
+        myFixture.configureByText("test.txt", "hello space window")
+        val editor = myFixture.editor
+        val state = HelixStateManager.getOrCreate(editor)
+
+        val executed = mutableListOf<String>()
+        jp.titze.intellij.helix.action.HelixActionDelegate.actionExecutor = { actionId, _ ->
+            executed.add(actionId)
+            true
+        }
+        try {
+            // Space + w v (vsplit)
+            HelixKeyHandler.handleKey(' ', editor).shouldBeTrue()
+            state.pendingSequence shouldBe " "
+            HelixKeyHandler.handleKey('w', editor).shouldBeTrue()
+            state.pendingSequence shouldBe "C-w"
+            HelixKeyHandler.handleKey('v', editor).shouldBeTrue()
+            state.pendingSequence.isEmpty().shouldBeTrue()
+            executed.last() shouldBe "SplitVertically"
+
+            // Space + w s (hsplit)
+            HelixKeyHandler.handleKey(' ', editor).shouldBeTrue()
+            HelixKeyHandler.handleKey('w', editor).shouldBeTrue()
+            HelixKeyHandler.handleKey('s', editor).shouldBeTrue()
+            executed.last() shouldBe "SplitHorizontally"
+
+            // Space + w h / j (jump splits)
+            HelixKeyHandler.handleKey(' ', editor).shouldBeTrue()
+            HelixKeyHandler.handleKey('w', editor).shouldBeTrue()
+            HelixKeyHandler.handleKey('h', editor).shouldBeTrue()
+            executed.last() shouldBe "PrevSplitter"
+
+            HelixKeyHandler.handleKey(' ', editor).shouldBeTrue()
+            HelixKeyHandler.handleKey('w', editor).shouldBeTrue()
+            HelixKeyHandler.handleKey('j', editor).shouldBeTrue()
+            executed.last() shouldBe "NextSplitter"
+
+            // Space + w q (close split)
+            HelixKeyHandler.handleKey(' ', editor).shouldBeTrue()
+            HelixKeyHandler.handleKey('w', editor).shouldBeTrue()
+            HelixKeyHandler.handleKey('q', editor).shouldBeTrue()
+            executed.last() shouldBe "Unsplit"
+        } finally {
+            jp.titze.intellij.helix.action.HelixActionDelegate.actionExecutor = null
+        }
+    }
+
+    fun testSpaceKeymapDirectHandleW() {
+        myFixture.configureByText("test.txt", "hello space keymap")
+        val editor = myFixture.editor
+        val state = HelixStateManager.getOrCreate(editor)
+
+        jp.titze.intellij.helix.keymap.HelixSpaceKeymap.handle('w', editor).shouldBeTrue()
+        state.pendingSequence shouldBe "C-w"
     }
 }
