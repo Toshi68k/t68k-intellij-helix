@@ -13,6 +13,7 @@ class HelixSettingsTest : BasePlatformTestCase() {
         // Reset settings to defaults
         val settings = HelixSettings.instance
         settings.searchUiMode = HelixSearchUiMode.STOCK_HELIX
+        settings.lineNavigationMode = HelixLineNavigationMode.HELIX_STANDARD
         settings.jumpListMaxEntries = HelixSettings.DEFAULT_JUMP_LIST_MAX_ENTRIES
         settings.promptHistoryMaxEntries = HelixSettings.DEFAULT_PROMPT_HISTORY_MAX_ENTRIES
         settings.colorTheme = HelixColorTheme.SYNC
@@ -24,6 +25,7 @@ class HelixSettingsTest : BasePlatformTestCase() {
     fun testDefaultSettings() {
         val settings = HelixSettings.instance
         settings.searchUiMode shouldBe HelixSearchUiMode.STOCK_HELIX
+        settings.lineNavigationMode shouldBe HelixLineNavigationMode.HELIX_STANDARD
         settings.jumpListMaxEntries shouldBe 100
         settings.promptHistoryMaxEntries shouldBe 100
         settings.colorTheme shouldBe HelixColorTheme.SYNC
@@ -86,7 +88,24 @@ class HelixSettingsTest : BasePlatformTestCase() {
         configurable.reset()
         configurable.isModified.shouldBeFalse()
 
+        settings.lineNavigationMode = HelixLineNavigationMode.VIM_STANDARD
+        configurable.isModified.shouldBeTrue()
+
+        configurable.reset()
+        configurable.isModified.shouldBeFalse()
+
         configurable.disposeUIResources()
+    }
+
+    fun testLineNavigationModeSetting() {
+        val settings = HelixSettings.instance
+        settings.lineNavigationMode shouldBe HelixLineNavigationMode.HELIX_STANDARD
+
+        settings.lineNavigationMode = HelixLineNavigationMode.VIM_STANDARD
+        settings.lineNavigationMode shouldBe HelixLineNavigationMode.VIM_STANDARD
+
+        settings.lineNavigationMode = HelixLineNavigationMode.HELIX_STANDARD
+        settings.lineNavigationMode shouldBe HelixLineNavigationMode.HELIX_STANDARD
     }
 
     fun testCustomJumpListCapacityEnforced() {

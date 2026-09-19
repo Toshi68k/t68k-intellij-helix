@@ -56,7 +56,8 @@ The goal of this plugin is to provide a more complete and polished Helix-like ex
 | `X` | Extend selection to whole line bounds including trailing newline (`extend_to_line_bounds`) |
 | `Alt+x` | Shrink selection to line bounds excluding trailing line breaks (`shrink_to_line_bounds`) |
 | `%` | Select entire buffer |
-| `h` / `j` / `k` / `l` | Move left / down / up / right (mode-aware selection update) |
+| `h` / `j` / `k` / `l` | Move left / down / up / right (`j`/`k` visual line by default; mode-aware selection) |
+| `gj` / `gk` | Move down / up by physical document line (Stock Helix default) |
 | `gh` | Move to line start (actual first character) |
 | `gs` | Move to first non-whitespace character of line |
 | `gl` | Move to line end |
@@ -256,8 +257,8 @@ Built-in surround and textobject functionality matching [Helix Surround](https:/
 - `gg` &rarr; `goto_line_start_file` (Goto start of buffer)
 - `ga` &rarr; `goto_last_accessed_file` (Last accessed file / alternate buffer)
 - `gm` &rarr; `goto_last_modified_file` (Last modified file in project)
-- `gj` &rarr; `move_visual_line_down` (Move down by visual screen line)
-- `gk` &rarr; `move_visual_line_up` (Move up by visual screen line)
+- `gj` &rarr; `move_line_down` (Move down by physical document line; visual line in Vim mode)
+- `gk` &rarr; `move_line_up` (Move up by physical document line; visual line in Vim mode)
 
 #### Interactive Which-Key Floating Menu
 Whenever a chord prefix key (<kbd>Space</kbd>, `Ctrl+w`, `g`, `m`, `[`, or `]`) is pressed in Normal mode, an interactive, non-intrusive **Which-Key popup** appears in authentic Helix cyan:
@@ -480,6 +481,7 @@ Helix Keymap supports two switchable search and regex prompt styles:
 
 #### Editor Behavior Settings
 Configure Helix Keymap preferences under **Preferences / Settings &rarr; Tools &rarr; Helix Keymap**:
+- **Line Navigation (Vertical Movement)** *(default: Stock Helix)*: Toggle between **Stock Helix** (`j`/`k` move by visual screen lines respecting soft wraps, `gj`/`gk` jump physical document lines) and **Vim Standard** (`j`/`k` move by physical lines, `gj`/`gk` move by visual lines). Can also be changed via `:toggle-line-nav` or `:set line-nav=helix|vim`.
 - **Which-Key Chord Menus**: Enable or disable Which-Key chord popups on chord prefixes (`Space`, `g`, `m`, `[`, `]`, `z`, `Ctrl+w`), choose default hint display style (Helix command names vs IntelliJ Action IDs), and set maximum columns (3 columns compact vs 2 columns classic).
 - **Reset to Normal mode on tab switch / file open** *(default: enabled)*: Ensures each tab starts in **Normal** mode with block cursor whenever a file is opened or tabs are switched. Can be disabled if you prefer retaining active modes (such as Insert mode) across tabs.
 - **Search and Selection Prompt UI**: Toggle between Stock Helix inline bottom bar or Popup dialog.

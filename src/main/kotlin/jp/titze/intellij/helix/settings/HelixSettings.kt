@@ -27,8 +27,14 @@ enum class WhichKeyColumnLayout(val displayName: String, val maxColumns: Int) {
     TWO_COLUMNS("Up to 2 columns (Classic / Narrower)", 2),
 }
 
+enum class HelixLineNavigationMode(val displayName: String) {
+    HELIX_STANDARD("Stock Helix (j/k: visual line, gj/gk: physical line)"),
+    VIM_STANDARD("Vim Standard (j/k: physical line, gj/gk: visual line)"),
+}
+
 class HelixSettingsState {
     var searchUiMode: String = HelixSearchUiMode.STOCK_HELIX.name
+    var lineNavigationMode: String = HelixLineNavigationMode.HELIX_STANDARD.name
     var jumpListMaxEntries: Int = HelixSettings.DEFAULT_JUMP_LIST_MAX_ENTRIES
     var promptHistoryMaxEntries: Int = HelixSettings.DEFAULT_PROMPT_HISTORY_MAX_ENTRIES
     var colorTheme: String = HelixColorTheme.SYNC.name
@@ -58,6 +64,16 @@ class HelixSettings : PersistentStateComponent<HelixSettingsState> {
         }
         set(value) {
             myState.searchUiMode = value.name
+        }
+
+    var lineNavigationMode: HelixLineNavigationMode
+        get() = try {
+            HelixLineNavigationMode.valueOf(myState.lineNavigationMode)
+        } catch (e: Exception) {
+            HelixLineNavigationMode.HELIX_STANDARD
+        }
+        set(value) {
+            myState.lineNavigationMode = value.name
         }
 
     var jumpListMaxEntries: Int

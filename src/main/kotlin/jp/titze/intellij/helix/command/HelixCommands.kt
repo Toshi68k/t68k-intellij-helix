@@ -11,6 +11,7 @@ import jp.titze.intellij.helix.action.HelixShellActions
 import jp.titze.intellij.helix.jumplist.HelixJumpListService
 import jp.titze.intellij.helix.keymap.HelixKeyHandler
 import jp.titze.intellij.helix.motion.HelixMotions
+import jp.titze.intellij.helix.settings.HelixLineNavigationMode
 import jp.titze.intellij.helix.settings.HelixSearchUiMode
 import jp.titze.intellij.helix.settings.HelixSettings
 import jp.titze.intellij.helix.state.HelixStateManager
@@ -195,6 +196,32 @@ object HelixCommands {
         },
         HelixCommandItem("set-search-ui-popup", emptyList(), "Set search UI to Popup dialog") { _ ->
             HelixSettings.instance.searchUiMode = HelixSearchUiMode.POPUP
+        },
+        HelixCommandItem(
+            "toggle-line-navigation",
+            listOf("toggle-line-nav", "line-navigation-mode", "toggle-line-navigation-mode"),
+            "Toggle line navigation mode (Stock Helix visual j/k <-> Vim physical j/k)",
+        ) { _ ->
+            HelixSettings.instance.lineNavigationMode =
+                if (HelixSettings.instance.lineNavigationMode == HelixLineNavigationMode.HELIX_STANDARD) {
+                    HelixLineNavigationMode.VIM_STANDARD
+                } else {
+                    HelixLineNavigationMode.HELIX_STANDARD
+                }
+        },
+        HelixCommandItem(
+            "set-line-nav-helix",
+            listOf("set-line-nav-stock"),
+            "Set line navigation to Stock Helix (j/k: visual line, gj/gk: physical line)",
+        ) { _ ->
+            HelixSettings.instance.lineNavigationMode = HelixLineNavigationMode.HELIX_STANDARD
+        },
+        HelixCommandItem(
+            "set-line-nav-vim",
+            listOf("set-line-nav-physical"),
+            "Set line navigation to Vim Standard (j/k: physical line, gj/gk: visual line)",
+        ) { _ ->
+            HelixSettings.instance.lineNavigationMode = HelixLineNavigationMode.VIM_STANDARD
         },
         HelixCommandItem("jumps", emptyList(), "Open jumplist picker") { editor ->
             HelixJumplistPopup.show(editor)
@@ -622,6 +649,10 @@ object HelixCommands {
         }
 
         // Fallbacks for standard vim/helix commands
+        executeFallbackCommand(cleanCmd, editor)
+    }
+
+    private fun executeFallbackCommand(cleanCmd: String, editor: Editor) {
         when (cleanCmd) {
             "jumps" -> HelixJumplistPopup.show(editor)
 
@@ -703,6 +734,24 @@ object HelixCommands {
                         HelixSearchUiMode.STOCK_HELIX
                     }
                 HelixSettings.instance.searchUiMode = next
+            }
+
+            "set line-nav=helix", "set line-nav=stock" -> {
+                HelixSettings.instance.lineNavigationMode = HelixLineNavigationMode.HELIX_STANDARD
+            }
+
+            "set line-nav=vim", "set line-nav=physical" -> {
+                HelixSettings.instance.lineNavigationMode = HelixLineNavigationMode.VIM_STANDARD
+            }
+
+            "toggle-line-nav", "toggle-line-navigation", "line-nav" -> {
+                val current = HelixSettings.instance.lineNavigationMode
+                val next = if (current == HelixLineNavigationMode.HELIX_STANDARD) {
+                    HelixLineNavigationMode.VIM_STANDARD
+                } else {
+                    HelixLineNavigationMode.HELIX_STANDARD
+                }
+                HelixSettings.instance.lineNavigationMode = next
             }
         }
     }

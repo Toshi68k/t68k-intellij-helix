@@ -8,6 +8,8 @@ import jp.titze.intellij.helix.editor.HelixInsertTracker
 import jp.titze.intellij.helix.jumplist.HelixJumpListService
 import jp.titze.intellij.helix.motion.HelixJumpToWord
 import jp.titze.intellij.helix.motion.HelixMotions
+import jp.titze.intellij.helix.settings.HelixLineNavigationMode
+import jp.titze.intellij.helix.settings.HelixSettings
 import jp.titze.intellij.helix.state.HelixEditorState
 import jp.titze.intellij.helix.state.HelixStateManager
 import jp.titze.intellij.helix.ui.HelixSearchManager
@@ -220,9 +222,21 @@ object HelixKeyHandler {
 
             'h' -> HelixMotions.moveLeft(editor, count)
 
-            'j' -> HelixMotions.moveDown(editor, count)
+            'j' -> {
+                if (HelixSettings.instance.lineNavigationMode == HelixLineNavigationMode.HELIX_STANDARD) {
+                    HelixMotions.moveVisualDown(editor, count)
+                } else {
+                    HelixMotions.moveDown(editor, count)
+                }
+            }
 
-            'k' -> HelixMotions.moveUp(editor, count)
+            'k' -> {
+                if (HelixSettings.instance.lineNavigationMode == HelixLineNavigationMode.HELIX_STANDARD) {
+                    HelixMotions.moveVisualUp(editor, count)
+                } else {
+                    HelixMotions.moveUp(editor, count)
+                }
+            }
 
             'l' -> HelixMotions.moveRight(editor, count)
 

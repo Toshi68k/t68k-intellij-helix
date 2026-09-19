@@ -1,5 +1,8 @@
 package jp.titze.intellij.helix.ui
 
+import jp.titze.intellij.helix.settings.HelixLineNavigationMode
+import jp.titze.intellij.helix.settings.HelixSettings
+
 data class WhichKeyItem(
     val key: String,
     val label: String,
@@ -40,31 +43,45 @@ object HelixWhichKeyMenus {
         WhichKeyItem("?", "Command palette", "command_palette", "GotoAction"),
     )
 
-    val gotoItems = listOf(
-        WhichKeyItem("d", "Goto definition", "goto_definition", "GotoDeclaration"),
-        WhichKeyItem("D", "Goto declaration", "goto_declaration", "GotoDeclarationOnly"),
-        WhichKeyItem("i", "Goto implementation", "goto_implementation", "GotoImplementation"),
-        WhichKeyItem("y", "Goto type definition", "goto_type_definition", "GotoTypeDeclaration"),
-        WhichKeyItem("r", "Goto reference", "goto_reference", "FindUsages"),
-        WhichKeyItem("n", "Next buffer / tab", "goto_next_buffer", "NextTab"),
-        WhichKeyItem("p", "Previous buffer / tab", "goto_previous_buffer", "PreviousTab"),
-        WhichKeyItem(".", "Last edit location", "goto_last_change", "JumpToLastChange"),
-        WhichKeyItem("h", "Goto line start", "goto_line_start"),
-        WhichKeyItem("l", "Goto line end", "goto_line_end"),
-        WhichKeyItem("s", "Goto first non-whitespace", "goto_first_nonwhitespace"),
-        WhichKeyItem("t", "Goto window top", "goto_window_top"),
-        WhichKeyItem("c", "Goto window center", "goto_window_center"),
-        WhichKeyItem("b", "Goto window bottom", "goto_window_bottom"),
-        WhichKeyItem("f", "Goto file at caret", "goto_file"),
-        WhichKeyItem("|", "Goto column", "goto_column <count>"),
-        WhichKeyItem("w", "Jump to word", "goto_word"),
-        WhichKeyItem("g", "Goto line / file start", "goto_line_start_file"),
-        WhichKeyItem("e", "Goto file end", "goto_last_line"),
-        WhichKeyItem("a", "Last accessed file", "goto_last_accessed_file"),
-        WhichKeyItem("m", "Last modified file", "goto_last_modified_file"),
-        WhichKeyItem("j", "Move down visual line", "move_visual_line_down"),
-        WhichKeyItem("k", "Move up visual line", "move_visual_line_up"),
-    )
+    val gotoItems: List<WhichKeyItem>
+        get() {
+            val isHelixStandard = HelixSettings.instance.lineNavigationMode == HelixLineNavigationMode.HELIX_STANDARD
+            val (jDesc, jCmd) = if (isHelixStandard) {
+                "Move down line" to "move_line_down"
+            } else {
+                "Move down visual line" to "move_visual_line_down"
+            }
+            val (kDesc, kCmd) = if (isHelixStandard) {
+                "Move up line" to "move_line_up"
+            } else {
+                "Move up visual line" to "move_visual_line_up"
+            }
+            return listOf(
+                WhichKeyItem("d", "Goto definition", "goto_definition", "GotoDeclaration"),
+                WhichKeyItem("D", "Goto declaration", "goto_declaration", "GotoDeclarationOnly"),
+                WhichKeyItem("i", "Goto implementation", "goto_implementation", "GotoImplementation"),
+                WhichKeyItem("y", "Goto type definition", "goto_type_definition", "GotoTypeDeclaration"),
+                WhichKeyItem("r", "Goto reference", "goto_reference", "FindUsages"),
+                WhichKeyItem("n", "Next buffer / tab", "goto_next_buffer", "NextTab"),
+                WhichKeyItem("p", "Previous buffer / tab", "goto_previous_buffer", "PreviousTab"),
+                WhichKeyItem(".", "Last edit location", "goto_last_change", "JumpToLastChange"),
+                WhichKeyItem("h", "Goto line start", "goto_line_start"),
+                WhichKeyItem("l", "Goto line end", "goto_line_end"),
+                WhichKeyItem("s", "Goto first non-whitespace", "goto_first_nonwhitespace"),
+                WhichKeyItem("t", "Goto window top", "goto_window_top"),
+                WhichKeyItem("c", "Goto window center", "goto_window_center"),
+                WhichKeyItem("b", "Goto window bottom", "goto_window_bottom"),
+                WhichKeyItem("f", "Goto file at caret", "goto_file"),
+                WhichKeyItem("|", "Goto column", "goto_column <count>"),
+                WhichKeyItem("w", "Jump to word", "goto_word"),
+                WhichKeyItem("g", "Goto line / file start", "goto_line_start_file"),
+                WhichKeyItem("e", "Goto file end", "goto_last_line"),
+                WhichKeyItem("a", "Last accessed file", "goto_last_accessed_file"),
+                WhichKeyItem("m", "Last modified file", "goto_last_modified_file"),
+                WhichKeyItem("j", jDesc, jCmd),
+                WhichKeyItem("k", kDesc, kCmd),
+            )
+        }
 
     val matchItems = listOf(
         WhichKeyItem("s", "Surround add", "surround_add <char>"),
