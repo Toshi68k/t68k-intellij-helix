@@ -130,13 +130,22 @@ object HelixKeyHandler {
             }
 
             " " -> {
-                if (ch == 'G') {
-                    state.setPendingSequence(" G")
-                    HelixWhichKeyPopup.show(editor, " G")
-                    true
-                } else {
-                    state.clearPendingSequence()
-                    HelixSpaceKeymap.handle(ch, editor)
+                when (ch) {
+                    'G' -> {
+                        state.setPendingSequence(" G")
+                        HelixWhichKeyPopup.show(editor, " G")
+                        true
+                    }
+
+                    'w' -> {
+                        startWindowChord(editor)
+                        true
+                    }
+
+                    else -> {
+                        state.clearPendingSequence()
+                        HelixSpaceKeymap.handle(ch, editor)
+                    }
                 }
             }
 

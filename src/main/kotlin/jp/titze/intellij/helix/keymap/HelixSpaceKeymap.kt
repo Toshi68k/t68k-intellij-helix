@@ -86,7 +86,10 @@ internal object HelixSpaceKeymap {
 
             'r' -> HelixActionDelegate.executeAction("RenameElement", editor)
 
-            'w' -> HelixActionDelegate.executeAction("SaveAll", editor)
+            'w' -> {
+                HelixKeyHandler.startWindowChord(editor)
+                true
+            }
 
             'y' -> {
                 HelixActions.yankSelection(editor, register = '+')

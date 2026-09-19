@@ -340,7 +340,7 @@
         <action id="jp.titze.intellij.helix.windowChord"
                 class="jp.titze.intellij.helix.editor.HelixWindowChordAction"
                 text="Helix Window and Split Menu"
-                description="Window and split management (Ctrl+w)">
+                description="Window and split management (Ctrl+w, space+w)">
             <keyboard-shortcut keymap="$default" first-keystroke="control W"/>
             <keyboard-shortcut keymap="Mac OS X" first-keystroke="control W"/>
             <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="control W"/>

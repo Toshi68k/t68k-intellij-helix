@@ -270,22 +270,22 @@ Whenever a chord prefix key (<kbd>Space</kbd>, `Ctrl+w`, `g`, `m`, `[`, or `]`) 
 - **Single-key & click dispatch**: Pressing any highlighted key or clicking any option directly executes the action.
 - **Cancelable**: Pressing <kbd>Esc</kbd> or clicking outside dismisses the menu and restores `Normal` mode.
 
-#### Window & Split Management (`Ctrl+w`)
+#### Window & Split Management (`Ctrl+w` / `space + w`)
 | Key | Helix Command | IntelliJ Action | Description |
 |-----|---------------|-----------------|-------------|
-| `Ctrl+w v` | `vsplit` | `SplitVertically` | Vertical editor split |
-| `Ctrl+w s` | `hsplit` | `SplitHorizontally` | Horizontal editor split |
-| `Ctrl+w h` | `jump_view_left` | `PrevSplitter` | Focus split to the left |
-| `Ctrl+w j` | `jump_view_down` | `NextSplitter` | Focus split below |
-| `Ctrl+w k` | `jump_view_up` | `PrevSplitter` | Focus split above |
-| `Ctrl+w l` | `jump_view_right` | `NextSplitter` | Focus split to the right |
-| `Ctrl+w w` | `jump_next_view` | `NextSplitter` | Cycle focus to next split window |
-| `Ctrl+w W` | `jump_prev_view` | `PrevSplitter` | Cycle focus to previous split window |
+| `Ctrl+w v` / `space + w v` | `vsplit` | `SplitVertically` | Vertical editor split |
+| `Ctrl+w s` / `space + w s` | `hsplit` | `SplitHorizontally` | Horizontal editor split |
+| `Ctrl+w h` / `space + w h` | `jump_view_left` | `PrevSplitter` | Focus split to the left |
+| `Ctrl+w j` / `space + w j` | `jump_view_down` | `NextSplitter` | Focus split below |
+| `Ctrl+w k` / `space + w k` | `jump_view_up` | `PrevSplitter` | Focus split above |
+| `Ctrl+w l` / `space + w l` | `jump_view_right` | `NextSplitter` | Focus split to the right |
+| `Ctrl+w w` / `space + w w` | `jump_next_view` | `NextSplitter` | Cycle focus to next split window |
+| `Ctrl+w W` / `space + w W` | `jump_prev_view` | `PrevSplitter` | Cycle focus to previous split window |
 | `Ctrl+w H` / `J` / `K` / `L` | `swap_view_*` | `ChangeSplitOrientation` | Swap split orientation |
-| `Ctrl+w q` / `Ctrl+w c` | `wclose` | `Unsplit` | Close active split |
-| `Ctrl+w o` | `wonly` | `UnsplitAll` | Close all other splits |
+| `Ctrl+w q` / `Ctrl+w c` / `space + w q` | `wclose` | `Unsplit` | Close active split |
+| `Ctrl+w o` / `space + w o` | `wonly` | `UnsplitAll` | Close all other splits |
 
-*(Holding Ctrl during chords, e.g. `Ctrl+w Ctrl+v`, `Ctrl+w Ctrl+w`, etc. is also fully supported.)*
+*(In Helix, `space + w` is an exact alias for `Ctrl+w`, allowing split and window navigation without holding Ctrl. Holding Ctrl during chords, e.g. `Ctrl+w Ctrl+v`, `Ctrl+w Ctrl+w`, etc. is also fully supported. For saving, use `:w` / `:wa` or `Ctrl+s`.)*
 
 #### View Mode & Code Folding (`z` / `Z`)
 | Key | Helix Command | IntelliJ Action | Description |
@@ -326,7 +326,7 @@ Whenever a chord prefix key (<kbd>Space</kbd>, `Ctrl+w`, `g`, `m`, `[`, or `]`) 
 | `space + c` | `toggle_comments` | `CommentByLineComment` | Toggle line comments on selection or line |
 | `space + C` | `toggle_block_comments` | `CommentByBlockComment` | Toggle block comments on selection |
 | `space + h` | `select_references_to_symbol_under_cursor` | `FindUsages` | Find symbol references / usages across project |
-| `space + w` | `w` | `SaveAll` | Save all modified buffers |
+| `space + w` | `window_mode` | — | Window mode menu (alias for `Ctrl+w`) |
 | `space + y` | `yank_main_selection_to_clipboard` | — | Yank active selection to system clipboard |
 | `space + p` | `paste_clipboard_after` | — | Paste system clipboard after cursor / selection |
 | `space + P` | `paste_clipboard_before` | — | Paste system clipboard before cursor / selection |

@@ -33,7 +33,7 @@ object HelixWhichKeyMenus {
         WhichKeyItem("C", "Toggle block comment", "toggle_block_comments", "CommentByBlockComment"),
         WhichKeyItem("h", "Select references", "select_references", "FindUsages"),
         WhichKeyItem("'", "Last picker", "last_picker"),
-        WhichKeyItem("w", "Save", "w", "SaveAll"),
+        WhichKeyItem("w", "Window mode", "window_mode"),
         WhichKeyItem("y", "Yank main selection", "yank_to_clipboard"),
         WhichKeyItem("p", "Paste clipboard after", "paste_clipboard_after"),
         WhichKeyItem("P", "Paste clipboard before", "paste_clipboard_before"),
@@ -216,7 +216,7 @@ object HelixWhichKeyMenus {
         "]" -> "JUMP FORWARD MENU" to bracketCloseItems
         "z" -> "VIEW MENU" to viewItems
         "Z" -> "STICKY VIEW MENU" to viewItems
-        "C-w", "Ctrl+w", "\u0017" -> "WINDOW MENU" to windowItems
+        "C-w", "Ctrl+w", "\u0017", " w", "space w" -> "WINDOW MENU" to windowItems
         "\"" -> "REGISTERS" to registerItems
         "C-r", "Ctrl+r", "\u0012" -> "INSERT REGISTER" to registerItems
         else -> null
