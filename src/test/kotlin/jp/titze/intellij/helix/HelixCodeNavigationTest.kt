@@ -500,46 +500,64 @@ class HelixCodeNavigationTest : BasePlatformTestCase() {
         }
     }
 
-    fun testMoveLinesUpAndDownKeymap() {
-        myFixture.configureByText("Test.txt", "line 1\nline 2\nline 3\n")
+    fun testEntryNavigationKeymap() {
+        val text = "val a = 1\nval b = 2\nval c = 3\n"
+        myFixture.configureByText("test.kt", text)
         val editor = myFixture.editor
-        val executedActions = mutableListOf<String>()
-        HelixActionDelegate.actionExecutor = { actionId, _ ->
-            executedActions.add(actionId)
-            true
-        }
-        try {
-            // [e -> MoveLineUp
-            HelixKeyHandler.handleKey('[', editor).shouldBeTrue()
-            HelixKeyHandler.handleKey('e', editor).shouldBeTrue()
-            executedActions shouldBe listOf("MoveLineUp")
+        val caret = editor.caretModel.primaryCaret
+        caret.moveToOffset(0)
 
-            // ]e -> MoveLineDown
-            HelixKeyHandler.handleKey(']', editor).shouldBeTrue()
-            HelixKeyHandler.handleKey('e', editor).shouldBeTrue()
-            executedActions shouldBe listOf("MoveLineUp", "MoveLineDown")
+        val entryAIdx = text.indexOf("val a = 1")
+        val entryBIdx = text.indexOf("val b = 2")
+        val entryCIdx = text.indexOf("val c = 3")
 
-            // With count prefix: 2[e
-            HelixKeyHandler.handleKey('2', editor).shouldBeTrue()
-            HelixKeyHandler.handleKey('[', editor).shouldBeTrue()
-            HelixKeyHandler.handleKey('e', editor).shouldBeTrue()
-            executedActions shouldBe listOf("MoveLineUp", "MoveLineDown", "MoveLineUp", "MoveLineUp")
+        // First ]e from start selects first entry (val a = 1)
+        HelixKeyHandler.handleKey(']', editor).shouldBeTrue()
+        HelixKeyHandler.handleKey('e', editor).shouldBeTrue()
+        caret.offset shouldBe entryAIdx
+        caret.hasSelection().shouldBeTrue()
 
-            // With count prefix: 2]e
-            HelixKeyHandler.handleKey('2', editor).shouldBeTrue()
-            HelixKeyHandler.handleKey(']', editor).shouldBeTrue()
-            HelixKeyHandler.handleKey('e', editor).shouldBeTrue()
-            executedActions shouldBe listOf(
-                "MoveLineUp",
-                "MoveLineDown",
-                "MoveLineUp",
-                "MoveLineUp",
-                "MoveLineDown",
-                "MoveLineDown",
-            )
-        } finally {
-            HelixActionDelegate.actionExecutor = null
-        }
+        // ]e -> next entry (val b = 2)
+        HelixKeyHandler.handleKey(']', editor).shouldBeTrue()
+        HelixKeyHandler.handleKey('e', editor).shouldBeTrue()
+        caret.offset shouldBe entryBIdx
+        caret.hasSelection().shouldBeTrue()
+
+        // ]e -> next entry (val c = 3)
+        HelixKeyHandler.handleKey(']', editor).shouldBeTrue()
+        HelixKeyHandler.handleKey('e', editor).shouldBeTrue()
+        caret.offset shouldBe entryCIdx
+        caret.hasSelection().shouldBeTrue()
+
+        // [e -> previous entry (val b = 2)
+        HelixKeyHandler.handleKey('[', editor).shouldBeTrue()
+        HelixKeyHandler.handleKey('e', editor).shouldBeTrue()
+        caret.offset shouldBe entryBIdx
+        caret.hasSelection().shouldBeTrue()
+
+        // [e -> previous entry (val a = 1)
+        HelixKeyHandler.handleKey('[', editor).shouldBeTrue()
+        HelixKeyHandler.handleKey('e', editor).shouldBeTrue()
+        caret.offset shouldBe entryAIdx
+        caret.hasSelection().shouldBeTrue()
+
+        // Reset to beginning and test count prefix: 2]e
+        caret.removeSelection()
+        caret.moveToOffset(0)
+        HelixKeyHandler.handleKey('2', editor).shouldBeTrue()
+        HelixKeyHandler.handleKey(']', editor).shouldBeTrue()
+        HelixKeyHandler.handleKey('e', editor).shouldBeTrue()
+        caret.offset shouldBe entryBIdx
+        caret.hasSelection().shouldBeTrue()
+
+        // From entry C (index 20), count prefix 2[e jumps back to entry A
+        caret.moveToOffset(entryCIdx)
+        caret.setSelection(entryCIdx, entryCIdx + "val c = 3".length)
+        HelixKeyHandler.handleKey('2', editor).shouldBeTrue()
+        HelixKeyHandler.handleKey('[', editor).shouldBeTrue()
+        HelixKeyHandler.handleKey('e', editor).shouldBeTrue()
+        caret.offset shouldBe entryAIdx
+        caret.hasSelection().shouldBeTrue()
     }
 
     fun testSpellingErrorNavigationKeymap() {
@@ -613,23 +631,38 @@ class HelixCodeNavigationTest : BasePlatformTestCase() {
         }
     }
 
-    fun testRepeatLastMotionMoveLineAndSpelling() {
-        myFixture.configureByText("Test.txt", "line 1\nline 2\n")
+    fun testEntryCommandsExecution() {
+        val text = "val a = 1\nval b = 2\nval c = 3\n"
+        myFixture.configureByText("test.kt", text)
         val editor = myFixture.editor
-        val executedActions = mutableListOf<String>()
-        HelixActionDelegate.actionExecutor = { actionId, _ ->
-            executedActions.add(actionId)
-            true
-        }
-        try {
-            HelixKeyHandler.handleKey('[', editor).shouldBeTrue()
-            HelixKeyHandler.handleKey('e', editor).shouldBeTrue()
-            executedActions shouldBe listOf("MoveLineUp")
+        val caret = editor.caretModel.primaryCaret
+        caret.moveToOffset(0)
 
-            HelixActions.repeatLastMotion(editor, 2)
-            executedActions shouldBe listOf("MoveLineUp", "MoveLineUp", "MoveLineUp")
-        } finally {
-            HelixActionDelegate.actionExecutor = null
-        }
+        jp.titze.intellij.helix.command.HelixCommands.execute("goto-next-entry", editor)
+        caret.offset shouldBe text.indexOf("val a = 1")
+        caret.hasSelection().shouldBeTrue()
+
+        jp.titze.intellij.helix.command.HelixCommands.execute("goto-next-entry", editor)
+        caret.offset shouldBe text.indexOf("val b = 2")
+        caret.hasSelection().shouldBeTrue()
+
+        jp.titze.intellij.helix.command.HelixCommands.execute("goto-prev-entry", editor)
+        caret.offset shouldBe text.indexOf("val a = 1")
+        caret.hasSelection().shouldBeTrue()
+    }
+
+    fun testRepeatLastMotionEntryNavigation() {
+        val text = "val a = 1\nval b = 2\nval c = 3\n"
+        myFixture.configureByText("test.kt", text)
+        val editor = myFixture.editor
+        val caret = editor.caretModel.primaryCaret
+        caret.moveToOffset(0)
+
+        HelixKeyHandler.handleKey(']', editor).shouldBeTrue()
+        HelixKeyHandler.handleKey('e', editor).shouldBeTrue()
+        caret.offset shouldBe text.indexOf("val a = 1")
+
+        HelixActions.repeatLastMotion(editor, 1)
+        caret.offset shouldBe text.indexOf("val b = 2")
     }
 }

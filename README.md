@@ -368,7 +368,7 @@ Whenever a chord prefix key (<kbd>Space</kbd>, `Ctrl+w`, `g`, `m`, `[`, or `]`) 
 | `]D` | `[D` | `goto_last_diag` / `goto_first_diag` | Last / first diagnostic error |
 | `]Space` | `[Space` | `add_newline_below` / `add_newline_above` | Add empty line below / above |
 | `]b` | `[b` | `goto_next_buffer` / `goto_prev_buffer` | Next / previous editor tab |
-| `]e` | `[e` | `move_line_down` / `move_line_up` | Move active line or selection down / up |
+| `]e` | `[e` | `goto_next_entry` / `goto_prev_entry` | Next / previous entry in list, table, array, or map |
 | `]s` | `[s` | `goto_next_spelling_error` / `goto_prev_spelling_error` | Next / previous spelling error |
 
 #### Code AST & Inspection
@@ -406,6 +406,8 @@ Press `:` in Normal mode to open the interactive **Helix Command Picker**, style
 - `:goto-definition` / `:definition` &rarr; Jump to definition or declaration (`GotoDeclaration`)
 - `:goto-prev-spelling-error` / `:prev-spelling-error` &rarr; Jump to previous spelling error (`GotoPreviousSpellingError`)
 - `:goto-next-spelling-error` / `:next-spelling-error` &rarr; Jump to next spelling error (`GotoNextSpellingError`)
+- `:goto-prev-entry` / `:prev-entry` &rarr; Jump to previous entry in list/table/array/map (`[e`)
+- `:goto-next-entry` / `:next-entry` &rarr; Jump to next entry in list/table/array/map (`]e`)
 - `:move-line-up` &rarr; Move active line or selection up (`MoveLineUp`)
 - `:move-line-down` &rarr; Move active line or selection down (`MoveLineDown`)
 - `:earlier` / `:undo-earlier` &rarr; Move backward in history (`Alt+u`)

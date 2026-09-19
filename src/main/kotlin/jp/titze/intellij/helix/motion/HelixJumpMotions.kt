@@ -206,6 +206,43 @@ object HelixJumpMotions {
         return navigateToRange(editor, ranges, forward, count)
     }
 
+    private val ENTRY_CONTAINER_KEYWORDS = listOf("List", "Table", "Body", "Block", "File", "Doc", "Type")
+    private val ENTRY_CANDIDATE_KEYWORDS = listOf(
+        "Entry",
+        "Pair",
+        "KeyValue",
+        "Property",
+        "ValueArgument",
+        "EnumConstant",
+    )
+
+    private fun isExcludedEntryContainer(name: String): Boolean =
+        ENTRY_CONTAINER_KEYWORDS.any { name.contains(it, ignoreCase = true) }
+
+    private fun isEntryCandidate(name: String): Boolean =
+        ENTRY_CANDIDATE_KEYWORDS.any { name.contains(it, ignoreCase = true) }
+
+    private fun isEntryPsiElement(elem: PsiElement): Boolean {
+        val name = elem.javaClass.simpleName
+        if (isExcludedEntryContainer(name)) return false
+        return isEntryCandidate(name)
+    }
+
+    /**
+     * [e / ]e: Move to previous/next entry (list, table, array, map entry)
+     */
+    fun moveEntry(editor: Editor, forward: Boolean, count: Int = 1): Boolean {
+        var ranges = getMatchingRangesFromPsi(editor) { elem ->
+            isEntryPsiElement(elem)
+        }
+
+        if (ranges.isEmpty()) {
+            ranges = findEntryRangesRegex(editor.document)
+        }
+
+        return navigateToRange(editor, ranges, forward, count)
+    }
+
     /**
      * [a / ]a: Move to previous/next parameter (selects parameter block)
      */
@@ -360,6 +397,24 @@ object HelixJumpMotions {
             val line = doc.getLineNumber(start)
             val lineEnd = doc.getLineEndOffset(line)
             TextRange(start, lineEnd)
+        }.toList()
+    }
+
+    private fun findEntryRangesRegex(doc: Document): List<TextRange> {
+        val regex = Regex(
+            """^[ \t]*(?:[-*+]\s+|\d+\.\s+|(?:(?:val|var|let|const|def)\s+)?["']?[A-Za-z0-9_.-]+["']?\s*[:=])""",
+            RegexOption.MULTILINE,
+        )
+        val text = doc.charsSequence
+        return regex.findAll(text).map { match ->
+            val line = doc.getLineNumber(match.range.first)
+            val lineStart = doc.getLineStartOffset(line)
+            val lineEnd = doc.getLineEndOffset(line)
+            var firstNonWs = lineStart
+            while (firstNonWs < lineEnd && text[firstNonWs].isWhitespace()) {
+                firstNonWs++
+            }
+            TextRange(firstNonWs, lineEnd)
         }.toList()
     }
 

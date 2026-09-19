@@ -148,9 +148,27 @@ object HelixCommands {
             repeat(count) { HelixActionDelegate.executeAction("GotoNextSpellingError", editor) }
         },
         HelixCommandItem(
+            "goto-prev-entry",
+            listOf("goto_prev_entry", "prev-entry"),
+            "Jump to previous entry ([e)",
+        ) { editor ->
+            val count = HelixStateManager.getOrCreate(editor).takeCount() ?: 1
+            HelixKeyHandler.recordJump(editor)
+            HelixMotions.moveEntry(editor, forward = false, count = count)
+        },
+        HelixCommandItem(
+            "goto-next-entry",
+            listOf("goto_next_entry", "next-entry"),
+            "Jump to next entry (]e)",
+        ) { editor ->
+            val count = HelixStateManager.getOrCreate(editor).takeCount() ?: 1
+            HelixKeyHandler.recordJump(editor)
+            HelixMotions.moveEntry(editor, forward = true, count = count)
+        },
+        HelixCommandItem(
             "move-line-up",
             listOf("move_line_up"),
-            "Move active line or selection up ([e)",
+            "Move active line or selection up (MoveLineUp)",
         ) { editor ->
             val count = HelixStateManager.getOrCreate(editor).takeCount() ?: 1
             repeat(count) { HelixActionDelegate.executeAction("MoveLineUp", editor) }
@@ -158,7 +176,7 @@ object HelixCommands {
         HelixCommandItem(
             "move-line-down",
             listOf("move_line_down"),
-            "Move active line or selection down (]e)",
+            "Move active line or selection down (MoveLineDown)",
         ) { editor ->
             val count = HelixStateManager.getOrCreate(editor).takeCount() ?: 1
             repeat(count) { HelixActionDelegate.executeAction("MoveLineDown", editor) }
