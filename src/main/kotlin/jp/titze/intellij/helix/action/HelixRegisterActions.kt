@@ -68,14 +68,19 @@ object HelixRegisterActions {
         }
     }
 
-    fun yankSelection(editor: Editor, count: Int = 1, register: Char? = null) {
+    fun yankSelection(editor: Editor, count: Int = 1, register: Char? = null, primaryOnly: Boolean = false) {
         val state = HelixStateManager.getOrCreate(editor)
         val pieces = mutableListOf<String>()
         val ranges = mutableListOf<TextRange>()
         val doc = editor.document
-        val allCaretsWholeLines = editor.caretModel.allCarets.all { isCaretSelectingWholeLines(doc, it) }
+        val carets = if (primaryOnly) {
+            listOf(editor.caretModel.primaryCaret)
+        } else {
+            editor.caretModel.allCarets
+        }
+        val allCaretsWholeLines = carets.all { isCaretSelectingWholeLines(doc, it) }
 
-        editor.caretModel.runForEachCaret { caret ->
+        carets.forEach { caret ->
             if (caret.hasSelection()) {
                 var text = caret.selectedText ?: ""
                 if (allCaretsWholeLines && !text.endsWith("\n")) {

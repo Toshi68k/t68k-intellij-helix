@@ -327,7 +327,8 @@ Whenever a chord prefix key (<kbd>Space</kbd>, `Ctrl+w`, `g`, `m`, `[`, or `]`) 
 | `space + C` | `toggle_block_comments` | `CommentByBlockComment` | Toggle block comments on selection |
 | `space + h` | `select_references_to_symbol_under_cursor` | `FindUsages` | Find symbol references / usages across project |
 | `space + w` | `window_mode` | — | Window mode menu (alias for `Ctrl+w`) |
-| `space + y` | `yank_main_selection_to_clipboard` | — | Yank active selection to system clipboard |
+| `space + y` | `yank_to_clipboard` | — | Yank active selections to system clipboard |
+| `space + Y` | `yank_main_selection_to_clipboard` | — | Yank main selection to system clipboard |
 | `space + p` | `paste_clipboard_after` | — | Paste system clipboard after cursor / selection |
 | `space + P` | `paste_clipboard_before` | — | Paste system clipboard before cursor / selection |
 | `space + R` | `replace_selections_with_clipboard` | — | Replace current selections with system clipboard |

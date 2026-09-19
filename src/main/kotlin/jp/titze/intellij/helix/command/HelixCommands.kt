@@ -329,6 +329,16 @@ object HelixCommands {
             "Change selection without yanking (Alt+c)",
         ) { editor -> HelixActions.changeSelectionNoYank(editor) },
         HelixCommandItem(
+            "yank-to-clipboard",
+            listOf("yank_to_clipboard", "clipboard-yank"),
+            "Yank active selections to system clipboard (space + y)",
+        ) { editor -> HelixActions.yankSelection(editor, register = '+') },
+        HelixCommandItem(
+            "yank-main-selection-to-clipboard",
+            listOf("yank_main_selection_to_clipboard", "clipboard-yank-primary"),
+            "Yank main selection to system clipboard (space + Y)",
+        ) { editor -> HelixActions.yankMainSelection(editor, register = '+') },
+        HelixCommandItem(
             "repeat-last-motion",
             listOf("repeat_last_motion"),
             "Repeat last motion (Alt+.)",

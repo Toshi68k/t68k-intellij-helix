@@ -96,6 +96,11 @@ internal object HelixSpaceKeymap {
                 true
             }
 
+            'Y' -> {
+                HelixActions.yankMainSelection(editor, register = '+')
+                true
+            }
+
             'p' -> {
                 HelixActions.paste(editor, after = true, register = '+')
                 true
