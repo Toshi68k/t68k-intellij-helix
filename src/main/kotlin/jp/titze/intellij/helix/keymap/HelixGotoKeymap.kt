@@ -5,6 +5,8 @@ import jp.titze.intellij.helix.action.HelixActionDelegate
 import jp.titze.intellij.helix.motion.HelixFileNavigation
 import jp.titze.intellij.helix.motion.HelixJumpToWord
 import jp.titze.intellij.helix.motion.HelixMotions
+import jp.titze.intellij.helix.settings.HelixLineNavigationMode
+import jp.titze.intellij.helix.settings.HelixSettings
 
 internal object HelixGotoKeymap {
 
@@ -115,12 +117,20 @@ internal object HelixGotoKeymap {
         }
 
         'j' -> {
-            HelixMotions.moveVisualDown(editor, count ?: 1)
+            if (HelixSettings.instance.lineNavigationMode == HelixLineNavigationMode.HELIX_STANDARD) {
+                HelixMotions.moveDown(editor, count ?: 1)
+            } else {
+                HelixMotions.moveVisualDown(editor, count ?: 1)
+            }
             true
         }
 
         'k' -> {
-            HelixMotions.moveVisualUp(editor, count ?: 1)
+            if (HelixSettings.instance.lineNavigationMode == HelixLineNavigationMode.HELIX_STANDARD) {
+                HelixMotions.moveUp(editor, count ?: 1)
+            } else {
+                HelixMotions.moveVisualUp(editor, count ?: 1)
+            }
             true
         }
 

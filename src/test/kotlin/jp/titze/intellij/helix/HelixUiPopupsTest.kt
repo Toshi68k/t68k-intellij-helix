@@ -9,6 +9,7 @@ import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.types.shouldBeSameInstanceAs
 import jp.titze.intellij.helix.command.HelixCommandPopup
 import jp.titze.intellij.helix.keymap.HelixKeyHandler
+import jp.titze.intellij.helix.settings.HelixLineNavigationMode
 import jp.titze.intellij.helix.settings.HelixSearchUiMode
 import jp.titze.intellij.helix.settings.HelixSettings
 import jp.titze.intellij.helix.state.HelixMode
@@ -103,6 +104,63 @@ class HelixUiPopupsTest : BasePlatformTestCase() {
             settings.searchUiMode shouldBe HelixSearchUiMode.STOCK_HELIX
         } finally {
             settings.searchUiMode = original
+        }
+    }
+
+    fun testHelixCommandLineNavigationMode() {
+        myFixture.configureByText("test.txt", "test")
+        val editor = myFixture.editor
+        val settings = HelixSettings.instance
+        val original = settings.lineNavigationMode
+
+        try {
+            settings.lineNavigationMode = HelixLineNavigationMode.HELIX_STANDARD
+            HelixCommandPopup.executeCommand("toggle-line-nav", editor)
+            settings.lineNavigationMode shouldBe HelixLineNavigationMode.VIM_STANDARD
+
+            HelixCommandPopup.executeCommand("toggle-line-nav", editor)
+            settings.lineNavigationMode shouldBe HelixLineNavigationMode.HELIX_STANDARD
+
+            HelixCommandPopup.executeCommand("set line-nav=vim", editor)
+            settings.lineNavigationMode shouldBe HelixLineNavigationMode.VIM_STANDARD
+
+            HelixCommandPopup.executeCommand("set line-nav=helix", editor)
+            settings.lineNavigationMode shouldBe HelixLineNavigationMode.HELIX_STANDARD
+
+            HelixCommandPopup.executeCommand("set-line-nav-vim", editor)
+            settings.lineNavigationMode shouldBe HelixLineNavigationMode.VIM_STANDARD
+
+            HelixCommandPopup.executeCommand("set-line-nav-helix", editor)
+            settings.lineNavigationMode shouldBe HelixLineNavigationMode.HELIX_STANDARD
+        } finally {
+            settings.lineNavigationMode = original
+        }
+    }
+
+    fun testWhichKeyGotoMenuReflectsLineNavigationMode() {
+        val settings = HelixSettings.instance
+        val original = settings.lineNavigationMode
+
+        try {
+            settings.lineNavigationMode = HelixLineNavigationMode.HELIX_STANDARD
+            val (_, helixItems) = HelixWhichKeyMenus.getMenu("g") ?: error("g menu not found")
+            val helixJ = helixItems.first { it.key == "j" }
+            val helixK = helixItems.first { it.key == "k" }
+            helixJ.label shouldBe "Move down line"
+            helixJ.helixCommand shouldBe "move_line_down"
+            helixK.label shouldBe "Move up line"
+            helixK.helixCommand shouldBe "move_line_up"
+
+            settings.lineNavigationMode = HelixLineNavigationMode.VIM_STANDARD
+            val (_, vimItems) = HelixWhichKeyMenus.getMenu("g") ?: error("g menu not found")
+            val vimJ = vimItems.first { it.key == "j" }
+            val vimK = vimItems.first { it.key == "k" }
+            vimJ.label shouldBe "Move down visual line"
+            vimJ.helixCommand shouldBe "move_visual_line_down"
+            vimK.label shouldBe "Move up visual line"
+            vimK.helixCommand shouldBe "move_visual_line_up"
+        } finally {
+            settings.lineNavigationMode = original
         }
     }
 

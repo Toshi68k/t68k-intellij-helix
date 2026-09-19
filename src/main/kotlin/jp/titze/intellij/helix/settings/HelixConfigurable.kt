@@ -24,6 +24,9 @@ class HelixConfigurable : SearchableConfigurable {
     private var popupRadio: JBRadioButton? = null
     private var promptHistorySpinner: JBIntSpinner? = null
 
+    private var stockLineNavRadio: JBRadioButton? = null
+    private var vimLineNavRadio: JBRadioButton? = null
+
     private var enableWhichKeyCheckBox: JBCheckBox? = null
     private var whichKeyHelixCommandRadio: JBRadioButton? = null
     private var whichKeyIntelliJActionRadio: JBRadioButton? = null
@@ -51,6 +54,8 @@ class HelixConfigurable : SearchableConfigurable {
         contentBox.layout = BoxLayout(contentBox, BoxLayout.Y_AXIS)
 
         contentBox.add(createSearchSection())
+        contentBox.add(Box.createVerticalStrut(JBUI.scale(20)))
+        contentBox.add(createLineNavigationSection())
         contentBox.add(Box.createVerticalStrut(JBUI.scale(20)))
         contentBox.add(createWhichKeySection())
         contentBox.add(Box.createVerticalStrut(JBUI.scale(20)))
@@ -119,6 +124,42 @@ class HelixConfigurable : SearchableConfigurable {
 
         val box = JPanel(BorderLayout(0, 8))
         box.add(searchOptionsBox, BorderLayout.NORTH)
+        box.add(helpLabel, BorderLayout.CENTER)
+        section.add(box, BorderLayout.CENTER)
+        return section
+    }
+
+    private fun createLineNavigationSection(): JPanel {
+        val section = JPanel(BorderLayout(0, 8))
+        val titleLabel = JBLabel("Line Navigation (Vertical Movement)")
+        titleLabel.font = JBUI.Fonts.label().asBold()
+        section.add(titleLabel, BorderLayout.NORTH)
+
+        val radioGroup = ButtonGroup()
+        val stock = JBRadioButton("Stock Helix: j / k move by visual (screen) line, gj / gk move by physical line")
+        val vim = JBRadioButton("Vim Standard: j / k move by physical document line, gj / gk move by visual line")
+        stockLineNavRadio = stock
+        vimLineNavRadio = vim
+
+        radioGroup.add(stock)
+        radioGroup.add(vim)
+
+        val optionsPanel = JPanel(GridLayout(2, 1, 0, 6))
+        optionsPanel.border = JBUI.Borders.emptyLeft(12)
+        optionsPanel.add(stock)
+        optionsPanel.add(vim)
+
+        val helpLabel = JBLabel(
+            "<html>In Stock Helix, vertical movement (<code>j</code>/<code>k</code>) follows visual screen lines " +
+                "when soft-wrapping is enabled,<br/>while <code>gj</code>/<code>gk</code> jump by physical lines. " +
+                "Vim standard inverts this so <code>j</code>/<code>k</code> moves across physical lines.</html>",
+        )
+        helpLabel.font = JBUI.Fonts.smallFont()
+        helpLabel.foreground = UIUtil.getContextHelpForeground()
+        helpLabel.border = JBUI.Borders.emptyLeft(12)
+
+        val box = JPanel(BorderLayout(0, 8))
+        box.add(optionsPanel, BorderLayout.NORTH)
         box.add(helpLabel, BorderLayout.CENTER)
         section.add(box, BorderLayout.CENTER)
         return section
@@ -326,6 +367,12 @@ class HelixConfigurable : SearchableConfigurable {
         HelixSearchUiMode.POPUP
     }
 
+    private fun getSelectedLineNavigationMode(): HelixLineNavigationMode = if (vimLineNavRadio?.isSelected == true) {
+        HelixLineNavigationMode.VIM_STANDARD
+    } else {
+        HelixLineNavigationMode.HELIX_STANDARD
+    }
+
     private fun getSelectedWhichKeyHintMode(): WhichKeyHintMode = if (whichKeyIntelliJActionRadio?.isSelected == true) {
         WhichKeyHintMode.INTELLIJ_ACTION
     } else {
@@ -346,21 +393,25 @@ class HelixConfigurable : SearchableConfigurable {
 
     override fun isModified(): Boolean {
         val settings = HelixSettings.instance
-        if (getSelectedSearchUiMode() != settings.searchUiMode) return true
-        if (promptHistorySpinner?.number != settings.promptHistoryMaxEntries) return true
-        if (enableWhichKeyCheckBox?.isSelected != settings.enableWhichKeyPopups) return true
-        if (getSelectedWhichKeyHintMode() != settings.whichKeyHintMode) return true
-        if (getSelectedWhichKeyColumnLayout() != settings.whichKeyColumnLayout) return true
-        if (jumpListSpinner?.number != settings.jumpListMaxEntries) return true
-        if (getSelectedColorTheme() != settings.colorTheme) return true
-        if (resetToNormalCheckBox?.isSelected != settings.resetToNormalOnTabSwitch) return true
-        if (syncClipboardCheckBox?.isSelected != settings.syncClipboardWithDefaultRegister) return true
-        return false
+        val modifiedChecks = listOf(
+            getSelectedSearchUiMode() != settings.searchUiMode,
+            getSelectedLineNavigationMode() != settings.lineNavigationMode,
+            promptHistorySpinner?.number != settings.promptHistoryMaxEntries,
+            enableWhichKeyCheckBox?.isSelected != settings.enableWhichKeyPopups,
+            getSelectedWhichKeyHintMode() != settings.whichKeyHintMode,
+            getSelectedWhichKeyColumnLayout() != settings.whichKeyColumnLayout,
+            jumpListSpinner?.number != settings.jumpListMaxEntries,
+            getSelectedColorTheme() != settings.colorTheme,
+            resetToNormalCheckBox?.isSelected != settings.resetToNormalOnTabSwitch,
+            syncClipboardCheckBox?.isSelected != settings.syncClipboardWithDefaultRegister,
+        )
+        return modifiedChecks.any { it }
     }
 
     override fun apply() {
         val settings = HelixSettings.instance
         settings.searchUiMode = getSelectedSearchUiMode()
+        settings.lineNavigationMode = getSelectedLineNavigationMode()
         promptHistorySpinner?.let {
             settings.promptHistoryMaxEntries = it.number
             HelixPromptHistory.trimToCapacity()
@@ -382,6 +433,8 @@ class HelixConfigurable : SearchableConfigurable {
         val settings = HelixSettings.instance
         stockHelixRadio?.isSelected = (settings.searchUiMode == HelixSearchUiMode.STOCK_HELIX)
         popupRadio?.isSelected = (settings.searchUiMode == HelixSearchUiMode.POPUP)
+        stockLineNavRadio?.isSelected = (settings.lineNavigationMode == HelixLineNavigationMode.HELIX_STANDARD)
+        vimLineNavRadio?.isSelected = (settings.lineNavigationMode == HelixLineNavigationMode.VIM_STANDARD)
         promptHistorySpinner?.value = settings.promptHistoryMaxEntries
 
         enableWhichKeyCheckBox?.isSelected = settings.enableWhichKeyPopups
@@ -403,6 +456,8 @@ class HelixConfigurable : SearchableConfigurable {
     override fun disposeUIResources() {
         stockHelixRadio = null
         popupRadio = null
+        stockLineNavRadio = null
+        vimLineNavRadio = null
         promptHistorySpinner = null
         enableWhichKeyCheckBox = null
         whichKeyHelixCommandRadio = null

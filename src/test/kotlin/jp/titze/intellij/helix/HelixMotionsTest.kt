@@ -11,6 +11,8 @@ import jp.titze.intellij.helix.keymap.HelixGotoKeymap
 import jp.titze.intellij.helix.keymap.HelixKeyHandler
 import jp.titze.intellij.helix.motion.HelixMotionHistory
 import jp.titze.intellij.helix.motion.HelixMotions
+import jp.titze.intellij.helix.settings.HelixLineNavigationMode
+import jp.titze.intellij.helix.settings.HelixSettings
 import jp.titze.intellij.helix.state.HelixMode
 import jp.titze.intellij.helix.state.HelixStateManager
 
@@ -19,10 +21,12 @@ class HelixMotionsTest : BasePlatformTestCase() {
     override fun setUp() {
         super.setUp()
         HelixMotionHistory.lastMotion = null
+        HelixSettings.instance.lineNavigationMode = HelixLineNavigationMode.HELIX_STANDARD
     }
 
     override fun tearDown() {
         HelixMotionHistory.lastMotion = null
+        HelixSettings.instance.lineNavigationMode = HelixLineNavigationMode.HELIX_STANDARD
         super.tearDown()
     }
     fun testWordMotions() {
@@ -986,5 +990,63 @@ class HelixMotionsTest : BasePlatformTestCase() {
 
         HelixGotoKeymap.handle('b', editor)
         (caret.offset >= 0).shouldBeTrue()
+    }
+
+    fun testLineNavigationHelixStandard() {
+        HelixSettings.instance.lineNavigationMode = HelixLineNavigationMode.HELIX_STANDARD
+        myFixture.configureByText("test.txt", "line 1\nline 2\nline 3\nline 4")
+        val editor = myFixture.editor
+        val caret = editor.caretModel.primaryCaret
+        caret.moveToOffset(0)
+
+        // 'j' moves down visual line by default in Helix standard
+        HelixKeyHandler.handleKey('j', editor)
+        caret.logicalPosition.line shouldBe 1
+
+        // 'k' moves up
+        HelixKeyHandler.handleKey('k', editor)
+        caret.logicalPosition.line shouldBe 0
+
+        // 'gj' moves down physical document line in Helix standard
+        HelixGotoKeymap.handle('j', editor)
+        caret.logicalPosition.line shouldBe 1
+
+        // 'gk' moves up physical document line in Helix standard
+        HelixGotoKeymap.handle('k', editor)
+        caret.logicalPosition.line shouldBe 0
+
+        // Count prefix with 'j'
+        HelixKeyHandler.handleKey('2', editor)
+        HelixKeyHandler.handleKey('j', editor)
+        caret.logicalPosition.line shouldBe 2
+
+        // Count prefix with 'k'
+        HelixKeyHandler.handleKey('2', editor)
+        HelixKeyHandler.handleKey('k', editor)
+        caret.logicalPosition.line shouldBe 0
+    }
+
+    fun testLineNavigationVimStandard() {
+        HelixSettings.instance.lineNavigationMode = HelixLineNavigationMode.VIM_STANDARD
+        myFixture.configureByText("test.txt", "line 1\nline 2\nline 3\nline 4")
+        val editor = myFixture.editor
+        val caret = editor.caretModel.primaryCaret
+        caret.moveToOffset(0)
+
+        // 'j' moves down physical document line in Vim standard
+        HelixKeyHandler.handleKey('j', editor)
+        caret.logicalPosition.line shouldBe 1
+
+        // 'k' moves up physical document line in Vim standard
+        HelixKeyHandler.handleKey('k', editor)
+        caret.logicalPosition.line shouldBe 0
+
+        // 'gj' moves down visual line in Vim standard
+        HelixGotoKeymap.handle('j', editor)
+        caret.logicalPosition.line shouldBe 1
+
+        // 'gk' moves up visual line in Vim standard
+        HelixGotoKeymap.handle('k', editor)
+        caret.logicalPosition.line shouldBe 0
     }
 }
