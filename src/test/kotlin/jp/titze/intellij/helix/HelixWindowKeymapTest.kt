@@ -22,7 +22,14 @@ class HelixWindowKeymapTest : BasePlatformTestCase() {
         menu.first shouldBe "WINDOW MENU"
 
         val keys = menu.second.map { it.key }
-        keys shouldBe listOf("v", "s", "h", "j", "k", "l", "w", "W", "H", "J", "K", "L", "q", "c", "o")
+        keys shouldBe listOf("v", "s", "f", "F", "t", "h", "j", "k", "l", "w", "W", "H", "J", "K", "L", "q", "c", "o")
+
+        val fItem = menu.second.first { it.key == "f" }
+        fItem.helixCommand shouldBe "goto_file_hsplit"
+        val capFItem = menu.second.first { it.key == "F" }
+        capFItem.helixCommand shouldBe "goto_file_vsplit"
+        val tItem = menu.second.first { it.key == "t" }
+        tItem.helixCommand shouldBe "transpose_view"
 
         // Also verify aliases
         HelixWhichKeyMenus.getMenu("Ctrl+w").shouldNotBeNull()
@@ -39,7 +46,7 @@ class HelixWindowKeymapTest : BasePlatformTestCase() {
         myFixture.configureByText("test.txt", "hello window split")
         val editor = myFixture.editor
 
-        val validKeys = listOf('v', 's', 'h', 'j', 'k', 'l', 'w', 'W', 'H', 'J', 'K', 'L', 'q', 'c', 'o')
+        val validKeys = listOf('v', 's', 'f', 'F', 't', 'h', 'j', 'k', 'l', 'w', 'W', 'H', 'J', 'K', 'L', 'q', 'c', 'o')
         for (k in validKeys) {
             HelixWindowKeymap.handle(k, editor).shouldBeTrue()
         }
@@ -80,11 +87,25 @@ class HelixWindowKeymapTest : BasePlatformTestCase() {
                 executed.last() shouldBe "ChangeSplitOrientation"
             }
 
+            HelixWindowKeymap.handle('t', editor).shouldBeTrue()
+            executed.last() shouldBe "ChangeSplitOrientation"
+
+            HelixWindowKeymap.handle('T', editor).shouldBeTrue()
+            executed.last() shouldBe "ChangeSplitOrientation"
+
             HelixWindowKeymap.handle('v', editor).shouldBeTrue()
             executed.last() shouldBe "SplitVertically"
 
             HelixWindowKeymap.handle('s', editor).shouldBeTrue()
             executed.last() shouldBe "SplitHorizontally"
+
+            executed.clear()
+            HelixWindowKeymap.handle('f', editor).shouldBeTrue()
+            executed shouldBe listOf("SplitHorizontally", "GotoDeclaration")
+
+            executed.clear()
+            HelixWindowKeymap.handle('F', editor).shouldBeTrue()
+            executed shouldBe listOf("SplitVertically", "GotoDeclaration")
 
             HelixWindowKeymap.handle('o', editor).shouldBeTrue()
             executed.last() shouldBe "UnsplitAll"
@@ -145,7 +166,18 @@ class HelixWindowKeymapTest : BasePlatformTestCase() {
         val swapSplitCmd = HelixCommandPopup.COMMANDS.firstOrNull { it.name == "swap-split" }
         swapSplitCmd.shouldNotBeNull()
         swapSplitCmd.matches("change-split-orientation").shouldBeTrue()
+        swapSplitCmd.matches("transpose-view").shouldBeTrue()
         swapSplitCmd.matches("swap").shouldBeTrue()
+
+        val gotoFileHsplitCmd = HelixCommandPopup.COMMANDS.firstOrNull { it.name == "goto-file-hsplit" }
+        gotoFileHsplitCmd.shouldNotBeNull()
+        gotoFileHsplitCmd.matches("hsplit-new").shouldBeTrue()
+        gotoFileHsplitCmd.matches("goto_file_hsplit").shouldBeTrue()
+
+        val gotoFileVsplitCmd = HelixCommandPopup.COMMANDS.firstOrNull { it.name == "goto-file-vsplit" }
+        gotoFileVsplitCmd.shouldNotBeNull()
+        gotoFileVsplitCmd.matches("vsplit-new").shouldBeTrue()
+        gotoFileVsplitCmd.matches("goto_file_vsplit").shouldBeTrue()
 
         HelixCommandPopup.executeCommand("unsplit", editor)
         HelixCommandPopup.executeCommand("only", editor)
@@ -153,6 +185,9 @@ class HelixWindowKeymapTest : BasePlatformTestCase() {
         HelixCommandPopup.executeCommand("close", editor)
         HelixCommandPopup.executeCommand("swap-split", editor)
         HelixCommandPopup.executeCommand("change-split-orientation", editor)
+        HelixCommandPopup.executeCommand("transpose-view", editor)
+        HelixCommandPopup.executeCommand("goto-file-hsplit", editor)
+        HelixCommandPopup.executeCommand("goto-file-vsplit", editor)
     }
 
     fun testEventDispatcherWindowChord() {
@@ -239,6 +274,50 @@ class HelixWindowKeymapTest : BasePlatformTestCase() {
             dispatcher.dispatch(ctrlShiftHEvent).shouldBeTrue()
             state.pendingSequence.isEmpty().shouldBeTrue()
             executed.last() shouldBe "ChangeSplitOrientation"
+
+            // Dispatch Ctrl+w then Ctrl+T -> ChangeSplitOrientation
+            dispatcher.dispatch(ctrlWEvent).shouldBeTrue()
+            val ctrlTEvent = KeyEvent(
+                editor.contentComponent,
+                KeyEvent.KEY_PRESSED,
+                System.currentTimeMillis(),
+                KeyEvent.CTRL_DOWN_MASK,
+                KeyEvent.VK_T,
+                't',
+            )
+            dispatcher.dispatch(ctrlTEvent).shouldBeTrue()
+            state.pendingSequence.isEmpty().shouldBeTrue()
+            executed.last() shouldBe "ChangeSplitOrientation"
+
+            // Dispatch Ctrl+w then Ctrl+F -> goto_file_hsplit
+            dispatcher.dispatch(ctrlWEvent).shouldBeTrue()
+            executed.clear()
+            val ctrlFEvent = KeyEvent(
+                editor.contentComponent,
+                KeyEvent.KEY_PRESSED,
+                System.currentTimeMillis(),
+                KeyEvent.CTRL_DOWN_MASK,
+                KeyEvent.VK_F,
+                'f',
+            )
+            dispatcher.dispatch(ctrlFEvent).shouldBeTrue()
+            state.pendingSequence.isEmpty().shouldBeTrue()
+            executed shouldBe listOf("SplitHorizontally", "GotoDeclaration")
+
+            // Dispatch Ctrl+w then Ctrl+Shift+F -> goto_file_vsplit
+            dispatcher.dispatch(ctrlWEvent).shouldBeTrue()
+            executed.clear()
+            val ctrlShiftFEvent = KeyEvent(
+                editor.contentComponent,
+                KeyEvent.KEY_PRESSED,
+                System.currentTimeMillis(),
+                KeyEvent.CTRL_DOWN_MASK or KeyEvent.SHIFT_DOWN_MASK,
+                KeyEvent.VK_F,
+                'F',
+            )
+            dispatcher.dispatch(ctrlShiftFEvent).shouldBeTrue()
+            state.pendingSequence.isEmpty().shouldBeTrue()
+            executed shouldBe listOf("SplitVertically", "GotoDeclaration")
         } finally {
             jp.titze.intellij.helix.action.HelixActionDelegate.actionExecutor = null
         }
@@ -269,6 +348,26 @@ class HelixWindowKeymapTest : BasePlatformTestCase() {
             HelixKeyHandler.handleKey('w', editor).shouldBeTrue()
             HelixKeyHandler.handleKey('s', editor).shouldBeTrue()
             executed.last() shouldBe "SplitHorizontally"
+
+            // Space + w f (goto_file_hsplit)
+            executed.clear()
+            HelixKeyHandler.handleKey(' ', editor).shouldBeTrue()
+            HelixKeyHandler.handleKey('w', editor).shouldBeTrue()
+            HelixKeyHandler.handleKey('f', editor).shouldBeTrue()
+            executed shouldBe listOf("SplitHorizontally", "GotoDeclaration")
+
+            // Space + w F (goto_file_vsplit)
+            executed.clear()
+            HelixKeyHandler.handleKey(' ', editor).shouldBeTrue()
+            HelixKeyHandler.handleKey('w', editor).shouldBeTrue()
+            HelixKeyHandler.handleKey('F', editor).shouldBeTrue()
+            executed shouldBe listOf("SplitVertically", "GotoDeclaration")
+
+            // Space + w t (transpose_view)
+            HelixKeyHandler.handleKey(' ', editor).shouldBeTrue()
+            HelixKeyHandler.handleKey('w', editor).shouldBeTrue()
+            HelixKeyHandler.handleKey('t', editor).shouldBeTrue()
+            executed.last() shouldBe "ChangeSplitOrientation"
 
             // Space + w h / j (jump splits)
             HelixKeyHandler.handleKey(' ', editor).shouldBeTrue()

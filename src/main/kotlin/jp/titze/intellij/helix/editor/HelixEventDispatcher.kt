@@ -181,6 +181,8 @@ class HelixEventDispatcher : IdeEventQueue.EventDispatcher {
             val ch = when (e.keyCode) {
                 KeyEvent.VK_V -> 'v'
                 KeyEvent.VK_S -> 's'
+                KeyEvent.VK_F -> if (e.isShiftDown) 'F' else 'f'
+                KeyEvent.VK_T -> if (e.isShiftDown) 'T' else 't'
                 KeyEvent.VK_H -> if (e.isShiftDown) 'H' else 'h'
                 KeyEvent.VK_J -> if (e.isShiftDown) 'J' else 'j'
                 KeyEvent.VK_K -> if (e.isShiftDown) 'K' else 'k'

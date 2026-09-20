@@ -8,6 +8,8 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.vcs.changes.ChangeListManager
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.wm.WindowManager
+import jp.titze.intellij.helix.action.HelixActionDelegate
+import jp.titze.intellij.helix.keymap.HelixKeyHandler
 import java.util.concurrent.ConcurrentHashMap
 
 object HelixFileNavigation {
@@ -143,25 +145,28 @@ object HelixFileNavigation {
         return oldFile != newFile && oldFile.isValid
     }
 
-    fun gotoFileAtCaret(editor: Editor): Boolean {
+    private fun isWordChar(c: Char): Boolean = !c.isWhitespace() && c !in "\"'`()<>{}[],"
+
+    fun extractTargetText(editor: Editor): String? {
         val primary = editor.caretModel.primaryCaret
-        val project = editor.project ?: return false
-        val textToFind = if (primary.hasSelection()) {
-            primary.selectedText?.trim()
-        } else {
-            val doc = editor.document
-            val text = doc.charsSequence
-            val offset = primary.offset.coerceIn(0, (text.length - 1).coerceAtLeast(0))
-            if (text.isEmpty()) {
-                null
-            } else {
-                var start = offset
-                while (start > 0 && !text[start - 1].isWhitespace() && text[start - 1] !in "\"'`()<>{}[],") start--
-                var end = offset
-                while (end < text.length && !text[end].isWhitespace() && text[end] !in "\"'`()<>{}[],") end++
-                if (start < end) text.substring(start, end) else null
-            }
+        if (primary.hasSelection()) {
+            return primary.selectedText?.trim()
         }
+        val doc = editor.document
+        val text = doc.charsSequence
+        val offset = primary.offset.coerceIn(0, (text.length - 1).coerceAtLeast(0))
+        if (text.isEmpty()) return null
+
+        var start = offset
+        while (start > 0 && isWordChar(text[start - 1])) start--
+        var end = offset
+        while (end < text.length && isWordChar(text[end])) end++
+        return if (start < end) text.substring(start, end) else null
+    }
+
+    fun gotoFileAtCaret(editor: Editor, explicitTarget: String? = null): Boolean {
+        val project = editor.project ?: return false
+        val textToFind = explicitTarget ?: extractTargetText(editor)
 
         if (!textToFind.isNullOrEmpty()) {
             val fileName = textToFind.substringAfterLast('/')
@@ -175,6 +180,25 @@ object HelixFileNavigation {
             }
         }
 
-        return jp.titze.intellij.helix.action.HelixActionDelegate.executeAction("GotoDeclaration", editor)
+        return HelixActionDelegate.executeAction("GotoDeclaration", editor)
+    }
+
+    fun gotoFileInSplit(editor: Editor, vertical: Boolean): Boolean {
+        HelixKeyHandler.recordJump(editor)
+        val targetText = extractTargetText(editor)
+        val splitAction = if (vertical) "SplitVertically" else "SplitHorizontally"
+        val splitSuccess = HelixActionDelegate.executeAction(splitAction, editor)
+
+        if (HelixActionDelegate.actionExecutor != null) {
+            val navSuccess = gotoFileAtCaret(editor, targetText)
+            return splitSuccess || navSuccess
+        }
+
+        com.intellij.openapi.application.ApplicationManager.getApplication().invokeLater {
+            val project = editor.project ?: return@invokeLater
+            val currentEditor = FileEditorManager.getInstance(project).selectedTextEditor ?: editor
+            gotoFileAtCaret(currentEditor, targetText)
+        }
+        return splitSuccess
     }
 }

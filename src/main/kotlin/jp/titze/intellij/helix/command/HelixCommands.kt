@@ -10,6 +10,7 @@ import jp.titze.intellij.helix.action.HelixActions
 import jp.titze.intellij.helix.action.HelixShellActions
 import jp.titze.intellij.helix.jumplist.HelixJumpListService
 import jp.titze.intellij.helix.keymap.HelixKeyHandler
+import jp.titze.intellij.helix.motion.HelixFileNavigation
 import jp.titze.intellij.helix.motion.HelixMotions
 import jp.titze.intellij.helix.settings.HelixLineNavigationMode
 import jp.titze.intellij.helix.settings.HelixSearchUiMode
@@ -76,10 +77,24 @@ object HelixCommands {
         },
         HelixCommandItem(
             "swap-split",
-            listOf("change-split-orientation"),
+            listOf("change-split-orientation", "transpose-view", "transpose_view"),
             "Swap current split view direction (ChangeSplitOrientation)",
         ) { editor ->
             HelixActionDelegate.executeAction("ChangeSplitOrientation", editor)
+        },
+        HelixCommandItem(
+            "goto-file-hsplit",
+            listOf("goto_file_hsplit", "hsplit-new"),
+            "Open declaration or file at cursor in a horizontal split",
+        ) { editor ->
+            HelixFileNavigation.gotoFileInSplit(editor, vertical = false)
+        },
+        HelixCommandItem(
+            "goto-file-vsplit",
+            listOf("goto_file_vsplit", "vsplit-new"),
+            "Open declaration or file at cursor in a vertical split",
+        ) { editor ->
+            HelixFileNavigation.gotoFileInSplit(editor, vertical = true)
         },
         HelixCommandItem("format", emptyList(), "Format buffer using IDE code formatter") { editor ->
             HelixActionDelegate.executeAction("ReformatCode", editor)

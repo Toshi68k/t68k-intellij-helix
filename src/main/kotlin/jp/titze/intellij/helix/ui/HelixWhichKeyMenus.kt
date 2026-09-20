@@ -147,6 +147,9 @@ object HelixWhichKeyMenus {
     val windowItems = listOf(
         WhichKeyItem("v", "Vertical split", "vsplit", "SplitVertically"),
         WhichKeyItem("s", "Horizontal split", "hsplit", "SplitHorizontally"),
+        WhichKeyItem("f", "Goto file (horizontal split)", "goto_file_hsplit", "SplitHorizontally"),
+        WhichKeyItem("F", "Goto file (vertical split)", "goto_file_vsplit", "SplitVertically"),
+        WhichKeyItem("t", "Transpose split orientation", "transpose_view", "ChangeSplitOrientation"),
         WhichKeyItem("h", "Focus left", "jump_view_left", "PrevSplitter"),
         WhichKeyItem("j", "Focus below", "jump_view_down", "NextSplitter"),
         WhichKeyItem("k", "Focus above", "jump_view_up", "PrevSplitter"),
