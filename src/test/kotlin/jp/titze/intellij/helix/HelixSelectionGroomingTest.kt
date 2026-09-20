@@ -10,8 +10,19 @@ import jp.titze.intellij.helix.action.HelixActions
 import jp.titze.intellij.helix.command.HelixCommands
 import jp.titze.intellij.helix.keymap.HelixKeyHandler
 import jp.titze.intellij.helix.motion.HelixMotions
+import jp.titze.intellij.helix.settings.HelixSearchUiMode
+import jp.titze.intellij.helix.settings.HelixSettings
+import jp.titze.intellij.helix.ui.HelixPromptBar
+import jp.titze.intellij.helix.ui.HelixPromptType
+import jp.titze.intellij.helix.ui.HelixSelectRegexPopup
 
 class HelixSelectionGroomingTest : BasePlatformTestCase() {
+
+    override fun tearDown() {
+        HelixPromptBar.lastShownType = null
+        HelixSelectRegexPopup.lastShownMode = null
+        super.tearDown()
+    }
 
     fun testTrimSelectionsKeyHandler() {
         myFixture.configureByText("test.txt", "   hello   \n  world  \n   pure   ")
@@ -343,5 +354,35 @@ class HelixSelectionGroomingTest : BasePlatformTestCase() {
         val primary = editor.caretModel.primaryCaret
         primary.selectionStart shouldBe 0
         primary.selectionEnd shouldBe 16
+    }
+
+    fun testKeyKTriggersKeepSelections() {
+        myFixture.configureByText("test.txt", "apple 123 banana")
+        val editor = myFixture.editor
+
+        // Default inline prompt mode
+        HelixPromptBar.lastShownType = null
+        HelixKeyHandler.handleKey('K', editor)
+        HelixPromptBar.lastShownType shouldBe HelixPromptType.KEEP
+
+        // Popup UI mode
+        val prevMode = HelixSettings.instance.searchUiMode
+        try {
+            HelixSettings.instance.searchUiMode = HelixSearchUiMode.POPUP
+            HelixSelectRegexPopup.lastShownMode = null
+            HelixKeyHandler.handleKey('K', editor)
+            HelixSelectRegexPopup.lastShownMode shouldBe HelixSelectRegexPopup.Mode.KEEP
+        } finally {
+            HelixSettings.instance.searchUiMode = prevMode
+        }
+    }
+
+    fun testKeepSelectionsPaletteCommand() {
+        myFixture.configureByText("test.txt", "alpha 123 beta")
+        val editor = myFixture.editor
+
+        HelixPromptBar.lastShownType = null
+        HelixCommands.execute("keep-selections", editor)
+        HelixPromptBar.lastShownType shouldBe HelixPromptType.KEEP
     }
 }

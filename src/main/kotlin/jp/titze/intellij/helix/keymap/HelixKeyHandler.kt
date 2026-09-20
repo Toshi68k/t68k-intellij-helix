@@ -352,7 +352,7 @@ object HelixKeyHandler {
 
             'q' -> repeat(count) { HelixActionDelegate.executeAction("PlaybackLastMacro", editor) }
 
-            'K' -> HelixActionDelegate.executeAction("QuickJavaDoc", editor)
+            'K' -> HelixSearchManager.startKeepSelections(editor)
 
             '=' -> HelixActionDelegate.executeAction("ReformatCode", editor)
 

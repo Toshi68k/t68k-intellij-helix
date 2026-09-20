@@ -8,6 +8,7 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.types.shouldBeSameInstanceAs
 import jp.titze.intellij.helix.command.HelixCommandPopup
+import jp.titze.intellij.helix.command.HelixCommands
 import jp.titze.intellij.helix.keymap.HelixKeyHandler
 import jp.titze.intellij.helix.settings.HelixLineNavigationMode
 import jp.titze.intellij.helix.settings.HelixSearchUiMode
@@ -330,6 +331,10 @@ class HelixUiPopupsTest : BasePlatformTestCase() {
             // Space + 'h' (usages)
             jp.titze.intellij.helix.keymap.HelixSpaceKeymap.handle('h', editor).shouldBeTrue()
 
+            // Space + 'k' (hover documentation)
+            jp.titze.intellij.helix.keymap.HelixSpaceKeymap.handle('k', editor).shouldBeTrue()
+            executedActions.contains("QuickJavaDoc").shouldBeTrue()
+
             // Space + 'e' (project tree)
             jp.titze.intellij.helix.keymap.HelixSpaceKeymap.handle('e', editor).shouldBeTrue()
             executedActions.contains("ActivateProjectToolWindow").shouldBeTrue()
@@ -356,6 +361,11 @@ class HelixUiPopupsTest : BasePlatformTestCase() {
             HelixDirectoryFilePickerPopup.isShowing = false
             jp.titze.intellij.helix.keymap.HelixSpaceKeymap.handle('\'', editor).shouldBeTrue()
             HelixDirectoryFilePickerPopup.isShowing.shouldBeTrue()
+
+            // Hover command palette execution
+            executedActions.clear()
+            HelixCommands.execute("hover", editor)
+            executedActions.contains("QuickJavaDoc").shouldBeTrue()
         } finally {
             jp.titze.intellij.helix.action.HelixActionDelegate.actionExecutor = null
         }
