@@ -275,6 +275,9 @@ Whenever a chord prefix key (<kbd>Space</kbd>, `Ctrl+w`, `g`, `m`, `[`, or `]`) 
 |-----|---------------|-----------------|-------------|
 | `Ctrl+w v` / `space + w v` | `vsplit` | `SplitVertically` | Vertical editor split |
 | `Ctrl+w s` / `space + w s` | `hsplit` | `SplitHorizontally` | Horizontal editor split |
+| `Ctrl+w f` / `space + w f` | `goto_file_hsplit` | `SplitHorizontally` | Open file / declaration in horizontal split |
+| `Ctrl+w F` / `space + w F` | `goto_file_vsplit` | `SplitVertically` | Open file / declaration in vertical split |
+| `Ctrl+w t` / `space + w t` | `transpose_view` | `ChangeSplitOrientation` | Toggle split orientation (horizontal/vertical) |
 | `Ctrl+w h` / `space + w h` | `jump_view_left` | `PrevSplitter` | Focus split to the left |
 | `Ctrl+w j` / `space + w j` | `jump_view_down` | `NextSplitter` | Focus split below |
 | `Ctrl+w k` / `space + w k` | `jump_view_up` | `PrevSplitter` | Focus split above |
@@ -394,7 +397,9 @@ Press `:` in Normal mode to open the interactive **Helix Command Picker**, style
 - `:sp` / `:hsplit` &rarr; Split editor horizontally
 - `:unsplit` / `:only` &rarr; Close all other splits (`UnsplitAll`)
 - `:close-split` / `:close` &rarr; Close active split (`Unsplit`)
-- `:swap-split` / `:change-split-orientation` &rarr; Swap split orientation (`ChangeSplitOrientation`)
+- `:swap-split` / `:change-split-orientation` / `:transpose-view` &rarr; Swap split orientation (`ChangeSplitOrientation`)
+- `:goto-file-hsplit` / `:hsplit-new` &rarr; Open declaration or file at cursor in a horizontal split
+- `:goto-file-vsplit` / `:vsplit-new` &rarr; Open declaration or file at cursor in a vertical split
 - `:format` &rarr; Reformat code (`ReformatCode`)
 - `:fold` &rarr; Fold block under cursor (`CollapseRegion`)
 - `:unfold` &rarr; Unfold block under cursor (`ExpandRegion`)

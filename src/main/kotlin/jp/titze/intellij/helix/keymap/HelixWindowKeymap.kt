@@ -2,6 +2,7 @@ package jp.titze.intellij.helix.keymap
 
 import com.intellij.openapi.editor.Editor
 import jp.titze.intellij.helix.action.HelixActionDelegate
+import jp.titze.intellij.helix.motion.HelixFileNavigation
 
 internal object HelixWindowKeymap {
 
@@ -9,6 +10,12 @@ internal object HelixWindowKeymap {
         'v', 'V' -> HelixActionDelegate.executeAction("SplitVertically", editor)
 
         's', 'S' -> HelixActionDelegate.executeAction("SplitHorizontally", editor)
+
+        'f' -> HelixFileNavigation.gotoFileInSplit(editor, vertical = false)
+
+        'F' -> HelixFileNavigation.gotoFileInSplit(editor, vertical = true)
+
+        't', 'T' -> HelixActionDelegate.executeAction("ChangeSplitOrientation", editor)
 
         'h' -> HelixActionDelegate.executeAction("PrevSplitter", editor)
 
