@@ -185,12 +185,23 @@ object HelixRegisterManager {
         return list
     }
 
-    fun clear() {
-        defaultRegister = null
-        yankRegister0 = null
-        for (i in deleteRegisters.indices) {
-            deleteRegisters[i] = null
+    fun clear(register: Char? = null) {
+        if (register == null) {
+            defaultRegister = null
+            yankRegister0 = null
+            for (i in deleteRegisters.indices) {
+                deleteRegisters[i] = null
+            }
+            namedRegisters.clear()
+            return
         }
-        namedRegisters.clear()
+        when (register) {
+            '"' -> defaultRegister = null
+            '0' -> yankRegister0 = null
+            in '1'..'9' -> deleteRegisters[register - '1'] = null
+            in 'a'..'z', in 'A'..'Z' -> namedRegisters.remove(register.lowercaseChar())
+            '+', '*' -> setClipboard("")
+            else -> { /* Ignore non-clearable or special registers */ }
+        }
     }
 }

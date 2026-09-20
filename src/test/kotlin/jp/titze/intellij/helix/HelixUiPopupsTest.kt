@@ -1229,4 +1229,50 @@ class HelixUiPopupsTest : BasePlatformTestCase() {
             HelixDirectoryFilePickerPopup.fileOpener = null
         }
     }
+
+    fun testNewBuiltInHelixCommands() {
+        myFixture.configureByText("test.txt", "sample")
+        val editor = myFixture.editor
+        val executedActions = mutableListOf<String>()
+        jp.titze.intellij.helix.action.HelixActionDelegate.actionExecutor = { id, _ ->
+            executedActions.add(id)
+            true
+        }
+
+        try {
+            // :reset-diff-change and aliases
+            executedActions.clear()
+            HelixCommands.execute("reset-diff-change", editor)
+            executedActions shouldBe listOf("Vcs.RollbackChangedLines")
+
+            executedActions.clear()
+            HelixCommands.execute("diffget", editor)
+            executedActions shouldBe listOf("Vcs.RollbackChangedLines")
+
+            executedActions.clear()
+            HelixCommands.execute("diffg", editor)
+            executedActions shouldBe listOf("Vcs.RollbackChangedLines")
+
+            // :reflow and aliases
+            executedActions.clear()
+            HelixCommands.execute("reflow", editor)
+            executedActions shouldBe listOf("FillParagraph")
+
+            executedActions.clear()
+            HelixCommands.execute("fill-paragraph", editor)
+            executedActions shouldBe listOf("FillParagraph")
+
+            // :file-explorer-buffer
+            executedActions.clear()
+            HelixCommands.execute("file-explorer-buffer", editor)
+            executedActions shouldBe listOf("SelectInProjectView")
+
+            // Space + 'E' chord
+            executedActions.clear()
+            jp.titze.intellij.helix.keymap.HelixSpaceKeymap.handle('E', editor).shouldBeTrue()
+            executedActions shouldBe listOf("SelectInProjectView")
+        } finally {
+            jp.titze.intellij.helix.action.HelixActionDelegate.actionExecutor = null
+        }
+    }
 }

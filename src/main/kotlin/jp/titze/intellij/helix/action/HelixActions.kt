@@ -50,6 +50,8 @@ object HelixActions {
         yankSelection(editor, count, register, primaryOnly = true)
     }
 
+    fun yankDiagnostic(editor: Editor): Boolean = HelixDiagnosticActions.yankDiagnostic(editor)
+
     fun paste(editor: Editor, after: Boolean = true, register: Char? = null) {
         val targetRegister = register ?: HelixStateManager.getOrCreate(editor).selectedRegister
         HelixRegisterActions.paste(editor, after, targetRegister)
@@ -389,6 +391,8 @@ object HelixActions {
 
     fun rotateSelectionsContents(editor: Editor, forward: Boolean) =
         HelixSelectionActions.rotateSelectionsContents(editor, forward)
+
+    fun reverseSelectionsContents(editor: Editor) = HelixSelectionActions.reverseSelectionsContents(editor)
 
     fun previewFilterSelectionsRegex(
         editor: Editor,

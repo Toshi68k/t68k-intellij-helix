@@ -280,6 +280,44 @@ class HelixSelectionGroomingTest : BasePlatformTestCase() {
         caretsBack[2].selectedText shouldBe "gamma"
     }
 
+    fun testReverseSelectionsContentsAndCommand() {
+        myFixture.configureByText("test.txt", "one ... two ... three")
+        val editor = myFixture.editor
+        val states = listOf(
+            CaretState(
+                editor.offsetToLogicalPosition(3),
+                editor.offsetToLogicalPosition(0),
+                editor.offsetToLogicalPosition(3),
+            ),
+            CaretState(
+                editor.offsetToLogicalPosition(11),
+                editor.offsetToLogicalPosition(8),
+                editor.offsetToLogicalPosition(11),
+            ),
+            CaretState(
+                editor.offsetToLogicalPosition(21),
+                editor.offsetToLogicalPosition(16),
+                editor.offsetToLogicalPosition(21),
+            ),
+        )
+        editor.caretModel.setCaretsAndSelections(states)
+
+        HelixActions.reverseSelectionsContents(editor)
+        editor.document.text shouldBe "three ... two ... one"
+
+        val caretsRev = editor.caretModel.allCarets.sortedBy { it.selectionStart }
+        caretsRev[0].selectedText shouldBe "three"
+        caretsRev[1].selectedText shouldBe "two"
+        caretsRev[2].selectedText shouldBe "one"
+
+        jp.titze.intellij.helix.command.HelixCommands.execute("reverse-selection-contents", editor)
+        editor.document.text shouldBe "one ... two ... three"
+        val caretsRestored = editor.caretModel.allCarets.sortedBy { it.selectionStart }
+        caretsRestored[0].selectedText shouldBe "one"
+        caretsRestored[1].selectedText shouldBe "two"
+        caretsRestored[2].selectedText shouldBe "three"
+    }
+
     fun testExtendToLineBoundsAndShrinkToLineBounds() {
         val text = "first line\nsecond line\nthird line\n"
         myFixture.configureByText("test.txt", text)

@@ -318,7 +318,7 @@ Whenever a chord prefix key (<kbd>Space</kbd>, `Ctrl+w`, `g`, `m`, `[`, or `]`) 
 | `space + /` | `global_search` | `FindInPath` | Live project-wide text search (live grep) with preview |
 | `space + j` | `jumplist_picker` | — | Open interactive jumplist picker popup |
 | `space + e` | `file_explorer` | `ActivateProjectToolWindow` | Open / toggle project file explorer tool window |
-| `space + .` | `file_explorer_buffer` | `SelectInProjectView` | Reveal active buffer file in project explorer tree |
+| `space + E` / `space + .` | `file_explorer_buffer` | `SelectInProjectView` | Reveal active buffer file in project explorer tree |
 | `space + g` | `changed_file_picker` | `ActivateVersionControlToolWindow` | Open / toggle Git version control changes window |
 | `space + s` | `symbol_picker` | `FileStructurePopup` | Document symbols / outline picker |
 | `space + S` | `workspace_symbol_picker` | `GotoSymbol` | Workspace-wide symbol picker across AST |
@@ -450,6 +450,12 @@ Press `:` in Normal mode to open the interactive **Helix Command Picker**, style
 - `:repeat-last-motion` &rarr; Repeat the last recorded motion (`Alt+.`)
 - `:rotate-selection-contents-forward` &rarr; Cycle text contents forward without moving carets (`Alt+)`)
 - `:rotate-selection-contents-backward` &rarr; Cycle text contents backward without moving carets (`Alt+(`)
+- `:reverse-selection-contents` &rarr; Invert text contents among active carets / selections
+- `:yank-diagnostic` / `:yank-diag` &rarr; Copy error/warning under cursor to clipboard and active register
+- `:reset-diff-change` / `:diffget` / `:diffg` &rarr; Revert VCS hunk under cursor (`Vcs.RollbackChangedLines`)
+- `:reflow` / `:reflow-paragraph` &rarr; Hard-wrap selected lines or comments to editor column margin (`FillParagraph`)
+- `:clear-register [reg]` &rarr; Clear specific named register or all registers (`HelixRegisterManager.clear`)
+- `:file-explorer-buffer` &rarr; Reveal active buffer file in project explorer tree (`SelectInProjectView`)
 - `:extend-to-line-bounds` / `:extend_to_line_bounds` &rarr; Extend selection to whole line bounds (`X`)
 - `:shrink-to-line-bounds` / `:shrink_to_line_bounds` &rarr; Shrink selection to line bounds excluding line breaks (`Alt+x`)
 - `:record-macro` / `:macro-record` &rarr; Start or stop recording a keyboard macro (`Q`)

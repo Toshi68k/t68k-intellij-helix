@@ -412,6 +412,12 @@
             <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="alt shift 9"/>
         </action>
 
+        <action id="jp.titze.intellij.helix.reverseSelectionsContents"
+                class="jp.titze.intellij.helix.editor.HelixReverseSelectionsContentsAction"
+                text="Helix Reverse Selections Contents"
+                description="Invert text contents between active carets / selections">
+        </action>
+
         <action id="jp.titze.intellij.helix.extendToLineBounds"
                 class="jp.titze.intellij.helix.editor.HelixExtendToLineBoundsAction"
                 text="Helix Extend to Line Bounds"
