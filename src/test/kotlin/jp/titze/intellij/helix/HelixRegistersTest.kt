@@ -638,4 +638,46 @@ class HelixRegistersTest : BasePlatformTestCase() {
         jp.titze.intellij.helix.command.HelixCommands.execute("yank-main-selection-to-clipboard", editor)
         getClipboardText() shouldBe "first"
     }
+
+    fun testClearRegisterSpecificAndAll() {
+        HelixRegisterManager.set('a', jp.titze.intellij.helix.register.HelixRegisterEntry("regA"))
+        HelixRegisterManager.set('b', jp.titze.intellij.helix.register.HelixRegisterEntry("regB"))
+        HelixRegisterManager.recordYank("defaultVal", isLinewise = false, pieces = listOf("defaultVal"))
+
+        HelixRegisterManager.get('a')?.text shouldBe "regA"
+        HelixRegisterManager.get('b')?.text shouldBe "regB"
+        HelixRegisterManager.defaultRegister?.text shouldBe "defaultVal"
+
+        // Clear specific register 'a'
+        HelixRegisterManager.clear('a')
+        HelixRegisterManager.get('a').shouldBeNull()
+        HelixRegisterManager.get('b')?.text shouldBe "regB"
+        HelixRegisterManager.defaultRegister?.text shouldBe "defaultVal"
+
+        // Clear default register '"'
+        HelixRegisterManager.clear('"')
+        HelixRegisterManager.defaultRegister.shouldBeNull()
+        HelixRegisterManager.get('b')?.text shouldBe "regB"
+
+        // Clear all
+        HelixRegisterManager.clear()
+        HelixRegisterManager.get('b').shouldBeNull()
+    }
+
+    fun testClearRegisterCommandExecution() {
+        myFixture.configureByText("test.txt", "content")
+        val editor = myFixture.editor
+
+        HelixRegisterManager.set('x', jp.titze.intellij.helix.register.HelixRegisterEntry("xVal"))
+        HelixRegisterManager.set('y', jp.titze.intellij.helix.register.HelixRegisterEntry("yVal"))
+
+        // Command with argument: :clear-register x
+        jp.titze.intellij.helix.command.HelixCommands.execute("clear-register x", editor)
+        HelixRegisterManager.get('x').shouldBeNull()
+        HelixRegisterManager.get('y')?.text shouldBe "yVal"
+
+        // Command without argument: :clear-register clears all
+        jp.titze.intellij.helix.command.HelixCommands.execute("clear-register", editor)
+        HelixRegisterManager.get('y').shouldBeNull()
+    }
 }

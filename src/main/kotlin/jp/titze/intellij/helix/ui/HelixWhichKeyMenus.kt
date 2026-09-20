@@ -19,6 +19,12 @@ object HelixWhichKeyMenus {
         WhichKeyItem("f", "File picker", "file_picker", "GotoFile"),
         WhichKeyItem("F", "Current dir file picker", "file_picker_in_current_directory"),
         WhichKeyItem("e", "File explorer", "file_explorer", "ActivateProjectToolWindow"),
+        WhichKeyItem(
+            "E",
+            "Buffer directory explorer",
+            "file_explorer_buffer",
+            "SelectInProjectView",
+        ),
         WhichKeyItem(".", "Buffer directory explorer", "buffer_dir_picker", "SelectInProjectView"),
         WhichKeyItem("g", "Changed file picker", "changed_file_picker", "ActivateVersionControlToolWindow"),
         WhichKeyItem("/", "Global search", "global_search", "FindInPath"),

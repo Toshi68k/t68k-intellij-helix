@@ -61,7 +61,7 @@ internal object HelixSpaceKeymap {
 
             'e' -> HelixActionDelegate.executeAction("ActivateProjectToolWindow", editor)
 
-            '.' -> HelixActionDelegate.executeAction("SelectInProjectView", editor)
+            'E', '.' -> HelixActionDelegate.executeAction("SelectInProjectView", editor)
 
             'g' -> {
                 HelixActionDelegate.executeAction("ActivateVersionControlToolWindow", editor) ||

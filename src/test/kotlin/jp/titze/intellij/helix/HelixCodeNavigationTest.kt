@@ -1,6 +1,7 @@
 package jp.titze.intellij.helix
 
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
+import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
@@ -664,5 +665,45 @@ class HelixCodeNavigationTest : BasePlatformTestCase() {
 
         HelixActions.repeatLastMotion(editor, 1)
         caret.offset shouldBe text.indexOf("val b = 2")
+    }
+
+    fun testYankDiagnosticWhenDiagnosticPresent() {
+        val text = "fun main() {\n    val x = 1\n}\n"
+        myFixture.configureByText("test.kt", text)
+        val editor = myFixture.editor
+
+        val markup = editor.markupModel
+        val lineStart = editor.document.getLineStartOffset(1)
+        val lineEnd = editor.document.getLineEndOffset(1)
+        val highlighter = markup.addRangeHighlighter(
+            lineStart,
+            lineEnd,
+            com.intellij.openapi.editor.markup.HighlighterLayer.ERROR,
+            null,
+            com.intellij.openapi.editor.markup.HighlighterTargetArea.EXACT_RANGE,
+        )
+        highlighter.errorStripeTooltip = "Unresolved reference: unresolvedVar"
+
+        editor.caretModel.primaryCaret.moveToOffset(lineStart + 2)
+
+        val result = HelixActions.yankDiagnostic(editor)
+        result.shouldBeTrue()
+
+        val clipboardText = jp.titze.intellij.helix.register.HelixRegisterManager.getFromClipboard()?.text
+        clipboardText shouldBe "Unresolved reference: unresolvedVar"
+        jp.titze.intellij.helix.register.HelixRegisterManager.defaultRegister?.text shouldBe
+            "Unresolved reference: unresolvedVar"
+
+        jp.titze.intellij.helix.register.HelixRegisterManager.clear()
+        jp.titze.intellij.helix.command.HelixCommands.execute("yank-diagnostic", editor)
+        jp.titze.intellij.helix.register.HelixRegisterManager.defaultRegister?.text shouldBe
+            "Unresolved reference: unresolvedVar"
+    }
+
+    fun testYankDiagnosticWhenNoDiagnosticPresent() {
+        myFixture.configureByText("test.kt", "fun main() {}\n")
+        val editor = myFixture.editor
+        val result = HelixActions.yankDiagnostic(editor)
+        result.shouldBeFalse()
     }
 }

@@ -226,6 +226,25 @@ object HelixSelectionActions {
     }
 
     fun rotateSelectionsContents(editor: Editor, forward: Boolean) {
+        transformSelectionsContents(editor) { texts ->
+            val n = texts.size
+            List(n) { i ->
+                if (forward) {
+                    texts[(i - 1 + n) % n]
+                } else {
+                    texts[(i + 1) % n]
+                }
+            }
+        }
+    }
+
+    fun reverseSelectionsContents(editor: Editor) {
+        transformSelectionsContents(editor) { texts ->
+            texts.reversed()
+        }
+    }
+
+    private fun transformSelectionsContents(editor: Editor, transform: (List<String>) -> List<String>) {
         val allCarets = editor.caretModel.allCarets
         if (allCarets.size <= 1) return
         val doc = editor.document
@@ -248,13 +267,7 @@ object HelixSelectionActions {
             if (start < end) doc.getText(TextRange(start, end)) else ""
         }
 
-        val newTexts = List(n) { i ->
-            if (forward) {
-                texts[(i - 1 + n) % n]
-            } else {
-                texts[(i + 1) % n]
-            }
-        }
+        val newTexts = transform(texts)
 
         var delta = 0
         val newRanges = mutableListOf<Pair<Int, Int>>()

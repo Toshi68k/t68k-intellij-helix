@@ -12,6 +12,7 @@ import jp.titze.intellij.helix.jumplist.HelixJumpListService
 import jp.titze.intellij.helix.keymap.HelixKeyHandler
 import jp.titze.intellij.helix.motion.HelixFileNavigation
 import jp.titze.intellij.helix.motion.HelixMotions
+import jp.titze.intellij.helix.register.HelixRegisterManager
 import jp.titze.intellij.helix.settings.HelixLineNavigationMode
 import jp.titze.intellij.helix.settings.HelixSearchUiMode
 import jp.titze.intellij.helix.settings.HelixSettings
@@ -373,6 +374,40 @@ object HelixCommands {
             listOf("rotate_selections_contents_backward"),
             "Cycle text contents backward without moving carets (Alt+()",
         ) { editor -> HelixActions.rotateSelectionsContents(editor, forward = false) },
+        HelixCommandItem(
+            "reverse-selection-contents",
+            listOf("reverse_selection_contents", "reverse-selections-contents", "reverse_selections_contents"),
+            "Reverse text contents between active selections",
+        ) { editor -> HelixActions.reverseSelectionsContents(editor) },
+        HelixCommandItem(
+            "yank-diagnostic",
+            listOf("yank_diagnostic", "yank-diag", "yank_diag"),
+            "Yank diagnostic under cursor to clipboard and active register",
+        ) { editor -> HelixActions.yankDiagnostic(editor) },
+        HelixCommandItem(
+            "reset-diff-change",
+            listOf("reset_diff_change", "diffget", "diffg"),
+            "Revert VCS git hunk under cursor (Vcs.RollbackChangedLines)",
+        ) { editor -> HelixActionDelegate.executeAction("Vcs.RollbackChangedLines", editor) },
+        HelixCommandItem(
+            "reflow",
+            listOf("reflow-paragraph", "fill-paragraph"),
+            "Hard-wrap selected lines or comments to editor column margin (FillParagraph)",
+        ) { editor -> HelixActionDelegate.executeAction("FillParagraph", editor) },
+        HelixCommandItem(
+            "clear-register",
+            listOf("clear_register"),
+            "Clear contents of a specific register or all registers",
+        ) { _ -> HelixRegisterManager.clear() },
+        HelixCommandItem(
+            "file-explorer-buffer",
+            listOf(
+                "file_explorer_buffer",
+                "file-explorer-in-current-buffer-directory",
+                "file_explorer_in_current_buffer_directory",
+            ),
+            "Open project explorer focused on current buffer directory (space + E)",
+        ) { editor -> HelixActionDelegate.executeAction("SelectInProjectView", editor) },
         HelixCommandItem(
             "extend-to-line-bounds",
             listOf("extend_to_line_bounds", "extend_line_below"),
@@ -801,6 +836,26 @@ object HelixCommands {
                 }
                 HelixSettings.instance.lineNavigationMode = next
             }
+
+            "diffget", "diffg", "reset-diff-change", "reset_diff_change" -> {
+                HelixActionDelegate.executeAction("Vcs.RollbackChangedLines", editor)
+            }
+
+            "reflow", "reflow-paragraph", "fill-paragraph" -> {
+                HelixActionDelegate.executeAction("FillParagraph", editor)
+            }
+
+            "file-explorer-buffer", "file_explorer_buffer" -> {
+                HelixActionDelegate.executeAction("SelectInProjectView", editor)
+            }
+
+            "yank-diagnostic", "yank_diagnostic", "yank-diag", "yank_diag" -> {
+                HelixActions.yankDiagnostic(editor)
+            }
+
+            "reverse-selection-contents", "reverse_selection_contents" -> {
+                HelixActions.reverseSelectionsContents(editor)
+            }
         }
     }
 
@@ -842,6 +897,11 @@ object HelixCommands {
         }
         if (baseCmd == "pwd") {
             HelixDirectoryManager.printWorkingDirectory(editor)
+            return true
+        }
+        if (baseCmd == "clear-register" || baseCmd == "clear_register") {
+            val regChar = if (arg.isNotEmpty()) arg.first() else null
+            HelixRegisterManager.clear(regChar)
             return true
         }
         return executeShellCommand(baseCmd, arg, editor)
