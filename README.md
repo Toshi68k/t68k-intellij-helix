@@ -88,7 +88,7 @@ The goal of this plugin is to provide a more complete and polished Helix-like ex
 |-----|-------------|
 | `_` | Trim leading and trailing whitespace from every active selection (`trim_selections`) |
 | `&` | Align multi-caret selections into vertical columns by inserting padding whitespace (`align_selections`) |
-| `Alt+k` | Prompt for regex pattern and keep only matching selections (`keep_selections`) |
+| `K`, `Alt+k` | Prompt for regex pattern and keep only matching selections (`keep_selections`) |
 | `Alt+K` | Prompt for regex pattern and remove matching selections (`remove_selections`) |
 | `Alt+:` | Ensure selections are oriented forward with anchor $\le$ cursor (`ensure_selections_forward`) |
 | `Alt+_` | Merge contiguous (touching) or overlapping selections into single spans (`merge_consecutive_selections`) |
@@ -382,7 +382,6 @@ Whenever a chord prefix key (<kbd>Space</kbd>, `Ctrl+w`, `g`, `m`, `[`, or `]`) 
 - `Alt+a` &rarr; Select all sibling AST elements (`select_all_siblings`)
 - `Alt+I` &rarr; Select all direct children AST elements (`select_all_children`)
 - `Ctrl+c` &rarr; Toggle line comment (`CommentByLineComment`)
-- `K` &rarr; Quick documentation hover (`QuickJavaDoc`)
 
 #### Command Picker (`:`)
 Press `:` in Normal mode to open the interactive **Helix Command Picker**, styled with the signature cyan prompt (`:`), live fuzzy suggestions, and keyboard navigation (<kbd>↑</kbd>/<kbd>↓</kbd>, <kbd>Tab</kbd> to complete, <kbd>Enter</kbd> to execute):
@@ -434,8 +433,9 @@ Press `:` in Normal mode to open the interactive **Helix Command Picker**, style
 - `:decrement` / `:dec` &rarr; Decrement integer under cursor or within selection (`Ctrl+x`)
 - `:trim-selections` / `:trim_selections` &rarr; Trim whitespace from selections (`_`)
 - `:align-selections` / `:align_selections` &rarr; Align selections into columns by inserting whitespace (`&`)
-- `:keep-selections` / `:keep_selections` &rarr; Filter selections by regex, keeping matching (`Alt+k`)
+- `:keep-selections` / `:keep_selections` &rarr; Filter selections by regex, keeping matching (`K` / `Alt+k`)
 - `:remove-selections` / `:remove_selections` &rarr; Filter selections by regex, removing matching (`Alt+K`)
+- `:hover` &rarr; Show hover documentation popup (`space + k`)
 - `:ensure-selections-forward` / `:ensure_selections_forward` &rarr; Flip backward selections forward (`Alt+:`)
 - `:merge-selections` / `:merge_consecutive_selections` &rarr; Merge contiguous or overlapping selections (`Alt+_`)
 - `:merge-all-selections` &rarr; Merge all active selections from earliest to latest into a single selection (`Alt+-`)

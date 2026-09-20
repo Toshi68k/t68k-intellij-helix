@@ -146,7 +146,10 @@ object HelixSelectRegexPopup {
         show(editor, if (isSplit) Mode.SPLIT else Mode.SELECT)
     }
 
+    var lastShownMode: Mode? = null
+
     fun show(editor: Editor, mode: Mode) {
+        lastShownMode = mode
         val app = ApplicationManager.getApplication()
         if (app != null && (app.isUnitTestMode || app.isHeadlessEnvironment)) {
             return

@@ -363,7 +363,10 @@ class HelixPromptBar(private val editor: Editor) : JPanel(BorderLayout(JBUI.scal
             return bar
         }
 
+        var lastShownType: HelixPromptType? = null
+
         fun show(editor: Editor, type: HelixPromptType, count: Int = 1) {
+            lastShownType = type
             val app = ApplicationManager.getApplication()
             if (app != null && (app.isUnitTestMode || app.isHeadlessEnvironment)) {
                 return

@@ -361,7 +361,7 @@
         <action id="jp.titze.intellij.helix.keepSelections"
                 class="jp.titze.intellij.helix.editor.HelixKeepSelectionsAction"
                 text="Helix Keep Selections"
-                description="Filter selections by regex, keeping matching (Alt+k)">
+                description="Filter selections by regex, keeping matching (K / Alt+k)">
             <keyboard-shortcut keymap="$default" first-keystroke="alt K"/>
             <keyboard-shortcut keymap="Mac OS X" first-keystroke="alt K"/>
             <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="alt K"/>

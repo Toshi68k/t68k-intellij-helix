@@ -291,8 +291,13 @@ object HelixCommands {
         HelixCommandItem(
             "keep-selections",
             listOf("keep_selections"),
-            "Filter selections by regex, keeping matching (Alt+k)",
+            "Filter selections by regex, keeping matching (K / Alt+k)",
         ) { editor -> jp.titze.intellij.helix.ui.HelixSearchManager.startKeepSelections(editor) },
+        HelixCommandItem(
+            "hover",
+            listOf("doc"),
+            "Show hover / documentation popup (space + k)",
+        ) { editor -> HelixActionDelegate.executeAction("QuickJavaDoc", editor) },
         HelixCommandItem(
             "remove-selections",
             listOf("remove_selections"),
