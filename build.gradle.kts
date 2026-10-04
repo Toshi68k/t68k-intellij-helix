@@ -58,16 +58,12 @@ tasks.test {
 intellijPlatform {
     pluginConfiguration {
         id = "jp.titze.intellij.helix"
-        name = "Helix Keymap"
+        name = "Helix Keymap (T68k)"
         version = project.version.toString()
         vendor {
             name = "Thorsten Titze"
-            url = "https://titze.jp"
+            url = "https://github.com/Toshi68k"
         }
-        description = """
-            Complete Helix-style modal editing plugin for IntelliJ IDEA.
-            Features selection-first paradigm, multi-caret operations, ActionManager delegation for native IDE navigation and refactoring, and status bar mode indication.
-        """.trimIndent()
         ideaVersion {
             sinceBuild = "242"
             untilBuild = provider { null }

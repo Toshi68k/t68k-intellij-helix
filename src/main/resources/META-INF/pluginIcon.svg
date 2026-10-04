@@ -1,0 +1,181 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="100%" height="100%">
+  <defs>
+    <!-- Background Gradient (JetBrains Light Canvas) -->
+    <linearGradient id="bgGradLight" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF"/>
+      <stop offset="100%" stop-color="#EEF1F6"/>
+    </linearGradient>
+
+    <!-- Canvas Border Highlight -->
+    <linearGradient id="borderGradLight" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#000000" stop-opacity="0.12"/>
+      <stop offset="100%" stop-color="#000000" stop-opacity="0.04"/>
+    </linearGradient>
+
+    <!-- Strand 1: Helix Cyan -> Vivid Azure -> Deep Indigo -->
+    <linearGradient id="helixCoolLight" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00B4D8"/>
+      <stop offset="45%" stop-color="#0066FF"/>
+      <stop offset="100%" stop-color="#4338CA"/>
+    </linearGradient>
+
+    <!-- Strand 2: Amiga Copper Amber -> Vibrant Magenta -> Electric Violet -->
+    <linearGradient id="helixCopperLight" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F59E0B"/>
+      <stop offset="45%" stop-color="#E11D48"/>
+      <stop offset="100%" stop-color="#7C3AED"/>
+    </linearGradient>
+
+    <!-- Light-Theme Selection Rung / Raster Bar Gradients -->
+    <linearGradient id="rasterBarTopLight" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#00B4D8" stop-opacity="0.10"/>
+      <stop offset="50%" stop-color="#0066FF" stop-opacity="0.25"/>
+      <stop offset="100%" stop-color="#00B4D8" stop-opacity="0.10"/>
+    </linearGradient>
+
+    <linearGradient id="rasterBarBottomLight" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#F59E0B" stop-opacity="0.10"/>
+      <stop offset="50%" stop-color="#E11D48" stop-opacity="0.25"/>
+      <stop offset="100%" stop-color="#F59E0B" stop-opacity="0.10"/>
+    </linearGradient>
+
+    <!-- Center Tile Border -->
+    <linearGradient id="tileBorderLight" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#E2E8F0"/>
+      <stop offset="100%" stop-color="#CBD5E1"/>
+    </linearGradient>
+
+    <!-- 3D Ribbon Drop Shadow (Soft Light-Mode Ambient) -->
+    <filter id="crossoverShadowLight" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="3.5" stdDeviation="4.5" flood-color="#0F172A" flood-opacity="0.18"/>
+    </filter>
+
+    <!-- Center Tile Drop Shadow -->
+    <filter id="tileShadowLight" x="-40%" y="-40%" width="180%" height="180%">
+      <feDropShadow dx="0" dy="5" stdDeviation="6" flood-color="#0F172A" flood-opacity="0.14"/>
+    </filter>
+
+    <!-- Ambient Center Core Glow -->
+    <radialGradient id="centerGlowLight" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#0066FF" stop-opacity="0.08"/>
+      <stop offset="100%" stop-color="#0066FF" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- 1. BASE SQUIRCLE -->
+  <rect x="16" y="16" width="224" height="224" rx="52" fill="url(#bgGradLight)"/>
+  <rect x="16" y="16" width="224" height="224" rx="52" fill="none" stroke="url(#borderGradLight)" stroke-width="1.5"/>
+
+  <!-- Radial Core Glow -->
+  <circle cx="128" cy="128" r="90" fill="url(#centerGlowLight)"/>
+
+  <!-- 2. COPPER-BAR / SELECTION RUNGS -->
+  <rect x="94" y="60" width="68" height="6.5" rx="3.25" fill="url(#rasterBarTopLight)"/>
+  <rect x="106" y="74" width="44" height="6.5" rx="3.25" fill="url(#rasterBarTopLight)"/>
+
+  <rect x="106" y="176" width="44" height="6.5" rx="3.25" fill="url(#rasterBarBottomLight)"/>
+  <rect x="94" y="190" width="68" height="6.5" rx="3.25" fill="url(#rasterBarBottomLight)"/>
+
+  <!-- 3. UNDERLAY HELIX STRANDS -->
+  <!-- Copper/Warm Strand (Top-Right down to Mid-Left) -->
+  <path d="M 186 46 C 186 86, 70 90, 70 128"
+        fill="none" stroke="url(#helixCopperLight)" stroke-width="18" stroke-linecap="round"/>
+
+  <!-- Cool Strand (Mid-Right down to Bottom-Left) -->
+  <path d="M 186 128 C 186 166, 70 170, 70 210"
+        fill="none" stroke="url(#helixCoolLight)" stroke-width="18" stroke-linecap="round"/>
+
+  <!-- 4. OVERLAY HELIX STRANDS (Depth Occluded) -->
+  <!-- Cool Strand (Top-Left crossing over to Mid-Right) -->
+  <path d="M 70 46 C 70 86, 186 90, 186 128"
+        fill="none" stroke="url(#helixCoolLight)" stroke-width="18" stroke-linecap="round"
+        filter="url(#crossoverShadowLight)"/>
+
+  <!-- Copper/Warm Strand (Mid-Left crossing over to Bottom-Right) -->
+  <path d="M 70 128 C 70 166, 186 170, 186 210"
+        fill="none" stroke="url(#helixCopperLight)" stroke-width="18" stroke-linecap="round"
+        filter="url(#crossoverShadowLight)"/>
+
+  <!-- 5. LIGHT CERAMIC PRODUCT BADGE WITH AMIGA TOPAZ 8x8 TYPOGRAPHY -->
+  <g filter="url(#tileShadowLight)">
+    <!-- Crisp White Ceramic Tile -->
+    <rect x="82" y="96" width="92" height="60" rx="14" fill="#FFFFFF"/>
+    <rect x="82" y="96" width="92" height="60" rx="14" fill="none" stroke="url(#tileBorderLight)" stroke-width="1.5"/>
+
+    <!-- Topaz 8x8 Bitmap Glyph Matrix (Dark Slate JetBrains Charcoal #18191E) -->
+    <g id="topaz-t68k-light" fill="#18191E" shape-rendering="crispEdges">
+      <!-- ===== Glyph 'T' (Amiga Topaz 1.3 Serif Bracket) ===== -->
+      <!-- Row 0: Top Bar -->
+      <rect x="93" y="109" width="16" height="2"/>
+      <!-- Row 1: Left/Right Downward Serifs + Center Stem -->
+      <rect x="93" y="111" width="2" height="2"/>
+      <rect x="99" y="111" width="4" height="2"/>
+      <rect x="107" y="111" width="2" height="2"/>
+      <!-- Rows 2-5: Center Stem -->
+      <rect x="99" y="113" width="4" height="2"/>
+      <rect x="99" y="115" width="4" height="2"/>
+      <rect x="99" y="117" width="4" height="2"/>
+      <rect x="99" y="119" width="4" height="2"/>
+      <!-- Row 6: Base Serif Foot -->
+      <rect x="95" y="121" width="12" height="2"/>
+
+      <!-- ===== Glyph '6' ===== -->
+      <!-- Row 0: Top Arc -->
+      <rect x="115" y="109" width="8" height="2"/>
+      <!-- Row 1: Arc Corners -->
+      <rect x="113" y="111" width="4" height="2"/>
+      <rect x="123" y="111" width="2" height="2"/>
+      <!-- Row 2: Left Spine -->
+      <rect x="111" y="113" width="4" height="2"/>
+      <!-- Row 3: Middle Divider -->
+      <rect x="111" y="115" width="12" height="2"/>
+      <!-- Rows 4-5: Lower Bowl Sides -->
+      <rect x="111" y="117" width="4" height="2"/>
+      <rect x="123" y="117" width="4" height="2"/>
+      <rect x="111" y="119" width="4" height="2"/>
+      <rect x="123" y="119" width="4" height="2"/>
+      <!-- Row 6: Bottom Arc -->
+      <rect x="113" y="121" width="12" height="2"/>
+
+      <!-- ===== Glyph '8' ===== -->
+      <!-- Row 0: Top Arc -->
+      <rect x="131" y="109" width="12" height="2"/>
+      <!-- Rows 1-2: Upper Bowl Sides -->
+      <rect x="129" y="111" width="4" height="2"/>
+      <rect x="141" y="111" width="4" height="2"/>
+      <rect x="129" y="113" width="4" height="2"/>
+      <rect x="141" y="113" width="4" height="2"/>
+      <!-- Row 3: Waist Divider -->
+      <rect x="131" y="115" width="12" height="2"/>
+      <!-- Rows 4-5: Lower Bowl Sides -->
+      <rect x="129" y="117" width="4" height="2"/>
+      <rect x="141" y="117" width="4" height="2"/>
+      <rect x="129" y="119" width="4" height="2"/>
+      <rect x="141" y="119" width="4" height="2"/>
+      <!-- Row 6: Bottom Arc -->
+      <rect x="131" y="121" width="12" height="2"/>
+
+      <!-- ===== Glyph 'k' (Topaz Lowercase Ascender & Leg Kick) ===== -->
+      <!-- Rows 0-1: Vertical Ascender -->
+      <rect x="147" y="109" width="4" height="2"/>
+      <rect x="147" y="111" width="4" height="2"/>
+      <!-- Row 2: Stem + Upper Branch Tip -->
+      <rect x="147" y="113" width="4" height="2"/>
+      <rect x="157" y="113" width="4" height="2"/>
+      <!-- Row 3: Stem + Inward Diagonal -->
+      <rect x="147" y="115" width="4" height="2"/>
+      <rect x="155" y="115" width="4" height="2"/>
+      <!-- Row 4: Junction -->
+      <rect x="147" y="117" width="10" height="2"/>
+      <!-- Row 5: Stem + Outward Leg -->
+      <rect x="147" y="119" width="4" height="2"/>
+      <rect x="155" y="119" width="4" height="2"/>
+      <!-- Row 6: Base Serif Foot + Kick Serif on Leg -->
+      <rect x="147" y="121" width="6" height="2"/>
+      <rect x="157" y="121" width="6" height="2"/>
+    </g>
+
+    <!-- Terminal Status Underscore (High-Contrast Teal-Cyan) -->
+    <rect x="93" y="136" width="70" height="3" fill="#0099B8" shape-rendering="crispEdges"/>
+  </g>
+</svg>

@@ -1,41 +1,71 @@
 <idea-plugin>
     <id>jp.titze.intellij.helix</id>
-    <name>Helix Keymap</name>
-    <vendor url="https://titze.jp">Thorsten Titze</vendor>
+    <name>Helix Keymap (T68k)</name>
+    <vendor url="https://github.com/Toshi68k">Thorsten Titze</vendor>
 
     <description><![CDATA[
-        A modal editing plugin for IntelliJ IDEA implementing the Helix selection-first paradigm.
-        Features:
-        <ul>
-            <li>Per-editor modal state: Normal, Insert, Select modes with block/line cursor integration.</li>
-            <li>Selection-first motions: f, t, F, T (find/till char across lines, including Enter), w, b, e, ge, x, %, h, j, k, l, gh, gl, gg.</li>
-            <li>Direct selection actions: d (delete), c (change), y (yank), p / P (paste), ;, Alt+;, ,.</li>
-            <li>Surround functionality (Match mode): ms (add surround), mr (replace surround), md (delete surround), mm (match bracket jump).</li>
-            <li>Full native multi-caret support.</li>
-            <li>Deep IntelliJ IDE ActionManager integration:
-                <ul>
-                    <li>g menu: gd, gy, gr, gh, gl, ge, gg</li>
-                    <li>space menu: space+f (SearchEverywhere), space+b (RecentFiles), space+s (Structure), space+S (Symbols), space+a (Intentions/Quick-fixes), space+d (Diagnostics), space+r (Rename)</li>
-                    <li>[d / ]d: Error jumps</li>
-                    <li>Alt+o / Alt+i: Structural AST selection expansion and shrinking</li>
-                    <li>Alt+n: Multi-caret select next occurrence</li>
-                    <li>C / Alt+C: Multi-caret copy selection to next / previous line</li>
-                    <li>Alt+,: Remove primary selection</li>
-                    <li>( / ): Rotate main selection backward / forward</li>
-                    <li>Alt+s: Split selection on newlines</li>
-                    <li>Alt+;: Flip selection cursor and anchor</li>
-                    <li>Ctrl+c: Toggle line comment</li>
-                    <li>Ctrl+f / Ctrl+b (PageDown / PageUp): Page down / up</li>
-                    <li>Ctrl+d / Ctrl+u: Half page down / up</li>
-                    <li>Ctrl+a / Ctrl+x: Increment / decrement integer under cursor or selection</li>
-                    <li>K: Quick documentation hover</li>
-                    <li>=: Reformat code</li>
-                    <li>u / U: Native undo / redo</li>
-                </ul>
-            </li>
-            <li>Lightweight Helix command bar: :w, :q, :wq, :wa, :qa.</li>
-            <li>Status bar mode indicator showing active mode and pending key chords.</li>
-        </ul>
+<p>
+  <b>Helix Keymap</b> brings the modern, selection-first modal editing paradigm of the 
+  <a href="https://helix-editor.com">Helix editor</a> directly into JetBrains IDEs. 
+  Rather than layering fragile vim emulations or static keymaps, this plugin deeply integrates 
+  authentic Helix workflows with IntelliJ's native <code>CaretModel</code>, <code>SelectionModel</code>, 
+  PSI/AST structure, and <code>ActionManager</code>.
+</p>
+
+<h3>The Selection-First Paradigm</h3>
+<p>
+  Traditional modal editors rely on the <i>verb &rarr; object</i> pattern (such as <code>d3w</code>), 
+  forcing you to guess text boundaries before acting. Helix inverts this into <b>selection &rarr; action</b>: 
+  every motion creates or manipulates a visible selection, providing instant visual feedback before executing 
+  a delete, change, or yank.
+</p>
+
+<h3>Key Features</h3>
+<ul>
+  <li>
+    <b>Interactive Which-Key Popups:</b> 
+    Pressing <kbd>Space</kbd>, <code>g</code>, <code>m</code>, <code>[</code>, <code>]</code>, <code>z</code>, <code>Z</code>, <code>Ctrl+w</code>, or <code>"</code> reveals an instant visual chord menu in authentic <code>snake_case</code>. Press <kbd>Tab</kbd> to inspect underlying IntelliJ Action IDs in real time, or bypass the popup entirely with rapid muscle memory.
+  </li>
+  <li>
+    <b>Native Multi-Caret &amp; Piece-Wise Registers:</b> 
+    Add cursors vertically (<code>Alt+C</code> / <code>C</code>), split on regex patterns or newlines (<code>s</code>, <code>S</code>, <code>Alt+s</code>), filter selections (<code>K</code>, <code>Alt+K</code>), and align into columns (<code>&amp;</code>). Supports named (<code>"a</code>–<code>"z</code>), clipboard (<code>"+</code>), black hole (<code>"_</code>), and selection-index (<code>"#</code>) registers with authentic 1:1 piece-wise multi-caret pasting.
+  </li>
+  <li>
+    <b>Surround &amp; PSI Textobjects (<code>m</code> menu):</b> 
+    Add, replace, and delete surround delimiters (<code>ms</code>, <code>mr</code>, <code>md</code>) and match brackets (<code>mm</code>). Select inside and around structural elements including functions (<code>maf</code>), classes (<code>mat</code>), arguments (<code>maa</code>), indent blocks (<code>mii</code>), XML tags (<code>max</code>), tests (<code>maT</code>), and VCS hunks (<code>mag</code>).
+  </li>
+  <li>
+    <b>AST-Aware &amp; Unimpaired Navigation:</b> 
+    Expand/shrink selection by syntax tree scope (<code>Alt+o</code> / <code>Alt+i</code>), navigate AST sibling elements (<code>Alt+p</code> / <code>Alt+n</code>), or jump between functions, diagnostics, comments, and VCS changes via <code>[</code> and <code>]</code> chords.
+  </li>
+  <li>
+    <b>Helix Command Palette &amp; Shell Filters (<code>:</code>):</b> 
+    Signature Helix prompt with live fuzzy completion for buffer actions (<code>:w</code>, <code>:q</code>, <code>:vsp</code>, <code>:format</code>, <code>:sort</code>, <code>:jumps</code>, and DAP debugging) plus external shell piping (<code>|</code>, <code>!</code>, <code>$</code>).
+  </li>
+  <li>
+    <b>Status Bar Widget &amp; Visual Feedback:</b> 
+    Live indicator displaying active mode (<code>NOR</code>, <code>INS</code>, <code>SEL</code>), caret counts, active register, and macro state, complete with flash-on-yank feedback.
+  </li>
+</ul>
+
+<h3>Space Leader Highlights</h3>
+<ul>
+  <li><b><kbd>Space</kbd> + <code>f</code> / <code>b</code></b> &rarr; File picker (<code>GotoFile</code>) / Buffer switcher (<code>RecentFiles</code>)</li>
+  <li><b><kbd>Space</kbd> + <code>/</code></b> &rarr; Project-wide text search (<code>FindInPath</code>)</li>
+  <li><b><kbd>Space</kbd> + <code>s</code> / <code>S</code></b> &rarr; Document structure &amp; workspace symbol search</li>
+  <li><b><kbd>Space</kbd> + <code>a</code> / <code>r</code></b> &rarr; Code actions (<kbd>Alt+Enter</kbd>) &amp; symbol rename</li>
+  <li><b><kbd>Space</kbd> + <code>d</code> / <code>D</code></b> &rarr; Diagnostic inspection &amp; Problems tool window</li>
+  <li><b><kbd>Space</kbd> + <code>w</code></b> &rarr; Window and split layout management</li>
+  <li><b><kbd>Space</kbd> + <code>G</code></b> &rarr; Interactive DAP debugging menu (breakpoints, stepping, eval)</li>
+  <li><b><kbd>Space</kbd> + <code>k</code> / <code>?</code></b> &rarr; Documentation hover &amp; command search</li>
+</ul>
+
+<h3>Configuration</h3>
+<p>
+  Customize vertical navigation (Stock Helix visual lines vs. physical lines), Which-Key hint styles, prompt mode (bottom bar vs. popup dialog), and color themes under:
+  <br/>
+  <b>Preferences / Settings &rarr; Tools &rarr; Helix Keymap</b>
+</p>
     ]]></description>
 
     <depends>com.intellij.modules.platform</depends>
