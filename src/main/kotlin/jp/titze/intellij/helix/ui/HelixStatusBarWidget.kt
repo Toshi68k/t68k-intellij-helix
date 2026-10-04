@@ -13,6 +13,7 @@ import com.intellij.openapi.wm.StatusBar
 import com.intellij.openapi.wm.StatusBarWidget
 import com.intellij.openapi.wm.StatusBarWidgetFactory
 import com.intellij.util.Consumer
+import jp.titze.intellij.helix.HelixBundle
 import jp.titze.intellij.helix.command.HelixCommandPopup
 import jp.titze.intellij.helix.state.HelixEditorState
 import jp.titze.intellij.helix.state.HelixStateManager
@@ -20,7 +21,7 @@ import java.awt.event.MouseEvent
 
 class HelixStatusBarWidgetFactory : StatusBarWidgetFactory {
     override fun getId(): String = HelixStatusBarWidget.WIDGET_ID
-    override fun getDisplayName(): String = "Helix Mode"
+    override fun getDisplayName(): String = HelixBundle.message("status.widget.displayName")
     override fun isAvailable(project: Project): Boolean = true
     override fun createWidget(project: Project): StatusBarWidget = HelixStatusBarWidget(project)
     override fun disposeWidget(widget: StatusBarWidget) = Disposer.dispose(widget)

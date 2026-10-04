@@ -6,6 +6,7 @@ import com.intellij.openapi.util.Key
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBTextField
 import com.intellij.util.ui.JBUI
+import jp.titze.intellij.helix.HelixBundle
 import jp.titze.intellij.helix.action.HelixActions
 import jp.titze.intellij.helix.action.HelixCaretSnapshot
 import jp.titze.intellij.helix.action.HelixShellActions
@@ -186,7 +187,7 @@ class HelixPromptBar(private val editor: Editor) : JPanel(BorderLayout(JBUI.scal
         val query = textField.text
 
         if (currentType.isShellType) {
-            statusLabel.text = if (query.isEmpty()) "" else "press Enter to execute"
+            statusLabel.text = if (query.isEmpty()) "" else HelixBundle.message("prompt.shell.pressEnter")
             statusLabel.foreground = HINT_FG
             return
         }
@@ -271,29 +272,27 @@ class HelixPromptBar(private val editor: Editor) : JPanel(BorderLayout(JBUI.scal
                 else -> Unit
             }
         } catch (e: Exception) {
-            statusLabel.text = "invalid regex"
+            statusLabel.text = HelixBundle.message("prompt.regex.invalid")
             statusLabel.foreground = MATCH_WARN_FG
         }
     }
 
     private fun updateStatusSelectionCount(count: Int) {
-        if (count > 0) {
-            statusLabel.text = "$count selection${if (count == 1) "" else "s"}"
-            statusLabel.foreground = MATCH_SUCCESS_FG
-        } else {
-            statusLabel.text = "0 selections"
-            statusLabel.foreground = MATCH_WARN_FG
+        statusLabel.text = when {
+            count == 1 -> HelixBundle.message("prompt.selections.one")
+            count > 1 -> HelixBundle.message("prompt.selections.count", count)
+            else -> HelixBundle.message("prompt.selections.zero")
         }
+        statusLabel.foreground = if (count > 0) MATCH_SUCCESS_FG else MATCH_WARN_FG
     }
 
     private fun updateStatusText(matches: Int) {
-        if (matches > 0) {
-            statusLabel.text = "$matches match${if (matches == 1) "" else "es"}"
-            statusLabel.foreground = MATCH_SUCCESS_FG
-        } else {
-            statusLabel.text = "0 matches"
-            statusLabel.foreground = MATCH_WARN_FG
+        statusLabel.text = when {
+            matches == 1 -> HelixBundle.message("prompt.matches.one")
+            matches > 1 -> HelixBundle.message("prompt.matches.count", matches)
+            else -> HelixBundle.message("prompt.matches.zero")
         }
+        statusLabel.foreground = if (matches > 0) MATCH_SUCCESS_FG else MATCH_WARN_FG
     }
 
     fun commitAndClose() {

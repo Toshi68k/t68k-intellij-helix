@@ -2,6 +2,7 @@ package jp.titze.intellij.helix.command
 
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.wm.WindowManager
+import jp.titze.intellij.helix.HelixBundle
 import java.io.File
 
 object HelixDirectoryManager {
@@ -23,7 +24,7 @@ object HelixDirectoryManager {
 
     fun printWorkingDirectory(editor: Editor): String {
         val cwd = getCurrentDirectory(editor)
-        val msg = "Working directory: $cwd"
+        val msg = HelixBundle.message("status.directory.cwd", cwd)
         setStatus(editor, msg)
         return msg
     }
@@ -39,7 +40,7 @@ object HelixDirectoryManager {
         if (trimmed == "-") {
             val prev = previousDirectory
             if (prev == null) {
-                val msg = "No previous directory"
+                val msg = HelixBundle.message("status.directory.noPrevious")
                 setStatus(editor, msg)
                 return msg
             }
@@ -49,7 +50,7 @@ object HelixDirectoryManager {
         val resolved = resolvePath(trimmed, getCurrentDirectory(editor))
         val target = File(resolved)
         if (!target.exists() || !target.isDirectory) {
-            val msg = "Directory not found: $trimmed"
+            val msg = HelixBundle.message("status.directory.notFound", trimmed)
             setStatus(editor, msg)
             return msg
         }
@@ -77,7 +78,7 @@ object HelixDirectoryManager {
         val current = getCurrentDirectory(editor)
         previousDirectory = current
         currentDirectory = canonicalPath
-        val msg = "Working directory changed to: $canonicalPath"
+        val msg = HelixBundle.message("status.directory.changed", canonicalPath)
         setStatus(editor, msg)
         return msg
     }

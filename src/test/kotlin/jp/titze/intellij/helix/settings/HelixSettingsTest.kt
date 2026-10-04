@@ -4,6 +4,7 @@ import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.shouldBe
+import jp.titze.intellij.helix.HelixBundle
 import jp.titze.intellij.helix.jumplist.HelixJumpListService
 import jp.titze.intellij.helix.ui.HelixTheme
 
@@ -164,5 +165,41 @@ class HelixSettingsTest : BasePlatformTestCase() {
             jp.titze.intellij.helix.ui.HelixPromptCategory.SEARCH,
         )
         trimmed.size shouldBe 10
+    }
+
+    fun testHelixBundleMessageResolution() {
+        HelixBundle.message("settings.displayName") shouldBe "Helix Keymap"
+        HelixBundle.message("status.widget.displayName") shouldBe "Helix Mode"
+        HelixBundle.message("action.jp.titze.intellij.helix.escape.text") shouldBe "Helix Escape"
+
+        // Prompts & Search
+        HelixBundle.message("prompt.shell.pressEnter") shouldBe "press Enter to execute"
+        HelixBundle.message("prompt.matches.count", 3) shouldBe "3 matches"
+        HelixBundle.message("prompt.selections.count", 2) shouldBe "2 selections"
+        HelixBundle.message("popup.search.matches.found", 5) shouldBe "5 matches found"
+
+        // Popups
+        HelixBundle.message("popup.command.title") shouldBe "COMMAND PALETTE"
+        HelixBundle.message("popup.filePicker.header", "src", 42) shouldBe "Current Dir: src (42 files)"
+        HelixBundle.message("popup.jumplist.title", 10) shouldBe "Jumplist (10)"
+        HelixBundle.message("popup.registers.title", 8) shouldBe "Registers (8)"
+
+        // Which-Key Menus
+        HelixBundle.message("whichKey.menu.space") shouldBe "SPACE MENU"
+        HelixBundle.message("whichKey.menu.goto") shouldBe "GOTO MENU"
+
+        // Notifications & Status
+        HelixBundle.message("notification.jumplist.saved", 25) shouldBe "Jump list: saved (line 25)"
+        HelixBundle.message("status.directory.cwd", "/tmp") shouldBe "Working directory: /tmp"
+        HelixBundle.message("status.shell.piped", 3, "sort") shouldBe "Piped 3 selection(s) through 'sort'"
+    }
+
+    fun testHelixConfigurableDisplayNameAndComponent() {
+        val configurable = HelixConfigurable()
+        configurable.id shouldBe "jp.titze.intellij.helix.settings"
+        configurable.displayName shouldBe "Helix Keymap"
+        val component = configurable.createComponent()
+        assertNotNull(component)
+        configurable.disposeUIResources()
     }
 }

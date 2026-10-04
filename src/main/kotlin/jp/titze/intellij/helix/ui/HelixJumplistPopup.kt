@@ -8,6 +8,7 @@ import com.intellij.ui.components.JBList
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.components.JBTextField
 import com.intellij.util.ui.JBUI
+import jp.titze.intellij.helix.HelixBundle
 import jp.titze.intellij.helix.jumplist.HelixJumpEntry
 import jp.titze.intellij.helix.jumplist.HelixJumpListService
 import java.awt.BorderLayout
@@ -142,11 +143,11 @@ object HelixJumplistPopup {
 
         val headerPanel = JPanel(BorderLayout())
         headerPanel.isOpaque = false
-        val titleLabel = JBLabel("Jumplist (${allEntries.size})").apply {
+        val titleLabel = JBLabel(HelixBundle.message("popup.jumplist.title", allEntries.size)).apply {
             font = JBUI.Fonts.label().deriveFont(Font.BOLD, JBUI.scaleFontSize(13f).toFloat())
             foreground = TITLE_COLOR
         }
-        val cancelHint = JBLabel("ESC to cancel").apply {
+        val cancelHint = JBLabel(HelixBundle.message("popup.jumplist.hint")).apply {
             font = JBUI.Fonts.smallFont()
             foreground = CANCEL_COLOR
         }
@@ -165,7 +166,7 @@ object HelixJumplistPopup {
         textField.background = Color(0, 0, 0, 0)
         textField.foreground = ITEM_TEXT_COLOR
         textField.caretColor = ITEM_TEXT_COLOR
-        textField.emptyText.text = "Filter jumps by file, line or content..."
+        textField.emptyText.text = HelixBundle.message("popup.jumplist.placeholder")
         inputPanel.add(textField, BorderLayout.CENTER)
         inputContainer.add(inputPanel, BorderLayout.CENTER)
         northPanel.add(inputContainer, BorderLayout.CENTER)

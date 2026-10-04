@@ -11,6 +11,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.TextRange
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.wm.WindowManager
+import jp.titze.intellij.helix.HelixBundle
 import jp.titze.intellij.helix.settings.HelixSettings
 
 data class HelixJumpEntry(
@@ -116,7 +117,7 @@ class HelixJumpListService(private val project: Project) {
         currentIndex = entries.size - 1
 
         if (force) {
-            showNotification("Jump list: saved (line $line)")
+            showNotification(HelixBundle.message("notification.jumplist.saved", line))
         }
 
         return true

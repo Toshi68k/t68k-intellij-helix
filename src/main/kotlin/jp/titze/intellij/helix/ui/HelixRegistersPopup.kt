@@ -9,6 +9,7 @@ import com.intellij.ui.components.JBList
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.components.JBTextField
 import com.intellij.util.ui.JBUI
+import jp.titze.intellij.helix.HelixBundle
 import jp.titze.intellij.helix.action.HelixRegisterActions
 import jp.titze.intellij.helix.register.HelixRegisterItem
 import jp.titze.intellij.helix.register.HelixRegisterManager
@@ -163,11 +164,11 @@ object HelixRegistersPopup {
 
     private fun createHeaderPanel(count: Int): JPanel = JPanel(BorderLayout()).apply {
         isOpaque = false
-        val title = JBLabel("Registers ($count)").apply {
+        val title = JBLabel(HelixBundle.message("popup.registers.title", count)).apply {
             font = JBUI.Fonts.label().deriveFont(Font.BOLD, JBUI.scaleFontSize(13f).toFloat())
             foreground = TITLE_COLOR
         }
-        val hint = JBLabel("ESC to cancel • ⏎ to paste").apply {
+        val hint = JBLabel(HelixBundle.message("popup.registers.hint")).apply {
             font = JBUI.Fonts.smallFont()
             foreground = CANCEL_COLOR
         }
@@ -181,7 +182,7 @@ object HelixRegistersPopup {
         background = Color(0, 0, 0, 0)
         foreground = ITEM_TEXT_COLOR
         caretColor = ITEM_TEXT_COLOR
-        emptyText.text = "Filter registers by name, type, or content..."
+        emptyText.text = HelixBundle.message("popup.registers.placeholder")
     }
 
     private fun createInputContainer(textField: JBTextField): JPanel = JPanel(BorderLayout()).apply {

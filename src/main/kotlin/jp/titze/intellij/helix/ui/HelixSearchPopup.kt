@@ -6,6 +6,7 @@ import com.intellij.openapi.ui.popup.JBPopupFactory
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBTextField
 import com.intellij.util.ui.JBUI
+import jp.titze.intellij.helix.HelixBundle
 import jp.titze.intellij.helix.action.HelixActions
 import java.awt.BorderLayout
 import java.awt.Dimension
@@ -153,12 +154,16 @@ object HelixSearchPopup {
         val headerRow = JPanel(BorderLayout())
         headerRow.isOpaque = false
 
-        val titleText = if (backward) "SEARCH BACKWARD" else "SEARCH FORWARD"
+        val titleText = if (backward) {
+            HelixBundle.message("popup.search.title.backward")
+        } else {
+            HelixBundle.message("popup.search.title.forward")
+        }
         val titleLabel = JBLabel(titleText)
         titleLabel.font = Font(Font.SANS_SERIF, Font.BOLD, JBUI.scaleFontSize(10.5f))
         titleLabel.foreground = TITLE_COLOR
 
-        val cancelLabel = JBLabel("ESC TO CANCEL")
+        val cancelLabel = JBLabel(HelixBundle.message("popup.hint.escToCancel"))
         cancelLabel.font = Font(Font.SANS_SERIF, Font.BOLD, JBUI.scaleFontSize(9.5f))
         cancelLabel.foreground = CANCEL_COLOR
 
@@ -179,7 +184,11 @@ object HelixSearchPopup {
         textField.font = Font(Font.MONOSPACED, Font.PLAIN, JBUI.scaleFontSize(13f))
         textField.foreground = HelixTheme.ITEM_TEXT_COLOR
         textField.caretColor = HelixTheme.ITEM_TEXT_COLOR
-        textField.emptyText.text = if (backward) "regex or backward search pattern" else "regex or search pattern"
+        textField.emptyText.text = if (backward) {
+            HelixBundle.message("popup.search.placeholder.backward")
+        } else {
+            HelixBundle.message("popup.search.placeholder.forward")
+        }
         textField.border = BorderFactory.createEmptyBorder()
         textField.isOpaque = false
         inputBox.add(textField, BorderLayout.CENTER)
@@ -200,7 +209,7 @@ object HelixSearchPopup {
         footerRow.isOpaque = false
         footerRow.border = JBUI.Borders.empty(6, 2, 2, 2)
 
-        val statusLabel = JBLabel("Type pattern to search")
+        val statusLabel = JBLabel(HelixBundle.message("popup.search.hint.typePattern"))
         statusLabel.font = Font(Font.SANS_SERIF, Font.PLAIN, JBUI.scaleFontSize(11f))
         statusLabel.foreground = HINT_FG
         footerRow.add(statusLabel, BorderLayout.WEST)
@@ -222,9 +231,9 @@ object HelixSearchPopup {
             return p
         }
 
-        shortcutsHint.add(createKeyHint("Enter", "Search"))
+        shortcutsHint.add(createKeyHint("Enter", HelixBundle.message("popup.hint.search")))
         shortcutsHint.add(Box.createHorizontalStrut(JBUI.scale(10)))
-        shortcutsHint.add(createKeyHint("Esc", "Cancel"))
+        shortcutsHint.add(createKeyHint("Esc", HelixBundle.message("popup.hint.cancel")))
         footerRow.add(shortcutsHint, BorderLayout.EAST)
 
         // Assemble Content Panel
@@ -254,20 +263,19 @@ object HelixSearchPopup {
         fun updateStatus() {
             val query = textField.text
             if (query.isEmpty()) {
-                statusLabel.text = "Type pattern to search"
+                statusLabel.text = HelixBundle.message("popup.search.hint.typePattern")
                 statusLabel.foreground = HINT_FG
             } else {
                 try {
                     val matches = HelixActions.countDocumentRegexMatches(editor, query)
-                    if (matches > 0) {
-                        statusLabel.text = "$matches match${if (matches == 1) "" else "es"} found"
-                        statusLabel.foreground = MATCH_SUCCESS_FG
-                    } else {
-                        statusLabel.text = "0 matches found"
-                        statusLabel.foreground = MATCH_WARN_FG
+                    statusLabel.text = when {
+                        matches == 1 -> HelixBundle.message("popup.search.matches.one")
+                        matches > 1 -> HelixBundle.message("popup.search.matches.found", matches)
+                        else -> HelixBundle.message("popup.search.matches.zero")
                     }
+                    statusLabel.foreground = if (matches > 0) MATCH_SUCCESS_FG else MATCH_WARN_FG
                 } catch (e: Exception) {
-                    statusLabel.text = "Invalid regex"
+                    statusLabel.text = HelixBundle.message("prompt.regex.invalid")
                     statusLabel.foreground = MATCH_WARN_FG
                 }
             }

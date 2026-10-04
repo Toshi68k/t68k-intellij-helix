@@ -14,6 +14,7 @@ import com.intellij.ui.components.JBList
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.components.JBTextField
 import com.intellij.util.ui.JBUI
+import jp.titze.intellij.helix.HelixBundle
 import java.awt.BorderLayout
 import java.awt.Color
 import java.awt.Component
@@ -239,11 +240,11 @@ object HelixDirectoryFilePickerPopup {
 
     private fun createHeaderPanel(dirName: String, count: Int): JPanel = JPanel(BorderLayout()).apply {
         isOpaque = false
-        val title = JBLabel("Current Dir: $dirName ($count files)").apply {
+        val title = JBLabel(HelixBundle.message("popup.filePicker.header", dirName, count)).apply {
             font = JBUI.Fonts.label().deriveFont(Font.BOLD, JBUI.scaleFontSize(13f).toFloat())
             foreground = TITLE_COLOR
         }
-        val hint = JBLabel("ESC to cancel • ⏎ to open").apply {
+        val hint = JBLabel(HelixBundle.message("popup.filePicker.hint")).apply {
             font = JBUI.Fonts.smallFont()
             foreground = CANCEL_COLOR
         }
@@ -257,7 +258,7 @@ object HelixDirectoryFilePickerPopup {
         background = Color(0, 0, 0, 0)
         foreground = ITEM_TEXT_COLOR
         caretColor = ITEM_TEXT_COLOR
-        emptyText.text = "Filter files in current directory..."
+        emptyText.text = HelixBundle.message("popup.filePicker.placeholder")
     }
 
     private fun createInputContainer(textField: JBTextField): JPanel = JPanel(BorderLayout()).apply {
@@ -346,7 +347,7 @@ object HelixDirectoryFilePickerPopup {
     private fun createFooterPanel(): JPanel = JPanel(BorderLayout()).apply {
         isOpaque = false
         border = JBUI.Borders.empty(8, 4, 4, 4)
-        val instructions = JBLabel("⏎ Open • ↑/↓ Select • C-n/C-p Navigate • ESC Cancel").apply {
+        val instructions = JBLabel(HelixBundle.message("popup.filePicker.footer")).apply {
             font = JBUI.Fonts.smallFont()
             foreground = CANCEL_COLOR
         }

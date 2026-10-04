@@ -8,6 +8,7 @@ import com.intellij.ui.components.JBList
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.components.JBTextField
 import com.intellij.util.ui.JBUI
+import jp.titze.intellij.helix.HelixBundle
 import jp.titze.intellij.helix.ui.HelixTheme
 import java.awt.BorderLayout
 import java.awt.Component
@@ -122,12 +123,12 @@ object HelixCommandPopup {
             JBUI.Borders.empty(12, 14, 10, 14),
         )
 
-        val titleLabel = JBLabel("COMMAND PALETTE")
+        val titleLabel = JBLabel(HelixBundle.message("popup.command.title"))
         titleLabel.font = JBUI.Fonts.label().deriveFont(Font.BOLD, JBUI.scaleFontSize(11.5f).toFloat())
         titleLabel.foreground = TITLE_COLOR
         headerPanel.add(titleLabel, BorderLayout.WEST)
 
-        val cancelLabel = JBLabel("ESC TO CANCEL")
+        val cancelLabel = JBLabel(HelixBundle.message("popup.hint.escToCancel"))
         cancelLabel.font = JBUI.Fonts.label().deriveFont(Font.BOLD, JBUI.scaleFontSize(9.5f).toFloat())
         cancelLabel.foreground = CANCEL_COLOR
         headerPanel.add(cancelLabel, BorderLayout.EAST)
@@ -149,7 +150,7 @@ object HelixCommandPopup {
         textField.font = Font(Font.MONOSPACED, Font.PLAIN, JBUI.scaleFontSize(13f))
         textField.foreground = ITEM_TEXT_COLOR
         textField.caretColor = TITLE_COLOR
-        textField.emptyText.text = "type command (w, q, wq, vsp, sp, format, ...)"
+        textField.emptyText.text = HelixBundle.message("popup.command.placeholder")
         inputPanel.add(textField, BorderLayout.CENTER)
         inputContainer.add(inputPanel, BorderLayout.CENTER)
         northPanel.add(inputContainer, BorderLayout.CENTER)
@@ -217,7 +218,7 @@ object HelixCommandPopup {
 
                 descLabel.text = value?.description ?: ""
                 aliasLabel.text = if (value != null && value.aliases.isNotEmpty()) {
-                    "alias: :${value.aliases.joinToString(", :")}"
+                    HelixBundle.message("popup.command.aliasPrefix", value.aliases.joinToString(", :"))
                 } else {
                     ""
                 }
@@ -240,7 +241,7 @@ object HelixCommandPopup {
             BorderFactory.createMatteBorder(1, 0, 0, 0, DIVIDER_COLOR),
             JBUI.Borders.empty(8, 14, 10, 14),
         )
-        val footerLabel = JBLabel("Enter: run | Tab: complete | ↑/↓: select | PgUp/PgDn: page | Esc: cancel")
+        val footerLabel = JBLabel(HelixBundle.message("popup.command.footer"))
         footerLabel.font = JBUI.Fonts.label().deriveFont(Font.BOLD, JBUI.scaleFontSize(9.5f).toFloat())
         footerLabel.foreground = CANCEL_COLOR
         footerPanel.add(footerLabel, BorderLayout.WEST)

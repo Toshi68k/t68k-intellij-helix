@@ -4,6 +4,7 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.util.TextRange
+import jp.titze.intellij.helix.HelixBundle
 import jp.titze.intellij.helix.command.HelixDirectoryManager
 import jp.titze.intellij.helix.shell.HelixShellExecutor
 import jp.titze.intellij.helix.shell.HelixShellResult
@@ -53,7 +54,10 @@ object HelixShellActions {
         }
 
         applyReplacements(editor, results)
-        HelixDirectoryManager.setStatus(editor, "Piped ${results.size} selection(s) through '$command'")
+        HelixDirectoryManager.setStatus(
+            editor,
+            HelixBundle.message("status.shell.piped", results.size, command),
+        )
         return true
     }
 
@@ -153,11 +157,18 @@ object HelixShellActions {
             val res = HelixShellExecutor.execute(command, null, cwd)
             ApplicationManager.getApplication().invokeLater {
                 if (res.exitCode == 0) {
-                    val msg = if (res.stdout.isBlank()) "Command finished: $command" else res.stdout.trim()
+                    val msg = if (res.stdout.isBlank()) {
+                        HelixBundle.message("status.shell.finished", command)
+                    } else {
+                        res.stdout.trim()
+                    }
                     HelixDirectoryManager.setStatus(editor, msg)
                 } else {
                     val errorDetail = res.stderr.ifBlank { "Exit code ${res.exitCode}" }
-                    HelixDirectoryManager.setStatus(editor, "Command failed: ${errorDetail.trim()}")
+                    HelixDirectoryManager.setStatus(
+                        editor,
+                        HelixBundle.message("status.shell.failed", errorDetail.trim()),
+                    )
                 }
             }
         }
@@ -223,6 +234,9 @@ object HelixShellActions {
 
     private fun notifyError(editor: Editor, command: String, res: HelixShellResult) {
         val detail = res.stderr.ifBlank { "Exit code ${res.exitCode}" }.trim()
-        HelixDirectoryManager.setStatus(editor, "Command '$command' failed: $detail")
+        HelixDirectoryManager.setStatus(
+            editor,
+            HelixBundle.message("status.shell.cmdFailed", command, detail),
+        )
     }
 }

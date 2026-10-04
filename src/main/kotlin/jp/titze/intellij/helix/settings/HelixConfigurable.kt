@@ -8,6 +8,7 @@ import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBRadioButton
 import com.intellij.util.ui.JBUI
 import com.intellij.util.ui.UIUtil
+import jp.titze.intellij.helix.HelixBundle
 import jp.titze.intellij.helix.jumplist.HelixJumpListService
 import jp.titze.intellij.helix.ui.HelixPromptHistory
 import java.awt.BorderLayout
@@ -44,7 +45,7 @@ class HelixConfigurable : SearchableConfigurable {
 
     override fun getId(): String = "jp.titze.intellij.helix.settings"
 
-    override fun getDisplayName(): String = "Helix Keymap"
+    override fun getDisplayName(): String = HelixBundle.message("settings.displayName")
 
     override fun createComponent(): JComponent {
         val mainPanel = JPanel(BorderLayout())
@@ -75,13 +76,13 @@ class HelixConfigurable : SearchableConfigurable {
 
     private fun createSearchSection(): JPanel {
         val section = JPanel(BorderLayout(0, 8))
-        val titleLabel = JBLabel("Search and Selection Prompt UI")
+        val titleLabel = JBLabel(HelixBundle.message("settings.search.title"))
         titleLabel.font = JBUI.Fonts.label().asBold()
         section.add(titleLabel, BorderLayout.NORTH)
 
         val radioGroup = ButtonGroup()
-        val stock = JBRadioButton("Stock Helix: Inline bottom bar with live search/select-as-you-type")
-        val popup = JBRadioButton("Popup Dialog: Floating centered dialog window")
+        val stock = JBRadioButton(HelixBundle.message("settings.search.mode.stock"))
+        val popup = JBRadioButton(HelixBundle.message("settings.search.mode.popup"))
         stockHelixRadio = stock
         popupRadio = popup
 
@@ -102,7 +103,7 @@ class HelixConfigurable : SearchableConfigurable {
 
         val spinnerPanel = JPanel(BorderLayout(8, 0))
         spinnerPanel.border = JBUI.Borders.empty(6, 12, 0, 0)
-        val spinnerLabel = JBLabel("Maximum prompt history entries per category (10 - 500):")
+        val spinnerLabel = JBLabel(HelixBundle.message("settings.search.history.label"))
         spinnerPanel.add(spinnerLabel, BorderLayout.WEST)
         spinnerPanel.add(spinner, BorderLayout.CENTER)
 
@@ -111,13 +112,7 @@ class HelixConfigurable : SearchableConfigurable {
         searchOptionsBox.add(optionsPanel)
         searchOptionsBox.add(spinnerPanel)
 
-        val helpLabel = JBLabel(
-            "<html>Applies to <code>/</code> (search), <code>?</code> (reverse search), " +
-                "<code>s</code> (regex select), and <code>S</code> (regex split).<br/>" +
-                "In Stock Helix mode, matches and selections update live in the editor buffer as you type.<br/>" +
-                "Pressing <b>↑</b> / <b>↓</b> cycles through previously entered queries from the history ring.<br/>" +
-                "Pressing <b>Esc</b> cancels and restores original selections.</html>",
-        )
+        val helpLabel = JBLabel(HelixBundle.message("settings.search.help"))
         helpLabel.font = JBUI.Fonts.smallFont()
         helpLabel.foreground = UIUtil.getContextHelpForeground()
         helpLabel.border = JBUI.Borders.emptyLeft(12)
@@ -131,13 +126,13 @@ class HelixConfigurable : SearchableConfigurable {
 
     private fun createLineNavigationSection(): JPanel {
         val section = JPanel(BorderLayout(0, 8))
-        val titleLabel = JBLabel("Line Navigation (Vertical Movement)")
+        val titleLabel = JBLabel(HelixBundle.message("settings.lineNav.title"))
         titleLabel.font = JBUI.Fonts.label().asBold()
         section.add(titleLabel, BorderLayout.NORTH)
 
         val radioGroup = ButtonGroup()
-        val stock = JBRadioButton("Stock Helix: j / k move by visual (screen) line, gj / gk move by physical line")
-        val vim = JBRadioButton("Vim Standard: j / k move by physical document line, gj / gk move by visual line")
+        val stock = JBRadioButton(HelixBundle.message("settings.lineNav.mode.stock"))
+        val vim = JBRadioButton(HelixBundle.message("settings.lineNav.mode.vim"))
         stockLineNavRadio = stock
         vimLineNavRadio = vim
 
@@ -149,11 +144,7 @@ class HelixConfigurable : SearchableConfigurable {
         optionsPanel.add(stock)
         optionsPanel.add(vim)
 
-        val helpLabel = JBLabel(
-            "<html>In Stock Helix, vertical movement (<code>j</code>/<code>k</code>) follows visual screen lines " +
-                "when soft-wrapping is enabled,<br/>while <code>gj</code>/<code>gk</code> jump by physical lines. " +
-                "Vim standard inverts this so <code>j</code>/<code>k</code> moves across physical lines.</html>",
-        )
+        val helpLabel = JBLabel(HelixBundle.message("settings.lineNav.help"))
         helpLabel.font = JBUI.Fonts.smallFont()
         helpLabel.foreground = UIUtil.getContextHelpForeground()
         helpLabel.border = JBUI.Borders.emptyLeft(12)
@@ -167,16 +158,16 @@ class HelixConfigurable : SearchableConfigurable {
 
     private fun createWhichKeySection(): JPanel {
         val section = JPanel(BorderLayout(0, 8))
-        val titleLabel = JBLabel("Which-Key Chord Menus")
+        val titleLabel = JBLabel(HelixBundle.message("settings.whichKey.title"))
         titleLabel.font = JBUI.Fonts.label().asBold()
         section.add(titleLabel, BorderLayout.NORTH)
 
-        val checkBox = JBCheckBox("Enable interactive Which-Key popups on chords (Space, g, m, [, ], z, Ctrl+w)")
+        val checkBox = JBCheckBox(HelixBundle.message("settings.whichKey.enable"))
         enableWhichKeyCheckBox = checkBox
 
         val radioGroup = ButtonGroup()
-        val helixRadio = JBRadioButton("Show Helix command names (snake_case, e.g. file_picker, goto_definition)")
-        val ideaRadio = JBRadioButton("Show IntelliJ action IDs (PascalCase, e.g. GotoFile, GotoDeclaration)")
+        val helixRadio = JBRadioButton(HelixBundle.message("settings.whichKey.hint.helix"))
+        val ideaRadio = JBRadioButton(HelixBundle.message("settings.whichKey.hint.idea"))
         whichKeyHelixCommandRadio = helixRadio
         whichKeyIntelliJActionRadio = ideaRadio
 
@@ -189,8 +180,8 @@ class HelixConfigurable : SearchableConfigurable {
         modesPanel.add(ideaRadio)
 
         val columnsGroup = ButtonGroup()
-        val cols3Radio = JBRadioButton("Up to 3 columns: Compact height (shorter menu for widescreen monitors)")
-        val cols2Radio = JBRadioButton("Up to 2 columns: Classic width (narrower menu)")
+        val cols3Radio = JBRadioButton(HelixBundle.message("settings.whichKey.cols.3"))
+        val cols2Radio = JBRadioButton(HelixBundle.message("settings.whichKey.cols.2"))
         whichKey3ColsRadio = cols3Radio
         whichKey2ColsRadio = cols2Radio
 
@@ -213,11 +204,7 @@ class HelixConfigurable : SearchableConfigurable {
         optionsPanel.add(checkBox, BorderLayout.NORTH)
         optionsPanel.add(settingsBox, BorderLayout.CENTER)
 
-        val helpLabel = JBLabel(
-            "<html>When enabled, pausing on a chord prefix displays an interactive popup menu with actions.<br/>" +
-                "In the popup, pressing <b>Tab</b> switches between Helix commands and IntelliJ action IDs.<br/>" +
-                "Hovering over any row reveals its underlying IntelliJ Action ID in a tooltip.</html>",
-        )
+        val helpLabel = JBLabel(HelixBundle.message("settings.whichKey.help"))
         helpLabel.font = JBUI.Fonts.smallFont()
         helpLabel.foreground = UIUtil.getContextHelpForeground()
         helpLabel.border = JBUI.Borders.emptyLeft(12)
@@ -231,7 +218,7 @@ class HelixConfigurable : SearchableConfigurable {
 
     private fun createJumpListSection(): JPanel {
         val section = JPanel(BorderLayout(0, 8))
-        val titleLabel = JBLabel("Jump List")
+        val titleLabel = JBLabel(HelixBundle.message("settings.jumpList.title"))
         titleLabel.font = JBUI.Fonts.label().asBold()
         section.add(titleLabel, BorderLayout.NORTH)
 
@@ -244,14 +231,11 @@ class HelixConfigurable : SearchableConfigurable {
 
         val spinnerPanel = JPanel(BorderLayout(8, 0))
         spinnerPanel.border = JBUI.Borders.emptyLeft(12)
-        val spinnerLabel = JBLabel("Maximum jump list entries per project (10 - 1000):")
+        val spinnerLabel = JBLabel(HelixBundle.message("settings.jumpList.history.label"))
         spinnerPanel.add(spinnerLabel, BorderLayout.WEST)
         spinnerPanel.add(spinner, BorderLayout.CENTER)
 
-        val helpLabel = JBLabel(
-            "<html>Controls how many jump points are remembered for <code>Ctrl-O</code>, <code>Ctrl-I</code>, " +
-                "and <code>:jumps</code>.<br/>Older jump locations beyond this limit are automatically discarded.</html>",
-        )
+        val helpLabel = JBLabel(HelixBundle.message("settings.jumpList.help"))
         helpLabel.font = JBUI.Fonts.smallFont()
         helpLabel.foreground = UIUtil.getContextHelpForeground()
         helpLabel.border = JBUI.Borders.emptyLeft(12)
@@ -265,14 +249,14 @@ class HelixConfigurable : SearchableConfigurable {
 
     private fun createThemeSection(): JPanel {
         val section = JPanel(BorderLayout(0, 8))
-        val titleLabel = JBLabel("Color Theme")
+        val titleLabel = JBLabel(HelixBundle.message("settings.theme.title"))
         titleLabel.font = JBUI.Fonts.label().asBold()
         section.add(titleLabel, BorderLayout.NORTH)
 
         val radioGroup = ButtonGroup()
-        val sync = JBRadioButton("Sync with IDE: Automatically match IntelliJ's light / dark appearance")
-        val dark = JBRadioButton("Dark: Always use Helix dark theme (deep cyan / charcoal palette)")
-        val light = JBRadioButton("Light: Always use Helix light theme (light teal / parchment palette)")
+        val sync = JBRadioButton(HelixBundle.message("settings.theme.mode.sync"))
+        val dark = JBRadioButton(HelixBundle.message("settings.theme.mode.dark"))
+        val light = JBRadioButton(HelixBundle.message("settings.theme.mode.light"))
 
         syncThemeRadio = sync
         darkThemeRadio = dark
@@ -288,9 +272,7 @@ class HelixConfigurable : SearchableConfigurable {
         optionsPanel.add(dark)
         optionsPanel.add(light)
 
-        val helpLabel = JBLabel(
-            "<html>Applies to Which-Key popups, Command palette, Jump list, and Search / Regex prompts.</html>",
-        )
+        val helpLabel = JBLabel(HelixBundle.message("settings.theme.help"))
         helpLabel.font = JBUI.Fonts.smallFont()
         helpLabel.foreground = UIUtil.getContextHelpForeground()
         helpLabel.border = JBUI.Borders.emptyLeft(12)
@@ -304,24 +286,18 @@ class HelixConfigurable : SearchableConfigurable {
 
     private fun createRegistersSection(): JPanel {
         val section = JPanel(BorderLayout(0, 8))
-        val titleLabel = JBLabel("Registers and Clipboard")
+        val titleLabel = JBLabel(HelixBundle.message("settings.registers.title"))
         titleLabel.font = JBUI.Fonts.label().asBold()
         section.add(titleLabel, BorderLayout.NORTH)
 
-        val checkBox = JBCheckBox("Sync default register with system clipboard (Helix behavior)")
+        val checkBox = JBCheckBox(HelixBundle.message("settings.registers.syncClipboard"))
         syncClipboardCheckBox = checkBox
 
         val optionsPanel = JPanel(BorderLayout())
         optionsPanel.border = JBUI.Borders.emptyLeft(12)
         optionsPanel.add(checkBox, BorderLayout.NORTH)
 
-        val helpLabel = JBLabel(
-            "<html>When enabled, default yank (<code>y</code>) and delete (<code>d</code>/<code>c</code>) " +
-                "synchronize with the OS clipboard.<br/>" +
-                "Use <code>\"_d</code> or <code>\"_c</code> to delete/change without overwriting the clipboard.<br/>" +
-                "When disabled, default yank/delete stay in the internal register, and " +
-                "<code>Space+y</code> / <code>Space+p</code> (or <code>\"+</code>) target the clipboard.</html>",
-        )
+        val helpLabel = JBLabel(HelixBundle.message("settings.registers.help"))
         helpLabel.font = JBUI.Fonts.smallFont()
         helpLabel.foreground = UIUtil.getContextHelpForeground()
         helpLabel.border = JBUI.Borders.emptyLeft(12)
@@ -335,21 +311,18 @@ class HelixConfigurable : SearchableConfigurable {
 
     private fun createEditorBehaviorSection(): JPanel {
         val section = JPanel(BorderLayout(0, 8))
-        val titleLabel = JBLabel("Editor Behavior")
+        val titleLabel = JBLabel(HelixBundle.message("settings.editorBehavior.title"))
         titleLabel.font = JBUI.Fonts.label().asBold()
         section.add(titleLabel, BorderLayout.NORTH)
 
-        val checkBox = JBCheckBox("Reset to Normal mode when opening files or switching tabs")
+        val checkBox = JBCheckBox(HelixBundle.message("settings.editorBehavior.resetToNormal"))
         resetToNormalCheckBox = checkBox
 
         val optionsPanel = JPanel(BorderLayout())
         optionsPanel.border = JBUI.Borders.emptyLeft(12)
         optionsPanel.add(checkBox, BorderLayout.NORTH)
 
-        val helpLabel = JBLabel(
-            "<html>When enabled, opening a file or switching editor tabs automatically enters " +
-                "<b>Normal</b> mode.<br/>When disabled, each editor tab retains its last active mode.</html>",
-        )
+        val helpLabel = JBLabel(HelixBundle.message("settings.editorBehavior.help"))
         helpLabel.font = JBUI.Fonts.smallFont()
         helpLabel.foreground = UIUtil.getContextHelpForeground()
         helpLabel.border = JBUI.Borders.emptyLeft(12)
