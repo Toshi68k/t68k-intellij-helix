@@ -4,6 +4,7 @@ import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.shouldBe
+import jp.titze.intellij.helix.HelixBundle
 import jp.titze.intellij.helix.jumplist.HelixJumpListService
 import jp.titze.intellij.helix.ui.HelixTheme
 
@@ -164,5 +165,20 @@ class HelixSettingsTest : BasePlatformTestCase() {
             jp.titze.intellij.helix.ui.HelixPromptCategory.SEARCH,
         )
         trimmed.size shouldBe 10
+    }
+
+    fun testHelixBundleMessageResolution() {
+        HelixBundle.message("settings.displayName") shouldBe "Helix Keymap"
+        HelixBundle.message("status.widget.displayName") shouldBe "Helix Mode"
+        HelixBundle.message("action.jp.titze.intellij.helix.escape.text") shouldBe "Helix Escape"
+    }
+
+    fun testHelixConfigurableDisplayNameAndComponent() {
+        val configurable = HelixConfigurable()
+        configurable.id shouldBe "jp.titze.intellij.helix.settings"
+        configurable.displayName shouldBe "Helix Keymap"
+        val component = configurable.createComponent()
+        assertNotNull(component)
+        configurable.disposeUIResources()
     }
 }
