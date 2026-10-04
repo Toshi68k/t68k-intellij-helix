@@ -1,5 +1,6 @@
 package jp.titze.intellij.helix.ui
 
+import jp.titze.intellij.helix.HelixBundle
 import jp.titze.intellij.helix.settings.HelixLineNavigationMode
 import jp.titze.intellij.helix.settings.HelixSettings
 
@@ -216,19 +217,19 @@ object HelixWhichKeyMenus {
     )
 
     fun getMenu(prefix: String): Pair<String, List<WhichKeyItem>>? = when (prefix) {
-        " " -> "SPACE MENU" to spaceItems
-        " G", "space G", "G", "dap" -> "DEBUG (DAP) MENU" to debugItems
-        "g" -> "GOTO MENU" to gotoItems
-        "m" -> "MATCH MENU" to matchItems
-        "ma" -> "SELECT AROUND" to textObjectItems
-        "mi" -> "SELECT INSIDE" to textObjectItems
-        "[" -> "JUMP BACK MENU" to bracketOpenItems
-        "]" -> "JUMP FORWARD MENU" to bracketCloseItems
-        "z" -> "VIEW MENU" to viewItems
-        "Z" -> "STICKY VIEW MENU" to viewItems
-        "C-w", "Ctrl+w", "\u0017", " w", "space w" -> "WINDOW MENU" to windowItems
-        "\"" -> "REGISTERS" to registerItems
-        "C-r", "Ctrl+r", "\u0012" -> "INSERT REGISTER" to registerItems
+        " " -> HelixBundle.message("whichKey.menu.space") to spaceItems
+        " G", "space G", "G", "dap" -> HelixBundle.message("whichKey.menu.debug") to debugItems
+        "g" -> HelixBundle.message("whichKey.menu.goto") to gotoItems
+        "m" -> HelixBundle.message("whichKey.menu.match") to matchItems
+        "ma" -> HelixBundle.message("whichKey.menu.selectAround") to textObjectItems
+        "mi" -> HelixBundle.message("whichKey.menu.selectInside") to textObjectItems
+        "[" -> HelixBundle.message("whichKey.menu.jumpBack") to bracketOpenItems
+        "]" -> HelixBundle.message("whichKey.menu.jumpForward") to bracketCloseItems
+        "z" -> HelixBundle.message("whichKey.menu.view") to viewItems
+        "Z" -> HelixBundle.message("whichKey.menu.stickyView") to viewItems
+        "C-w", "Ctrl+w", "\u0017", " w", "space w" -> HelixBundle.message("whichKey.menu.window") to windowItems
+        "\"" -> HelixBundle.message("whichKey.menu.registers") to registerItems
+        "C-r", "Ctrl+r", "\u0012" -> HelixBundle.message("whichKey.menu.insertRegister") to registerItems
         else -> null
     }
 }

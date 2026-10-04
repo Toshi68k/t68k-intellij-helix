@@ -6,6 +6,7 @@ import com.intellij.openapi.ui.popup.JBPopupFactory
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBTextField
 import com.intellij.util.ui.JBUI
+import jp.titze.intellij.helix.HelixBundle
 import jp.titze.intellij.helix.action.HelixActions
 import jp.titze.intellij.helix.action.HelixCaretUtils
 import java.awt.BorderLayout
@@ -169,16 +170,16 @@ object HelixSelectRegexPopup {
         headerRow.isOpaque = false
 
         val titleText = when (mode) {
-            Mode.SPLIT -> "SPLIT SELECTION"
-            Mode.KEEP -> "KEEP SELECTIONS"
-            Mode.REMOVE -> "REMOVE SELECTIONS"
-            Mode.SELECT -> "SELECT REGEX"
+            Mode.SPLIT -> HelixBundle.message("popup.selectRegex.title.split")
+            Mode.KEEP -> HelixBundle.message("popup.selectRegex.title.keep")
+            Mode.REMOVE -> HelixBundle.message("popup.selectRegex.title.remove")
+            Mode.SELECT -> HelixBundle.message("popup.selectRegex.title.select")
         }
         val titleLabel = JBLabel(titleText)
         titleLabel.font = Font(Font.SANS_SERIF, Font.BOLD, JBUI.scaleFontSize(10.5f))
         titleLabel.foreground = TITLE_COLOR
 
-        val cancelLabel = JBLabel("ESC TO CANCEL")
+        val cancelLabel = JBLabel(HelixBundle.message("popup.hint.escToCancel"))
         cancelLabel.font = Font(Font.SANS_SERIF, Font.BOLD, JBUI.scaleFontSize(9.5f))
         cancelLabel.foreground = CANCEL_COLOR
 
@@ -206,10 +207,10 @@ object HelixSelectRegexPopup {
         textField.foreground = HelixTheme.ITEM_TEXT_COLOR
         textField.caretColor = HelixTheme.ITEM_TEXT_COLOR
         textField.emptyText.text = when (mode) {
-            Mode.SPLIT -> "regex pattern to split selection on"
-            Mode.KEEP -> "regex pattern to keep matching selections"
-            Mode.REMOVE -> "regex pattern to drop matching selections"
-            Mode.SELECT -> "regex pattern to select within selection"
+            Mode.SPLIT -> HelixBundle.message("popup.selectRegex.placeholder.split")
+            Mode.KEEP -> HelixBundle.message("popup.selectRegex.placeholder.keep")
+            Mode.REMOVE -> HelixBundle.message("popup.selectRegex.placeholder.remove")
+            Mode.SELECT -> HelixBundle.message("popup.selectRegex.placeholder.select")
         }
         textField.border = BorderFactory.createEmptyBorder()
         textField.isOpaque = false
@@ -231,7 +232,7 @@ object HelixSelectRegexPopup {
         footerRow.isOpaque = false
         footerRow.border = JBUI.Borders.empty(6, 2, 2, 2)
 
-        val statusLabel = JBLabel("Type regex pattern")
+        val statusLabel = JBLabel(HelixBundle.message("popup.selectRegex.hint.typePattern"))
         statusLabel.font = Font(Font.SANS_SERIF, Font.PLAIN, JBUI.scaleFontSize(11f))
         statusLabel.foreground = HINT_FG
         footerRow.add(statusLabel, BorderLayout.WEST)
@@ -253,9 +254,9 @@ object HelixSelectRegexPopup {
             return p
         }
 
-        shortcutsHint.add(createKeyHint("Enter", "Apply"))
+        shortcutsHint.add(createKeyHint("Enter", HelixBundle.message("popup.hint.apply")))
         shortcutsHint.add(Box.createHorizontalStrut(JBUI.scale(10)))
-        shortcutsHint.add(createKeyHint("Esc", "Cancel"))
+        shortcutsHint.add(createKeyHint("Esc", HelixBundle.message("popup.hint.cancel")))
         footerRow.add(shortcutsHint, BorderLayout.EAST)
 
         // Assemble Content Panel
@@ -285,7 +286,7 @@ object HelixSelectRegexPopup {
         fun updateStatus() {
             val query = textField.text
             if (query.isEmpty()) {
-                statusLabel.text = "Type regex pattern"
+                statusLabel.text = HelixBundle.message("popup.selectRegex.hint.typePattern")
                 statusLabel.foreground = HINT_FG
             } else {
                 try {
@@ -293,30 +294,46 @@ object HelixSelectRegexPopup {
                     when (mode) {
                         Mode.SELECT -> {
                             val matches = HelixActions.countRegexMatchesInSnapshot(editor, query, snapshot)
-                            statusLabel.text = "$matches match${if (matches == 1) "" else "es"} in selection"
+                            statusLabel.text = when {
+                                matches == 1 -> HelixBundle.message("popup.selectRegex.status.inSelection.one")
+                                matches > 1 -> HelixBundle.message("popup.selectRegex.status.inSelection", matches)
+                                else -> HelixBundle.message("popup.selectRegex.status.inSelection.zero")
+                            }
                             statusLabel.foreground = if (matches > 0) MATCH_SUCCESS_FG else MATCH_WARN_FG
                         }
 
                         Mode.SPLIT -> {
                             val matches = HelixActions.countRegexMatchesInSnapshot(editor, query, snapshot)
-                            statusLabel.text = "$matches match${if (matches == 1) "" else "es"} to split on"
+                            statusLabel.text = when {
+                                matches == 1 -> HelixBundle.message("popup.selectRegex.status.toSplit.one")
+                                matches > 1 -> HelixBundle.message("popup.selectRegex.status.toSplit", matches)
+                                else -> HelixBundle.message("popup.selectRegex.status.toSplit.zero")
+                            }
                             statusLabel.foreground = if (matches > 0) MATCH_SUCCESS_FG else MATCH_WARN_FG
                         }
 
                         Mode.KEEP -> {
                             val count = HelixActions.countFilterSelectionsMatches(editor, query, true, snapshot)
-                            statusLabel.text = "$count matching selection${if (count == 1) "" else "s"}"
+                            statusLabel.text = when {
+                                count == 1 -> HelixBundle.message("popup.selectRegex.status.matchingSelections.one")
+                                count > 1 -> HelixBundle.message("popup.selectRegex.status.matchingSelections", count)
+                                else -> HelixBundle.message("popup.selectRegex.status.matchingSelections.zero")
+                            }
                             statusLabel.foreground = if (count > 0) MATCH_SUCCESS_FG else MATCH_WARN_FG
                         }
 
                         Mode.REMOVE -> {
                             val count = HelixActions.countFilterSelectionsMatches(editor, query, false, snapshot)
-                            statusLabel.text = "$count remaining selection${if (count == 1) "" else "s"}"
+                            statusLabel.text = when {
+                                count == 1 -> HelixBundle.message("popup.selectRegex.status.remainingSelections.one")
+                                count > 1 -> HelixBundle.message("popup.selectRegex.status.remainingSelections", count)
+                                else -> HelixBundle.message("popup.selectRegex.status.remainingSelections.zero")
+                            }
                             statusLabel.foreground = if (count > 0) MATCH_SUCCESS_FG else MATCH_WARN_FG
                         }
                     }
                 } catch (e: Exception) {
-                    statusLabel.text = "Invalid regex"
+                    statusLabel.text = HelixBundle.message("prompt.regex.invalid")
                     statusLabel.foreground = MATCH_WARN_FG
                 }
             }

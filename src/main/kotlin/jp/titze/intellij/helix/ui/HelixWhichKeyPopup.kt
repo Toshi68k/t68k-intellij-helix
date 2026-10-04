@@ -9,6 +9,7 @@ import com.intellij.openapi.ui.popup.LightweightWindowEvent
 import com.intellij.ui.awt.RelativePoint
 import com.intellij.ui.components.JBLabel
 import com.intellij.util.ui.JBUI
+import jp.titze.intellij.helix.HelixBundle
 import jp.titze.intellij.helix.keymap.HelixKeyHandler
 import jp.titze.intellij.helix.settings.HelixSettings
 import jp.titze.intellij.helix.settings.WhichKeyHintMode
@@ -209,19 +210,19 @@ object HelixWhichKeyPopup {
         }
 
         fun hintBadgeText(mode: WhichKeyHintMode) = if (mode == WhichKeyHintMode.HELIX_COMMAND) {
-            "TAB: HELIX"
+            HelixBundle.message("whichKey.badge.helix")
         } else {
-            "TAB: INTELLIJ"
+            HelixBundle.message("whichKey.badge.intellij")
         }
 
         val toggleModeLabel = JBLabel(hintBadgeText(activeHintMode)).apply {
             font = JBUI.Fonts.label().deriveFont(Font.BOLD, JBUI.scaleFontSize(9.5f).toFloat())
             foreground = TITLE_COLOR
             cursor = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
-            toolTipText = "Click or press Tab to switch between Helix command names and IntelliJ action IDs"
+            toolTipText = HelixBundle.message("whichKey.tooltip.toggleMode")
         }
 
-        val cancelLabel = JBLabel("ESC TO CANCEL").apply {
+        val cancelLabel = JBLabel(HelixBundle.message("popup.hint.escToCancel")).apply {
             font = JBUI.Fonts.label().deriveFont(Font.BOLD, JBUI.scaleFontSize(9.5f).toFloat())
             foreground = CANCEL_COLOR
         }
