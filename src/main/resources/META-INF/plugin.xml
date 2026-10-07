@@ -4,6 +4,10 @@
     <vendor url="https://github.com/Toshi68k">Thorsten Titze</vendor>
 
     <description><![CDATA[
+<div style="background-color: #fff9db; border: 1px solid #f59f00; padding: 10px 14px; margin-bottom: 14px; color: #212529;">
+  <b>Beta Notice:</b> I have been using this plugin for real work for several weeks; however, it is considered <b>beta</b> and might still contain bugs or incorrect behavior. Feedback and issue reports are warmly welcomed on <a href="https://github.com/Toshi68k/t68k-intellij-helix/issues">GitHub</a>, but please don't flood me with AI slop!
+</div>
+
 <p>
   <b>Helix Keymap</b> brings the modern, selection-first modal editing paradigm of the 
   <a href="https://helix-editor.com">Helix editor</a> directly into JetBrains IDEs. 
@@ -14,8 +18,8 @@
 
 <h3>The Selection-First Paradigm</h3>
 <p>
-  Traditional modal editors rely on the <i>verb &rarr; object</i> pattern (such as <code>d3w</code>), 
-  forcing you to guess text boundaries before acting. Helix inverts this into <b>selection &rarr; action</b>: 
+  Traditional modal editors rely on the <i>verb → object</i> pattern (such as <code>d3w</code>), 
+  forcing you to guess text boundaries before acting. Helix inverts this into <b>selection → action</b>: 
   every motion creates or manipulates a visible selection, providing instant visual feedback before executing 
   a delete, change, or yank.
 </p>
@@ -50,21 +54,21 @@
 
 <h3>Space Leader Highlights</h3>
 <ul>
-  <li><b><kbd>Space</kbd> + <code>f</code> / <code>b</code></b> &rarr; File picker (<code>GotoFile</code>) / Buffer switcher (<code>RecentFiles</code>)</li>
-  <li><b><kbd>Space</kbd> + <code>/</code></b> &rarr; Project-wide text search (<code>FindInPath</code>)</li>
-  <li><b><kbd>Space</kbd> + <code>s</code> / <code>S</code></b> &rarr; Document structure &amp; workspace symbol search</li>
-  <li><b><kbd>Space</kbd> + <code>a</code> / <code>r</code></b> &rarr; Code actions (<kbd>Alt+Enter</kbd>) &amp; symbol rename</li>
-  <li><b><kbd>Space</kbd> + <code>d</code> / <code>D</code></b> &rarr; Diagnostic inspection &amp; Problems tool window</li>
-  <li><b><kbd>Space</kbd> + <code>w</code></b> &rarr; Window and split layout management</li>
-  <li><b><kbd>Space</kbd> + <code>G</code></b> &rarr; Interactive DAP debugging menu (breakpoints, stepping, eval)</li>
-  <li><b><kbd>Space</kbd> + <code>k</code> / <code>?</code></b> &rarr; Documentation hover &amp; command search</li>
+  <li><b><kbd>Space</kbd> + <code>f</code> / <code>b</code></b> → File picker (<code>GotoFile</code>) / Buffer switcher (<code>RecentFiles</code>)</li>
+  <li><b><kbd>Space</kbd> + <code>/</code></b> → Project-wide text search (<code>FindInPath</code>)</li>
+  <li><b><kbd>Space</kbd> + <code>s</code> / <code>S</code></b> → Document structure &amp; workspace symbol search</li>
+  <li><b><kbd>Space</kbd> + <code>a</code> / <code>r</code></b> → Code actions (<kbd>Alt+Enter</kbd>) &amp; symbol rename</li>
+  <li><b><kbd>Space</kbd> + <code>d</code> / <code>D</code></b> → Diagnostic inspection &amp; Problems tool window</li>
+  <li><b><kbd>Space</kbd> + <code>w</code></b> → Window and split layout management</li>
+  <li><b><kbd>Space</kbd> + <code>G</code></b> → Interactive DAP debugging menu (breakpoints, stepping, eval)</li>
+  <li><b><kbd>Space</kbd> + <code>k</code> / <code>?</code></b> → Documentation hover &amp; command search</li>
 </ul>
 
 <h3>Configuration &amp; Ctrl Handling</h3>
 <p>
   Customize activation scope (diff viewers, console, commit messages), platform-aware Ctrl key routing (Helix vs. IDE ownership per mode), Which-Key hint styles, vertical navigation (Stock Helix visual vs. physical lines), and color themes under:
   <br/>
-  <b>Settings &rarr; Tools &rarr; Helix Keymap</b>
+  <b>Settings → Tools → Helix Keymap</b>
 </p>
 
 <h3>Documentation &amp; Support</h3>

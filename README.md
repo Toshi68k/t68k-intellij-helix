@@ -16,6 +16,9 @@ combining the authentic Helix selection-first workflow with native IntelliJ IDE 
 - **Vendor**: [Thorsten Titze](https://github.com/Toshi68k)
 - **Target IDE**: IntelliJ IDEA 2025.1+ (Community & Ultimate) and JetBrains IDEs
 
+> [!WARNING]
+> **Beta Notice**: I have been using this plugin daily for real work for several weeks; however, it is still considered **beta** software and might contain bugs or incorrect behavior. Feedback and issue reports are warmly welcomed on [GitHub Issues](https://github.com/Toshi68k/t68k-intellij-helix/issues), but please don't flood me with AI slop!
+
 ---
 
 ## Key Features
@@ -706,7 +709,7 @@ t68k-intellij-helix/
 This simple extension was written out of personal need for a non-frills, feature complete and somewhat cool
 looking Helix binding Intellij IDEA extension.
 
-Pull requests, bug reports, and suggestions are welcome!
+Pull requests, bug reports, and suggestions are always welcome!
 
 ---
 
