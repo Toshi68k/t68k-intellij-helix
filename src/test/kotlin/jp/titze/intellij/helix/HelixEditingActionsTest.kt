@@ -18,12 +18,14 @@ class HelixEditingActionsTest : BasePlatformTestCase() {
 
     override fun setUp() {
         super.setUp()
+        jp.titze.intellij.helix.keymap.HelixShortcutPolicy.macOverride = true
         HelixRegisterManager.clear()
         jp.titze.intellij.helix.motion.HelixMotionHistory.lastMotion = null
         HelixInsertTracker.reset()
     }
 
     override fun tearDown() {
+        jp.titze.intellij.helix.keymap.HelixShortcutPolicy.macOverride = null
         HelixRegisterManager.clear()
         jp.titze.intellij.helix.motion.HelixMotionHistory.lastMotion = null
         HelixInsertTracker.reset()
