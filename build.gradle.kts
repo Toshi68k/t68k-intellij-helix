@@ -62,6 +62,11 @@ tasks.named("detektTest") {
 
 tasks.test {
     useJUnitPlatform()
+    testLogging {
+        events("failed", "standardError")
+        exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
+        showStackTraces = true
+    }
 }
 
 changelog {
