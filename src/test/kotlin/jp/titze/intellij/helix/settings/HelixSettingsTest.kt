@@ -6,6 +6,9 @@ import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.shouldBe
 import jp.titze.intellij.helix.HelixBundle
 import jp.titze.intellij.helix.jumplist.HelixJumpListService
+import jp.titze.intellij.helix.keymap.HelixKeyContext
+import jp.titze.intellij.helix.keymap.HelixKeyOwner
+import jp.titze.intellij.helix.keymap.HelixShortcutPolicy
 import jp.titze.intellij.helix.ui.HelixTheme
 
 class HelixSettingsTest : BasePlatformTestCase() {
@@ -19,6 +22,7 @@ class HelixSettingsTest : BasePlatformTestCase() {
         settings.promptHistoryMaxEntries = HelixSettings.DEFAULT_PROMPT_HISTORY_MAX_ENTRIES
         settings.colorTheme = HelixColorTheme.SYNC
         settings.resetToNormalOnTabSwitch = true
+        settings.ctrlKeyOverrides = emptyMap()
         jp.titze.intellij.helix.ui.HelixPromptHistory.clear()
         super.tearDown()
     }
@@ -200,6 +204,107 @@ class HelixSettingsTest : BasePlatformTestCase() {
         configurable.displayName shouldBe "Helix Keymap"
         val component = configurable.createComponent()
         assertNotNull(component)
+        configurable.disposeUIResources()
+    }
+
+    fun testActivationScopeSettings() {
+        val settings = HelixSettings.instance
+        settings.enabled.shouldBeTrue()
+        settings.activateInDiff.shouldBeTrue()
+        settings.activateInConsole.shouldBeFalse()
+        settings.activateInCommitMessage.shouldBeFalse()
+        settings.activateInOtherEditors.shouldBeFalse()
+
+        settings.enabled = false
+        settings.enabled.shouldBeFalse()
+        settings.enabled = true
+    }
+
+    fun testShortcutPolicyMacDefaults() {
+        HelixShortcutPolicy.macOverride = true
+        try {
+            for (key in HelixShortcutPolicy.KEYS) {
+                if (key.supports(HelixKeyContext.NORMAL)) {
+                    HelixShortcutPolicy.defaultOwner(key, HelixKeyContext.NORMAL) shouldBe
+                        HelixKeyOwner.HELIX
+                }
+                if (key.supports(HelixKeyContext.INSERT)) {
+                    HelixShortcutPolicy.defaultOwner(key, HelixKeyContext.INSERT) shouldBe
+                        HelixKeyOwner.HELIX
+                }
+            }
+        } finally {
+            HelixShortcutPolicy.macOverride = null
+        }
+    }
+
+    fun testShortcutPolicyNonMacDefaults() {
+        HelixShortcutPolicy.macOverride = false
+        try {
+            val ctrlC = HelixShortcutPolicy.KEYS.first { it.letter == 'C' }
+            val ctrlS = HelixShortcutPolicy.KEYS.first { it.letter == 'S' }
+            val ctrlD = HelixShortcutPolicy.KEYS.first { it.letter == 'D' }
+
+            HelixShortcutPolicy.defaultOwner(ctrlC, HelixKeyContext.NORMAL) shouldBe
+                HelixKeyOwner.HELIX
+            HelixShortcutPolicy.defaultOwner(ctrlS, HelixKeyContext.NORMAL) shouldBe
+                HelixKeyOwner.HELIX
+            HelixShortcutPolicy.defaultOwner(ctrlD, HelixKeyContext.NORMAL) shouldBe
+                HelixKeyOwner.HELIX
+
+            HelixShortcutPolicy.defaultOwner(ctrlC, HelixKeyContext.INSERT) shouldBe
+                HelixKeyOwner.IDE
+            HelixShortcutPolicy.defaultOwner(ctrlS, HelixKeyContext.INSERT) shouldBe
+                HelixKeyOwner.IDE
+            HelixShortcutPolicy.defaultOwner(ctrlD, HelixKeyContext.INSERT) shouldBe
+                HelixKeyOwner.IDE
+        } finally {
+            HelixShortcutPolicy.macOverride = null
+        }
+    }
+
+    fun testShortcutPolicyOverrides() {
+        val ctrlC = HelixShortcutPolicy.KEYS.first { it.letter == 'C' }
+        val overrides = mapOf("NORMAL:C" to "IDE", "INSERT:C" to "HELIX")
+
+        HelixShortcutPolicy.owner(ctrlC, HelixKeyContext.NORMAL, overrides) shouldBe HelixKeyOwner.IDE
+        HelixShortcutPolicy.owner(ctrlC, HelixKeyContext.INSERT, overrides) shouldBe HelixKeyOwner.HELIX
+    }
+
+    fun testShortcutPolicyNormalization() {
+        HelixShortcutPolicy.macOverride = false
+        try {
+            val raw = mapOf(
+                "NORMAL:C" to "IDE",
+                "NORMAL:INVALID" to "HELIX",
+                "NORMAL:S" to "IDE",
+                "INSERT:UNKNOWN" to "IDE",
+                "INSERT:R" to "HELIX",
+            )
+            val normalized = HelixShortcutPolicy.normalize(raw)
+            normalized shouldBe mapOf(
+                "NORMAL:C" to "IDE",
+                "NORMAL:S" to "IDE",
+                "INSERT:R" to "HELIX",
+            )
+        } finally {
+            HelixShortcutPolicy.macOverride = null
+        }
+    }
+
+    fun testCtrlKeyConfigurableModification() {
+        val configurable = HelixConfigurable()
+        configurable.createComponent()
+        val settings = HelixSettings.instance
+
+        configurable.reset()
+        configurable.isModified.shouldBeFalse()
+
+        settings.ctrlKeyOverrides = mapOf("NORMAL:C" to "IDE")
+        configurable.isModified.shouldBeTrue()
+
+        configurable.reset()
+        configurable.isModified.shouldBeFalse()
         configurable.disposeUIResources()
     }
 }

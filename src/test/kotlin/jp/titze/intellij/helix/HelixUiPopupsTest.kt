@@ -1275,4 +1275,23 @@ class HelixUiPopupsTest : BasePlatformTestCase() {
             jp.titze.intellij.helix.action.HelixActionDelegate.actionExecutor = null
         }
     }
+
+    fun testToggleHelixModeAndEligibility() {
+        myFixture.configureByText("test.txt", "initial text")
+        val editor = myFixture.editor
+        val settings = HelixSettings.instance
+        settings.enabled = true
+
+        jp.titze.intellij.helix.editor.HelixEditorEligibility.isActive(editor).shouldBeTrue()
+
+        // Toggle via command palette :toggle-helix
+        HelixCommands.execute("toggle-helix", editor)
+        settings.enabled.shouldBeFalse()
+        jp.titze.intellij.helix.editor.HelixEditorEligibility.isActive(editor).shouldBeFalse()
+
+        // Re-enable
+        HelixCommands.execute("toggle-helix", editor)
+        settings.enabled.shouldBeTrue()
+        jp.titze.intellij.helix.editor.HelixEditorEligibility.isActive(editor).shouldBeTrue()
+    }
 }

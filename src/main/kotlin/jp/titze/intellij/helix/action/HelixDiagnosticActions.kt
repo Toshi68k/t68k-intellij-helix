@@ -26,24 +26,28 @@ object HelixDiagnosticActions {
         val items = mutableListOf<DiagnosticItem>()
         val seenDescriptions = mutableSetOf<String>()
 
-        DaemonCodeAnalyzerEx.processHighlights(
-            doc,
-            project,
-            HighlightSeverity.INFORMATION,
-            lineStart,
-            lineEnd,
-        ) { info ->
-            val desc = info.description ?: cleanHtml(info.toolTip)
-            if (!desc.isNullOrBlank() && seenDescriptions.add(desc)) {
-                items.add(
-                    DiagnosticItem(
-                        description = desc,
-                        severityValue = info.severity.myVal,
-                        range = TextRange(info.actualStartOffset, info.actualEndOffset),
-                    ),
-                )
+        try {
+            DaemonCodeAnalyzerEx.processHighlights(
+                doc,
+                project,
+                HighlightSeverity.INFORMATION,
+                lineStart,
+                lineEnd,
+            ) { info ->
+                val desc = info.description ?: cleanHtml(info.toolTip)
+                if (!desc.isNullOrBlank() && seenDescriptions.add(desc)) {
+                    items.add(
+                        DiagnosticItem(
+                            description = desc,
+                            severityValue = info.severity.myVal,
+                            range = TextRange(info.actualStartOffset, info.actualEndOffset),
+                        ),
+                    )
+                }
+                true
             }
-            true
+        } catch (_: Throwable) {
+            // Fall back to collectHighlighters if DaemonCodeAnalyzerEx is unavailable
         }
 
         collectHighlighters(editor, lineStart, lineEnd, items, seenDescriptions)
@@ -83,8 +87,12 @@ object HelixDiagnosticActions {
         val doc = editor.document
         val highlighters = mutableListOf<RangeHighlighter>()
         highlighters.addAll(editor.markupModel.allHighlighters)
-        DocumentMarkupModel.forDocument(doc, project, false)?.let {
-            highlighters.addAll(it.allHighlighters)
+        try {
+            DocumentMarkupModel.forDocument(doc, project, false)?.let {
+                highlighters.addAll(it.allHighlighters)
+            }
+        } catch (_: Throwable) {
+            // Ignore if DocumentMarkupModel unavailable
         }
 
         for (highlighter in highlighters) {

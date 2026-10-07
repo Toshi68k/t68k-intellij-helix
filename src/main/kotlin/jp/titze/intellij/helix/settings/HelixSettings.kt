@@ -46,6 +46,12 @@ class HelixSettingsState {
     var searchHistory: MutableList<String> = mutableListOf()
     var regexHistory: MutableList<String> = mutableListOf()
     var shellHistory: MutableList<String> = mutableListOf()
+    var enabled: Boolean = true
+    var activateInDiff: Boolean = true
+    var activateInConsole: Boolean = false
+    var activateInCommitMessage: Boolean = false
+    var activateInOtherEditors: Boolean = false
+    var ctrlKeyOverrides: MutableMap<String, String> = mutableMapOf()
 }
 
 @Service(Service.Level.APP)
@@ -156,6 +162,42 @@ class HelixSettings : PersistentStateComponent<HelixSettingsState> {
         }
         set(value) {
             myState.whichKeyColumnLayout = value.name
+        }
+
+    var enabled: Boolean
+        get() = myState.enabled
+        set(value) {
+            myState.enabled = value
+        }
+
+    var activateInDiff: Boolean
+        get() = myState.activateInDiff
+        set(value) {
+            myState.activateInDiff = value
+        }
+
+    var activateInConsole: Boolean
+        get() = myState.activateInConsole
+        set(value) {
+            myState.activateInConsole = value
+        }
+
+    var activateInCommitMessage: Boolean
+        get() = myState.activateInCommitMessage
+        set(value) {
+            myState.activateInCommitMessage = value
+        }
+
+    var activateInOtherEditors: Boolean
+        get() = myState.activateInOtherEditors
+        set(value) {
+            myState.activateInOtherEditors = value
+        }
+
+    var ctrlKeyOverrides: Map<String, String>
+        get() = myState.ctrlKeyOverrides
+        set(value) {
+            myState.ctrlKeyOverrides = value.toMutableMap()
         }
 
     override fun getState(): HelixSettingsState = myState

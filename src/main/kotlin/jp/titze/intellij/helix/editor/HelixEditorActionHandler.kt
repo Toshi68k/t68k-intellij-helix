@@ -15,7 +15,7 @@ class HelixEditorActionHandler(private val actionId: String, private val origina
     EditorActionHandler() {
 
     override fun doExecute(editor: Editor, caret: Caret?, dataContext: DataContext) {
-        if (editor.isOneLineMode || editor.isViewer) {
+        if (!HelixEditorEligibility.isActive(editor)) {
             originalHandler?.execute(editor, caret, dataContext)
             return
         }
@@ -64,7 +64,7 @@ class HelixEditorActionHandler(private val actionId: String, private val origina
     }
 
     override fun isEnabledForCaret(editor: Editor, caret: Caret, dataContext: DataContext?): Boolean {
-        if (editor.isOneLineMode || editor.isViewer) {
+        if (!HelixEditorEligibility.isActive(editor)) {
             return originalHandler?.isEnabled(editor, caret, dataContext) ?: true
         }
 
@@ -91,6 +91,7 @@ class HelixEditorActionHandler(private val actionId: String, private val origina
 
     companion object {
         private var installed = false
+        private val originalHandlers = mutableMapOf<String, EditorActionHandler?>()
 
         @Synchronized
         fun install() {
@@ -107,8 +108,26 @@ class HelixEditorActionHandler(private val actionId: String, private val origina
 
             for (actionId in actionsToWrap) {
                 val orig = actionManager.getActionHandler(actionId)
+                originalHandlers[actionId] = orig
                 actionManager.setActionHandler(actionId, HelixEditorActionHandler(actionId, orig))
             }
+        }
+
+        @Synchronized
+        fun uninstall() {
+            if (!installed) return
+            val actionManager = EditorActionManager.getInstance()
+            for ((actionId, orig) in originalHandlers) {
+                val current = actionManager.getActionHandler(actionId)
+                if (current is HelixEditorActionHandler) {
+                    val fallback = orig ?: current.originalHandler
+                    if (fallback != null) {
+                        actionManager.setActionHandler(actionId, fallback)
+                    }
+                }
+            }
+            originalHandlers.clear()
+            installed = false
         }
     }
 }

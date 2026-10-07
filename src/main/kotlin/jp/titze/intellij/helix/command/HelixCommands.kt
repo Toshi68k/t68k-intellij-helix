@@ -44,6 +44,11 @@ data class HelixCommandItem(
 object HelixCommands {
 
     val COMMANDS = listOf(
+        HelixCommandItem("toggle-helix", emptyList(), "Toggle Helix modal editing mode globally") { _ ->
+            val settings = jp.titze.intellij.helix.settings.HelixSettings.instance
+            settings.enabled = !settings.enabled
+            jp.titze.intellij.helix.editor.HelixEditorEligibility.refreshAllEditors()
+        },
         HelixCommandItem("write", listOf("w"), "Save all modified files") { editor ->
             HelixActionDelegate.executeAction("SaveAll", editor)
         },

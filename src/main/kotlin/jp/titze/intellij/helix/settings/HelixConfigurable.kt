@@ -9,6 +9,7 @@ import com.intellij.ui.components.JBRadioButton
 import com.intellij.util.ui.JBUI
 import com.intellij.util.ui.UIUtil
 import jp.titze.intellij.helix.HelixBundle
+import jp.titze.intellij.helix.editor.HelixEditorEligibility
 import jp.titze.intellij.helix.jumplist.HelixJumpListService
 import jp.titze.intellij.helix.ui.HelixPromptHistory
 import java.awt.BorderLayout
@@ -42,6 +43,8 @@ class HelixConfigurable : SearchableConfigurable {
 
     private var resetToNormalCheckBox: JBCheckBox? = null
     private var syncClipboardCheckBox: JBCheckBox? = null
+    private val activationPanel = HelixActivationPanel()
+    private val ctrlKeyPanel = HelixCtrlKeyPanel()
 
     override fun getId(): String = "jp.titze.intellij.helix.settings"
 
@@ -54,6 +57,10 @@ class HelixConfigurable : SearchableConfigurable {
         val contentBox = JPanel()
         contentBox.layout = BoxLayout(contentBox, BoxLayout.Y_AXIS)
 
+        contentBox.add(activationPanel.panel)
+        contentBox.add(Box.createVerticalStrut(JBUI.scale(20)))
+        contentBox.add(ctrlKeyPanel.panel)
+        contentBox.add(Box.createVerticalStrut(JBUI.scale(20)))
         contentBox.add(createSearchSection())
         contentBox.add(Box.createVerticalStrut(JBUI.scale(20)))
         contentBox.add(createLineNavigationSection())
@@ -71,7 +78,7 @@ class HelixConfigurable : SearchableConfigurable {
         mainPanel.add(contentBox, BorderLayout.NORTH)
 
         reset()
-        return mainPanel
+        return com.intellij.ui.components.JBScrollPane(mainPanel)
     }
 
     private fun createSearchSection(): JPanel {
@@ -367,6 +374,8 @@ class HelixConfigurable : SearchableConfigurable {
     override fun isModified(): Boolean {
         val settings = HelixSettings.instance
         val modifiedChecks = listOf(
+            activationPanel.isModified(settings),
+            ctrlKeyPanel.isModified(settings),
             getSelectedSearchUiMode() != settings.searchUiMode,
             getSelectedLineNavigationMode() != settings.lineNavigationMode,
             promptHistorySpinner?.number != settings.promptHistoryMaxEntries,
@@ -383,6 +392,8 @@ class HelixConfigurable : SearchableConfigurable {
 
     override fun apply() {
         val settings = HelixSettings.instance
+        activationPanel.apply(settings)
+        ctrlKeyPanel.apply(settings)
         settings.searchUiMode = getSelectedSearchUiMode()
         settings.lineNavigationMode = getSelectedLineNavigationMode()
         promptHistorySpinner?.let {
@@ -397,6 +408,8 @@ class HelixConfigurable : SearchableConfigurable {
         resetToNormalCheckBox?.let { settings.resetToNormalOnTabSwitch = it.isSelected }
         syncClipboardCheckBox?.let { settings.syncClipboardWithDefaultRegister = it.isSelected }
 
+        HelixEditorEligibility.refreshAllEditors()
+
         ProjectManager.getInstance().openProjects.forEach { project ->
             project.getService(HelixJumpListService::class.java)?.trimToCapacity()
         }
@@ -404,6 +417,8 @@ class HelixConfigurable : SearchableConfigurable {
 
     override fun reset() {
         val settings = HelixSettings.instance
+        activationPanel.reset(settings)
+        ctrlKeyPanel.reset(settings)
         stockHelixRadio?.isSelected = (settings.searchUiMode == HelixSearchUiMode.STOCK_HELIX)
         popupRadio?.isSelected = (settings.searchUiMode == HelixSearchUiMode.POPUP)
         stockLineNavRadio?.isSelected = (settings.lineNavigationMode == HelixLineNavigationMode.HELIX_STANDARD)

@@ -1,5 +1,5 @@
 <idea-plugin>
-    <id>jp.titze.intellij.helix</id>
+    <id>jp.titze.helix</id>
     <name>Helix Keymap (T68k)</name>
     <vendor url="https://github.com/Toshi68k">Thorsten Titze</vendor>
 
@@ -60,15 +60,23 @@
   <li><b><kbd>Space</kbd> + <code>k</code> / <code>?</code></b> &rarr; Documentation hover &amp; command search</li>
 </ul>
 
-<h3>Configuration</h3>
+<h3>Configuration &amp; Ctrl Handling</h3>
 <p>
-  Customize vertical navigation (Stock Helix visual lines vs. physical lines), Which-Key hint styles, prompt mode (bottom bar vs. popup dialog), and color themes under:
+  Customize activation scope (diff viewers, console, commit messages), platform-aware Ctrl key routing (Helix vs. IDE ownership per mode), Which-Key hint styles, vertical navigation (Stock Helix visual vs. physical lines), and color themes under:
   <br/>
-  <b>Preferences / Settings &rarr; Tools &rarr; Helix Keymap</b>
+  <b>Settings &rarr; Tools &rarr; Helix Keymap</b>
+</p>
+
+<h3>Documentation &amp; Support</h3>
+<p>
+  Source code, documentation, and issue tracker:
+  <a href="https://github.com/Toshi68k/t68k-intellij-helix">GitHub Repository</a> |
+  <a href="https://github.com/Toshi68k/t68k-intellij-helix/issues">Issue Tracker</a>
 </p>
     ]]></description>
 
     <depends>com.intellij.modules.platform</depends>
+    <incompatible-with>IdeaVIM</incompatible-with>
 
     <resource-bundle>messages.HelixBundle</resource-bundle>
 
@@ -77,6 +85,7 @@
         <statusBarWidgetFactory implementation="jp.titze.intellij.helix.ui.HelixStatusBarWidgetFactory"
                                 id="jp.titze.intellij.helix.status"/>
         <applicationService serviceImplementation="jp.titze.intellij.helix.settings.HelixSettings"/>
+        <applicationService serviceImplementation="jp.titze.intellij.helix.editor.HelixPluginLifecycle"/>
         <applicationConfigurable parentId="tools"
                                  instance="jp.titze.intellij.helix.settings.HelixConfigurable"
                                  id="jp.titze.intellij.helix.settings"
@@ -90,29 +99,29 @@
     </projectListeners>
 
     <actions>
+        <action id="jp.titze.intellij.helix.toggleMode"
+                class="jp.titze.intellij.helix.editor.HelixToggleModeAction"
+                text="Helix: Toggle Helix Mode"
+                description="Enable or disable Helix modal editing globally">
+        </action>
+
         <action id="jp.titze.intellij.helix.escape"
                 class="jp.titze.intellij.helix.editor.HelixEscapeAction"
                 text="Helix Escape"
                 description="Return to Normal mode">
-            <keyboard-shortcut keymap="$default" first-keystroke="ESCAPE"/>
-            <keyboard-shortcut keymap="Mac OS X" first-keystroke="ESCAPE"/>
-            <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="ESCAPE"/>
-            <keyboard-shortcut keymap="$default" first-keystroke="control OPEN_BRACKET"/>
-            <keyboard-shortcut keymap="Mac OS X" first-keystroke="control OPEN_BRACKET"/>
-            <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="control OPEN_BRACKET"/>
         </action>
 
         <action id="jp.titze.intellij.helix.expandSelection"
                 class="jp.titze.intellij.helix.editor.HelixExpandSelectionAction"
                 text="Helix Expand Selection"
-                description="Expand structural selection (Tree-sitter / PSI)">
+                description="Expand structural selection (PSI)">
             <keyboard-shortcut keymap="$default" first-keystroke="alt O"/>
         </action>
 
         <action id="jp.titze.intellij.helix.shrinkSelection"
                 class="jp.titze.intellij.helix.editor.HelixShrinkSelectionAction"
                 text="Helix Shrink Selection"
-                description="Shrink structural selection (Tree-sitter / PSI)">
+                description="Shrink structural selection (PSI)">
             <keyboard-shortcut keymap="$default" first-keystroke="alt I"/>
         </action>
 
@@ -195,9 +204,6 @@
             <keyboard-shortcut keymap="$default" first-keystroke="alt shift C"/>
             <keyboard-shortcut keymap="Mac OS X" first-keystroke="alt shift C"/>
             <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="alt shift C"/>
-            <keyboard-shortcut keymap="$default" first-keystroke="alt C"/>
-            <keyboard-shortcut keymap="Mac OS X" first-keystroke="alt C"/>
-            <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="alt C"/>
         </action>
 
         <action id="jp.titze.intellij.helix.removePrimarySelection"
@@ -243,18 +249,12 @@
                 class="jp.titze.intellij.helix.editor.HelixCommentLineAction"
                 text="Helix Comment Line"
                 description="Toggle line comment">
-            <keyboard-shortcut keymap="$default" first-keystroke="control C"/>
-            <keyboard-shortcut keymap="Mac OS X" first-keystroke="control C"/>
-            <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="control C"/>
         </action>
 
         <action id="jp.titze.intellij.helix.pageDown"
                 class="jp.titze.intellij.helix.editor.HelixPageDownAction"
                 text="Helix Page Down"
                 description="Scroll and move page down">
-            <keyboard-shortcut keymap="$default" first-keystroke="control F"/>
-            <keyboard-shortcut keymap="Mac OS X" first-keystroke="control F"/>
-            <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="control F"/>
             <keyboard-shortcut keymap="$default" first-keystroke="PAGE_DOWN"/>
         </action>
 
@@ -262,9 +262,6 @@
                 class="jp.titze.intellij.helix.editor.HelixPageUpAction"
                 text="Helix Page Up"
                 description="Scroll and move page up">
-            <keyboard-shortcut keymap="$default" first-keystroke="control B"/>
-            <keyboard-shortcut keymap="Mac OS X" first-keystroke="control B"/>
-            <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="control B"/>
             <keyboard-shortcut keymap="$default" first-keystroke="PAGE_UP"/>
         </action>
 
@@ -272,45 +269,30 @@
                 class="jp.titze.intellij.helix.editor.HelixHalfPageDownAction"
                 text="Helix Half Page Down"
                 description="Scroll and move half page down">
-            <keyboard-shortcut keymap="$default" first-keystroke="control D"/>
-            <keyboard-shortcut keymap="Mac OS X" first-keystroke="control D"/>
-            <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="control D"/>
         </action>
 
         <action id="jp.titze.intellij.helix.halfPageUp"
                 class="jp.titze.intellij.helix.editor.HelixHalfPageUpAction"
                 text="Helix Half Page Up"
                 description="Scroll and move half page up">
-            <keyboard-shortcut keymap="$default" first-keystroke="control U"/>
-            <keyboard-shortcut keymap="Mac OS X" first-keystroke="control U"/>
-            <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="control U"/>
         </action>
 
         <action id="jp.titze.intellij.helix.jumpBackward"
                 class="jp.titze.intellij.helix.editor.HelixJumpBackwardAction"
                 text="Helix Jump Backward"
                 description="Jump to previous location in jumplist">
-            <keyboard-shortcut keymap="$default" first-keystroke="control O"/>
-            <keyboard-shortcut keymap="Mac OS X" first-keystroke="control O"/>
-            <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="control O"/>
         </action>
 
         <action id="jp.titze.intellij.helix.jumpForward"
                 class="jp.titze.intellij.helix.editor.HelixJumpForwardAction"
                 text="Helix Jump Forward"
                 description="Jump to next location in jumplist">
-            <keyboard-shortcut keymap="$default" first-keystroke="control I"/>
-            <keyboard-shortcut keymap="Mac OS X" first-keystroke="control I"/>
-            <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="control I"/>
         </action>
 
         <action id="jp.titze.intellij.helix.saveJump"
                 class="jp.titze.intellij.helix.editor.HelixSaveJumpAction"
                 text="Helix Save Jump / Undo Checkpoint"
                 description="Save current selection to jumplist (Normal) or commit undo checkpoint (Insert)">
-            <keyboard-shortcut keymap="$default" first-keystroke="control S"/>
-            <keyboard-shortcut keymap="Mac OS X" first-keystroke="control S"/>
-            <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="control S"/>
         </action>
 
         <action id="jp.titze.intellij.helix.undoCheckpoint"
@@ -356,27 +338,18 @@
                 class="jp.titze.intellij.helix.editor.HelixIncrementAction"
                 text="Helix Increment"
                 description="Increment integer under cursor or within selection (Ctrl+a)">
-            <keyboard-shortcut keymap="$default" first-keystroke="control A"/>
-            <keyboard-shortcut keymap="Mac OS X" first-keystroke="control A"/>
-            <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="control A"/>
         </action>
 
         <action id="jp.titze.intellij.helix.decrement"
                 class="jp.titze.intellij.helix.editor.HelixDecrementAction"
                 text="Helix Decrement"
                 description="Decrement integer under cursor or within selection (Ctrl+x)">
-            <keyboard-shortcut keymap="$default" first-keystroke="control X"/>
-            <keyboard-shortcut keymap="Mac OS X" first-keystroke="control X"/>
-            <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="control X"/>
         </action>
 
         <action id="jp.titze.intellij.helix.windowChord"
                 class="jp.titze.intellij.helix.editor.HelixWindowChordAction"
                 text="Helix Window and Split Menu"
                 description="Window and split management (Ctrl+w, space+w)">
-            <keyboard-shortcut keymap="$default" first-keystroke="control W"/>
-            <keyboard-shortcut keymap="Mac OS X" first-keystroke="control W"/>
-            <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="control W"/>
         </action>
 
         <action id="jp.titze.intellij.helix.trimSelections"
@@ -542,36 +515,24 @@
                 class="jp.titze.intellij.helix.editor.HelixKillToLineEndAction"
                 text="Helix Kill to Line End"
                 description="Delete from cursor to line end (Ctrl+k)">
-            <keyboard-shortcut keymap="$default" first-keystroke="control K"/>
-            <keyboard-shortcut keymap="Mac OS X" first-keystroke="control K"/>
-            <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="control K"/>
         </action>
 
         <action id="jp.titze.intellij.helix.insertRegister"
                 class="jp.titze.intellij.helix.editor.HelixInsertRegisterAction"
                 text="Helix Insert Register"
                 description="Insert contents of register while typing (Ctrl+r)">
-            <keyboard-shortcut keymap="$default" first-keystroke="control R"/>
-            <keyboard-shortcut keymap="Mac OS X" first-keystroke="control R"/>
-            <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="control R"/>
         </action>
 
         <action id="jp.titze.intellij.helix.insertLineEnd"
                 class="jp.titze.intellij.helix.editor.HelixInsertLineEndAction"
                 text="Helix Insert Move to Line End"
                 description="Move cursor to line end in insert mode (Ctrl+e)">
-            <keyboard-shortcut keymap="$default" first-keystroke="control E"/>
-            <keyboard-shortcut keymap="Mac OS X" first-keystroke="control E"/>
-            <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="control E"/>
         </action>
 
         <action id="jp.titze.intellij.helix.insertDeleteCharBackward"
                 class="jp.titze.intellij.helix.editor.HelixInsertDeleteCharBackwardAction"
                 text="Helix Insert Delete Char Backward"
                 description="Delete previous character in insert mode (Ctrl+h)">
-            <keyboard-shortcut keymap="$default" first-keystroke="control H"/>
-            <keyboard-shortcut keymap="Mac OS X" first-keystroke="control H"/>
-            <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="control H"/>
         </action>
 
         <action id="jp.titze.intellij.helix.shellPipe"
@@ -614,9 +575,6 @@
                 class="jp.titze.intellij.helix.editor.HelixSignatureHelpAction"
                 text="Helix Signature Help"
                 description="Show signature help / parameter info (Ctrl+p)">
-            <keyboard-shortcut keymap="$default" first-keystroke="control P"/>
-            <keyboard-shortcut keymap="Mac OS X" first-keystroke="control P"/>
-            <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="control P"/>
         </action>
 
         <action id="jp.titze.intellij.helix.earlier"
