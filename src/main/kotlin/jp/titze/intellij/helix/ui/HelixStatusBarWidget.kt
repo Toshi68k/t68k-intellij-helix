@@ -1,6 +1,5 @@
 package jp.titze.intellij.helix.ui
 
-import com.intellij.ide.actionMacro.ActionMacroManager
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.event.CaretEvent
 import com.intellij.openapi.editor.event.CaretListener
@@ -15,6 +14,7 @@ import com.intellij.openapi.wm.StatusBarWidgetFactory
 import com.intellij.util.Consumer
 import jp.titze.intellij.helix.HelixBundle
 import jp.titze.intellij.helix.command.HelixCommandPopup
+import jp.titze.intellij.helix.editor.HelixEditorEligibility
 import jp.titze.intellij.helix.state.HelixEditorState
 import jp.titze.intellij.helix.state.HelixStateManager
 import java.awt.event.MouseEvent
@@ -38,7 +38,9 @@ class HelixStatusBarWidget(private val project: Project) :
 
     var macroRecordingProvider: () -> Boolean = {
         try {
-            ActionMacroManager.getInstance().isRecording
+            val clazz = Class.forName("com.intellij.ide.actionMacro.ActionMacroManager")
+            val manager = clazz.getMethod("getInstance").invoke(null)
+            clazz.getMethod("isRecording").invoke(manager) as? Boolean ?: false
         } catch (_: Throwable) {
             false
         }
@@ -78,7 +80,7 @@ class HelixStatusBarWidget(private val project: Project) :
         currentState?.removeListener(stateListener)
         currentEditor?.caretModel?.removeCaretListener(caretListener)
 
-        if (editor != null && !editor.isDisposed) {
+        if (editor != null && !editor.isDisposed && HelixEditorEligibility.isActive(editor)) {
             val state = HelixStateManager.getOrCreate(editor)
             currentState = state
             currentEditor = editor
@@ -86,7 +88,7 @@ class HelixStatusBarWidget(private val project: Project) :
             editor.caretModel.addCaretListener(caretListener)
         } else {
             currentState = null
-            currentEditor = null
+            currentEditor = editor
         }
         myStatusBar?.updateWidget(ID())
     }
@@ -107,9 +109,12 @@ class HelixStatusBarWidget(private val project: Project) :
     override fun getPresentation(): StatusBarWidget.WidgetPresentation = this
 
     override fun getText(): String {
-        val state = currentState ?: return ""
         val editor = currentEditor
-        val caretCount = editor?.caretModel?.caretCount ?: 1
+        if (editor == null || !HelixEditorEligibility.isActive(editor)) {
+            return "OFF"
+        }
+        val state = currentState ?: return "OFF"
+        val caretCount = editor.caretModel.caretCount
         val recStr = if (macroRecordingProvider()) " [REC]" else ""
         val selStr = if (caretCount > 1) " $caretCount sel" else ""
         val reg = state.selectedRegister

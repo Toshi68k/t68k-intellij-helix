@@ -1,7 +1,5 @@
 package jp.titze.intellij.helix.editor
 
-import com.intellij.openapi.actionSystem.ActionUpdateThread
-import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.CommonDataKeys
 import jp.titze.intellij.helix.action.HelixActionDelegate
@@ -11,152 +9,87 @@ import jp.titze.intellij.helix.keymap.HelixKeyHandler
 import jp.titze.intellij.helix.motion.HelixMotions
 import jp.titze.intellij.helix.state.HelixStateManager
 import jp.titze.intellij.helix.ui.HelixJumplistPopup
+import jp.titze.intellij.helix.ui.HelixRegistersPopup
 import jp.titze.intellij.helix.ui.HelixSearchManager
 
-class HelixEscapeAction : AnAction() {
+class HelixEscapeAction : HelixEditorAction() {
     override fun actionPerformed(e: AnActionEvent) {
         val editor = e.getData(CommonDataKeys.EDITOR) ?: return
         HelixEscapeHandler.handleEscape(editor)
     }
-
-    override fun update(e: AnActionEvent) {
-        e.presentation.isEnabled = e.getData(CommonDataKeys.EDITOR) != null
-    }
-
-    override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT
 }
 
-class HelixExpandSelectionAction : AnAction() {
+class HelixExpandSelectionAction : HelixEditorAction() {
     override fun actionPerformed(e: AnActionEvent) {
         val editor = e.getData(CommonDataKeys.EDITOR) ?: return
         HelixActionDelegate.executeAction("EditorSelectWord", editor)
     }
-
-    override fun update(e: AnActionEvent) {
-        e.presentation.isEnabled = e.getData(CommonDataKeys.EDITOR) != null
-    }
-
-    override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT
 }
 
-class HelixShrinkSelectionAction : AnAction() {
+class HelixShrinkSelectionAction : HelixEditorAction() {
     override fun actionPerformed(e: AnActionEvent) {
         val editor = e.getData(CommonDataKeys.EDITOR) ?: return
         HelixActionDelegate.executeAction("EditorUnSelectWord", editor)
     }
-
-    override fun update(e: AnActionEvent) {
-        e.presentation.isEnabled = e.getData(CommonDataKeys.EDITOR) != null
-    }
-
-    override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT
 }
 
-class HelixSelectPrevSiblingAction : AnAction() {
+class HelixSelectPrevSiblingAction : HelixEditorAction() {
     override fun actionPerformed(e: AnActionEvent) {
         val editor = e.getData(CommonDataKeys.EDITOR) ?: return
         HelixActions.selectPrevSibling(editor)
     }
-
-    override fun update(e: AnActionEvent) {
-        e.presentation.isEnabled = e.getData(CommonDataKeys.EDITOR) != null
-    }
-
-    override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT
 }
 
-class HelixSelectNextSiblingAction : AnAction() {
+class HelixSelectNextSiblingAction : HelixEditorAction() {
     override fun actionPerformed(e: AnActionEvent) {
         val editor = e.getData(CommonDataKeys.EDITOR) ?: return
         HelixActions.selectNextSibling(editor)
     }
-
-    override fun update(e: AnActionEvent) {
-        e.presentation.isEnabled = e.getData(CommonDataKeys.EDITOR) != null
-    }
-
-    override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT
 }
 
-class HelixMoveParentNodeStartAction : AnAction() {
+class HelixMoveParentNodeStartAction : HelixEditorAction() {
     override fun actionPerformed(e: AnActionEvent) {
         val editor = e.getData(CommonDataKeys.EDITOR) ?: return
         HelixActions.moveParentNodeStart(editor)
     }
-
-    override fun update(e: AnActionEvent) {
-        e.presentation.isEnabled = e.getData(CommonDataKeys.EDITOR) != null
-    }
-
-    override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT
 }
 
-class HelixMoveParentNodeEndAction : AnAction() {
+class HelixMoveParentNodeEndAction : HelixEditorAction() {
     override fun actionPerformed(e: AnActionEvent) {
         val editor = e.getData(CommonDataKeys.EDITOR) ?: return
         HelixActions.moveParentNodeEnd(editor)
     }
-
-    override fun update(e: AnActionEvent) {
-        e.presentation.isEnabled = e.getData(CommonDataKeys.EDITOR) != null
-    }
-
-    override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT
 }
 
-class HelixSelectAllSiblingsAction : AnAction() {
+class HelixSelectAllSiblingsAction : HelixEditorAction() {
     override fun actionPerformed(e: AnActionEvent) {
         val editor = e.getData(CommonDataKeys.EDITOR) ?: return
         HelixActions.selectAllSiblings(editor)
     }
-
-    override fun update(e: AnActionEvent) {
-        e.presentation.isEnabled = e.getData(CommonDataKeys.EDITOR) != null
-    }
-
-    override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT
 }
 
-class HelixSelectAllChildrenAction : AnAction() {
+class HelixSelectAllChildrenAction : HelixEditorAction() {
     override fun actionPerformed(e: AnActionEvent) {
         val editor = e.getData(CommonDataKeys.EDITOR) ?: return
         HelixActions.selectAllChildren(editor)
     }
-
-    override fun update(e: AnActionEvent) {
-        e.presentation.isEnabled = e.getData(CommonDataKeys.EDITOR) != null
-    }
-
-    override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT
 }
 
-class HelixSelectNextOccurrenceAction : AnAction() {
+class HelixSelectNextOccurrenceAction : HelixEditorAction() {
     override fun actionPerformed(e: AnActionEvent) {
         val editor = e.getData(CommonDataKeys.EDITOR) ?: return
         HelixActionDelegate.executeAction("SelectNextOccurrence", editor)
     }
-
-    override fun update(e: AnActionEvent) {
-        e.presentation.isEnabled = e.getData(CommonDataKeys.EDITOR) != null
-    }
-
-    override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT
 }
 
-class HelixCommentLineAction : AnAction() {
+class HelixCommentLineAction : HelixEditorAction() {
     override fun actionPerformed(e: AnActionEvent) {
         val editor = e.getData(CommonDataKeys.EDITOR) ?: return
         HelixActionDelegate.executeAction("CommentByLineComment", editor)
     }
-
-    override fun update(e: AnActionEvent) {
-        e.presentation.isEnabled = e.getData(CommonDataKeys.EDITOR) != null
-    }
-
-    override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT
 }
 
-class HelixPageDownAction : AnAction() {
+class HelixPageDownAction : HelixEditorAction(requireInsertable = false) {
     override fun actionPerformed(e: AnActionEvent) {
         val editor = e.getData(CommonDataKeys.EDITOR) ?: return
         val state = HelixStateManager.getOrCreate(editor)
@@ -164,17 +97,9 @@ class HelixPageDownAction : AnAction() {
         val count = state.takeCount() ?: 1
         HelixMotions.pageDown(editor, count)
     }
-
-    override fun update(e: AnActionEvent) {
-        val editor = e.getData(CommonDataKeys.EDITOR)
-        val state = editor?.let { HelixStateManager.getOrCreate(it) }
-        e.presentation.isEnabled = editor != null && state != null && !state.mode.isInsertable
-    }
-
-    override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT
 }
 
-class HelixPageUpAction : AnAction() {
+class HelixPageUpAction : HelixEditorAction(requireInsertable = false) {
     override fun actionPerformed(e: AnActionEvent) {
         val editor = e.getData(CommonDataKeys.EDITOR) ?: return
         val state = HelixStateManager.getOrCreate(editor)
@@ -182,17 +107,9 @@ class HelixPageUpAction : AnAction() {
         val count = state.takeCount() ?: 1
         HelixMotions.pageUp(editor, count)
     }
-
-    override fun update(e: AnActionEvent) {
-        val editor = e.getData(CommonDataKeys.EDITOR)
-        val state = editor?.let { HelixStateManager.getOrCreate(it) }
-        e.presentation.isEnabled = editor != null && state != null && !state.mode.isInsertable
-    }
-
-    override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT
 }
 
-class HelixHalfPageDownAction : AnAction() {
+class HelixHalfPageDownAction : HelixEditorAction() {
     override fun actionPerformed(e: AnActionEvent) {
         val editor = e.getData(CommonDataKeys.EDITOR) ?: return
         val state = HelixStateManager.getOrCreate(editor)
@@ -203,16 +120,9 @@ class HelixHalfPageDownAction : AnAction() {
         val count = state.takeCount() ?: 1
         HelixMotions.halfPageDown(editor, count)
     }
-
-    override fun update(e: AnActionEvent) {
-        val editor = e.getData(CommonDataKeys.EDITOR)
-        e.presentation.isEnabled = editor != null
-    }
-
-    override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT
 }
 
-class HelixHalfPageUpAction : AnAction() {
+class HelixHalfPageUpAction : HelixEditorAction() {
     override fun actionPerformed(e: AnActionEvent) {
         val editor = e.getData(CommonDataKeys.EDITOR) ?: return
         val state = HelixStateManager.getOrCreate(editor)
@@ -223,16 +133,9 @@ class HelixHalfPageUpAction : AnAction() {
         val count = state.takeCount() ?: 1
         HelixMotions.halfPageUp(editor, count)
     }
-
-    override fun update(e: AnActionEvent) {
-        val editor = e.getData(CommonDataKeys.EDITOR)
-        e.presentation.isEnabled = editor != null
-    }
-
-    override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT
 }
 
-class HelixCopySelectionOnNextLineAction : AnAction() {
+class HelixCopySelectionOnNextLineAction : HelixEditorAction(requireInsertable = false) {
     override fun actionPerformed(e: AnActionEvent) {
         val editor = e.getData(CommonDataKeys.EDITOR) ?: return
         val state = HelixStateManager.getOrCreate(editor)
@@ -240,17 +143,9 @@ class HelixCopySelectionOnNextLineAction : AnAction() {
         val count = state.takeCount() ?: 1
         HelixMotions.copySelectionOnNextLine(editor, count)
     }
-
-    override fun update(e: AnActionEvent) {
-        val editor = e.getData(CommonDataKeys.EDITOR)
-        val state = editor?.let { HelixStateManager.getOrCreate(it) }
-        e.presentation.isEnabled = editor != null && state != null && !state.mode.isInsertable
-    }
-
-    override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT
 }
 
-class HelixCopySelectionOnPrevLineAction : AnAction() {
+class HelixCopySelectionOnPrevLineAction : HelixEditorAction(requireInsertable = false) {
     override fun actionPerformed(e: AnActionEvent) {
         val editor = e.getData(CommonDataKeys.EDITOR) ?: return
         val state = HelixStateManager.getOrCreate(editor)
@@ -258,102 +153,54 @@ class HelixCopySelectionOnPrevLineAction : AnAction() {
         val count = state.takeCount() ?: 1
         HelixMotions.copySelectionOnPrevLine(editor, count)
     }
-
-    override fun update(e: AnActionEvent) {
-        val editor = e.getData(CommonDataKeys.EDITOR)
-        val state = editor?.let { HelixStateManager.getOrCreate(it) }
-        e.presentation.isEnabled = editor != null && state != null && !state.mode.isInsertable
-    }
-
-    override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT
 }
 
-class HelixRemovePrimarySelectionAction : AnAction() {
+class HelixRemovePrimarySelectionAction : HelixEditorAction(requireInsertable = false) {
     override fun actionPerformed(e: AnActionEvent) {
         val editor = e.getData(CommonDataKeys.EDITOR) ?: return
         val state = HelixStateManager.getOrCreate(editor)
         if (state.mode.isInsertable) return
         HelixMotions.removePrimarySelection(editor)
     }
-
-    override fun update(e: AnActionEvent) {
-        val editor = e.getData(CommonDataKeys.EDITOR)
-        val state = editor?.let { HelixStateManager.getOrCreate(it) }
-        e.presentation.isEnabled = editor != null && state != null && !state.mode.isInsertable
-    }
-
-    override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT
 }
 
-class HelixRotateSelectionsForwardAction : AnAction() {
+class HelixRotateSelectionsForwardAction : HelixEditorAction(requireInsertable = false) {
     override fun actionPerformed(e: AnActionEvent) {
         val editor = e.getData(CommonDataKeys.EDITOR) ?: return
         val state = HelixStateManager.getOrCreate(editor)
         if (state.mode.isInsertable) return
         HelixMotions.rotateSelections(editor, forward = true)
     }
-
-    override fun update(e: AnActionEvent) {
-        val editor = e.getData(CommonDataKeys.EDITOR)
-        val state = editor?.let { HelixStateManager.getOrCreate(it) }
-        e.presentation.isEnabled = editor != null && state != null && !state.mode.isInsertable
-    }
-
-    override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT
 }
 
-class HelixRotateSelectionsBackwardAction : AnAction() {
+class HelixRotateSelectionsBackwardAction : HelixEditorAction(requireInsertable = false) {
     override fun actionPerformed(e: AnActionEvent) {
         val editor = e.getData(CommonDataKeys.EDITOR) ?: return
         val state = HelixStateManager.getOrCreate(editor)
         if (state.mode.isInsertable) return
         HelixMotions.rotateSelections(editor, forward = false)
     }
-
-    override fun update(e: AnActionEvent) {
-        val editor = e.getData(CommonDataKeys.EDITOR)
-        val state = editor?.let { HelixStateManager.getOrCreate(it) }
-        e.presentation.isEnabled = editor != null && state != null && !state.mode.isInsertable
-    }
-
-    override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT
 }
 
-class HelixSplitSelectionOnNewlineAction : AnAction() {
+class HelixSplitSelectionOnNewlineAction : HelixEditorAction(requireInsertable = false) {
     override fun actionPerformed(e: AnActionEvent) {
         val editor = e.getData(CommonDataKeys.EDITOR) ?: return
         val state = HelixStateManager.getOrCreate(editor)
         if (state.mode.isInsertable) return
         HelixMotions.splitSelectionOnNewlines(editor)
     }
-
-    override fun update(e: AnActionEvent) {
-        val editor = e.getData(CommonDataKeys.EDITOR)
-        val state = editor?.let { HelixStateManager.getOrCreate(it) }
-        e.presentation.isEnabled = editor != null && state != null && !state.mode.isInsertable
-    }
-
-    override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT
 }
 
-class HelixFlipSelectionAction : AnAction() {
+class HelixFlipSelectionAction : HelixEditorAction(requireInsertable = false) {
     override fun actionPerformed(e: AnActionEvent) {
         val editor = e.getData(CommonDataKeys.EDITOR) ?: return
         val state = HelixStateManager.getOrCreate(editor)
         if (state.mode.isInsertable) return
         HelixMotions.flipSelection(editor)
     }
-
-    override fun update(e: AnActionEvent) {
-        val editor = e.getData(CommonDataKeys.EDITOR)
-        val state = editor?.let { HelixStateManager.getOrCreate(it) }
-        e.presentation.isEnabled = editor != null && state != null && !state.mode.isInsertable
-    }
-
-    override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT
 }
 
-class HelixJumpBackwardAction : AnAction() {
+class HelixJumpBackwardAction : HelixEditorAction(requireInsertable = false) {
     override fun actionPerformed(e: AnActionEvent) {
         val editor = e.getData(CommonDataKeys.EDITOR) ?: return
         val project = e.project ?: editor.project ?: return
@@ -362,17 +209,9 @@ class HelixJumpBackwardAction : AnAction() {
         val count = state.takeCount() ?: 1
         HelixJumpListService.getInstance(project).jumpBackward(editor, count)
     }
-
-    override fun update(e: AnActionEvent) {
-        val editor = e.getData(CommonDataKeys.EDITOR)
-        val state = editor?.let { HelixStateManager.getOrCreate(it) }
-        e.presentation.isEnabled = editor != null && state != null && !state.mode.isInsertable
-    }
-
-    override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT
 }
 
-class HelixJumpForwardAction : AnAction() {
+class HelixJumpForwardAction : HelixEditorAction(requireInsertable = false) {
     override fun actionPerformed(e: AnActionEvent) {
         val editor = e.getData(CommonDataKeys.EDITOR) ?: return
         val project = e.project ?: editor.project ?: return
@@ -381,17 +220,9 @@ class HelixJumpForwardAction : AnAction() {
         val count = state.takeCount() ?: 1
         HelixJumpListService.getInstance(project).jumpForward(editor, count)
     }
-
-    override fun update(e: AnActionEvent) {
-        val editor = e.getData(CommonDataKeys.EDITOR)
-        val state = editor?.let { HelixStateManager.getOrCreate(it) }
-        e.presentation.isEnabled = editor != null && state != null && !state.mode.isInsertable
-    }
-
-    override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT
 }
 
-class HelixSaveJumpAction : AnAction() {
+class HelixSaveJumpAction : HelixEditorAction() {
     override fun actionPerformed(e: AnActionEvent) {
         val editor = e.getData(CommonDataKeys.EDITOR) ?: return
         val project = e.project ?: editor.project ?: return
@@ -403,59 +234,30 @@ class HelixSaveJumpAction : AnAction() {
         state.clearCount()
         HelixJumpListService.getInstance(project).recordCurrent(editor, force = true)
     }
-
-    override fun update(e: AnActionEvent) {
-        val editor = e.getData(CommonDataKeys.EDITOR)
-        val state = editor?.let { HelixStateManager.getOrCreate(it) }
-        e.presentation.isEnabled = editor != null && state != null
-    }
-
-    override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT
 }
 
-class HelixUndoCheckpointAction : AnAction() {
+class HelixUndoCheckpointAction : HelixEditorAction() {
     override fun actionPerformed(e: AnActionEvent) {
         val editor = e.getData(CommonDataKeys.EDITOR) ?: return
         HelixActions.commitUndoCheckpoint(editor)
     }
-
-    override fun update(e: AnActionEvent) {
-        val editor = e.getData(CommonDataKeys.EDITOR)
-        e.presentation.isEnabled = editor != null
-    }
-
-    override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT
 }
 
-class HelixJumplistPickerAction : AnAction() {
+class HelixJumplistPickerAction : HelixEditorAction() {
     override fun actionPerformed(e: AnActionEvent) {
         val editor = e.getData(CommonDataKeys.EDITOR) ?: return
         HelixJumplistPopup.show(editor)
     }
-
-    override fun update(e: AnActionEvent) {
-        val editor = e.getData(CommonDataKeys.EDITOR)
-        e.presentation.isEnabled = editor != null
-    }
-
-    override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT
 }
 
-class HelixRegistersPickerAction : AnAction() {
+class HelixRegistersPickerAction : HelixEditorAction() {
     override fun actionPerformed(e: AnActionEvent) {
         val editor = e.getData(CommonDataKeys.EDITOR) ?: return
-        jp.titze.intellij.helix.ui.HelixRegistersPopup.show(editor)
+        HelixRegistersPopup.show(editor)
     }
-
-    override fun update(e: AnActionEvent) {
-        val editor = e.getData(CommonDataKeys.EDITOR)
-        e.presentation.isEnabled = editor != null
-    }
-
-    override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT
 }
 
-class HelixSwitchCaseAction : AnAction() {
+class HelixSwitchCaseAction : HelixEditorAction(requireInsertable = false) {
     override fun actionPerformed(e: AnActionEvent) {
         val editor = e.getData(CommonDataKeys.EDITOR) ?: return
         val state = HelixStateManager.getOrCreate(editor)
@@ -463,17 +265,9 @@ class HelixSwitchCaseAction : AnAction() {
         val count = state.takeCount() ?: 1
         HelixActions.toggleCase(editor, count)
     }
-
-    override fun update(e: AnActionEvent) {
-        val editor = e.getData(CommonDataKeys.EDITOR)
-        val state = editor?.let { HelixStateManager.getOrCreate(it) }
-        e.presentation.isEnabled = editor != null && state != null && !state.mode.isInsertable
-    }
-
-    override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT
 }
 
-class HelixSwitchToLowercaseAction : AnAction() {
+class HelixSwitchToLowercaseAction : HelixEditorAction(requireInsertable = false) {
     override fun actionPerformed(e: AnActionEvent) {
         val editor = e.getData(CommonDataKeys.EDITOR) ?: return
         val state = HelixStateManager.getOrCreate(editor)
@@ -481,17 +275,9 @@ class HelixSwitchToLowercaseAction : AnAction() {
         val count = state.takeCount() ?: 1
         HelixActions.toLowerCase(editor, count)
     }
-
-    override fun update(e: AnActionEvent) {
-        val editor = e.getData(CommonDataKeys.EDITOR)
-        val state = editor?.let { HelixStateManager.getOrCreate(it) }
-        e.presentation.isEnabled = editor != null && state != null && !state.mode.isInsertable
-    }
-
-    override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT
 }
 
-class HelixSwitchToUppercaseAction : AnAction() {
+class HelixSwitchToUppercaseAction : HelixEditorAction(requireInsertable = false) {
     override fun actionPerformed(e: AnActionEvent) {
         val editor = e.getData(CommonDataKeys.EDITOR) ?: return
         val state = HelixStateManager.getOrCreate(editor)
@@ -499,17 +285,9 @@ class HelixSwitchToUppercaseAction : AnAction() {
         val count = state.takeCount() ?: 1
         HelixActions.toUpperCase(editor, count)
     }
-
-    override fun update(e: AnActionEvent) {
-        val editor = e.getData(CommonDataKeys.EDITOR)
-        val state = editor?.let { HelixStateManager.getOrCreate(it) }
-        e.presentation.isEnabled = editor != null && state != null && !state.mode.isInsertable
-    }
-
-    override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT
 }
 
-class HelixIncrementAction : AnAction() {
+class HelixIncrementAction : HelixEditorAction() {
     override fun actionPerformed(e: AnActionEvent) {
         val editor = e.getData(CommonDataKeys.EDITOR) ?: return
         val state = HelixStateManager.getOrCreate(editor)
@@ -520,16 +298,9 @@ class HelixIncrementAction : AnAction() {
         val count = state.takeCount() ?: 1
         HelixActions.increment(editor, count)
     }
-
-    override fun update(e: AnActionEvent) {
-        val editor = e.getData(CommonDataKeys.EDITOR)
-        e.presentation.isEnabled = editor != null
-    }
-
-    override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT
 }
 
-class HelixDecrementAction : AnAction() {
+class HelixDecrementAction : HelixEditorAction() {
     override fun actionPerformed(e: AnActionEvent) {
         val editor = e.getData(CommonDataKeys.EDITOR) ?: return
         val state = HelixStateManager.getOrCreate(editor)
@@ -540,16 +311,9 @@ class HelixDecrementAction : AnAction() {
         val count = state.takeCount() ?: 1
         HelixActions.decrement(editor, count)
     }
-
-    override fun update(e: AnActionEvent) {
-        val editor = e.getData(CommonDataKeys.EDITOR)
-        e.presentation.isEnabled = editor != null
-    }
-
-    override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT
 }
 
-class HelixWindowChordAction : AnAction() {
+class HelixWindowChordAction : HelixEditorAction() {
     override fun actionPerformed(e: AnActionEvent) {
         val editor = e.getData(CommonDataKeys.EDITOR) ?: return
         val state = HelixStateManager.getOrCreate(editor)
@@ -559,169 +323,90 @@ class HelixWindowChordAction : AnAction() {
         }
         HelixKeyHandler.startWindowChord(editor)
     }
-
-    override fun update(e: AnActionEvent) {
-        val editor = e.getData(CommonDataKeys.EDITOR)
-        e.presentation.isEnabled = editor != null
-    }
-
-    override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT
 }
 
-class HelixTrimSelectionsAction : AnAction() {
+class HelixTrimSelectionsAction : HelixEditorAction(requireInsertable = false) {
     override fun actionPerformed(e: AnActionEvent) {
         val editor = e.getData(CommonDataKeys.EDITOR) ?: return
         val state = HelixStateManager.getOrCreate(editor)
         if (state.mode.isInsertable) return
         HelixActions.trimSelections(editor)
     }
-
-    override fun update(e: AnActionEvent) {
-        val editor = e.getData(CommonDataKeys.EDITOR)
-        val state = editor?.let { HelixStateManager.getOrCreate(it) }
-        e.presentation.isEnabled = editor != null && state != null && !state.mode.isInsertable
-    }
-
-    override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT
 }
 
-class HelixAlignSelectionsAction : AnAction() {
+class HelixAlignSelectionsAction : HelixEditorAction(requireInsertable = false) {
     override fun actionPerformed(e: AnActionEvent) {
         val editor = e.getData(CommonDataKeys.EDITOR) ?: return
         val state = HelixStateManager.getOrCreate(editor)
         if (state.mode.isInsertable) return
         HelixActions.alignSelections(editor)
     }
-
-    override fun update(e: AnActionEvent) {
-        val editor = e.getData(CommonDataKeys.EDITOR)
-        val state = editor?.let { HelixStateManager.getOrCreate(it) }
-        e.presentation.isEnabled = editor != null && state != null && !state.mode.isInsertable
-    }
-
-    override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT
 }
 
-class HelixKeepSelectionsAction : AnAction() {
+class HelixKeepSelectionsAction : HelixEditorAction(requireInsertable = false) {
     override fun actionPerformed(e: AnActionEvent) {
         val editor = e.getData(CommonDataKeys.EDITOR) ?: return
         val state = HelixStateManager.getOrCreate(editor)
         if (state.mode.isInsertable) return
         HelixSearchManager.startKeepSelections(editor)
     }
-
-    override fun update(e: AnActionEvent) {
-        val editor = e.getData(CommonDataKeys.EDITOR)
-        val state = editor?.let { HelixStateManager.getOrCreate(it) }
-        e.presentation.isEnabled = editor != null && state != null && !state.mode.isInsertable
-    }
-
-    override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT
 }
 
-class HelixRemoveSelectionsAction : AnAction() {
+class HelixRemoveSelectionsAction : HelixEditorAction(requireInsertable = false) {
     override fun actionPerformed(e: AnActionEvent) {
         val editor = e.getData(CommonDataKeys.EDITOR) ?: return
         val state = HelixStateManager.getOrCreate(editor)
         if (state.mode.isInsertable) return
         HelixSearchManager.startRemoveSelections(editor)
     }
-
-    override fun update(e: AnActionEvent) {
-        val editor = e.getData(CommonDataKeys.EDITOR)
-        val state = editor?.let { HelixStateManager.getOrCreate(it) }
-        e.presentation.isEnabled = editor != null && state != null && !state.mode.isInsertable
-    }
-
-    override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT
 }
 
-class HelixEnsureSelectionsForwardAction : AnAction() {
+class HelixEnsureSelectionsForwardAction : HelixEditorAction(requireInsertable = false) {
     override fun actionPerformed(e: AnActionEvent) {
         val editor = e.getData(CommonDataKeys.EDITOR) ?: return
         val state = HelixStateManager.getOrCreate(editor)
         if (state.mode.isInsertable) return
         HelixActions.ensureSelectionsForward(editor)
     }
-
-    override fun update(e: AnActionEvent) {
-        val editor = e.getData(CommonDataKeys.EDITOR)
-        val state = editor?.let { HelixStateManager.getOrCreate(it) }
-        e.presentation.isEnabled = editor != null && state != null && !state.mode.isInsertable
-    }
-
-    override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT
 }
 
-class HelixMergeSelectionsAction : AnAction() {
+class HelixMergeSelectionsAction : HelixEditorAction(requireInsertable = false) {
     override fun actionPerformed(e: AnActionEvent) {
         val editor = e.getData(CommonDataKeys.EDITOR) ?: return
         val state = HelixStateManager.getOrCreate(editor)
         if (state.mode.isInsertable) return
         HelixActions.mergeSelections(editor)
     }
-
-    override fun update(e: AnActionEvent) {
-        val editor = e.getData(CommonDataKeys.EDITOR)
-        val state = editor?.let { HelixStateManager.getOrCreate(it) }
-        e.presentation.isEnabled = editor != null && state != null && !state.mode.isInsertable
-    }
-
-    override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT
 }
 
-class HelixRotateSelectionsContentsForwardAction : AnAction() {
+class HelixRotateSelectionsContentsForwardAction : HelixEditorAction(requireInsertable = false) {
     override fun actionPerformed(e: AnActionEvent) {
         val editor = e.getData(CommonDataKeys.EDITOR) ?: return
         val state = HelixStateManager.getOrCreate(editor)
         if (state.mode.isInsertable) return
         HelixActions.rotateSelectionsContents(editor, forward = true)
     }
-
-    override fun update(e: AnActionEvent) {
-        val editor = e.getData(CommonDataKeys.EDITOR)
-        val state = editor?.let { HelixStateManager.getOrCreate(it) }
-        e.presentation.isEnabled = editor != null && state != null && !state.mode.isInsertable
-    }
-
-    override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT
 }
 
-class HelixRotateSelectionsContentsBackwardAction : AnAction() {
+class HelixRotateSelectionsContentsBackwardAction : HelixEditorAction(requireInsertable = false) {
     override fun actionPerformed(e: AnActionEvent) {
         val editor = e.getData(CommonDataKeys.EDITOR) ?: return
         val state = HelixStateManager.getOrCreate(editor)
         if (state.mode.isInsertable) return
         HelixActions.rotateSelectionsContents(editor, forward = false)
     }
-
-    override fun update(e: AnActionEvent) {
-        val editor = e.getData(CommonDataKeys.EDITOR)
-        val state = editor?.let { HelixStateManager.getOrCreate(it) }
-        e.presentation.isEnabled = editor != null && state != null && !state.mode.isInsertable
-    }
-
-    override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT
 }
 
-class HelixReverseSelectionsContentsAction : AnAction() {
+class HelixReverseSelectionsContentsAction : HelixEditorAction(requireInsertable = false) {
     override fun actionPerformed(e: AnActionEvent) {
         val editor = e.getData(CommonDataKeys.EDITOR) ?: return
         val state = HelixStateManager.getOrCreate(editor)
         if (state.mode.isInsertable) return
         HelixActions.reverseSelectionsContents(editor)
     }
-
-    override fun update(e: AnActionEvent) {
-        val editor = e.getData(CommonDataKeys.EDITOR)
-        val state = editor?.let { HelixStateManager.getOrCreate(it) }
-        e.presentation.isEnabled = editor != null && state != null && !state.mode.isInsertable
-    }
-
-    override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT
 }
 
-class HelixExtendToLineBoundsAction : AnAction() {
+class HelixExtendToLineBoundsAction : HelixEditorAction(requireInsertable = false) {
     override fun actionPerformed(e: AnActionEvent) {
         val editor = e.getData(CommonDataKeys.EDITOR) ?: return
         val state = HelixStateManager.getOrCreate(editor)
@@ -729,34 +414,18 @@ class HelixExtendToLineBoundsAction : AnAction() {
         val count = state.takeCount() ?: 1
         HelixMotions.extendToLineBounds(editor, count)
     }
-
-    override fun update(e: AnActionEvent) {
-        val editor = e.getData(CommonDataKeys.EDITOR)
-        val state = editor?.let { HelixStateManager.getOrCreate(it) }
-        e.presentation.isEnabled = editor != null && state != null && !state.mode.isInsertable
-    }
-
-    override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT
 }
 
-class HelixShrinkToLineBoundsAction : AnAction() {
+class HelixShrinkToLineBoundsAction : HelixEditorAction(requireInsertable = false) {
     override fun actionPerformed(e: AnActionEvent) {
         val editor = e.getData(CommonDataKeys.EDITOR) ?: return
         val state = HelixStateManager.getOrCreate(editor)
         if (state.mode.isInsertable) return
         HelixMotions.shrinkToLineBounds(editor)
     }
-
-    override fun update(e: AnActionEvent) {
-        val editor = e.getData(CommonDataKeys.EDITOR)
-        val state = editor?.let { HelixStateManager.getOrCreate(it) }
-        e.presentation.isEnabled = editor != null && state != null && !state.mode.isInsertable
-    }
-
-    override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT
 }
 
-class HelixRepeatLastMotionAction : AnAction() {
+class HelixRepeatLastMotionAction : HelixEditorAction(requireInsertable = false) {
     override fun actionPerformed(e: AnActionEvent) {
         val editor = e.getData(CommonDataKeys.EDITOR) ?: return
         val state = HelixStateManager.getOrCreate(editor)
@@ -764,17 +433,9 @@ class HelixRepeatLastMotionAction : AnAction() {
         val count = state.takeCount() ?: 1
         HelixActions.repeatLastMotion(editor, count)
     }
-
-    override fun update(e: AnActionEvent) {
-        val editor = e.getData(CommonDataKeys.EDITOR)
-        val state = editor?.let { HelixStateManager.getOrCreate(it) }
-        e.presentation.isEnabled = editor != null && state != null && !state.mode.isInsertable
-    }
-
-    override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT
 }
 
-class HelixDeleteNoYankAction : AnAction() {
+class HelixDeleteNoYankAction : HelixEditorAction() {
     override fun actionPerformed(e: AnActionEvent) {
         val editor = e.getData(CommonDataKeys.EDITOR) ?: return
         val state = HelixStateManager.getOrCreate(editor)
@@ -785,16 +446,9 @@ class HelixDeleteNoYankAction : AnAction() {
         val count = state.takeCount() ?: 1
         HelixActions.deleteSelectionNoYank(editor, count)
     }
-
-    override fun update(e: AnActionEvent) {
-        val editor = e.getData(CommonDataKeys.EDITOR)
-        e.presentation.isEnabled = editor != null
-    }
-
-    override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT
 }
 
-class HelixChangeNoYankAction : AnAction() {
+class HelixChangeNoYankAction : HelixEditorAction(requireInsertable = false) {
     override fun actionPerformed(e: AnActionEvent) {
         val editor = e.getData(CommonDataKeys.EDITOR) ?: return
         val state = HelixStateManager.getOrCreate(editor)
@@ -802,34 +456,18 @@ class HelixChangeNoYankAction : AnAction() {
         val count = state.takeCount() ?: 1
         HelixActions.changeSelectionNoYank(editor, count)
     }
-
-    override fun update(e: AnActionEvent) {
-        val editor = e.getData(CommonDataKeys.EDITOR)
-        val state = editor?.let { HelixStateManager.getOrCreate(it) }
-        e.presentation.isEnabled = editor != null && state != null && !state.mode.isInsertable
-    }
-
-    override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT
 }
 
-class HelixMergeAllSelectionsAction : AnAction() {
+class HelixMergeAllSelectionsAction : HelixEditorAction(requireInsertable = false) {
     override fun actionPerformed(e: AnActionEvent) {
         val editor = e.getData(CommonDataKeys.EDITOR) ?: return
         val state = HelixStateManager.getOrCreate(editor)
         if (state.mode.isInsertable) return
         HelixActions.mergeAllSelections(editor)
     }
-
-    override fun update(e: AnActionEvent) {
-        val editor = e.getData(CommonDataKeys.EDITOR)
-        val state = editor?.let { HelixStateManager.getOrCreate(it) }
-        e.presentation.isEnabled = editor != null && state != null && !state.mode.isInsertable
-    }
-
-    override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT
 }
 
-class HelixJoinSelectionsSpaceAction : AnAction() {
+class HelixJoinSelectionsSpaceAction : HelixEditorAction(requireInsertable = false) {
     override fun actionPerformed(e: AnActionEvent) {
         val editor = e.getData(CommonDataKeys.EDITOR) ?: return
         val state = HelixStateManager.getOrCreate(editor)
@@ -837,17 +475,9 @@ class HelixJoinSelectionsSpaceAction : AnAction() {
         val count = state.takeCount() ?: 1
         HelixActions.joinLines(editor, count, selectSpace = true)
     }
-
-    override fun update(e: AnActionEvent) {
-        val editor = e.getData(CommonDataKeys.EDITOR)
-        val state = editor?.let { HelixStateManager.getOrCreate(it) }
-        e.presentation.isEnabled = editor != null && state != null && !state.mode.isInsertable
-    }
-
-    override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT
 }
 
-class HelixSearchSelectionRawAction : AnAction() {
+class HelixSearchSelectionRawAction : HelixEditorAction(requireInsertable = false) {
     override fun actionPerformed(e: AnActionEvent) {
         val editor = e.getData(CommonDataKeys.EDITOR) ?: return
         val state = HelixStateManager.getOrCreate(editor)
@@ -855,31 +485,16 @@ class HelixSearchSelectionRawAction : AnAction() {
         HelixKeyHandler.recordJump(editor)
         HelixActions.searchSelection(editor, detectWordBoundaries = false)
     }
-
-    override fun update(e: AnActionEvent) {
-        val editor = e.getData(CommonDataKeys.EDITOR)
-        val state = editor?.let { HelixStateManager.getOrCreate(it) }
-        e.presentation.isEnabled = editor != null && state != null && !state.mode.isInsertable
-    }
-
-    override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT
 }
 
-class HelixSignatureHelpAction : AnAction() {
+class HelixSignatureHelpAction : HelixEditorAction() {
     override fun actionPerformed(e: AnActionEvent) {
         val editor = e.getData(CommonDataKeys.EDITOR) ?: return
         HelixActionDelegate.executeAction("ParameterInfo", editor)
     }
-
-    override fun update(e: AnActionEvent) {
-        val editor = e.getData(CommonDataKeys.EDITOR)
-        e.presentation.isEnabled = editor != null
-    }
-
-    override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT
 }
 
-class HelixEarlierAction : AnAction() {
+class HelixEarlierAction : HelixEditorAction(requireInsertable = false) {
     override fun actionPerformed(e: AnActionEvent) {
         val editor = e.getData(CommonDataKeys.EDITOR) ?: return
         val state = HelixStateManager.getOrCreate(editor)
@@ -887,17 +502,9 @@ class HelixEarlierAction : AnAction() {
         val count = state.takeCount() ?: 1
         repeat(count) { HelixActionDelegate.executeAction("\$Undo", editor) }
     }
-
-    override fun update(e: AnActionEvent) {
-        val editor = e.getData(CommonDataKeys.EDITOR)
-        val state = editor?.let { HelixStateManager.getOrCreate(it) }
-        e.presentation.isEnabled = editor != null && state != null && !state.mode.isInsertable
-    }
-
-    override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT
 }
 
-class HelixLaterAction : AnAction() {
+class HelixLaterAction : HelixEditorAction(requireInsertable = false) {
     override fun actionPerformed(e: AnActionEvent) {
         val editor = e.getData(CommonDataKeys.EDITOR) ?: return
         val state = HelixStateManager.getOrCreate(editor)
@@ -905,12 +512,4 @@ class HelixLaterAction : AnAction() {
         val count = state.takeCount() ?: 1
         repeat(count) { HelixActionDelegate.executeAction("\$Redo", editor) }
     }
-
-    override fun update(e: AnActionEvent) {
-        val editor = e.getData(CommonDataKeys.EDITOR)
-        val state = editor?.let { HelixStateManager.getOrCreate(it) }
-        e.presentation.isEnabled = editor != null && state != null && !state.mode.isInsertable
-    }
-
-    override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT
 }

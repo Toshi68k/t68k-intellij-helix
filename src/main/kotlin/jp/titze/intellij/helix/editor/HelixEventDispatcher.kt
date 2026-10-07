@@ -27,7 +27,7 @@ class HelixEventDispatcher : IdeEventQueue.EventDispatcher {
         if (e.id != KeyEvent.KEY_PRESSED) return false
 
         val editor = findFocusedEditor(e) ?: return false
-        if (editor.isOneLineMode || editor.isViewer) return false
+        if (!HelixEditorEligibility.isActive(editor)) return false
 
         val isCtrl = e.isControlDown && !e.isMetaDown && !e.isAltDown
         val isAlt = e.isAltDown && !e.isControlDown && !e.isMetaDown
@@ -94,64 +94,74 @@ class HelixEventDispatcher : IdeEventQueue.EventDispatcher {
         e: KeyEvent,
         editor: Editor,
         state: jp.titze.intellij.helix.state.HelixEditorState,
-    ): Boolean = when (e.keyCode) {
-        KeyEvent.VK_A -> {
-            HelixActionDelegate.executeAction("EditorLineStart", editor)
-            true
+    ): Boolean {
+        if (!jp.titze.intellij.helix.keymap.HelixShortcutPolicy.isHelixOwned(
+                e.keyCode,
+                jp.titze.intellij.helix.keymap.HelixKeyContext.INSERT,
+            )
+        ) {
+            return false
         }
 
-        KeyEvent.VK_E -> {
-            HelixActionDelegate.executeAction("EditorLineEnd", editor)
-            true
-        }
+        return when (e.keyCode) {
+            KeyEvent.VK_A -> {
+                HelixActionDelegate.executeAction("EditorLineStart", editor)
+                true
+            }
 
-        KeyEvent.VK_H -> {
-            HelixActionDelegate.executeAction("EditorBackSpace", editor)
-            true
-        }
+            KeyEvent.VK_E -> {
+                HelixActionDelegate.executeAction("EditorLineEnd", editor)
+                true
+            }
 
-        KeyEvent.VK_D -> {
-            HelixActionDelegate.executeAction("EditorDelete", editor)
-            true
-        }
+            KeyEvent.VK_H -> {
+                HelixActionDelegate.executeAction("EditorBackSpace", editor)
+                true
+            }
 
-        KeyEvent.VK_S -> {
-            HelixActions.commitUndoCheckpoint(editor)
-            true
-        }
+            KeyEvent.VK_D -> {
+                HelixActionDelegate.executeAction("EditorDelete", editor)
+                true
+            }
 
-        KeyEvent.VK_W -> {
-            HelixActions.deleteWordBackward(editor)
-            true
-        }
+            KeyEvent.VK_S -> {
+                HelixActions.commitUndoCheckpoint(editor)
+                true
+            }
 
-        KeyEvent.VK_U -> {
-            HelixActions.killToLineStart(editor)
-            true
-        }
+            KeyEvent.VK_W -> {
+                HelixActions.deleteWordBackward(editor)
+                true
+            }
 
-        KeyEvent.VK_K -> {
-            HelixActions.killToLineEnd(editor)
-            true
-        }
+            KeyEvent.VK_U -> {
+                HelixActions.killToLineStart(editor)
+                true
+            }
 
-        KeyEvent.VK_R -> {
-            state.setPendingSequence("C-r")
-            HelixWhichKeyPopup.show(editor, "C-r")
-            true
-        }
+            KeyEvent.VK_K -> {
+                HelixActions.killToLineEnd(editor)
+                true
+            }
 
-        KeyEvent.VK_X -> {
-            HelixActionDelegate.executeAction("CodeCompletion", editor)
-            true
-        }
+            KeyEvent.VK_R -> {
+                state.setPendingSequence("C-r")
+                HelixWhichKeyPopup.show(editor, "C-r")
+                true
+            }
 
-        KeyEvent.VK_P -> {
-            HelixActionDelegate.executeAction("ParameterInfo", editor)
-            true
-        }
+            KeyEvent.VK_X -> {
+                HelixActionDelegate.executeAction("CodeCompletion", editor)
+                true
+            }
 
-        else -> false
+            KeyEvent.VK_P -> {
+                HelixActionDelegate.executeAction("ParameterInfo", editor)
+                true
+            }
+
+            else -> false
+        }
     }
 
     private fun handleAltInsertShortcut(e: KeyEvent, editor: Editor): Boolean = when {
@@ -198,6 +208,14 @@ class HelixEventDispatcher : IdeEventQueue.EventDispatcher {
                 state.clearPendingSequence()
                 return HelixWindowKeymap.handle(ch, editor)
             }
+        }
+
+        if (!jp.titze.intellij.helix.keymap.HelixShortcutPolicy.isHelixOwned(
+                e.keyCode,
+                jp.titze.intellij.helix.keymap.HelixKeyContext.NORMAL,
+            )
+        ) {
+            return false
         }
 
         return when (e.keyCode) {
@@ -453,6 +471,7 @@ class HelixEventDispatcher : IdeEventQueue.EventDispatcher {
 
     companion object {
         private var installed = false
+        private var currentDispatcher: HelixEventDispatcher? = null
 
         @Synchronized
         fun install(parentDisposable: Disposable? = null) {
@@ -461,8 +480,20 @@ class HelixEventDispatcher : IdeEventQueue.EventDispatcher {
             val app = ApplicationManager.getApplication()
             val disposable = parentDisposable ?: app
             if (app != null) {
-                IdeEventQueue.getInstance().addDispatcher(HelixEventDispatcher(), disposable)
+                val dispatcher = HelixEventDispatcher()
+                currentDispatcher = dispatcher
+                IdeEventQueue.getInstance().addDispatcher(dispatcher, disposable)
             }
+        }
+
+        @Synchronized
+        fun uninstall() {
+            if (!installed) return
+            currentDispatcher?.let {
+                IdeEventQueue.getInstance().removeDispatcher(it)
+            }
+            currentDispatcher = null
+            installed = false
         }
     }
 }

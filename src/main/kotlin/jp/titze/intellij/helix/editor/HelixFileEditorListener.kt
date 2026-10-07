@@ -40,7 +40,7 @@ class HelixFileEditorListener : FileEditorManagerListener {
     }
 
     private fun handleEditorActivated(editor: com.intellij.openapi.editor.Editor) {
-        if (editor.isOneLineMode || editor.isViewer) return
+        if (!HelixEditorEligibility.isActive(editor)) return
 
         if (HelixSettings.instance.resetToNormalOnTabSwitch) {
             val state = HelixStateManager.getOrCreate(editor)

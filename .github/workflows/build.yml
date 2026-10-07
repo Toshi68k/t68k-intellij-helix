@@ -1,0 +1,55 @@
+name: Build and Verify Plugin
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-verify:
+    name: Build, Test & Verify Plugin
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7 (7.0.1)
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6 (6.0.1)
+        with:
+          java-version: '21'
+          distribution: 'corretto'
+
+      - name: Cache Plugin Verifier IDEs
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6 (6.1.0)
+        with:
+          path: ~/.pluginVerifier/ides
+          key: ${{ runner.os }}-plugin-verifier-ides
+          restore-keys: |
+            ${{ runner.os }}-plugin-verifier-ides-
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@80e941e61874822d2a89974089c4915748e8f4b7 # v4
+        with:
+          cache-read-only: ${{ github.ref != 'refs/heads/main' }}
+
+      - name: Make gradlew executable
+        run: chmod +x gradlew
+
+      - name: Test, Inspect, and Build Plugin
+        run: ./gradlew test detekt verifyPlugin buildPlugin --build-cache
+
+      - name: Upload Test Reports
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7 (7.0.1)
+        with:
+          name: test-reports
+          path: build/reports/tests/

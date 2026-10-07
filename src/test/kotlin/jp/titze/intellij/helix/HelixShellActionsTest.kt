@@ -241,4 +241,14 @@ class HelixShellActionsTest : BasePlatformTestCase() {
         undoManager.undo(fileEditor)
         editor.document.text shouldBe "original text"
     }
+
+    fun testRealProcessExecutionLargeInput() {
+        HelixShellExecutor.reset()
+        val isWindows = System.getProperty("os.name").orEmpty().lowercase().contains("win")
+        val cmd = if (isWindows) "findstr ." else "cat"
+        val largeText = "A".repeat(128 * 1024)
+        val result = HelixShellExecutor.execute(cmd, input = largeText, timeoutMs = 5000L)
+        result.exitCode shouldBe 0
+        result.stdout.length shouldBe largeText.length
+    }
 }

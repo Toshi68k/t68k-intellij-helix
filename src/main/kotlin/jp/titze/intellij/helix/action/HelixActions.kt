@@ -2,7 +2,6 @@ package jp.titze.intellij.helix.action
 
 import com.intellij.openapi.command.CommandProcessor
 import com.intellij.openapi.command.WriteCommandAction
-import com.intellij.openapi.command.impl.UndoManagerImpl
 import com.intellij.openapi.command.undo.UndoManager
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.ScrollType
@@ -16,7 +15,13 @@ object HelixActions {
     fun commitUndoCheckpoint(editor: Editor) {
         val project = editor.project ?: return
         val undoManager = UndoManager.getInstance(project)
-        (undoManager as? UndoManagerImpl)?.flushCurrentCommandMerger()
+        try {
+            val method = undoManager.javaClass.getMethod("flushCurrentCommandMerger")
+            method.isAccessible = true
+            method.invoke(undoManager)
+        } catch (_: Throwable) {
+            // Not UndoManagerImpl or method renamed
+        }
         CommandProcessor.getInstance().executeCommand(
             project,
             { },

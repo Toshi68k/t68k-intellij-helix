@@ -12,7 +12,7 @@ import jp.titze.intellij.helix.ui.HelixWhichKeyPopup
 class HelixTypedActionHandler(private val originalHandler: TypedActionHandler?) : TypedActionHandler {
 
     override fun execute(editor: Editor, charTyped: Char, dataContext: DataContext) {
-        if (editor.isOneLineMode || editor.isViewer) {
+        if (!HelixEditorEligibility.isActive(editor)) {
             originalHandler?.execute(editor, charTyped, dataContext)
             return
         }
@@ -37,14 +37,30 @@ class HelixTypedActionHandler(private val originalHandler: TypedActionHandler?) 
 
     companion object {
         private var installed = false
+        private var originalRawHandler: TypedActionHandler? = null
 
         @Synchronized
         fun install() {
             if (installed) return
             installed = true
             val typedAction = TypedAction.getInstance()
-            val original = typedAction.rawHandler
-            typedAction.setupRawHandler(HelixTypedActionHandler(original))
+            originalRawHandler = typedAction.rawHandler
+            typedAction.setupRawHandler(HelixTypedActionHandler(originalRawHandler))
+        }
+
+        @Synchronized
+        fun uninstall() {
+            if (!installed) return
+            val typedAction = TypedAction.getInstance()
+            val current = typedAction.rawHandler
+            if (current is HelixTypedActionHandler) {
+                val target = originalRawHandler ?: current.originalHandler
+                if (target != null) {
+                    typedAction.setupRawHandler(target)
+                }
+            }
+            originalRawHandler = null
+            installed = false
         }
     }
 }

@@ -54,7 +54,6 @@ object HelixShellExecutor {
         applyWorkingDirectory(pb, workingDir)
 
         val process = pb.start()
-        writeProcessInput(process, input)
 
         val stdoutFuture = CompletableFuture.supplyAsync {
             process.inputStream.bufferedReader(StandardCharsets.UTF_8).readText()
@@ -63,11 +62,23 @@ object HelixShellExecutor {
             process.errorStream.bufferedReader(StandardCharsets.UTF_8).readText()
         }
 
+        val stdinFuture = CompletableFuture.runAsync {
+            writeProcessInput(process, input)
+        }
+
         val finished = process.waitFor(timeoutMs, TimeUnit.MILLISECONDS)
         if (!finished) {
             process.destroyForcibly()
+            stdinFuture.cancel(true)
+            stdoutFuture.cancel(true)
+            stderrFuture.cancel(true)
             HelixShellResult(-1, "", "Command timed out after ${timeoutMs}ms")
         } else {
+            try {
+                stdinFuture.get(1, TimeUnit.SECONDS)
+            } catch (_: Exception) {
+                // Ignore stdin write errors if process finished
+            }
             val stdout = stdoutFuture.get(1, TimeUnit.SECONDS)
             val stderr = stderrFuture.get(1, TimeUnit.SECONDS)
             HelixShellResult(process.exitValue(), stdout, stderr)
@@ -77,6 +88,8 @@ object HelixShellExecutor {
     } catch (e: InterruptedException) {
         Thread.currentThread().interrupt()
         HelixShellResult(-1, "", "Command execution interrupted")
+    } catch (_: java.util.concurrent.ExecutionException) {
+        HelixShellResult(-1, "", "Stream reading failed")
     }
 
     private fun applyEnvironment(pb: ProcessBuilder) {
@@ -100,13 +113,17 @@ object HelixShellExecutor {
     }
 
     private fun writeProcessInput(process: java.lang.Process, input: String?) {
-        if (input != null) {
-            process.outputStream.bufferedWriter(StandardCharsets.UTF_8).use { writer ->
-                writer.write(input)
-                writer.flush()
+        try {
+            if (input != null) {
+                process.outputStream.bufferedWriter(StandardCharsets.UTF_8).use { writer ->
+                    writer.write(input)
+                    writer.flush()
+                }
+            } else {
+                process.outputStream.close()
             }
-        } else {
-            process.outputStream.close()
+        } catch (_: IOException) {
+            // Child process closed pipe early (e.g. head, grep -m)
         }
     }
 }

@@ -1,22 +1,23 @@
 # Helix Keymap (T68k) for IntelliJ IDEA
 
-[![IntelliJ Platform](https://img.shields.io/badge/IntelliJ%20Platform-2024.2+-000000.svg?logo=intellij-idea&logoColor=white)](https://plugins.jetbrains.com)
-[![Kotlin](https://img.shields.io/badge/Kotlin-2.3.4-7F52FF.svg?logo=kotlin&logoColor=white)](https://kotlinlang.org)
-[![JDK](https://img.shields.io/badge/Java-17%20%7C%2021+-ED8B00.svg?logo=openjdk&logoColor=white)](https://openjdk.org)
+[![IntelliJ Platform](https://img.shields.io/badge/IntelliJ%20Platform-2025.1+-000000.svg?logo=intellij-idea&logoColor=white)](https://plugins.jetbrains.com)
+[![Kotlin](https://img.shields.io/badge/Kotlin-2.1-7F52FF.svg?logo=kotlin&logoColor=white)](https://kotlinlang.org)
+[![JDK](https://img.shields.io/badge/Java-21+-ED8B00.svg?logo=openjdk&logoColor=white)](https://openjdk.org)
 [![Helix](https://img.shields.io/badge/Modal-Helix-03C7D3.svg)](https://helix-editor.com)
-[![License](https://img.shields.io/badge/License-Apache_2.0-green.svg)](https://www.apache.org/licenses/LICENSE-2.0)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 A modal editing plugin for JetBrains IDEs implementing the [Helix](https://helix-editor.com) editor's **selection-first
 paradigm**, deeply integrated with IntelliJ's native IDE intelligence, AST capabilities, and refactoring engines.
 
-The goal of this plugin is to provide a more complete and polished Helix-like experience than what is currently
-available with the [Vim](https://www.vim.org) plugin. This plugin attempts to provide an experience that is as close to
-the original Helix editor as possible, while still being deeply integrated with IntelliJ's native IDE capabilities. It
-is currently under development and is not yet complete.
+The goal of this plugin is to provide a complete and polished Helix-like experience directly within JetBrains IDEs,
+combining the authentic Helix selection-first workflow with native IntelliJ IDE capabilities.
 
-- **Plugin ID**: `jp.titze.intellij.helix`
+- **Plugin ID**: `jp.titze.helix`
 - **Vendor**: [Thorsten Titze](https://github.com/Toshi68k)
-- **Target IDE**: IntelliJ IDEA 2024.2+ (Community & Ultimate) and JetBrains IDEs
+- **Target IDE**: IntelliJ IDEA 2025.1+ (Community & Ultimate) and JetBrains IDEs
+
+> [!WARNING]
+> **Beta Notice**: I have been using this plugin daily for real work for several weeks; however, it is still considered **beta** software and might contain bugs or incorrect behavior. Feedback and issue reports are warmly welcomed on [GitHub Issues](https://github.com/Toshi68k/t68k-intellij-helix/issues), but please don't flood me with AI slop!
 
 ---
 
@@ -38,7 +39,56 @@ is currently under development and is not yet complete.
     - **Flash-on-Yank**: Instant, subtle Helix-themed visual feedback highlight across single and multiple carets when
       yanking selections.
 - **Command Palette (`:`)**: Lightweight command prompt supporting standard Helix buffer commands (`:w`, `:q`, `:wq`,
-  `:wa`, `:qa`, `:vsp`, `:sp`, `:format`, `:increment`, `:decrement`).
+  `:wa`, `:qa`, `:vsp`, `:sp`, `:format`, `:increment`, `:decrement`, `:toggle-helix`).
+
+---
+
+## Installation
+
+### From JetBrains Marketplace
+1. In your JetBrains IDE, open **Settings / Preferences** (`Cmd+,` on macOS, `Ctrl+Alt+S` on Windows/Linux).
+2. Navigate to **Plugins** &rarr; **Marketplace**.
+3. Search for **Helix Keymap (T68k)** and click **Install**.
+4. The plugin supports dynamic loading and can be used immediately without restarting.
+
+### Manual Installation (From Disk)
+1. Download `t68k-intellij-helix-<version>.zip` from [GitHub Releases](https://github.com/Toshi68k/t68k-intellij-helix/releases).
+2. Open **Settings / Preferences** &rarr; **Plugins**.
+3. Click the gear icon (&gear;) &rarr; **Install Plugin from Disk...**.
+4. Select the downloaded `.zip` archive.
+
+---
+
+## Compatibility Note
+
+Helix operates as a complete modal editing environment. Running **IdeaVim** concurrently creates severe key interception conflicts. This plugin declares an incompatibility with IdeaVim (`<incompatible-with>IdeaVIM</incompatible-with>`). Please disable or uninstall IdeaVim prior to enabling Helix Keymap.
+
+---
+
+## Editor Scope & Activation
+
+By default, Helix is active in all primary code editors and diff viewers. To prevent interference with terminal sessions or tool windows, activation scope is configurable under **Settings &rarr; Tools &rarr; Helix Keymap**:
+
+- **Code Editors**: Active (locked, core functionality).
+- **Diff Viewers**: Active by default.
+- **Terminal Tool Windows**: Always excluded (raw terminal keys pass through untouched).
+- **Console / REPL Editors**: Inactive by default (opt-in via settings).
+- **VCS Commit Message Editors**: Inactive by default (opt-in via settings).
+- **Other Editors**: Inactive by default (opt-in via settings).
+
+You can also toggle Helix globally on or off at any time by executing `:toggle-helix` in the Command Palette (`:`) or invoking the action `Helix: Toggle Helix Mode`. When Helix is toggled off, the status bar widget displays `OFF`.
+
+---
+
+## Ctrl Key Handling & Platform Policies
+
+Helix relies on several `Ctrl` chords for navigation (`Ctrl-d`, `Ctrl-u`, `Ctrl-f`, `Ctrl-b`, `Ctrl-o`, `Ctrl-i`, `Ctrl-s`, `Ctrl-c`). To balance Helix modal navigation with native operating system and IDE conventions, the plugin implements platform-aware routing:
+
+- **macOS**: All `Ctrl` chords default to **Helix** in both Normal and Insert modes.
+- **Windows & Linux**:
+  - **Normal Mode**: `Ctrl-c` (toggle line comment), `Ctrl-s` (save jump to jumplist), and standard Helix motions (`Ctrl-d`, `Ctrl-u`, `Ctrl-f`, `Ctrl-b`, `Ctrl-o`, `Ctrl-i`, `Ctrl-w`) are routed to **Helix**.
+  - **Insert Mode**: Shortcuts default to the **IDE** so typing in Insert mode preserves native conventions (such as `Ctrl-c` copy, `Ctrl-v` paste, `Ctrl-s` save file, `Ctrl-a` select all).
+- **Customizable**: You can customize ownership for every single `Ctrl` key individually in both Normal and Insert modes under **Settings &rarr; Tools &rarr; Helix Keymap &rarr; Ctrl Key Handling**.
 
 ---
 
@@ -466,6 +516,7 @@ to execute):
 - `:new` / `:n` &rarr; Create new scratch buffer / file (`NewScratchFile`)
 - `:find` &rarr; Find in project files (`FindInPath`)
 - `:commit-undo-checkpoint` / `:checkpoint` &rarr; Commit undo checkpoint to break typing history
+- `:toggle-helix` &rarr; Toggle Helix modal editing globally on or off
 - `:toggle-search-ui` / `:search-ui` &rarr; Toggle between Stock Helix inline bar and Popup dialog
 - `:set search-ui=inline` / `:set search-ui=stock` &rarr; Set search UI to Stock Helix inline bar
 - `:set search-ui=popup` &rarr; Set search UI to Popup dialog
@@ -616,30 +667,38 @@ t68k-intellij-helix/
 ├── build.gradle.kts          # IntelliJ Platform Gradle Plugin 2.x build configuration
 ├── settings.gradle.kts
 ├── gradle.properties
+├── CHANGELOG.md              # Version and release history
 ├── src/
 │   ├── main/
 │   │   ├── kotlin/jp/titze/intellij/helix/
 │   │   │   ├── action/       # Deletion, yanking, pasting, IntelliJ ActionManager delegation
-│   │   │   ├── command/      # Lightweight : command palette popup
-│   │   │   ├── editor/       # TypedActionHandler, Escape/Alt shortcuts, Editor listener
-│   │   │   ├── jumplist/     # Jumplist service
-│   │   │   ├── keymap/       # Sequence dispatching engine (g, space, [, ], count prefixes)
+│   │   │   ├── command/      # Lightweight : command palette popup & registry
+│   │   │   ├── editor/       # Interceptors, eligibility, lifecycle & shared action base
+│   │   │   ├── jumplist/     # Jumplist service & navigation
+│   │   │   ├── keymap/       # Sequence dispatching engine, Which-Key & Ctrl shortcut policy
 │   │   │   ├── motion/       # Word, line, and buffer motions with active selection semantics
-│   │   │   ├── settings/     # Configuration panel and settings
+│   │   │   ├── register/     # Named, clipboard, and special registers
+│   │   │   ├── settings/     # Configuration panel, activation scopes & Ctrl key handling
+│   │   │   ├── shell/        # External process execution & pipe filtering
 │   │   │   ├── state/        # HelixMode (Normal, Insert, Select), state manager & cursor logic
-│   │   │   └── ui/           # Status bar mode widget and factory
+│   │   │   └── ui/           # Status bar mode widget, Which-Key popups & prompt bars
 │   │   └── resources/
-│   │       └── META-INF/
-│   │   │       ├── pluginIcon.svg
-│   │           └── plugin.xml
+│   │       ├── META-INF/
+│   │       │   ├── pluginIcon.svg
+│   │       │   └── plugin.xml
+│   │       └── messages/
+│   │           └── HelixBundle.properties
 │   └── test/
 │       └── kotlin/jp/titze/intellij/helix/
 │           ├── HelixEditingActionsTest.kt     # Tests for modal editing, insert, delete, and change actions
 │           ├── HelixMotionsTest.kt            # Tests for word, line, count, page, find, and view motions
-│           ├── HelixNavigationAndSearchTest.kt# Tests for search, commands, jumplist, and brackets
 │           ├── HelixSelectionTest.kt          # Tests for multi-caret, surround, and text objects
+│           ├── HelixSearchAndRegexTest.kt     # Tests for regex substitution and search navigation
+│           ├── HelixCodeNavigationTest.kt     # Tests for AST and code navigation
+│           ├── HelixUiPopupsTest.kt           # Tests for popups and menus
+│           ├── HelixShellActionsTest.kt       # Tests for shell execution and piping
 │           └── settings/
-│               └── HelixSettingsTest.kt       # Tests for plugin settings and configuration
+│               └── HelixSettingsTest.kt       # Tests for plugin settings, scope, and shortcut policies
 └── README.md
 ```
 
@@ -650,7 +709,7 @@ t68k-intellij-helix/
 This simple extension was written out of personal need for a non-frills, feature complete and somewhat cool
 looking Helix binding Intellij IDEA extension.
 
-Pull requests, bug reports, and suggestions are welcome!
+Pull requests, bug reports, and suggestions are always welcome!
 
 ---
 
