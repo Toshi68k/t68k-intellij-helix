@@ -4,10 +4,6 @@
     <vendor url="https://github.com/Toshi68k">Thorsten Titze</vendor>
 
     <description><![CDATA[
-<div style="background-color: #fff9db; border: 1px solid #f59f00; padding: 10px 14px; margin-bottom: 14px; color: #212529;">
-  <b>Beta Notice:</b> I have been using this plugin for real work for several weeks; however, it is considered <b>beta</b> and might still contain bugs or incorrect behavior. Feedback and issue reports are warmly welcomed on <a href="https://github.com/Toshi68k/t68k-intellij-helix/issues">GitHub</a>, but please don't flood me with AI slop!
-</div>
-
 <p>
   <b>Helix Keymap</b> brings the modern, selection-first modal editing paradigm of the 
   <a href="https://helix-editor.com">Helix editor</a> directly into JetBrains IDEs. 
@@ -15,6 +11,10 @@
   authentic Helix workflows with IntelliJ's native <code>CaretModel</code>, <code>SelectionModel</code>, 
   PSI/AST structure, and <code>ActionManager</code>.
 </p>
+
+<div style="background-color: #fff9db; border: 1px solid #f59f00; padding: 10px 14px; margin-bottom: 14px; color: #212529;">
+  <b>Beta Notice:</b> I have been using this plugin for real work for several weeks; however, it is considered <b>beta</b> and might still contain bugs or incorrect behavior. Feedback and issue reports are warmly welcomed on <a href="https://github.com/Toshi68k/t68k-intellij-helix/issues">GitHub</a>, but please don't flood me with AI slop!
+</div>
 
 <h3>The Selection-First Paradigm</h3>
 <p>
