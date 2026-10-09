@@ -55,6 +55,11 @@ object HelixActions {
         yankSelection(editor, count, register, primaryOnly = true)
     }
 
+    fun yankJoined(editor: Editor, separator: String = "\n", register: Char? = null) {
+        val targetRegister = register ?: HelixStateManager.getOrCreate(editor).selectedRegister
+        HelixRegisterActions.yankJoined(editor, separator, targetRegister)
+    }
+
     fun yankDiagnostic(editor: Editor): Boolean = HelixDiagnosticActions.yankDiagnostic(editor)
 
     fun paste(editor: Editor, after: Boolean = true, register: Char? = null) {

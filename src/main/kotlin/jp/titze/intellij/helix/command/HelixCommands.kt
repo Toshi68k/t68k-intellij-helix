@@ -14,6 +14,7 @@ import jp.titze.intellij.helix.motion.HelixFileNavigation
 import jp.titze.intellij.helix.motion.HelixMotions
 import jp.titze.intellij.helix.register.HelixRegisterManager
 import jp.titze.intellij.helix.settings.HelixLineNavigationMode
+import jp.titze.intellij.helix.settings.HelixScratchSplitMode
 import jp.titze.intellij.helix.settings.HelixSearchUiMode
 import jp.titze.intellij.helix.settings.HelixSettings
 import jp.titze.intellij.helix.state.HelixStateManager
@@ -55,9 +56,19 @@ object HelixCommands {
         HelixCommandItem("quit", listOf("q"), "Close active editor tab") { editor ->
             HelixActionDelegate.executeAction("CloseContent", editor)
         },
-        HelixCommandItem("write-quit", listOf("wq", "x"), "Save all and close tab") { editor ->
+        HelixCommandItem("write-quit", listOf("wq", "x", "exit", "xit"), "Save all and close tab") { editor ->
             HelixActionDelegate.executeAction("SaveAll", editor)
             HelixActionDelegate.executeAction("CloseContent", editor)
+        },
+        HelixCommandItem("update", listOf("u"), "Save all modified files") { editor ->
+            HelixActionDelegate.executeAction("SaveAll", editor)
+        },
+        HelixCommandItem(
+            "yank-join",
+            listOf("yank_join"),
+            "Join and yank selections to clipboard",
+        ) { editor ->
+            HelixActions.yankJoined(editor)
         },
         HelixCommandItem("write-all", listOf("wa"), "Save all modified files") { editor ->
             HelixActionDelegate.executeAction("SaveAll", editor)
@@ -261,6 +272,32 @@ object HelixCommands {
             "Set line navigation to Vim Standard (j/k: physical line, gj/gk: visual line)",
         ) { _ ->
             HelixSettings.instance.lineNavigationMode = HelixLineNavigationMode.VIM_STANDARD
+        },
+        HelixCommandItem(
+            "toggle-scratch-mode",
+            listOf("toggle-scratch", "scratch-mode"),
+            "Toggle scratch split mode (Interactive picker <-> Instant empty buffer)",
+        ) { _ ->
+            HelixSettings.instance.scratchSplitMode =
+                if (HelixSettings.instance.scratchSplitMode == HelixScratchSplitMode.INTERACTIVE) {
+                    HelixScratchSplitMode.EMPTY_BUFFER
+                } else {
+                    HelixScratchSplitMode.INTERACTIVE
+                }
+        },
+        HelixCommandItem(
+            "set-scratch-mode-interactive",
+            listOf("set-scratch-mode-file"),
+            "Set scratch split mode to interactive language picker (NewScratchFile)",
+        ) { _ ->
+            HelixSettings.instance.scratchSplitMode = HelixScratchSplitMode.INTERACTIVE
+        },
+        HelixCommandItem(
+            "set-scratch-mode-buffer",
+            listOf("set-scratch-mode-plain", "set-scratch-mode-helix"),
+            "Set scratch split mode to instant empty buffer (NewScratchBuffer)",
+        ) { _ ->
+            HelixSettings.instance.scratchSplitMode = HelixScratchSplitMode.EMPTY_BUFFER
         },
         HelixCommandItem("jumps", emptyList(), "Open jumplist picker") { editor ->
             HelixJumplistPopup.show(editor)
@@ -750,12 +787,16 @@ object HelixCommands {
 
             "q", "quit" -> HelixActionDelegate.executeAction("CloseContent", editor)
 
-            "wq", "x" -> {
+            "wq", "x", "exit", "xit" -> {
                 HelixActionDelegate.executeAction("SaveAll", editor)
                 ApplicationManager.getApplication().invokeLater {
                     HelixActionDelegate.executeAction("CloseContent", editor)
                 }
             }
+
+            "u", "update" -> HelixActionDelegate.executeAction("SaveAll", editor)
+
+            "yank-join", "yank_join" -> HelixActions.yankJoined(editor)
 
             "wa" -> HelixActionDelegate.executeAction("SaveAll", editor)
 
@@ -840,6 +881,26 @@ object HelixCommands {
                     HelixLineNavigationMode.HELIX_STANDARD
                 }
                 HelixSettings.instance.lineNavigationMode = next
+            }
+
+            "set scratch-mode=interactive", "set scratch-mode=file" -> {
+                HelixSettings.instance.scratchSplitMode = HelixScratchSplitMode.INTERACTIVE
+            }
+
+            "set scratch-mode=buffer", "set scratch-mode=plain",
+            "set scratch-mode=helix", "set scratch-mode=empty",
+            -> {
+                HelixSettings.instance.scratchSplitMode = HelixScratchSplitMode.EMPTY_BUFFER
+            }
+
+            "toggle-scratch-mode", "toggle-scratch", "scratch-mode" -> {
+                val current = HelixSettings.instance.scratchSplitMode
+                val next = if (current == HelixScratchSplitMode.INTERACTIVE) {
+                    HelixScratchSplitMode.EMPTY_BUFFER
+                } else {
+                    HelixScratchSplitMode.INTERACTIVE
+                }
+                HelixSettings.instance.scratchSplitMode = next
             }
 
             "diffget", "diffg", "reset-diff-change", "reset_diff_change" -> {

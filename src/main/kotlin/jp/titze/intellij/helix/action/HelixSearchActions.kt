@@ -105,24 +105,11 @@ object HelixSearchActions {
 
         val regex = try {
             Regex(pattern)
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             Regex(Regex.escape(pattern))
         }
 
-        val matches = mutableListOf<Pair<Int, Int>>()
-        var currentPos = 0
-        while (currentPos < textLen) {
-            val match = regex.find(text, currentPos) ?: break
-            val start = match.range.first
-            val end = match.range.last + 1
-            if (end > start) {
-                matches.add(Pair(start, end))
-                currentPos = end
-            } else {
-                currentPos++
-            }
-        }
-
+        val matches = collectMatches(regex, text, textLen)
         if (matches.isEmpty()) return false
 
         val newCaretRanges = mutableListOf<Pair<Int, Int>>()
@@ -152,12 +139,96 @@ object HelixSearchActions {
 
     fun searchNext(editor: Editor, count: Int = 1): Boolean {
         val pattern = lastSearchPattern ?: return false
-        return search(editor, pattern, backward = lastSearchBackward, count = count, updateDirection = false)
+        val state = jp.titze.intellij.helix.state.HelixStateManager.getOrCreate(editor)
+        return if (state.mode == jp.titze.intellij.helix.state.HelixMode.SELECT) {
+            extendSearch(editor, pattern, backward = lastSearchBackward, count = count)
+        } else {
+            search(editor, pattern, backward = lastSearchBackward, count = count, updateDirection = false)
+        }
     }
 
     fun searchPrev(editor: Editor, count: Int = 1): Boolean {
         val pattern = lastSearchPattern ?: return false
-        return search(editor, pattern, backward = !lastSearchBackward, count = count, updateDirection = false)
+        val state = jp.titze.intellij.helix.state.HelixStateManager.getOrCreate(editor)
+        return if (state.mode == jp.titze.intellij.helix.state.HelixMode.SELECT) {
+            extendSearch(editor, pattern, backward = !lastSearchBackward, count = count)
+        } else {
+            search(editor, pattern, backward = !lastSearchBackward, count = count, updateDirection = false)
+        }
+    }
+
+    private fun extendSearch(editor: Editor, pattern: String, backward: Boolean, count: Int): Boolean {
+        val doc = editor.document
+        val text = doc.charsSequence
+        val textLen = text.length
+        if (textLen == 0) return false
+
+        val regex = try {
+            Regex(pattern)
+        } catch (_: Exception) {
+            Regex(Regex.escape(pattern))
+        }
+
+        val matches = collectMatches(regex, text, textLen)
+        if (matches.isEmpty()) return false
+
+        val existingRanges = editor.caretModel.allCarets.map {
+            Pair(
+                if (it.hasSelection()) it.selectionStart else it.offset,
+                if (it.hasSelection()) it.selectionEnd else it.offset,
+            )
+        }
+
+        val primary = editor.caretModel.primaryCaret
+        val targetMatch = findNextUnselectedMatch(matches, existingRanges, primary, backward, count) ?: return false
+
+        val combined = (existingRanges + listOf(targetMatch)).distinct().sortedBy { it.first }
+        HelixCaretUtils.applyCarets(editor, combined)
+        return true
+    }
+
+    private fun collectMatches(regex: Regex, text: CharSequence, textLen: Int): List<Pair<Int, Int>> {
+        val matches = mutableListOf<Pair<Int, Int>>()
+        var currentPos = 0
+        while (currentPos < textLen) {
+            val match = regex.find(text, currentPos) ?: break
+            val start = match.range.first
+            val end = match.range.last + 1
+            if (end > start) {
+                matches.add(Pair(start, end))
+                currentPos = end
+            } else {
+                currentPos++
+            }
+        }
+        return matches
+    }
+
+    private fun findNextUnselectedMatch(
+        matches: List<Pair<Int, Int>>,
+        existing: List<Pair<Int, Int>>,
+        primary: com.intellij.openapi.editor.Caret,
+        backward: Boolean,
+        count: Int,
+    ): Pair<Int, Int>? {
+        val existingSet = existing.toSet()
+        val available = matches.filter { it !in existingSet }
+        val pool = if (available.isNotEmpty()) available else matches
+        val total = pool.size
+        if (total == 0) return null
+
+        val steps = (count.coerceAtLeast(1) - 1)
+        return if (!backward) {
+            val searchFrom = if (primary.hasSelection()) primary.selectionEnd else primary.offset
+            val baseIdx = pool.indexOfFirst { it.first >= searchFrom }
+            val firstIdx = if (baseIdx >= 0) baseIdx else 0
+            pool[(firstIdx + steps) % total]
+        } else {
+            val searchFrom = if (primary.hasSelection()) primary.selectionStart else primary.offset
+            val baseIdx = pool.indexOfLast { it.second <= searchFrom }
+            val firstIdx = if (baseIdx >= 0) baseIdx else (total - 1)
+            pool[Math.floorMod(firstIdx - steps, total)]
+        }
     }
 
     fun searchSelection(editor: Editor, detectWordBoundaries: Boolean = true): Boolean {

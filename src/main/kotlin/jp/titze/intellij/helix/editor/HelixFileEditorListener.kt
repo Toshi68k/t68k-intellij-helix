@@ -22,8 +22,10 @@ class HelixFileEditorListener : FileEditorManagerListener {
         HelixFileNavigation.recordFileAccess(event.manager.project, event.oldFile, event.newFile)
 
         (event.oldEditor as? TextEditor)?.editor?.let { oldEditor ->
-            HelixJumpToWord.cancel(oldEditor)
-            HelixPromptBar.cancelActivePrompt(oldEditor)
+            if (!oldEditor.isDisposed) {
+                HelixJumpToWord.cancel(oldEditor)
+                HelixPromptBar.cancelActivePrompt(oldEditor)
+            }
         }
 
         val newEditor = (event.newEditor as? TextEditor)?.editor ?: return

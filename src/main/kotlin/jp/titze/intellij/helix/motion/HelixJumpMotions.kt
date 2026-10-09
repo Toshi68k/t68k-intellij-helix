@@ -556,4 +556,40 @@ object HelixJumpMotions {
         '>' -> HelixSurroundActions.findMatchingOpen(text, index, '<', '>')
         else -> null
     }
+
+    /**
+     * [x / ]x: Move to previous/next XML/HTML element
+     */
+    fun moveXmlElement(editor: Editor, forward: Boolean, count: Int = 1) {
+        val doc = editor.document
+        val text = doc.charsSequence
+        val textLen = text.length
+        if (textLen == 0) return
+
+        val state = HelixStateManager.getOrCreate(editor)
+        val isSelect = state.mode == HelixMode.SELECT
+
+        val tagPattern = Regex("""<(/)?([a-zA-Z0-9_\-:]+)(?:\s+[^>]*?)?(/)?>""")
+        val tagOffsets = tagPattern.findAll(text).map { it.range.first }.toList()
+        if (tagOffsets.isEmpty()) return
+
+        HelixMotionUtils.runForEachCaret(editor) { caret ->
+            val anchor = if (isSelect && caret.hasSelection()) caret.leadSelectionOffset else caret.offset
+            val curOffset = caret.offset
+            val targetOffset = if (forward) {
+                val candidates = tagOffsets.filter { it > curOffset }
+                val idx = (count - 1).coerceAtMost(candidates.size - 1)
+                candidates.getOrNull(idx)
+            } else {
+                val candidates = tagOffsets.filter { it < curOffset }
+                val idx = (candidates.size - count).coerceAtLeast(0)
+                candidates.getOrNull(idx)
+            }
+
+            if (targetOffset != null) {
+                HelixMotionUtils.applyMotion(caret, anchor, targetOffset, isSelect)
+            }
+        }
+        editor.scrollingModel.scrollToCaret(ScrollType.MAKE_VISIBLE)
+    }
 }

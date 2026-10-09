@@ -64,6 +64,12 @@ internal object HelixBracketKeymap {
             repeat(count) { HelixActionDelegate.executeAction("GotoPreviousSpellingError", editor) }.let { true }
         }
 
+        'x' -> {
+            HelixKeyHandler.recordJump(editor)
+            HelixMotions.moveXmlElement(editor, forward = false, count = count)
+            true
+        }
+
         ' ' -> {
             HelixMotions.addNewline(editor, below = false, count = count)
             true
@@ -128,6 +134,12 @@ internal object HelixBracketKeymap {
         's' -> {
             HelixKeyHandler.recordJump(editor)
             repeat(count) { HelixActionDelegate.executeAction("GotoNextSpellingError", editor) }.let { true }
+        }
+
+        'x' -> {
+            HelixKeyHandler.recordJump(editor)
+            HelixMotions.moveXmlElement(editor, forward = true, count = count)
+            true
         }
 
         ' ' -> {

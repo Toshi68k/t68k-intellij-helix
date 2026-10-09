@@ -5,6 +5,35 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+
+- **Scratch Window Splits**:
+  - Added `<Ctrl+w n s>` / `<space w n s>` (`hsplit_new`) and `<Ctrl+w n v>` / `<space w n v>` (`vsplit_new`) chords to create new scratches in splits.
+  - Added configurable scratch mode preference: Interactive dialog (`NewScratchFile`) vs. instant plain scratch buffer (`NewScratchBuffer`).
+  - Added `:toggle-scratch-mode`, `:scratch-mode`, `:set scratch-mode=interactive`, and `:set scratch-mode=buffer` palette commands.
+- **Directional Navigation Keys**:
+  - Arrow keys (<kbd>←</kbd>, <kbd>→</kbd>, <kbd>↑</kbd>, <kbd>↓</kbd>) in Normal mode now behave as modal motions matching `h`, `l`, `k`, `j` (respecting visual line settings and count prefixes).
+  - <kbd>Home</kbd> and <kbd>End</kbd> in Normal mode navigate to line start / line end.
+- **Select Mode Search Caret Extension**:
+  - In Select mode, `n` (`search_next`) and `N` (`search_prev`) now extend carets by keeping existing selections and adding next/previous matches (`extend_search_next` / `extend_search_prev`).
+- **XML / HTML Tag Navigation**:
+  - Added `[x` and `]x` unimpaired chords to jump to previous and next XML/HTML tags and elements (`goto_prev_xml_element` / `goto_next_xml_element`).
+- **Last Insert Register**:
+  - Added `".` register recording text inserted during the most recent insert sequence.
+- **Selection Join & Yank**:
+  - Added `:yank-join` command palette action to join all active multi-caret selections with a separator and copy to clipboard/register.
+- **Command Palette Aliases**:
+  - Added `:update` / `:u` alias for `SaveAll`.
+  - Added `:exit` / `:xit` alias for save and exit (`:wq` / `:x`).
+
+### Fixed
+
+- **Search & Regex Prompt Bar Cancellation**:
+  - Pressing <kbd>Ctrl+c</kbd>, <kbd>Esc</kbd>, or <kbd>Ctrl+[</kbd> inside the active search or regex prompt bar now cleanly dismisses the bar without triggering line comments (`CommentByLineComment`) on the editor.
+  - Non-cancel keystrokes typed inside active prompts flow directly to the prompt input field without triggering Normal mode bindings.
+- **Editor Disposal Safety**:
+  - Guarded prompt bar cancellation and caret restoration against disposed editors during tab switching, closing, and test fixture teardown.
+
 ## [0.1.0]
 
 ### Added

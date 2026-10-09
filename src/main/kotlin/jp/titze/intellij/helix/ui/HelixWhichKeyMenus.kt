@@ -115,6 +115,7 @@ object HelixWhichKeyMenus {
         WhichKeyItem("s", "Previous spelling error", "goto_prev_spelling_error", "GotoPreviousSpellingError"),
         WhichKeyItem("Space", "Add newline above", "add_newline_above"),
         WhichKeyItem("b", "Previous buffer / tab", "goto_previous_buffer", "PreviousTab"),
+        WhichKeyItem("x", "Previous XML element", "goto_prev_xml_element"),
     )
 
     val bracketCloseItems = listOf(
@@ -132,6 +133,7 @@ object HelixWhichKeyMenus {
         WhichKeyItem("s", "Next spelling error", "goto_next_spelling_error", "GotoNextSpellingError"),
         WhichKeyItem("Space", "Add newline below", "add_newline_below"),
         WhichKeyItem("b", "Next buffer / tab", "goto_next_buffer", "NextTab"),
+        WhichKeyItem("x", "Next XML element", "goto_next_xml_element"),
     )
 
     val viewItems = listOf(
@@ -154,6 +156,8 @@ object HelixWhichKeyMenus {
     val windowItems = listOf(
         WhichKeyItem("v", "Vertical split", "vsplit", "SplitVertically"),
         WhichKeyItem("s", "Horizontal split", "hsplit", "SplitHorizontally"),
+        WhichKeyItem("nv", "New vertical scratch split", "vsplit_new"),
+        WhichKeyItem("ns", "New horizontal scratch split", "hsplit_new"),
         WhichKeyItem("f", "Goto file (horizontal split)", "goto_file_hsplit", "SplitHorizontally"),
         WhichKeyItem("F", "Goto file (vertical split)", "goto_file_vsplit", "SplitVertically"),
         WhichKeyItem("t", "Transpose split orientation", "transpose_view", "ChangeSplitOrientation"),
@@ -182,6 +186,7 @@ object HelixWhichKeyMenus {
         WhichKeyItem("/", "Search register", "search_register"),
         WhichKeyItem("%", "Buffer name", "buffer_name_register"),
         WhichKeyItem("#", "Selection index", "selection_index_register"),
+        WhichKeyItem(".", "Last inserted text", "last_insert_register"),
     )
 
     val textObjectItems = listOf(

@@ -11,6 +11,7 @@ import jp.titze.intellij.helix.action.HelixActions
 import jp.titze.intellij.helix.action.HelixCaretSnapshot
 import jp.titze.intellij.helix.action.HelixShellActions
 import java.awt.BorderLayout
+import java.awt.Component
 import java.awt.Dimension
 import java.awt.Font
 import java.awt.Graphics
@@ -22,6 +23,7 @@ import java.awt.event.KeyAdapter
 import java.awt.event.KeyEvent
 import javax.swing.BorderFactory
 import javax.swing.JPanel
+import javax.swing.KeyStroke
 import javax.swing.SwingConstants
 import javax.swing.SwingUtilities
 import javax.swing.event.DocumentEvent
@@ -123,7 +125,7 @@ class HelixPromptBar(private val editor: Editor) : JPanel(BorderLayout(JBUI.scal
                         e.consume()
                     }
 
-                    e.keyCode == KeyEvent.VK_ESCAPE -> {
+                    isCancelKey(e) -> {
                         cancelAndClose()
                         e.consume()
                     }
@@ -154,11 +156,39 @@ class HelixPromptBar(private val editor: Editor) : JPanel(BorderLayout(JBUI.scal
             }
         })
 
+        val cancelAction = Runnable { cancelAndClose() }
+        textField.registerKeyboardAction(
+            { cancelAction.run() },
+            KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0),
+            WHEN_FOCUSED,
+        )
+        textField.registerKeyboardAction(
+            { cancelAction.run() },
+            KeyStroke.getKeyStroke(KeyEvent.VK_C, KeyEvent.CTRL_DOWN_MASK),
+            WHEN_FOCUSED,
+        )
+        textField.registerKeyboardAction(
+            { cancelAction.run() },
+            KeyStroke.getKeyStroke(KeyEvent.VK_OPEN_BRACKET, KeyEvent.CTRL_DOWN_MASK),
+            WHEN_FOCUSED,
+        )
+
         textField.addFocusListener(object : FocusAdapter() {
             override fun focusLost(e: FocusEvent?) {
                 // If focus moves away from prompt bar and editor, keep state or allow cancel
             }
         })
+    }
+
+    private fun isCtrlCKey(e: KeyEvent): Boolean =
+        e.keyCode == KeyEvent.VK_C || e.keyChar == 'c' || e.keyChar == 'C' || e.keyChar.code == 3
+
+    private fun isCancelKey(e: KeyEvent): Boolean {
+        val isCtrl = e.isControlDown && !e.isMetaDown && !e.isAltDown
+        val isEscape = e.keyCode == KeyEvent.VK_ESCAPE
+        val isCtrlC = isCtrl && isCtrlCKey(e)
+        val isCtrlBracket = isCtrl && e.keyCode == KeyEvent.VK_OPEN_BRACKET
+        return isEscape || isCtrlC || isCtrlBracket
     }
 
     fun show(type: HelixPromptType, count: Int = 1) {
@@ -301,7 +331,7 @@ class HelixPromptBar(private val editor: Editor) : JPanel(BorderLayout(JBUI.scal
         val snapshot = baseSnapshot
         hideBar()
 
-        if (query.isNotEmpty()) {
+        if (query.isNotEmpty() && !editor.isDisposed) {
             HelixPromptHistory.add(type.toCategory(), query)
             if (type == HelixPromptType.SEARCH) {
                 HelixActions.lastSearchPattern = query
@@ -317,7 +347,9 @@ class HelixPromptBar(private val editor: Editor) : JPanel(BorderLayout(JBUI.scal
 
     fun cancelAndClose() {
         historyNavigator.reset()
-        HelixActions.restoreCarets(editor, baseSnapshot)
+        if (!editor.isDisposed) {
+            HelixActions.restoreCarets(editor, baseSnapshot)
+        }
         hideBar()
     }
 
@@ -334,9 +366,11 @@ class HelixPromptBar(private val editor: Editor) : JPanel(BorderLayout(JBUI.scal
 
     private fun hideBar() {
         isVisible = false
-        editor.component.revalidate()
-        editor.component.repaint()
-        editor.contentComponent.requestFocusInWindow()
+        if (!editor.isDisposed) {
+            editor.component.revalidate()
+            editor.component.repaint()
+            editor.contentComponent.requestFocusInWindow()
+        }
     }
 
     companion object {
@@ -381,12 +415,23 @@ class HelixPromptBar(private val editor: Editor) : JPanel(BorderLayout(JBUI.scal
         }
 
         fun cancelActivePrompt(editor: Editor): Boolean {
+            if (editor.isDisposed) return false
             val bar = editor.getUserData(PROMPT_BAR_KEY)
             if (bar != null && bar.isVisible) {
                 bar.cancelAndClose()
                 return true
             }
             return false
+        }
+
+        fun isPromptActive(editor: Editor): Boolean {
+            val bar = editor.getUserData(PROMPT_BAR_KEY)
+            return bar != null && bar.isVisible
+        }
+
+        fun isPromptComponent(editor: Editor, component: Component): Boolean {
+            val bar = editor.getUserData(PROMPT_BAR_KEY) ?: return false
+            return bar.isVisible && (bar == component || SwingUtilities.isDescendingFrom(component, bar))
         }
     }
 }

@@ -32,9 +32,15 @@ enum class HelixLineNavigationMode(val displayName: String) {
     VIM_STANDARD("Vim Standard (j/k: physical line, gj/gk: visual line)"),
 }
 
+enum class HelixScratchSplitMode(val displayName: String) {
+    INTERACTIVE("Interactive: Prompt for language / file type (NewScratchFile)"),
+    EMPTY_BUFFER("Instant: Open empty plain-text buffer without prompt (NewScratchBuffer)"),
+}
+
 class HelixSettingsState {
     var searchUiMode: String = HelixSearchUiMode.STOCK_HELIX.name
     var lineNavigationMode: String = HelixLineNavigationMode.HELIX_STANDARD.name
+    var scratchSplitMode: String = HelixScratchSplitMode.INTERACTIVE.name
     var jumpListMaxEntries: Int = HelixSettings.DEFAULT_JUMP_LIST_MAX_ENTRIES
     var promptHistoryMaxEntries: Int = HelixSettings.DEFAULT_PROMPT_HISTORY_MAX_ENTRIES
     var colorTheme: String = HelixColorTheme.SYNC.name
@@ -80,6 +86,16 @@ class HelixSettings : PersistentStateComponent<HelixSettingsState> {
         }
         set(value) {
             myState.lineNavigationMode = value.name
+        }
+
+    var scratchSplitMode: HelixScratchSplitMode
+        get() = try {
+            HelixScratchSplitMode.valueOf(myState.scratchSplitMode)
+        } catch (_: Exception) {
+            HelixScratchSplitMode.INTERACTIVE
+        }
+        set(value) {
+            myState.scratchSplitMode = value.name
         }
 
     var jumpListMaxEntries: Int

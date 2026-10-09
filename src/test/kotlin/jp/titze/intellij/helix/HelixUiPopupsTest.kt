@@ -7,10 +7,15 @@ import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.types.shouldBeSameInstanceAs
+import jp.titze.intellij.helix.action.HelixActionDelegate
+import jp.titze.intellij.helix.action.HelixCaretUtils
 import jp.titze.intellij.helix.command.HelixCommandPopup
 import jp.titze.intellij.helix.command.HelixCommands
+import jp.titze.intellij.helix.editor.HelixEventDispatcher
 import jp.titze.intellij.helix.keymap.HelixKeyHandler
+import jp.titze.intellij.helix.register.HelixRegisterManager
 import jp.titze.intellij.helix.settings.HelixLineNavigationMode
+import jp.titze.intellij.helix.settings.HelixScratchSplitMode
 import jp.titze.intellij.helix.settings.HelixSearchUiMode
 import jp.titze.intellij.helix.settings.HelixSettings
 import jp.titze.intellij.helix.state.HelixMode
@@ -18,11 +23,15 @@ import jp.titze.intellij.helix.state.HelixStateManager
 import jp.titze.intellij.helix.ui.HelixDirectoryFilePickerPopup
 import jp.titze.intellij.helix.ui.HelixPromptBar
 import jp.titze.intellij.helix.ui.HelixPromptType
+import jp.titze.intellij.helix.ui.HelixSearchPopup
+import jp.titze.intellij.helix.ui.HelixSelectRegexPopup
 import jp.titze.intellij.helix.ui.HelixStatusBarWidget
 import jp.titze.intellij.helix.ui.HelixStatusBarWidgetFactory
 import jp.titze.intellij.helix.ui.HelixWhichKeyMenus
 import jp.titze.intellij.helix.ui.HelixWhichKeyPopup
 import java.awt.Component
+import java.awt.event.InputEvent
+import java.awt.event.KeyEvent
 import java.awt.event.MouseEvent
 
 class HelixUiPopupsTest : BasePlatformTestCase() {
@@ -1293,5 +1302,116 @@ class HelixUiPopupsTest : BasePlatformTestCase() {
         HelixCommands.execute("toggle-helix", editor)
         settings.enabled.shouldBeTrue()
         jp.titze.intellij.helix.editor.HelixEditorEligibility.isActive(editor).shouldBeTrue()
+    }
+
+    fun testUpdateAndExitCommands() {
+        myFixture.configureByText("test.txt", "sample text")
+        val editor = myFixture.editor
+        val executedActions = mutableListOf<String>()
+        HelixActionDelegate.actionExecutor = { id, _ ->
+            executedActions.add(id)
+            true
+        }
+        try {
+            executedActions.clear()
+            HelixCommands.execute("update", editor)
+            executedActions shouldBe listOf("SaveAll")
+
+            executedActions.clear()
+            HelixCommands.execute("u", editor)
+            executedActions shouldBe listOf("SaveAll")
+
+            executedActions.clear()
+            HelixCommands.execute("exit", editor)
+            executedActions shouldBe listOf("SaveAll", "CloseContent")
+
+            executedActions.clear()
+            HelixCommands.execute("xit", editor)
+            executedActions shouldBe listOf("SaveAll", "CloseContent")
+        } finally {
+            HelixActionDelegate.actionExecutor = null
+        }
+    }
+
+    fun testYankJoinCommand() {
+        myFixture.configureByText("test.txt", "alpha beta gamma delta")
+        val editor = myFixture.editor
+        HelixRegisterManager.clear()
+
+        // Create two carets selecting "alpha" and "gamma"
+        HelixCaretUtils.applyCarets(editor, listOf(Pair(0, 5), Pair(11, 16)))
+        editor.caretModel.caretCount shouldBe 2
+
+        HelixCommands.execute("yank-join", editor)
+        HelixRegisterManager.defaultRegister?.text shouldBe "alpha\ngamma"
+    }
+
+    fun testScratchSplitModeCommands() {
+        myFixture.configureByText("test.txt", "sample text")
+        val editor = myFixture.editor
+        val settings = HelixSettings.instance
+        settings.scratchSplitMode = HelixScratchSplitMode.INTERACTIVE
+
+        HelixCommands.execute("set scratch-mode=buffer", editor)
+        settings.scratchSplitMode shouldBe HelixScratchSplitMode.EMPTY_BUFFER
+
+        HelixCommands.execute("set scratch-mode=interactive", editor)
+        settings.scratchSplitMode shouldBe HelixScratchSplitMode.INTERACTIVE
+
+        HelixCommands.execute("toggle-scratch-mode", editor)
+        settings.scratchSplitMode shouldBe HelixScratchSplitMode.EMPTY_BUFFER
+
+        HelixCommands.execute("toggle-scratch-mode", editor)
+        settings.scratchSplitMode shouldBe HelixScratchSplitMode.INTERACTIVE
+    }
+
+    fun testSearchPopupCancellation() {
+        myFixture.configureByText("test.txt", "line 1\nline 2\n")
+        val editor = myFixture.editor
+
+        HelixSearchPopup.show(editor)
+        try {
+            HelixSearchPopup.isShowing().shouldBeTrue()
+            val dispatcher = HelixEventDispatcher()
+            val ctrlC = KeyEvent(
+                editor.contentComponent,
+                KeyEvent.KEY_PRESSED,
+                System.currentTimeMillis(),
+                InputEvent.CTRL_DOWN_MASK,
+                KeyEvent.VK_C,
+                'c',
+            )
+            val handled = dispatcher.dispatch(ctrlC)
+            handled.shouldBeTrue()
+            ctrlC.isConsumed.shouldBeTrue()
+            HelixSearchPopup.isShowing().shouldBeFalse()
+        } finally {
+            HelixSearchPopup.cancelActive()
+        }
+    }
+
+    fun testSelectRegexPopupCancellation() {
+        myFixture.configureByText("test.txt", "line 1\nline 2\n")
+        val editor = myFixture.editor
+
+        HelixSelectRegexPopup.show(editor)
+        try {
+            HelixSelectRegexPopup.isShowing().shouldBeTrue()
+            val dispatcher = HelixEventDispatcher()
+            val ctrlC = KeyEvent(
+                editor.contentComponent,
+                KeyEvent.KEY_PRESSED,
+                System.currentTimeMillis(),
+                InputEvent.CTRL_DOWN_MASK,
+                KeyEvent.VK_C,
+                'c',
+            )
+            val handled = dispatcher.dispatch(ctrlC)
+            handled.shouldBeTrue()
+            ctrlC.isConsumed.shouldBeTrue()
+            HelixSelectRegexPopup.isShowing().shouldBeFalse()
+        } finally {
+            HelixSelectRegexPopup.cancelActive()
+        }
     }
 }

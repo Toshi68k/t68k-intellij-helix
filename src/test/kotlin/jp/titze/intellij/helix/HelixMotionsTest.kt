@@ -7,6 +7,7 @@ import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import jp.titze.intellij.helix.action.HelixActions
+import jp.titze.intellij.helix.editor.HelixEventDispatcher
 import jp.titze.intellij.helix.keymap.HelixGotoKeymap
 import jp.titze.intellij.helix.keymap.HelixKeyHandler
 import jp.titze.intellij.helix.motion.HelixMotionHistory
@@ -1048,5 +1049,95 @@ class HelixMotionsTest : BasePlatformTestCase() {
         // 'gk' moves up visual line in Vim standard
         HelixGotoKeymap.handle('k', editor)
         caret.logicalPosition.line shouldBe 0
+    }
+
+    fun testHelixEventDispatcherArrowKeys() {
+        myFixture.configureByText("test.txt", "line 1\nline 2\nline 3")
+        val editor = myFixture.editor
+        val caret = editor.caretModel.primaryCaret
+        caret.moveToOffset(0)
+
+        val dispatcher = HelixEventDispatcher()
+
+        // Right arrow moves char right
+        val rightEvent = java.awt.event.KeyEvent(
+            editor.contentComponent,
+            java.awt.event.KeyEvent.KEY_PRESSED,
+            System.currentTimeMillis(),
+            0,
+            java.awt.event.KeyEvent.VK_RIGHT,
+            java.awt.event.KeyEvent.CHAR_UNDEFINED,
+        )
+        dispatcher.dispatch(rightEvent).shouldBeTrue()
+        caret.offset shouldBe 1
+
+        // Left arrow moves char left
+        val leftEvent = java.awt.event.KeyEvent(
+            editor.contentComponent,
+            java.awt.event.KeyEvent.KEY_PRESSED,
+            System.currentTimeMillis(),
+            0,
+            java.awt.event.KeyEvent.VK_LEFT,
+            java.awt.event.KeyEvent.CHAR_UNDEFINED,
+        )
+        dispatcher.dispatch(leftEvent).shouldBeTrue()
+        caret.offset shouldBe 0
+
+        // Down arrow moves down
+        val downEvent = java.awt.event.KeyEvent(
+            editor.contentComponent,
+            java.awt.event.KeyEvent.KEY_PRESSED,
+            System.currentTimeMillis(),
+            0,
+            java.awt.event.KeyEvent.VK_DOWN,
+            java.awt.event.KeyEvent.CHAR_UNDEFINED,
+        )
+        dispatcher.dispatch(downEvent).shouldBeTrue()
+        caret.logicalPosition.line shouldBe 1
+
+        // Up arrow moves up
+        val upEvent = java.awt.event.KeyEvent(
+            editor.contentComponent,
+            java.awt.event.KeyEvent.KEY_PRESSED,
+            System.currentTimeMillis(),
+            0,
+            java.awt.event.KeyEvent.VK_UP,
+            java.awt.event.KeyEvent.CHAR_UNDEFINED,
+        )
+        dispatcher.dispatch(upEvent).shouldBeTrue()
+        caret.logicalPosition.line shouldBe 0
+    }
+
+    fun testHelixEventDispatcherHomeAndEnd() {
+        myFixture.configureByText("test.txt", "   hello world")
+        val editor = myFixture.editor
+        val caret = editor.caretModel.primaryCaret
+        caret.moveToOffset(5)
+
+        val dispatcher = HelixEventDispatcher()
+
+        // End moves to line end
+        val endEvent = java.awt.event.KeyEvent(
+            editor.contentComponent,
+            java.awt.event.KeyEvent.KEY_PRESSED,
+            System.currentTimeMillis(),
+            0,
+            java.awt.event.KeyEvent.VK_END,
+            java.awt.event.KeyEvent.CHAR_UNDEFINED,
+        )
+        dispatcher.dispatch(endEvent).shouldBeTrue()
+        caret.offset shouldBe 14
+
+        // Home moves to line start
+        val homeEvent = java.awt.event.KeyEvent(
+            editor.contentComponent,
+            java.awt.event.KeyEvent.KEY_PRESSED,
+            System.currentTimeMillis(),
+            0,
+            java.awt.event.KeyEvent.VK_HOME,
+            java.awt.event.KeyEvent.CHAR_UNDEFINED,
+        )
+        dispatcher.dispatch(homeEvent).shouldBeTrue()
+        caret.offset shouldBe 0
     }
 }

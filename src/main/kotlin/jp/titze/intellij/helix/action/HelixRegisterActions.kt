@@ -278,4 +278,35 @@ object HelixRegisterActions {
         caret.removeSelection()
         caret.moveToOffset(newOffset)
     }
+
+    fun yankJoined(editor: Editor, separator: String = "\n", register: Char? = null) {
+        val state = HelixStateManager.getOrCreate(editor)
+        val pieces = editor.caretModel.allCarets.mapNotNull { caret ->
+            if (caret.hasSelection()) {
+                caret.selectedText
+            } else {
+                val offset = caret.offset
+                if (offset < editor.document.textLength) {
+                    editor.document.getText(TextRange(offset, offset + 1))
+                } else {
+                    null
+                }
+            }
+        }.filter { it.isNotEmpty() }
+
+        if (pieces.isNotEmpty()) {
+            val joined = pieces.joinToString(separator)
+            val ranges = editor.caretModel.allCarets.map {
+                TextRange(it.selectionStart, it.selectionEnd)
+            }
+            state.yankRegister = joined
+            HelixRegisterManager.recordYank(
+                text = joined,
+                isLinewise = separator.contains('\n'),
+                pieces = listOf(joined),
+                register = register,
+            )
+            HelixVisualFeedback.flashYank(editor, ranges)
+        }
+    }
 }

@@ -5,16 +5,29 @@ import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import jp.titze.intellij.helix.action.HelixActionDelegate
 import jp.titze.intellij.helix.command.HelixCommandPopup
 import jp.titze.intellij.helix.editor.HelixEscapeHandler
 import jp.titze.intellij.helix.editor.HelixEventDispatcher
 import jp.titze.intellij.helix.keymap.HelixKeyHandler
 import jp.titze.intellij.helix.keymap.HelixWindowKeymap
+import jp.titze.intellij.helix.settings.HelixScratchSplitMode
+import jp.titze.intellij.helix.settings.HelixSettings
 import jp.titze.intellij.helix.state.HelixStateManager
 import jp.titze.intellij.helix.ui.HelixWhichKeyMenus
 import java.awt.event.KeyEvent
 
 class HelixWindowKeymapTest : BasePlatformTestCase() {
+
+    override fun setUp() {
+        super.setUp()
+        HelixSettings.instance.scratchSplitMode = HelixScratchSplitMode.INTERACTIVE
+    }
+
+    override fun tearDown() {
+        HelixSettings.instance.scratchSplitMode = HelixScratchSplitMode.INTERACTIVE
+        super.tearDown()
+    }
 
     fun testWindowMenuData() {
         val menu = HelixWhichKeyMenus.getMenu("C-w")
@@ -22,7 +35,14 @@ class HelixWindowKeymapTest : BasePlatformTestCase() {
         menu.first shouldBe "WINDOW MENU"
 
         val keys = menu.second.map { it.key }
-        keys shouldBe listOf("v", "s", "f", "F", "t", "h", "j", "k", "l", "w", "W", "H", "J", "K", "L", "q", "c", "o")
+        keys shouldBe listOf(
+            "v", "s", "nv", "ns", "f", "F", "t", "h", "j", "k", "l", "w", "W", "H", "J", "K", "L", "q", "c", "o",
+        )
+
+        val nvItem = menu.second.first { it.key == "nv" }
+        nvItem.helixCommand shouldBe "vsplit_new"
+        val nsItem = menu.second.first { it.key == "ns" }
+        nsItem.helixCommand shouldBe "hsplit_new"
 
         val fItem = menu.second.first { it.key == "f" }
         fItem.helixCommand shouldBe "goto_file_hsplit"
@@ -397,5 +417,66 @@ class HelixWindowKeymapTest : BasePlatformTestCase() {
 
         jp.titze.intellij.helix.keymap.HelixSpaceKeymap.handle('w', editor).shouldBeTrue()
         state.pendingSequence shouldBe "C-w"
+    }
+
+    fun testWindowScratchSplitsActionSequence() {
+        myFixture.configureByText("test.txt", "hello window")
+        val editor = myFixture.editor
+        val executed = mutableListOf<String>()
+        jp.titze.intellij.helix.action.HelixActionDelegate.actionExecutor = { actionId, _ ->
+            executed.add(actionId)
+            true
+        }
+        try {
+            // C-w n s (hsplit_new)
+            executed.clear()
+            HelixKeyHandler.handleKey('\u0017', editor).shouldBeTrue()
+            HelixKeyHandler.handleKey('n', editor).shouldBeTrue()
+            HelixKeyHandler.handleKey('s', editor).shouldBeTrue()
+            executed shouldBe listOf("SplitHorizontally", "NewScratchFile")
+
+            // C-w n v (vsplit_new)
+            executed.clear()
+            HelixKeyHandler.handleKey('\u0017', editor).shouldBeTrue()
+            HelixKeyHandler.handleKey('n', editor).shouldBeTrue()
+            HelixKeyHandler.handleKey('v', editor).shouldBeTrue()
+            executed shouldBe listOf("SplitVertically", "NewScratchFile")
+
+            // Space + w n s (hsplit_new via space keymap)
+            executed.clear()
+            HelixKeyHandler.handleKey(' ', editor).shouldBeTrue()
+            HelixKeyHandler.handleKey('w', editor).shouldBeTrue()
+            HelixKeyHandler.handleKey('n', editor).shouldBeTrue()
+            HelixKeyHandler.handleKey('s', editor).shouldBeTrue()
+            executed shouldBe listOf("SplitHorizontally", "NewScratchFile")
+        } finally {
+            HelixActionDelegate.actionExecutor = null
+        }
+    }
+
+    fun testWindowScratchSplitsEmptyBufferMode() {
+        myFixture.configureByText("test.txt", "hello window")
+        val editor = myFixture.editor
+        HelixSettings.instance.scratchSplitMode = HelixScratchSplitMode.EMPTY_BUFFER
+        val executed = mutableListOf<String>()
+        HelixActionDelegate.actionExecutor = { actionId, _ ->
+            executed.add(actionId)
+            true
+        }
+        try {
+            executed.clear()
+            HelixKeyHandler.handleKey('\u0017', editor).shouldBeTrue()
+            HelixKeyHandler.handleKey('n', editor).shouldBeTrue()
+            HelixKeyHandler.handleKey('s', editor).shouldBeTrue()
+            executed shouldBe listOf("SplitHorizontally", "NewScratchBuffer")
+
+            executed.clear()
+            HelixKeyHandler.handleKey('\u0017', editor).shouldBeTrue()
+            HelixKeyHandler.handleKey('n', editor).shouldBeTrue()
+            HelixKeyHandler.handleKey('v', editor).shouldBeTrue()
+            executed shouldBe listOf("SplitVertically", "NewScratchBuffer")
+        } finally {
+            HelixActionDelegate.actionExecutor = null
+        }
     }
 }

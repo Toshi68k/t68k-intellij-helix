@@ -706,4 +706,28 @@ class HelixCodeNavigationTest : BasePlatformTestCase() {
         val result = HelixActions.yankDiagnostic(editor)
         result.shouldBeFalse()
     }
+
+    fun testXmlElementNavigationForwardAndBackward() {
+        val text = "<root>\n    <item>One</item>\n    <item>Two</item>\n</root>"
+        myFixture.configureByText("test.xml", text)
+        val editor = myFixture.editor
+        val caret = editor.caretModel.primaryCaret
+
+        caret.moveToOffset(0) // at <root>
+
+        // Move to next tag: <item>
+        HelixKeyHandler.handleKey(']', editor).shouldBeTrue()
+        HelixKeyHandler.handleKey('x', editor).shouldBeTrue()
+        caret.offset shouldBe text.indexOf("<item>One")
+
+        // Move to closing tag: </item>
+        HelixKeyHandler.handleKey(']', editor).shouldBeTrue()
+        HelixKeyHandler.handleKey('x', editor).shouldBeTrue()
+        caret.offset shouldBe text.indexOf("</item>")
+
+        // Move backward to <item>
+        HelixKeyHandler.handleKey('[', editor).shouldBeTrue()
+        HelixKeyHandler.handleKey('x', editor).shouldBeTrue()
+        caret.offset shouldBe text.indexOf("<item>One")
+    }
 }
