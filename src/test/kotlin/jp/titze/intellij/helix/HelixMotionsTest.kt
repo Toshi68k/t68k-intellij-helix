@@ -618,12 +618,7 @@ class HelixMotionsTest : BasePlatformTestCase() {
 
         val dataContext = com.intellij.ide.DataManager.getInstance().getDataContext(editor.contentComponent)
         val pageDownAction = jp.titze.intellij.helix.editor.HelixPageDownAction()
-        val event = com.intellij.openapi.actionSystem.AnActionEvent.createFromAnAction(
-            pageDownAction,
-            null,
-            com.intellij.openapi.actionSystem.ActionPlaces.KEYBOARD_SHORTCUT,
-            dataContext,
-        )
+        val event = com.intellij.testFramework.TestActionEvent.createTestEvent(pageDownAction, dataContext)
 
         pageDownAction.update(event)
         event.presentation.isEnabled.shouldBeTrue()
@@ -633,12 +628,7 @@ class HelixMotionsTest : BasePlatformTestCase() {
         editor.document.getLineNumber(caret.offset) shouldBe pageSize
 
         val halfPageUpAction = jp.titze.intellij.helix.editor.HelixHalfPageUpAction()
-        val halfUpEvent = com.intellij.openapi.actionSystem.AnActionEvent.createFromAnAction(
-            halfPageUpAction,
-            null,
-            com.intellij.openapi.actionSystem.ActionPlaces.KEYBOARD_SHORTCUT,
-            dataContext,
-        )
+        val halfUpEvent = com.intellij.testFramework.TestActionEvent.createTestEvent(halfPageUpAction, dataContext)
         halfPageUpAction.actionPerformed(halfUpEvent)
         val halfPage = (pageSize / 2).coerceAtLeast(1)
         editor.document.getLineNumber(caret.offset) shouldBe pageSize - halfPage
