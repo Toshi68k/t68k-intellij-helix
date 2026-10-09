@@ -43,6 +43,8 @@ class HelixConfigurable : SearchableConfigurable {
 
     private var resetToNormalCheckBox: JBCheckBox? = null
     private var syncClipboardCheckBox: JBCheckBox? = null
+    private var scratchInteractiveRadio: JBRadioButton? = null
+    private var scratchBufferRadio: JBRadioButton? = null
     private val activationPanel = HelixActivationPanel()
     private val ctrlKeyPanel = HelixCtrlKeyPanel()
 
@@ -74,6 +76,8 @@ class HelixConfigurable : SearchableConfigurable {
         contentBox.add(createRegistersSection())
         contentBox.add(Box.createVerticalStrut(JBUI.scale(20)))
         contentBox.add(createEditorBehaviorSection())
+        contentBox.add(Box.createVerticalStrut(JBUI.scale(20)))
+        contentBox.add(createScratchSplitSection())
 
         mainPanel.add(contentBox, BorderLayout.NORTH)
 
@@ -341,6 +345,44 @@ class HelixConfigurable : SearchableConfigurable {
         return section
     }
 
+    private fun createScratchSplitSection(): JPanel {
+        val section = JPanel(BorderLayout(0, 8))
+        val titleLabel = JBLabel(HelixBundle.message("settings.scratchSplit.title"))
+        titleLabel.font = JBUI.Fonts.label().asBold()
+        section.add(titleLabel, BorderLayout.NORTH)
+
+        val radioGroup = ButtonGroup()
+        val interactive = JBRadioButton(HelixBundle.message("settings.scratchSplit.mode.interactive"))
+        val buffer = JBRadioButton(HelixBundle.message("settings.scratchSplit.mode.buffer"))
+        scratchInteractiveRadio = interactive
+        scratchBufferRadio = buffer
+
+        radioGroup.add(interactive)
+        radioGroup.add(buffer)
+
+        val optionsPanel = JPanel(GridLayout(2, 1, 0, 6))
+        optionsPanel.border = JBUI.Borders.emptyLeft(12)
+        optionsPanel.add(interactive)
+        optionsPanel.add(buffer)
+
+        val helpLabel = JBLabel(HelixBundle.message("settings.scratchSplit.help"))
+        helpLabel.font = JBUI.Fonts.smallFont()
+        helpLabel.foreground = UIUtil.getContextHelpForeground()
+        helpLabel.border = JBUI.Borders.emptyLeft(12)
+
+        val box = JPanel(BorderLayout(0, 8))
+        box.add(optionsPanel, BorderLayout.NORTH)
+        box.add(helpLabel, BorderLayout.CENTER)
+        section.add(box, BorderLayout.CENTER)
+        return section
+    }
+
+    private fun getSelectedScratchSplitMode(): HelixScratchSplitMode = if (scratchBufferRadio?.isSelected == true) {
+        HelixScratchSplitMode.EMPTY_BUFFER
+    } else {
+        HelixScratchSplitMode.INTERACTIVE
+    }
+
     private fun getSelectedSearchUiMode(): HelixSearchUiMode = if (stockHelixRadio?.isSelected == true) {
         HelixSearchUiMode.STOCK_HELIX
     } else {
@@ -386,6 +428,7 @@ class HelixConfigurable : SearchableConfigurable {
             getSelectedColorTheme() != settings.colorTheme,
             resetToNormalCheckBox?.isSelected != settings.resetToNormalOnTabSwitch,
             syncClipboardCheckBox?.isSelected != settings.syncClipboardWithDefaultRegister,
+            getSelectedScratchSplitMode() != settings.scratchSplitMode,
         )
         return modifiedChecks.any { it }
     }
@@ -407,6 +450,7 @@ class HelixConfigurable : SearchableConfigurable {
         settings.colorTheme = getSelectedColorTheme()
         resetToNormalCheckBox?.let { settings.resetToNormalOnTabSwitch = it.isSelected }
         syncClipboardCheckBox?.let { settings.syncClipboardWithDefaultRegister = it.isSelected }
+        settings.scratchSplitMode = getSelectedScratchSplitMode()
 
         HelixEditorEligibility.refreshAllEditors()
 
@@ -439,6 +483,8 @@ class HelixConfigurable : SearchableConfigurable {
 
         resetToNormalCheckBox?.isSelected = settings.resetToNormalOnTabSwitch
         syncClipboardCheckBox?.isSelected = settings.syncClipboardWithDefaultRegister
+        scratchInteractiveRadio?.isSelected = (settings.scratchSplitMode == HelixScratchSplitMode.INTERACTIVE)
+        scratchBufferRadio?.isSelected = (settings.scratchSplitMode == HelixScratchSplitMode.EMPTY_BUFFER)
     }
 
     override fun disposeUIResources() {
@@ -458,5 +504,7 @@ class HelixConfigurable : SearchableConfigurable {
         lightThemeRadio = null
         resetToNormalCheckBox = null
         syncClipboardCheckBox = null
+        scratchInteractiveRadio = null
+        scratchBufferRadio = null
     }
 }

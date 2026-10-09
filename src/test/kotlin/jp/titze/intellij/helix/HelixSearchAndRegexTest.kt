@@ -5,12 +5,20 @@ import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
+import jp.titze.intellij.helix.action.HelixActionDelegate
 import jp.titze.intellij.helix.action.HelixActions
 import jp.titze.intellij.helix.action.HelixSearchActions
+import jp.titze.intellij.helix.editor.HelixEventDispatcher
 import jp.titze.intellij.helix.keymap.HelixKeyHandler
+import jp.titze.intellij.helix.state.HelixMode
+import jp.titze.intellij.helix.state.HelixStateManager
+import jp.titze.intellij.helix.ui.HelixPromptBar
 import jp.titze.intellij.helix.ui.HelixPromptCategory
 import jp.titze.intellij.helix.ui.HelixPromptHistory
 import jp.titze.intellij.helix.ui.HelixPromptHistoryNavigator
+import jp.titze.intellij.helix.ui.HelixPromptType
+import java.awt.event.InputEvent
+import java.awt.event.KeyEvent
 
 class HelixSearchAndRegexTest : BasePlatformTestCase() {
 
@@ -21,6 +29,9 @@ class HelixSearchAndRegexTest : BasePlatformTestCase() {
 
     override fun tearDown() {
         HelixPromptHistory.clear()
+        if (myFixture.editor != null && !myFixture.editor.isDisposed) {
+            HelixPromptBar.cancelActivePrompt(myFixture.editor)
+        }
         super.tearDown()
     }
 
@@ -402,5 +413,222 @@ class HelixSearchAndRegexTest : BasePlatformTestCase() {
 
         val history = HelixPromptHistory.get(HelixPromptCategory.SEARCH)
         history.contains("hello").shouldBeTrue()
+    }
+
+    fun testSearchNextInNormalModeJumpsSingleCaret() {
+        val text = "alpha beta alpha gamma alpha"
+        myFixture.configureByText("test.txt", text)
+        val editor = myFixture.editor
+        editor.caretModel.moveToOffset(0)
+
+        HelixActions.search(editor, "alpha")
+        editor.caretModel.caretCount shouldBe 1
+        editor.caretModel.currentCaret.selectedText shouldBe "alpha"
+        editor.caretModel.currentCaret.selectionStart shouldBe 0
+
+        HelixSearchActions.searchNext(editor)
+        editor.caretModel.caretCount shouldBe 1
+        editor.caretModel.currentCaret.selectedText shouldBe "alpha"
+        editor.caretModel.currentCaret.selectionStart shouldBe 11
+
+        HelixSearchActions.searchNext(editor)
+        editor.caretModel.caretCount shouldBe 1
+        editor.caretModel.currentCaret.selectedText shouldBe "alpha"
+        editor.caretModel.currentCaret.selectionStart shouldBe 23
+    }
+
+    fun testSearchNextInSelectModeExtendsSelections() {
+        myFixture.configureByText("test.txt", "apple orange apple banana apple")
+        val editor = myFixture.editor
+        editor.caretModel.moveToOffset(0)
+
+        // Initial search in Normal mode
+        HelixActions.search(editor, "apple")
+        editor.caretModel.caretCount shouldBe 1
+
+        // Switch to Select mode
+        val state = HelixStateManager.getOrCreate(editor)
+        state.setMode(HelixMode.SELECT)
+
+        // In select mode, searchNext should add the next match as an additional caret
+        HelixSearchActions.searchNext(editor)
+        editor.caretModel.caretCount shouldBe 2
+        editor.caretModel.allCarets.map { it.selectedText } shouldBe listOf("apple", "apple")
+
+        // Once more
+        HelixSearchActions.searchNext(editor)
+        editor.caretModel.caretCount shouldBe 3
+        editor.caretModel.allCarets.map { it.selectedText } shouldBe listOf("apple", "apple", "apple")
+    }
+
+    fun testSearchPrevInSelectModeExtendsSelections() {
+        myFixture.configureByText("test.txt", "item1 item2 item1 item3 item1")
+        val editor = myFixture.editor
+        // Start near the end
+        editor.caretModel.moveToOffset(28)
+
+        HelixActions.search(editor, "item1")
+        val state = HelixStateManager.getOrCreate(editor)
+        state.setMode(HelixMode.SELECT)
+
+        HelixSearchActions.searchPrev(editor)
+        editor.caretModel.caretCount shouldBe 2
+        editor.caretModel.allCarets.map { it.selectedText } shouldBe listOf("item1", "item1")
+    }
+
+    fun testPromptBarCtrlCCancelsPromptWithoutCommenting() {
+        myFixture.configureByText("test.txt", "line of code")
+        val editor = myFixture.editor
+
+        var executedAction: String? = null
+        HelixActionDelegate.actionExecutor = { actionId, _ ->
+            executedAction = actionId
+            true
+        }
+        try {
+            val bar = HelixPromptBar.getOrCreate(editor)
+            bar.show(HelixPromptType.SEARCH)
+            HelixPromptBar.isPromptActive(editor).shouldBeTrue()
+
+            val dispatcher = HelixEventDispatcher()
+            val ctrlC = KeyEvent(
+                bar,
+                KeyEvent.KEY_PRESSED,
+                System.currentTimeMillis(),
+                InputEvent.CTRL_DOWN_MASK,
+                KeyEvent.VK_C,
+                'c',
+            )
+
+            val handled = dispatcher.dispatch(ctrlC)
+            handled.shouldBeTrue()
+            ctrlC.isConsumed.shouldBeTrue()
+            HelixPromptBar.isPromptActive(editor).shouldBeFalse()
+            executedAction.shouldBeNull()
+        } finally {
+            HelixActionDelegate.actionExecutor = null
+        }
+    }
+
+    fun testPromptBarEscapeCancelsPrompt() {
+        myFixture.configureByText("test.txt", "line of code")
+        val editor = myFixture.editor
+
+        val bar = HelixPromptBar.getOrCreate(editor)
+        bar.show(HelixPromptType.SEARCH)
+        HelixPromptBar.isPromptActive(editor).shouldBeTrue()
+
+        val dispatcher = HelixEventDispatcher()
+        val escapeEvent = KeyEvent(
+            bar,
+            KeyEvent.KEY_PRESSED,
+            System.currentTimeMillis(),
+            0,
+            KeyEvent.VK_ESCAPE,
+            KeyEvent.CHAR_UNDEFINED,
+        )
+
+        val handled = dispatcher.dispatch(escapeEvent)
+        handled.shouldBeTrue()
+        escapeEvent.isConsumed.shouldBeTrue()
+        HelixPromptBar.isPromptActive(editor).shouldBeFalse()
+    }
+
+    fun testPromptBarRegularKeyPassesThroughDispatcher() {
+        myFixture.configureByText("test.txt", "line of code")
+        val editor = myFixture.editor
+
+        val bar = HelixPromptBar.getOrCreate(editor)
+        bar.show(HelixPromptType.SEARCH)
+        try {
+            HelixPromptBar.isPromptActive(editor).shouldBeTrue()
+
+            val dispatcher = HelixEventDispatcher()
+            val typeA = KeyEvent(
+                bar,
+                KeyEvent.KEY_PRESSED,
+                System.currentTimeMillis(),
+                0,
+                KeyEvent.VK_A,
+                'a',
+            )
+
+            val handled = dispatcher.dispatch(typeA)
+            handled.shouldBeFalse()
+            typeA.isConsumed.shouldBeFalse()
+            HelixPromptBar.isPromptActive(editor).shouldBeTrue()
+        } finally {
+            bar.cancelAndClose()
+        }
+    }
+
+    fun testPromptBarCtrlCWithEditorFocusCancelsPromptWithoutCommenting() {
+        myFixture.configureByText("test.txt", "line of code")
+        val editor = myFixture.editor
+
+        var executedAction: String? = null
+        HelixActionDelegate.actionExecutor = { actionId, _ ->
+            executedAction = actionId
+            true
+        }
+        try {
+            val bar = HelixPromptBar.getOrCreate(editor)
+            bar.show(HelixPromptType.SEARCH)
+            HelixPromptBar.isPromptActive(editor).shouldBeTrue()
+
+            val dispatcher = HelixEventDispatcher()
+            val ctrlC = KeyEvent(
+                editor.contentComponent,
+                KeyEvent.KEY_PRESSED,
+                System.currentTimeMillis(),
+                InputEvent.CTRL_DOWN_MASK,
+                KeyEvent.VK_C,
+                'c',
+            )
+
+            val handled = dispatcher.dispatch(ctrlC)
+            handled.shouldBeTrue()
+            ctrlC.isConsumed.shouldBeTrue()
+            HelixPromptBar.isPromptActive(editor).shouldBeFalse()
+            executedAction.shouldBeNull()
+        } finally {
+            HelixActionDelegate.actionExecutor = null
+        }
+    }
+
+    fun testPromptBarCtrlCInSelectModeCancelsPrompt() {
+        myFixture.configureByText("test.txt", "line of code")
+        val editor = myFixture.editor
+        val state = HelixStateManager.getOrCreate(editor)
+        state.setMode(HelixMode.SELECT)
+
+        var executedAction: String? = null
+        HelixActionDelegate.actionExecutor = { actionId, _ ->
+            executedAction = actionId
+            true
+        }
+        try {
+            val bar = HelixPromptBar.getOrCreate(editor)
+            bar.show(HelixPromptType.SEARCH)
+            HelixPromptBar.isPromptActive(editor).shouldBeTrue()
+
+            val dispatcher = HelixEventDispatcher()
+            val ctrlC = KeyEvent(
+                editor.contentComponent,
+                KeyEvent.KEY_PRESSED,
+                System.currentTimeMillis(),
+                InputEvent.CTRL_DOWN_MASK,
+                KeyEvent.VK_C,
+                'c',
+            )
+
+            val handled = dispatcher.dispatch(ctrlC)
+            handled.shouldBeTrue()
+            ctrlC.isConsumed.shouldBeTrue()
+            HelixPromptBar.isPromptActive(editor).shouldBeFalse()
+            executedAction.shouldBeNull()
+        } finally {
+            HelixActionDelegate.actionExecutor = null
+        }
     }
 }

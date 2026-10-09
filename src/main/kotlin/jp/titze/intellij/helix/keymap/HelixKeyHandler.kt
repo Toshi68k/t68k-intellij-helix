@@ -188,8 +188,15 @@ object HelixKeyHandler {
             "m" -> HelixMatchKeymap.handle(ch, editor, state, count)
 
             "C-w" -> {
-                state.clearPendingSequence()
+                if (ch != 'n') {
+                    state.clearPendingSequence()
+                }
                 HelixWindowKeymap.handle(ch, editor)
+            }
+
+            "C-w n" -> {
+                state.clearPendingSequence()
+                HelixWindowKeymap.handleNew(ch, editor)
             }
 
             "\"" -> {
@@ -482,7 +489,7 @@ object HelixKeyHandler {
 
     private fun isValidRegisterChar(ch: Char): Boolean = ch == '_' || ch == '+' || ch == '*' || ch == '"' ||
         ch in '0'..'9' || ch in 'a'..'z' || ch in 'A'..'Z' ||
-        ch == '/' || ch == '%' || ch == '#'
+        ch == '/' || ch == '%' || ch == '#' || ch == '.'
 
     private fun isCountDigit(ch: Char, hasCount: Boolean): Boolean = ch in '1'..'9' || (ch == '0' && hasCount)
 }

@@ -2,7 +2,10 @@ package jp.titze.intellij.helix.ui
 
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.editor.Editor
+import com.intellij.openapi.ui.popup.JBPopup
 import com.intellij.openapi.ui.popup.JBPopupFactory
+import com.intellij.openapi.ui.popup.JBPopupListener
+import com.intellij.openapi.ui.popup.LightweightWindowEvent
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBTextField
 import com.intellij.util.ui.JBUI
@@ -23,13 +26,45 @@ import java.awt.event.KeyEvent
 import javax.swing.BorderFactory
 import javax.swing.Box
 import javax.swing.BoxLayout
+import javax.swing.JComponent
 import javax.swing.JPanel
+import javax.swing.KeyStroke
 import javax.swing.SwingConstants
 import javax.swing.SwingUtilities
 import javax.swing.event.DocumentEvent
 import javax.swing.event.DocumentListener
 
 object HelixSelectRegexPopup {
+
+    private var activePopup: JBPopup? = null
+
+    fun isShowing(): Boolean {
+        val popup = activePopup ?: return false
+        val app = ApplicationManager.getApplication()
+        val isHeadless = app != null && (app.isUnitTestMode || app.isHeadlessEnvironment)
+        return !popup.isDisposed && (isHeadless || popup.isVisible)
+    }
+
+    fun cancelActive(): Boolean {
+        val popup = activePopup ?: return false
+        if (!popup.isDisposed) {
+            popup.cancel()
+            activePopup = null
+            return true
+        }
+        return false
+    }
+
+    private fun isCtrlCKey(e: KeyEvent): Boolean =
+        e.keyCode == KeyEvent.VK_C || e.keyChar == 'c' || e.keyChar == 'C' || e.keyChar.code == 3
+
+    private fun isCancelKey(e: KeyEvent): Boolean {
+        val isCtrl = e.isControlDown && !e.isMetaDown && !e.isAltDown
+        val isEscape = e.keyCode == KeyEvent.VK_ESCAPE
+        val isCtrlC = isCtrl && isCtrlCKey(e)
+        val isCtrlBracket = isCtrl && e.keyCode == KeyEvent.VK_OPEN_BRACKET
+        return isEscape || isCtrlC || isCtrlBracket
+    }
 
     private val CARD_BG get() = HelixTheme.CARD_BG
     private val CARD_BORDER get() = HelixTheme.CARD_BORDER
@@ -152,10 +187,6 @@ object HelixSelectRegexPopup {
     fun show(editor: Editor, mode: Mode) {
         lastShownMode = mode
         val app = ApplicationManager.getApplication()
-        if (app != null && (app.isUnitTestMode || app.isHeadlessEnvironment)) {
-            return
-        }
-
         if (app != null && !app.isDispatchThread) {
             SwingUtilities.invokeLater { show(editor, mode) }
             return
@@ -165,27 +196,7 @@ object HelixSelectRegexPopup {
         cardPanel.border = JBUI.Borders.empty(10, 14, 10, 14)
         cardPanel.preferredSize = Dimension(JBUI.scale(460), JBUI.scale(136))
 
-        // 1. Header Row
-        val headerRow = JPanel(BorderLayout())
-        headerRow.isOpaque = false
-
-        val titleText = when (mode) {
-            Mode.SPLIT -> HelixBundle.message("popup.selectRegex.title.split")
-            Mode.KEEP -> HelixBundle.message("popup.selectRegex.title.keep")
-            Mode.REMOVE -> HelixBundle.message("popup.selectRegex.title.remove")
-            Mode.SELECT -> HelixBundle.message("popup.selectRegex.title.select")
-        }
-        val titleLabel = JBLabel(titleText)
-        titleLabel.font = Font(Font.SANS_SERIF, Font.BOLD, JBUI.scaleFontSize(10.5f))
-        titleLabel.foreground = TITLE_COLOR
-
-        val cancelLabel = JBLabel(HelixBundle.message("popup.hint.escToCancel"))
-        cancelLabel.font = Font(Font.SANS_SERIF, Font.BOLD, JBUI.scaleFontSize(9.5f))
-        cancelLabel.foreground = CANCEL_COLOR
-
-        headerRow.add(titleLabel, BorderLayout.WEST)
-        headerRow.add(cancelLabel, BorderLayout.EAST)
-        headerRow.border = JBUI.Borders.empty(2, 2, 8, 2)
+        val headerRow = createHeaderRow(mode)
 
         // 2. Input Box
         val inputBox = InputBoxPanel()
@@ -228,36 +239,7 @@ object HelixSelectRegexPopup {
         })
 
         // 3. Footer Row
-        val footerRow = JPanel(BorderLayout())
-        footerRow.isOpaque = false
-        footerRow.border = JBUI.Borders.empty(6, 2, 2, 2)
-
-        val statusLabel = JBLabel(HelixBundle.message("popup.selectRegex.hint.typePattern"))
-        statusLabel.font = Font(Font.SANS_SERIF, Font.PLAIN, JBUI.scaleFontSize(11f))
-        statusLabel.foreground = HINT_FG
-        footerRow.add(statusLabel, BorderLayout.WEST)
-
-        val shortcutsHint = JPanel()
-        shortcutsHint.isOpaque = false
-        shortcutsHint.layout = BoxLayout(shortcutsHint, BoxLayout.X_AXIS)
-
-        fun createKeyHint(key: String, desc: String): JPanel {
-            val p = JPanel()
-            p.isOpaque = false
-            p.layout = BoxLayout(p, BoxLayout.X_AXIS)
-            val kb = KeycapBadge(key, minWidth = 20, height = 20, fontSize = 10.5f)
-            val d = JBLabel(" $desc")
-            d.font = Font(Font.SANS_SERIF, Font.PLAIN, JBUI.scaleFontSize(10.5f))
-            d.foreground = HINT_FG
-            p.add(kb)
-            p.add(d)
-            return p
-        }
-
-        shortcutsHint.add(createKeyHint("Enter", HelixBundle.message("popup.hint.apply")))
-        shortcutsHint.add(Box.createHorizontalStrut(JBUI.scale(10)))
-        shortcutsHint.add(createKeyHint("Esc", HelixBundle.message("popup.hint.cancel")))
-        footerRow.add(shortcutsHint, BorderLayout.EAST)
+        val (footerRow, statusLabel) = createFooterRow()
 
         // Assemble Content Panel
         val contentPanel = JPanel()
@@ -347,8 +329,8 @@ object HelixSelectRegexPopup {
 
         textField.addKeyListener(object : KeyAdapter() {
             override fun keyPressed(e: KeyEvent) {
-                when (e.keyCode) {
-                    KeyEvent.VK_ENTER -> {
+                when {
+                    e.keyCode == KeyEvent.VK_ENTER -> {
                         val pattern = textField.text
                         popup.cancel()
                         if (pattern.isNotEmpty()) {
@@ -362,7 +344,7 @@ object HelixSelectRegexPopup {
                         e.consume()
                     }
 
-                    KeyEvent.VK_ESCAPE -> {
+                    isCancelKey(e) -> {
                         popup.cancel()
                         e.consume()
                     }
@@ -370,11 +352,99 @@ object HelixSelectRegexPopup {
             }
         })
 
+        val cancelAction = Runnable { popup.cancel() }
+        textField.registerKeyboardAction(
+            { cancelAction.run() },
+            KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0),
+            JComponent.WHEN_IN_FOCUSED_WINDOW,
+        )
+        textField.registerKeyboardAction(
+            { cancelAction.run() },
+            KeyStroke.getKeyStroke(KeyEvent.VK_C, KeyEvent.CTRL_DOWN_MASK),
+            JComponent.WHEN_IN_FOCUSED_WINDOW,
+        )
+        textField.registerKeyboardAction(
+            { cancelAction.run() },
+            KeyStroke.getKeyStroke(KeyEvent.VK_OPEN_BRACKET, KeyEvent.CTRL_DOWN_MASK),
+            JComponent.WHEN_IN_FOCUSED_WINDOW,
+        )
+
+        popup.addListener(object : JBPopupListener {
+            override fun onClosed(event: LightweightWindowEvent) {
+                if (activePopup === popup) {
+                    activePopup = null
+                }
+            }
+        })
+        activePopup = popup
+
+        if (app != null && (app.isUnitTestMode || app.isHeadlessEnvironment)) {
+            return
+        }
+
         val project = editor.project
         if (project != null) {
             popup.showCenteredInCurrentWindow(project)
         } else {
             popup.showInBestPositionFor(editor)
         }
+    }
+
+    private fun createHeaderRow(mode: Mode): JPanel {
+        val headerRow = JPanel(BorderLayout())
+        headerRow.isOpaque = false
+
+        val titleText = when (mode) {
+            Mode.SPLIT -> HelixBundle.message("popup.selectRegex.title.split")
+            Mode.KEEP -> HelixBundle.message("popup.selectRegex.title.keep")
+            Mode.REMOVE -> HelixBundle.message("popup.selectRegex.title.remove")
+            Mode.SELECT -> HelixBundle.message("popup.selectRegex.title.select")
+        }
+        val titleLabel = JBLabel(titleText)
+        titleLabel.font = Font(Font.SANS_SERIF, Font.BOLD, JBUI.scaleFontSize(10.5f))
+        titleLabel.foreground = TITLE_COLOR
+
+        val cancelLabel = JBLabel(HelixBundle.message("popup.hint.escToCancel"))
+        cancelLabel.font = Font(Font.SANS_SERIF, Font.BOLD, JBUI.scaleFontSize(9.5f))
+        cancelLabel.foreground = CANCEL_COLOR
+
+        headerRow.add(titleLabel, BorderLayout.WEST)
+        headerRow.add(cancelLabel, BorderLayout.EAST)
+        headerRow.border = JBUI.Borders.empty(2, 2, 8, 2)
+        return headerRow
+    }
+
+    private fun createFooterRow(): Pair<JPanel, JBLabel> {
+        val footerRow = JPanel(BorderLayout())
+        footerRow.isOpaque = false
+        footerRow.border = JBUI.Borders.empty(6, 2, 2, 2)
+
+        val statusLabel = JBLabel(HelixBundle.message("popup.selectRegex.hint.typePattern"))
+        statusLabel.font = Font(Font.SANS_SERIF, Font.PLAIN, JBUI.scaleFontSize(11f))
+        statusLabel.foreground = HINT_FG
+        footerRow.add(statusLabel, BorderLayout.WEST)
+
+        val shortcutsHint = JPanel()
+        shortcutsHint.isOpaque = false
+        shortcutsHint.layout = BoxLayout(shortcutsHint, BoxLayout.X_AXIS)
+
+        fun createKeyHint(key: String, desc: String): JPanel {
+            val p = JPanel()
+            p.isOpaque = false
+            p.layout = BoxLayout(p, BoxLayout.X_AXIS)
+            val kb = KeycapBadge(key, minWidth = 20, height = 20, fontSize = 10.5f)
+            val d = JBLabel(" $desc")
+            d.font = Font(Font.SANS_SERIF, Font.PLAIN, JBUI.scaleFontSize(10.5f))
+            d.foreground = HINT_FG
+            p.add(kb)
+            p.add(d)
+            return p
+        }
+
+        shortcutsHint.add(createKeyHint("Enter", HelixBundle.message("popup.hint.apply")))
+        shortcutsHint.add(Box.createHorizontalStrut(JBUI.scale(10)))
+        shortcutsHint.add(createKeyHint("Esc", HelixBundle.message("popup.hint.cancel")))
+        footerRow.add(shortcutsHint, BorderLayout.EAST)
+        return Pair(footerRow, statusLabel)
     }
 }

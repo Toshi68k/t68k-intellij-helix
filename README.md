@@ -103,6 +103,10 @@ Helix relies on several `Ctrl` chords for navigation (`Ctrl-d`, `Ctrl-u`, `Ctrl-
 | `F<char>`             | Move to previous occurrence of `<char>` (backward, inclusive)                                              |
 | `T<char>`             | Move till previous occurrence of `<char>` (backward, exclusive, stops after `<char>`)                      |
 | `Alt+.`               | Repeat last motion (`f`, `t`, `F`, `T`, `mm`, `[`/`]`) (`repeat_last_motion`)                              |
+| `/`                   | Search forward for regex pattern (`search`)                                                                |
+| `?`                   | Search backward for regex pattern (`rsearch`)                                                              |
+| `n`                   | Jump to next match (`search_next`; in Select mode extends carets `extend_search_next`)                      |
+| `N`                   | Jump to previous match (`search_prev`; in Select mode extends carets `extend_search_prev`)                  |
 | `*`                   | Search for selection or word under cursor with word boundaries (`search_selection`)                        |
 | `Alt+*`               | Search for selection or word under cursor without word boundaries                                          |
 | `w`                   | Advance to the start of the next word                                                                      |
@@ -117,6 +121,8 @@ Helix relies on several `Ctrl` chords for navigation (`Ctrl-d`, `Ctrl-u`, `Ctrl-
 | `Alt+x`               | Shrink selection to line bounds excluding trailing line breaks (`shrink_to_line_bounds`)                   |
 | `%`                   | Select entire buffer                                                                                       |
 | `h` / `j` / `k` / `l` | Move left / down / up / right (`j`/`k` visual line by default; mode-aware selection)                       |
+| `<Left>` / `<Down>` / `<Up>` / `<Right>` | Directional arrows matching `h`/`j`/`k`/`l` (mode and visual-line aware)                  |
+| `<Home>` / `<End>`   | Move to line start / line end (mode-aware selection)                                                        |
 | `gj` / `gk`           | Move down / up by physical document line (Stock Helix default)                                             |
 | `gh`                  | Move to line start (actual first character)                                                                |
 | `gs`                  | Move to first non-whitespace character of line                                                             |
@@ -232,6 +238,7 @@ Helix Keymap provides a full modal register subsystem with authentic multi-caret
 | `/`       | `"/`        | Search pattern register (last active search regex)                             |
 | `%`       | `"%`        | Current buffer / file name register                                            |
 | `#`       | `"#`        | Dynamic selection index register (`0`, `1`, `2`, ... across multi-carets)      |
+| `.`       | `".`        | Last inserted text register (inserted during last insert sequence)             |
 
 - **Piece-wise Multi-Caret Pasting**: When yanking $N$ selections (e.g. across 3 carets), Helix records each selection
   as an individual piece. When pasting into $N$ carets (`p`, `P`, `R`), each caret in document order receives its
@@ -348,6 +355,8 @@ interactive, non-intrusive **Which-Key popup** appears in authentic Helix cyan:
 |-----------------------------------------|--------------------|--------------------------|------------------------------------------------|
 | `Ctrl+w v` / `space + w v`              | `vsplit`           | `SplitVertically`        | Vertical editor split                          |
 | `Ctrl+w s` / `space + w s`              | `hsplit`           | `SplitHorizontally`      | Horizontal editor split                        |
+| `Ctrl+w n v` / `space + w n v`          | `vsplit_new`       | `SplitVertically`        | Open new scratch in vertical split             |
+| `Ctrl+w n s` / `space + w n s`          | `hsplit_new`       | `SplitHorizontally`      | Open new scratch in horizontal split           |
 | `Ctrl+w f` / `space + w f`              | `goto_file_hsplit` | `SplitHorizontally`      | Open file / declaration in horizontal split    |
 | `Ctrl+w F` / `space + w F`              | `goto_file_vsplit` | `SplitVertically`        | Open file / declaration in vertical split      |
 | `Ctrl+w t` / `space + w t`              | `transpose_view`   | `ChangeSplitOrientation` | Toggle split orientation (horizontal/vertical) |
@@ -454,6 +463,7 @@ pressed.)*
 | `]b`          | `[b`           | `goto_next_buffer` / `goto_prev_buffer`                 | Next / previous editor tab                          |
 | `]e`          | `[e`           | `goto_next_entry` / `goto_prev_entry`                   | Next / previous entry in list, table, array, or map |
 | `]s`          | `[s`           | `goto_next_spelling_error` / `goto_prev_spelling_error` | Next / previous spelling error                      |
+| `]x`          | `[x`           | `goto_next_xml_element` / `goto_prev_xml_element`       | Next / previous XML/HTML tag or element             |
 
 #### Code AST & Inspection
 
@@ -474,8 +484,9 @@ live fuzzy suggestions, and keyboard navigation (<kbd>↑</kbd>/<kbd>↓</kbd>, 
 to execute):
 
 - `:w` / `:write` &rarr; Save all files (`SaveAll`)
+- `:update` / `:u` &rarr; Save all modified files (`SaveAll`)
 - `:q` / `:quit` &rarr; Close active tab (`CloseContent`)
-- `:wq` / `:x` &rarr; Save all and close active tab
+- `:wq` / `:x` / `:exit` / `:xit` &rarr; Save all and close active tab
 - `:wa` &rarr; Save all modified buffers (`SaveAll`)
 - `:qa` &rarr; Close all editors (`CloseAllEditors`)
 - `:vsp` / `:vsplit` &rarr; Split editor vertically
@@ -520,6 +531,8 @@ to execute):
 - `:toggle-search-ui` / `:search-ui` &rarr; Toggle between Stock Helix inline bar and Popup dialog
 - `:set search-ui=inline` / `:set search-ui=stock` &rarr; Set search UI to Stock Helix inline bar
 - `:set search-ui=popup` &rarr; Set search UI to Popup dialog
+- `:toggle-scratch-mode` / `:scratch-mode` &rarr; Toggle scratch split mode (Interactive picker <-> Instant buffer)
+- `:set scratch-mode=interactive` / `:set scratch-mode=buffer` &rarr; Set scratch split mode
 - `:jumps` &rarr; Open interactive jumplist picker
 - `:reg` / `:registers` &rarr; Open interactive registers picker popup
 - `:increment` / `:inc` &rarr; Increment integer under cursor or within selection (`Ctrl+a`)
@@ -533,6 +546,7 @@ to execute):
 - `:merge-selections` / `:merge_consecutive_selections` &rarr; Merge contiguous or overlapping selections (`Alt+_`)
 - `:merge-all-selections` &rarr; Merge all active selections from earliest to latest into a single selection (`Alt+-`)
 - `:join-selections-space` &rarr; Join lines inside selection and select the joined space (`Alt+J`)
+- `:yank-join` &rarr; Join all active selections with separator and yank to clipboard/register
 - `:delete-noyank` / `:d!` &rarr; Delete selection without copying to clipboard (`Alt+d`)
 - `:change-noyank` / `:c!` &rarr; Change selection without copying to clipboard (`Alt+c`)
 - `:repeat-last-motion` &rarr; Repeat the last recorded motion (`Alt+.`)
@@ -609,6 +623,9 @@ Configure Helix Keymap preferences under **Preferences / Settings &rarr; Tools &
 - **Search and Selection Prompt UI**: Toggle between Stock Helix inline bottom bar or Popup dialog.
 - **Prompt History Capacity**: Set maximum remembered prompt history entries per category (10–500, default: 100).
 - **Jump List Capacity**: Set maximum recorded jump entries (10–1000).
+- **Scratch Window Splits** *(default: Interactive)*: Configure whether `<C-w>ns` / `<C-w>nv` prompts for file
+  type/language (`NewScratchFile`) or opens an instant plain-text buffer without dialog (`NewScratchBuffer`). Can also be
+  changed via `:toggle-scratch-mode` or `:set scratch-mode=interactive|buffer`.
 - **Color Theme**: Choose between Sync with IDE, Dark, or Light themes for all Helix overlays.
 
 ---

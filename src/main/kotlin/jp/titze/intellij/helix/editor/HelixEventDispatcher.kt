@@ -11,8 +11,12 @@ import jp.titze.intellij.helix.jumplist.HelixJumpListService
 import jp.titze.intellij.helix.keymap.HelixKeyHandler
 import jp.titze.intellij.helix.keymap.HelixWindowKeymap
 import jp.titze.intellij.helix.motion.HelixMotions
+import jp.titze.intellij.helix.state.HelixEditorState
 import jp.titze.intellij.helix.state.HelixStateManager
+import jp.titze.intellij.helix.ui.HelixPromptBar
 import jp.titze.intellij.helix.ui.HelixSearchManager
+import jp.titze.intellij.helix.ui.HelixSearchPopup
+import jp.titze.intellij.helix.ui.HelixSelectRegexPopup
 import jp.titze.intellij.helix.ui.HelixWhichKeyPopup
 import java.awt.AWTEvent
 import java.awt.KeyboardFocusManager
@@ -24,10 +28,18 @@ class HelixEventDispatcher : IdeEventQueue.EventDispatcher {
     override fun dispatch(e: AWTEvent): Boolean {
         if (e !is KeyEvent) return false
         if (handleWhichKeyPopupEvent(e)) return true
+        if (handleSearchPopupEvent(e)) return true
         if (e.id != KeyEvent.KEY_PRESSED) return false
 
         val editor = findFocusedEditor(e) ?: return false
         if (!HelixEditorEligibility.isActive(editor)) return false
+
+        return dispatchToEditor(e, editor)
+    }
+
+    private fun dispatchToEditor(e: KeyEvent, editor: Editor): Boolean {
+        if (handlePromptBarEvent(e, editor)) return true
+        if (isInsideActivePromptBar(e, editor)) return false
 
         val isCtrl = e.isControlDown && !e.isMetaDown && !e.isAltDown
         val isAlt = e.isAltDown && !e.isControlDown && !e.isMetaDown
@@ -36,25 +48,10 @@ class HelixEventDispatcher : IdeEventQueue.EventDispatcher {
         if (handleEscapeEvent(e, editor, isNoModifiers, isCtrl)) return true
 
         val state = HelixStateManager.getOrCreate(editor)
-
-        if (state.mode.isInsertable) {
-            val handledInsert = when {
-                isCtrl -> handleCtrlInsertShortcut(e, editor, state)
-                isAlt -> handleAltInsertShortcut(e, editor)
-                else -> false
-            }
-            if (handledInsert) {
-                e.consume()
-                return true
-            }
-            return false
-        }
-
-        val handled = when {
-            isCtrl -> handleCtrlShortcut(e, editor, state)
-            isNoModifiers -> handleNoModifiersShortcut(e, editor, state)
-            isAlt -> handleAltShortcut(e, editor, state)
-            else -> false
+        val handled = if (state.mode.isInsertable) {
+            handleInsertShortcut(e, editor, state, isCtrl, isAlt)
+        } else {
+            handleNormalShortcut(e, editor, state, isCtrl, isAlt, isNoModifiers)
         }
 
         if (handled) {
@@ -63,6 +60,32 @@ class HelixEventDispatcher : IdeEventQueue.EventDispatcher {
         }
 
         return false
+    }
+
+    private fun handleInsertShortcut(
+        e: KeyEvent,
+        editor: Editor,
+        state: HelixEditorState,
+        isCtrl: Boolean,
+        isAlt: Boolean,
+    ): Boolean = when {
+        isCtrl -> handleCtrlInsertShortcut(e, editor, state)
+        isAlt -> handleAltInsertShortcut(e, editor)
+        else -> false
+    }
+
+    private fun handleNormalShortcut(
+        e: KeyEvent,
+        editor: Editor,
+        state: HelixEditorState,
+        isCtrl: Boolean,
+        isAlt: Boolean,
+        isNoModifiers: Boolean,
+    ): Boolean = when {
+        isCtrl -> handleCtrlShortcut(e, editor, state)
+        isNoModifiers -> handleNoModifiersShortcut(e, editor, state)
+        isAlt -> handleAltShortcut(e, editor, state)
+        else -> false
     }
 
     private fun handleWhichKeyPopupEvent(e: KeyEvent): Boolean {
@@ -77,6 +100,49 @@ class HelixEventDispatcher : IdeEventQueue.EventDispatcher {
             return true
         }
         return false
+    }
+
+    private fun handleSearchPopupEvent(e: KeyEvent): Boolean {
+        if (e.id != KeyEvent.KEY_PRESSED) return false
+        val isPopupOpen = HelixSearchPopup.isShowing() || HelixSelectRegexPopup.isShowing()
+        if (!isPopupOpen) return false
+        if (isPromptCancelKey(e)) {
+            val cancelled = HelixSearchPopup.cancelActive() || HelixSelectRegexPopup.cancelActive()
+            if (cancelled) {
+                e.consume()
+                return true
+            }
+        }
+        return false
+    }
+
+    private fun isCtrlCKey(e: KeyEvent): Boolean =
+        e.keyCode == KeyEvent.VK_C || e.keyChar == 'c' || e.keyChar == 'C' || e.keyChar.code == 3
+
+    private fun isPromptCancelKey(e: KeyEvent): Boolean {
+        val isCtrl = e.isControlDown && !e.isMetaDown && !e.isAltDown
+        val isNoModifiers = !e.isControlDown && !e.isMetaDown && !e.isAltDown && !e.isShiftDown
+        val isEscape = isNoModifiers && e.keyCode == KeyEvent.VK_ESCAPE
+        val isCtrlC = isCtrl && isCtrlCKey(e)
+        val isCtrlBracket = isCtrl && e.keyCode == KeyEvent.VK_OPEN_BRACKET
+        return isEscape || isCtrlC || isCtrlBracket
+    }
+
+    private fun handlePromptBarEvent(e: KeyEvent, editor: Editor): Boolean {
+        if (!HelixPromptBar.isPromptActive(editor)) return false
+        if (isPromptCancelKey(e)) {
+            HelixPromptBar.cancelActivePrompt(editor)
+            e.consume()
+            return true
+        }
+        return false
+    }
+
+    private fun isInsideActivePromptBar(e: KeyEvent, editor: Editor): Boolean {
+        if (!HelixPromptBar.isPromptActive(editor)) return false
+        val focusOwner = KeyboardFocusManager.getCurrentKeyboardFocusManager().focusOwner
+        val component = e.component ?: focusOwner ?: return false
+        return HelixPromptBar.isPromptComponent(editor, component)
     }
 
     private fun handleEscapeEvent(e: KeyEvent, editor: Editor, isNoModifiers: Boolean, isCtrl: Boolean): Boolean {
@@ -187,7 +253,21 @@ class HelixEventDispatcher : IdeEventQueue.EventDispatcher {
         editor: Editor,
         state: jp.titze.intellij.helix.state.HelixEditorState,
     ): Boolean {
+        if (state.pendingSequence == "C-w n") {
+            state.clearPendingSequence()
+            HelixWhichKeyPopup.hide()
+            return when (e.keyCode) {
+                KeyEvent.VK_S -> HelixWindowKeymap.handleNew('s', editor)
+                KeyEvent.VK_V -> HelixWindowKeymap.handleNew('v', editor)
+                else -> false
+            }
+        }
+
         if (state.pendingSequence == "C-w") {
+            if (e.keyCode == KeyEvent.VK_N) {
+                state.setPendingSequence("C-w n")
+                return true
+            }
             val ch = when (e.keyCode) {
                 KeyEvent.VK_V -> 'v'
                 KeyEvent.VK_S -> 's'
@@ -285,18 +365,78 @@ class HelixEventDispatcher : IdeEventQueue.EventDispatcher {
         e: KeyEvent,
         editor: Editor,
         state: jp.titze.intellij.helix.state.HelixEditorState,
-    ): Boolean = when (e.keyCode) {
-        KeyEvent.VK_PAGE_DOWN -> {
-            HelixMotions.pageDown(editor, state.takeCount() ?: 1)
-            true
+    ): Boolean {
+        if (state.pendingSequence == "C-w n") {
+            state.clearPendingSequence()
+            HelixWhichKeyPopup.hide()
+            return when (e.keyCode) {
+                KeyEvent.VK_S -> HelixWindowKeymap.handleNew('s', editor)
+                KeyEvent.VK_V -> HelixWindowKeymap.handleNew('v', editor)
+                else -> false
+            }
         }
 
-        KeyEvent.VK_PAGE_UP -> {
-            HelixMotions.pageUp(editor, state.takeCount() ?: 1)
-            true
-        }
+        val count = state.takeCount() ?: 1
+        return when (e.keyCode) {
+            KeyEvent.VK_PAGE_DOWN -> {
+                HelixMotions.pageDown(editor, count)
+                true
+            }
 
-        else -> false
+            KeyEvent.VK_PAGE_UP -> {
+                HelixMotions.pageUp(editor, count)
+                true
+            }
+
+            KeyEvent.VK_HOME -> {
+                HelixWhichKeyPopup.hide()
+                HelixMotions.moveLineStart(editor)
+                true
+            }
+
+            KeyEvent.VK_END -> {
+                HelixWhichKeyPopup.hide()
+                HelixMotions.moveLineEnd(editor)
+                true
+            }
+
+            KeyEvent.VK_LEFT -> {
+                HelixWhichKeyPopup.hide()
+                HelixMotions.moveLeft(editor, count)
+                true
+            }
+
+            KeyEvent.VK_RIGHT -> {
+                HelixWhichKeyPopup.hide()
+                HelixMotions.moveRight(editor, count)
+                true
+            }
+
+            KeyEvent.VK_UP -> {
+                HelixWhichKeyPopup.hide()
+                handleVerticalArrow(editor, count, isUp = true)
+                true
+            }
+
+            KeyEvent.VK_DOWN -> {
+                HelixWhichKeyPopup.hide()
+                handleVerticalArrow(editor, count, isUp = false)
+                true
+            }
+
+            else -> false
+        }
+    }
+
+    private fun handleVerticalArrow(editor: Editor, count: Int, isUp: Boolean) {
+        val isHelixStandard =
+            jp.titze.intellij.helix.settings.HelixSettings.instance.lineNavigationMode ==
+                jp.titze.intellij.helix.settings.HelixLineNavigationMode.HELIX_STANDARD
+        if (isUp) {
+            if (isHelixStandard) HelixMotions.moveVisualUp(editor, count) else HelixMotions.moveUp(editor, count)
+        } else {
+            if (isHelixStandard) HelixMotions.moveVisualDown(editor, count) else HelixMotions.moveDown(editor, count)
+        }
     }
 
     private fun handleAltShortcut(

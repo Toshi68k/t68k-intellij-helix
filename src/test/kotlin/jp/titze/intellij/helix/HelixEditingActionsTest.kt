@@ -1149,4 +1149,29 @@ class HelixEditingActionsTest : BasePlatformTestCase() {
             jp.titze.intellij.helix.action.HelixActionDelegate.actionExecutor = null
         }
     }
+
+    fun testLastInsertedTextRegisterPaste() {
+        myFixture.configureByText("test.txt", "hello world")
+        val editor = myFixture.editor
+        val state = HelixStateManager.getOrCreate(editor)
+
+        // Type "!!!" in insert mode
+        state.setMode(HelixMode.INSERT)
+        HelixInsertTracker.recordChar('!')
+        HelixInsertTracker.recordChar('!')
+        HelixInsertTracker.recordChar('!')
+        HelixEscapeHandler.handleEscape(editor)
+
+        HelixInsertTracker.lastInsertedText shouldBe "!!!"
+
+        // Position caret at index 5 (after "hello")
+        editor.caretModel.primaryCaret.moveToOffset(5)
+
+        // Select register '.' and paste
+        HelixKeyHandler.handleKey('"', editor).shouldBeTrue()
+        HelixKeyHandler.handleKey('.', editor).shouldBeTrue()
+        HelixKeyHandler.handleKey('p', editor).shouldBeTrue()
+
+        editor.document.text shouldBe "hello !!!world"
+    }
 }

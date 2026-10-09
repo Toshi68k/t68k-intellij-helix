@@ -338,6 +338,8 @@ object HelixMotions {
     fun moveChange(editor: Editor, forward: Boolean, count: Int = 1, toEnd: Boolean = false): Boolean =
         HelixJumpMotions.moveChange(editor, forward, count, toEnd)
     fun matchBrackets(editor: Editor, count: Int = 1): Boolean = HelixJumpMotions.matchBrackets(editor, count)
+    fun moveXmlElement(editor: Editor, forward: Boolean, count: Int = 1) =
+        HelixJumpMotions.moveXmlElement(editor, forward, count)
     fun moveVisualDown(editor: Editor, count: Int = 1) = HelixVisualMotions.moveVisualDown(editor, count)
     fun moveVisualUp(editor: Editor, count: Int = 1) = HelixVisualMotions.moveVisualUp(editor, count)
 }

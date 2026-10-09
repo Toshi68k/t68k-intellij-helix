@@ -2,6 +2,7 @@ package jp.titze.intellij.helix.keymap
 
 import com.intellij.openapi.editor.Editor
 import jp.titze.intellij.helix.action.HelixActionDelegate
+import jp.titze.intellij.helix.action.HelixSplitActions
 import jp.titze.intellij.helix.motion.HelixFileNavigation
 
 internal object HelixWindowKeymap {
@@ -38,6 +39,17 @@ internal object HelixWindowKeymap {
 
         'o', 'O' -> HelixActionDelegate.executeAction("UnsplitAll", editor)
 
+        'n' -> {
+            jp.titze.intellij.helix.state.HelixStateManager.getOrCreate(editor).setPendingSequence("C-w n")
+            true
+        }
+
+        else -> false
+    }
+
+    fun handleNew(ch: Char, editor: Editor): Boolean = when (ch) {
+        's', 'S' -> HelixSplitActions.openScratchSplit(editor, vertical = false)
+        'v', 'V' -> HelixSplitActions.openScratchSplit(editor, vertical = true)
         else -> false
     }
 }
