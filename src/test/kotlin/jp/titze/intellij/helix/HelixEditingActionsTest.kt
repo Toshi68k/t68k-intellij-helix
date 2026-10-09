@@ -472,12 +472,7 @@ class HelixEditingActionsTest : BasePlatformTestCase() {
 
         val escapeAction = jp.titze.intellij.helix.editor.HelixEscapeAction()
         val dataContext = com.intellij.ide.DataManager.getInstance().getDataContext(editor.contentComponent)
-        val event = com.intellij.openapi.actionSystem.AnActionEvent.createFromAnAction(
-            escapeAction,
-            null,
-            com.intellij.openapi.actionSystem.ActionPlaces.KEYBOARD_SHORTCUT,
-            dataContext,
-        )
+        val event = com.intellij.testFramework.TestActionEvent.createTestEvent(escapeAction, dataContext)
         escapeAction.actionPerformed(event)
 
         state.pendingSequence shouldBe ""
