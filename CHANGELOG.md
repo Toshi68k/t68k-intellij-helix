@@ -36,6 +36,12 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
     `:fold`, `:unfold`, `:fold-all`, and `:unfold-all` commands.
   - Added support for `f` / `Ctrl+f` (`page_down`), `d` / `Ctrl+d` (`page_cursor_half_down`), and `u` / `Ctrl+u`
     (`page_cursor_half_up`) in View mode.
+- **Alt Modifier Dual-Registration in Event Dispatcher**:
+  - Closed dual-registration gaps in `HelixEventDispatcher` for `Alt-s` (split selection on newlines),
+    `Alt-;` (flip selection anchor and cursor), `Alt-,` (remove primary selection), `Alt-C` (copy selection
+    on previous line), `Alt-o` / `Alt-up` (expand selection), and `Alt-i` / `Alt-down` (shrink selection).
+  - Keystrokes with Alt/Option modifiers on macOS and Linux are now reliably intercepted at root event level,
+    preventing special character input (e.g. `ß`) from interfering with selection operations.
 - **Search & Regex Prompt Bar Cancellation**:
   - Pressing <kbd>Ctrl+c</kbd>, <kbd>Esc</kbd>, or <kbd>Ctrl+[</kbd> inside the active search or regex prompt bar now cleanly dismisses the bar without triggering line comments (`CommentByLineComment`) on the editor.
   - Non-cancel keystrokes typed inside active prompts flow directly to the prompt input field without triggering Normal mode bindings.
