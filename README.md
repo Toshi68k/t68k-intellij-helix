@@ -436,6 +436,7 @@ pressed. Code folding is available via `:fold`, `:unfold`, `:fold-all`, and `:un
 | `space + G p` | `dap_pause`             | `Pause`                   | Pause program execution             |
 | `space + G l` | `dap_launch`            | `Debug`                   | Launch active debug target          |
 | `space + G r` | `dap_restart`           | `Rerun`                   | Restart debugging session           |
+| `space + G R` | `run`                   | `RunClass`                | Run without debugger                |
 | `space + G t` | `dap_terminate`         | `Stop`                    | Terminate debug session             |
 | `space + G v` | `dap_variables`         | `ActivateDebugToolWindow` | Focus debug panel & variables       |
 | `space + G k` | `dap_evaluate`          | `EvaluateExpression`      | Evaluate expression popup           |
@@ -584,6 +585,30 @@ to execute):
 - `:dap-edit-condition` &rarr; Edit breakpoint condition and log (`space + G e`)
 - `:dap-view-breakpoints` / `:breakpoints` &rarr; View all breakpoints manager (`space + G B`)
 - `:signature-help` / `:param-info` &rarr; Show signature help / parameter info (`Ctrl+p`)
+- `:run` / `:run-context` &rarr; Run context configuration or file (`RunClass`)
+- `:run-target` &rarr; Run active configuration (`Run`)
+- `:rerun` &rarr; Rerun last run or test execution (`Rerun`)
+- `:build` / `:make` / `:compile` &rarr; Build project / compile dirty files (`CompileDirty`)
+- `:stop` / `:terminate` / `:kill` &rarr; Stop running or debugging process (`Stop`)
+- `:blame` / `:annotate` / `:git-blame` &rarr; Toggle Git blame annotations (`Annotate`)
+- `:diff` / `:show-diff` / `:git-diff` &rarr; Compare file with repository version (`Compare.SameVersion`)
+- `:commit` / `:git-commit` &rarr; Open Git commit dialog or tool window (`CheckinProject`)
+- `:push` / `:git-push` &rarr; Push commits to remote repository (`Vcs.Push`)
+- `:pull` / `:git-pull` / `:update-project` &rarr; Update project / pull from remote (`Vcs.UpdateProject`)
+- `:vcs-log` / `:git-log` &rarr; Show VCS / Git log (`Vcs.Show.Log`)
+- `:goto-implementation` / `:implementation` &rarr; Jump to implementation (`GotoImplementation`, `gi`)
+- `:goto-type-definition` / `:type-definition` &rarr; Jump to type definition (`GotoTypeDeclaration`, `gy`)
+- `:goto-reference` / `:references` &rarr; Find symbol references / usages (`FindUsages`, `gr`)
+- `:goto-super` / `:super` &rarr; Navigate to super method or class (`GotoSuperMethod`)
+- `:call-hierarchy` &rarr; Open Call Hierarchy tool window (`CallHierarchy`)
+- `:type-hierarchy` &rarr; Open Type Hierarchy tool window (`TypeHierarchy`)
+- `:file-structure` / `:structure` &rarr; Document structure outline picker (`FileStructurePopup`, `space + s`)
+- `:extract-variable` / `:extract-var` &rarr; Refactor extract variable (`IntroduceVariable`)
+- `:extract-method` &rarr; Refactor extract method (`ExtractMethod`)
+- `:inline` &rarr; Refactor inline variable or method (`Inline`)
+- `:change-signature` &rarr; Refactor change method signature (`ChangeSignature`)
+- `:generate` / `:gen` &rarr; Generate code (constructors, getters, setters) (`Generate`)
+- `:replace-in-path` / `:replace-in-files` &rarr; Find and replace in project files (`ReplaceInPath`)
 
 #### Search & Selection UI Modes
 

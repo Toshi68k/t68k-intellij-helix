@@ -211,6 +211,7 @@ object HelixWhichKeyMenus {
         WhichKeyItem("p", "Pause", "dap_pause", "Pause"),
         WhichKeyItem("l", "Launch debug", "dap_launch", "Debug"),
         WhichKeyItem("r", "Restart", "dap_restart", "Rerun"),
+        WhichKeyItem("R", "Run without debugger", "run", "RunClass"),
         WhichKeyItem("t", "Terminate", "dap_terminate", "Stop"),
         WhichKeyItem("v", "Variables / Debug window", "dap_variables", "ActivateDebugToolWindow"),
         WhichKeyItem("k", "Evaluate expression", "dap_evaluate", "EvaluateExpression"),
