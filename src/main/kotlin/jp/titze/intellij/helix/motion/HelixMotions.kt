@@ -72,19 +72,14 @@ object HelixMotions {
                 val selStart = caret.selectionStart
                 val selEnd = caret.selectionEnd
                 val anchor = caret.leadSelectionOffset
-                val isForward = anchor == selStart
 
                 val curEndLine = doc.getLineNumber(selEnd.coerceAtLeast(1) - 1)
                 val newEndLine = (curEndLine + steps).coerceAtMost(lineCount - 1)
                 val newEnd = HelixMotionUtils.getLineEndWithNewline(doc, newEndLine)
+                val startOffset = minOf(anchor, selStart)
 
-                if (isForward) {
-                    caret.moveToOffset(newEnd)
-                    caret.setSelection(anchor, newEnd)
-                } else {
-                    caret.moveToOffset(anchor)
-                    caret.setSelection(newEnd, anchor)
-                }
+                caret.moveToOffset(newEnd)
+                caret.setSelection(startOffset, newEnd)
             }
         }
         editor.scrollingModel.scrollToCaret(ScrollType.MAKE_VISIBLE)

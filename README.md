@@ -96,48 +96,74 @@ Helix relies on several `Ctrl` chords for navigation (`Ctrl-d`, `Ctrl-u`, `Ctrl-
 
 ### Motions (Create / Extend Selections)
 
-| Key                   | Description                                                                                                |
-|-----------------------|------------------------------------------------------------------------------------------------------------|
-| `f<char>`             | Move to next occurrence of `<char>` (inclusive, searches across lines)                                     |
-| `t<char>`             | Move till next occurrence of `<char>` (exclusive, stops before `<char>`, supports `<Enter>`)               |
-| `F<char>`             | Move to previous occurrence of `<char>` (backward, inclusive)                                              |
-| `T<char>`             | Move till previous occurrence of `<char>` (backward, exclusive, stops after `<char>`)                      |
-| `Alt+.`               | Repeat last motion (`f`, `t`, `F`, `T`, `mm`, `[`/`]`) (`repeat_last_motion`)                              |
-| `/`                   | Search forward for regex pattern (`search`)                                                                |
-| `?`                   | Search backward for regex pattern (`rsearch`)                                                              |
-| `n`                   | Jump to next match (`search_next`; in Select mode extends carets `extend_search_next`)                      |
-| `N`                   | Jump to previous match (`search_prev`; in Select mode extends carets `extend_search_prev`)                  |
-| `*`                   | Search for selection or word under cursor with word boundaries (`search_selection`)                        |
-| `Alt+*`               | Search for selection or word under cursor without word boundaries                                          |
-| `w`                   | Advance to the start of the next word                                                                      |
-| `b`                   | Move backward to the start of the previous word                                                            |
-| `e`                   | Advance to the end of the current/next word                                                                |
-| `W`                   | Advance to the start of the next WORD (non-whitespace chunk)                                               |
-| `B`                   | Move backward to the start of the previous WORD                                                            |
-| `E`                   | Advance to the end of the current/next WORD                                                                |
-| `ge`                  | Move backward to the end of the previous word                                                              |
-| `x`                   | Select current line (including newline); pressing `x` again extends to the next line (`extend_line_below`) |
-| `X`                   | Extend selection to whole line bounds including trailing newline (`extend_to_line_bounds`)                 |
-| `Alt+x`               | Shrink selection to line bounds excluding trailing line breaks (`shrink_to_line_bounds`)                   |
-| `%`                   | Select entire buffer                                                                                       |
-| `h` / `j` / `k` / `l` | Move left / down / up / right (`j`/`k` visual line by default; mode-aware selection)                       |
-| `<Left>` / `<Down>` / `<Up>` / `<Right>` | Directional arrows matching `h`/`j`/`k`/`l` (mode and visual-line aware)                  |
-| `<Home>` / `<End>`   | Move to line start / line end (mode-aware selection)                                                        |
-| `gj` / `gk`           | Move down / up by physical document line (Stock Helix default)                                             |
-| `gh`                  | Move to line start (actual first character)                                                                |
-| `gs`                  | Move to first non-whitespace character of line                                                             |
-| `gl`                  | Move to line end                                                                                           |
-| `gw`                  | Jump to visible word with 2-letter badge overlays (`goto_word`)                                            |
-| `gg`                  | Move to the top of the buffer                                                                              |
-| `ge` *(in `g` menu)*  | Move to the end of the buffer                                                                              |
-| `gt`                  | Move to top line of visible window viewport (`goto_window_top`)                                            |
-| `gc`                  | Move to center line of visible window viewport (`goto_window_center`)                                      |
-| `gb`                  | Move to bottom line of visible window viewport (`goto_window_bottom`)                                      |
-| `g\|` / `<count>\|`   | Move to column within line (1-indexed, default start) (`goto_column`)                                      |
-| `Ctrl+f` / `PageDown` | Move page down                                                                                             |
-| `Ctrl+b` / `PageUp`   | Move page up                                                                                               |
-| `Ctrl+d`              | Move half page down                                                                                        |
-| `Ctrl+u`              | Move half page up                                                                                          |
+| Key                                      | Description                                                                                                |
+|------------------------------------------|------------------------------------------------------------------------------------------------------------|
+| `[count]<motion>`                        | Repeat motion N times (e.g. `5j`, `3x`, `2w`, `2fa`, `100gg`, `15g\|`)                                     |
+| `f<char>`                                | Move to next occurrence of `<char>` (inclusive, searches across lines)                                     |
+| `t<char>`                                | Move till next occurrence of `<char>` (exclusive, stops before `<char>`, supports `<Enter>`)               |
+| `F<char>`                                | Move to previous occurrence of `<char>` (backward, inclusive)                                              |
+| `T<char>`                                | Move till previous occurrence of `<char>` (backward, exclusive, stops after `<char>`)                      |
+| `Alt+.`                                  | Repeat last motion (`f`, `t`, `F`, `T`, `mm`, `[`/`]`) (`repeat_last_motion`)                              |
+| `/`                                      | Search forward for regex pattern (`search`)                                                                |
+| `?`                                      | Search backward for regex pattern (`rsearch`)                                                              |
+| `n`                                      | Jump to next match (`search_next`; in Select mode extends carets `extend_search_next`)                     |
+| `N`                                      | Jump to previous match (`search_prev`; in Select mode extends carets `extend_search_prev`)                 |
+| `*`                                      | Search for selection or word under cursor with word boundaries (`search_selection`)                        |
+| `Alt+*`                                  | Search for selection or word under cursor without word boundaries                                          |
+| `w`                                      | Advance to the start of the next word                                                                      |
+| `b`                                      | Move backward to the start of the previous word                                                            |
+| `e`                                      | Advance to the end of the current/next word                                                                |
+| `W`                                      | Advance to the start of the next WORD (non-whitespace chunk)                                               |
+| `B`                                      | Move backward to the start of the previous WORD                                                            |
+| `E`                                      | Advance to the end of the current/next WORD                                                                |
+| `ge`                                     | Move backward to the end of the previous word                                                              |
+| `x`                                      | Select current line (including newline); pressing `x` again extends to the next line (`extend_line_below`) |
+| `X`                                      | Extend selection to whole line bounds including trailing newline (`extend_to_line_bounds`)                 |
+| `Alt+x`                                  | Shrink selection to line bounds excluding trailing line breaks (`shrink_to_line_bounds`)                   |
+| `%`                                      | Select entire buffer                                                                                       |
+| `h` / `j` / `k` / `l`                    | Move left / down / up / right (`j`/`k` visual line by default; mode-aware selection)                       |
+| `<Left>` / `<Down>` / `<Up>` / `<Right>` | Directional arrows matching `h`/`j`/`k`/`l` (mode and visual-line aware)                                   |
+| `<Home>` / `<End>`                       | Move to line start / line end (mode-aware selection)                                                       |
+| `gj` / `gk`                              | Move down / up by physical document line (Stock Helix default)                                             |
+| `gh`                                     | Move to line start (actual first character)                                                                |
+| `gs`                                     | Move to first non-whitespace character of line                                                             |
+| `gl`                                     | Move to line end                                                                                           |
+| `gw`                                     | Jump to visible word with 2-letter badge overlays (`goto_word`)                                            |
+| `gg`                                     | Move to the top of the buffer                                                                              |
+| `ge` *(in `g` menu)*                     | Move to the end of the buffer                                                                              |
+| `gt`                                     | Move to top line of visible window viewport (`goto_window_top`)                                            |
+| `gc`                                     | Move to center line of visible window viewport (`goto_window_center`)                                      |
+| `gb`                                     | Move to bottom line of visible window viewport (`goto_window_bottom`)                                      |
+| `g\|` / `<count>\|`                      | Move to column within line (1-indexed, default start) (`goto_column`)                                      |
+| `Ctrl+f` / `PageDown`                    | Move page down                                                                                             |
+| `Ctrl+b` / `PageUp`                      | Move page up                                                                                               |
+| `Ctrl+d`                                 | Move half page down                                                                                        |
+| `Ctrl+u`                                 | Move half page up                                                                                          |
+
+#### Numeric Count Prefixes (`[count]`)
+
+Helix supports prefixing motions, selections, and editing commands with numbers (`1`–`9` followed by digits) to repeat them $N$ times. Active pending counts are shown in the status bar widget (e.g. `NOR 5`) and can be cancelled with <kbd>Esc</kbd>.
+
+| Key / Sequence        | Target Command                                | Description                                                    |
+|-----------------------|-----------------------------------------------|----------------------------------------------------------------|
+| `5j` / `5k`           | `move_visual_down` / `move_visual_up`         | Move down / up 5 lines (mode and visual setting aware)         |
+| `5h` / `5l`           | `move_char_left` / `move_char_right`          | Move left / right 5 characters                                 |
+| `3x`                  | `select_line_below`                           | Select 3 full lines (or extend selection downwards by 3 lines) |
+| `3X`                  | `extend_to_line_bounds`                       | Extend selection across 3 lines to whole line bounds           |
+| `2w` / `3b` / `2e`    | `move_next_word_start` / `prev` / `end`       | Advance 2 words forward / 3 words backward / 2 word ends       |
+| `2W` / `3B` / `2E`    | `move_next_long_word_start` / etc.            | Advance across non-whitespace WORD chunks                      |
+| `2fa` / `3tb`         | `find_next_char` / `find_till_char`           | Jump to 2nd occurrence of `a` / till 3rd occurrence of `b`     |
+| `2Fa` / `3Tb`         | `find_prev_char` / `find_till_prev_char`      | Jump backward to 2nd `a` / till 3rd `b`                        |
+| `100gg` / `50G`       | `goto_line`                                   | Jump directly to line 100 / 50 (1-indexed)                     |
+| `15g\|`               | `goto_column`                                 | Jump to column 15 of current line (1-indexed)                  |
+| `3]p` / `3[p`         | `goto_next_paragraph` / `goto_prev_paragraph` | Jump 3 paragraphs forward / backward                           |
+| `3]f` / `3[f`         | `goto_next_function` / `goto_prev_function`   | Jump 3 functions forward / backward                            |
+| `3]d` / `3[d`         | `goto_next_diag` / `goto_prev_diag`           | Jump 3 diagnostics forward / backward                          |
+| `3]g` / `3[g`         | `goto_next_change` / `goto_prev_change`       | Jump 3 VCS changes forward / backward                          |
+| `2Ctrl+d` / `2Ctrl+u` | `half_page_down` / `half_page_up`             | Scroll half page down / up 2 times                             |
+| `3.`                  | `repeat_last_insert`                          | Repeat last inserted text 3 times                              |
+| `3u` / `3U`           | `undo` / `redo`                               | Undo / redo 3 changes                                          |
+| `3~` / `3\``          | `switch_case` / `switch_to_lowercase`         | Transform case for 3 characters                                |
 
 ### Jumplist Navigation
 
