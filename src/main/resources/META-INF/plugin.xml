@@ -120,6 +120,11 @@
                 text="Helix Expand Selection"
                 description="Expand structural selection (PSI)">
             <keyboard-shortcut keymap="$default" first-keystroke="alt O"/>
+            <keyboard-shortcut keymap="Mac OS X" first-keystroke="alt O"/>
+            <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="alt O"/>
+            <keyboard-shortcut keymap="$default" first-keystroke="alt UP"/>
+            <keyboard-shortcut keymap="Mac OS X" first-keystroke="alt UP"/>
+            <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="alt UP"/>
         </action>
 
         <action id="jp.titze.intellij.helix.shrinkSelection"
@@ -127,6 +132,11 @@
                 text="Helix Shrink Selection"
                 description="Shrink structural selection (PSI)">
             <keyboard-shortcut keymap="$default" first-keystroke="alt I"/>
+            <keyboard-shortcut keymap="Mac OS X" first-keystroke="alt I"/>
+            <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="alt I"/>
+            <keyboard-shortcut keymap="$default" first-keystroke="alt DOWN"/>
+            <keyboard-shortcut keymap="Mac OS X" first-keystroke="alt DOWN"/>
+            <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="alt DOWN"/>
         </action>
 
         <action id="jp.titze.intellij.helix.selectPrevSibling"
@@ -187,6 +197,9 @@
             <keyboard-shortcut keymap="$default" first-keystroke="alt shift I"/>
             <keyboard-shortcut keymap="Mac OS X" first-keystroke="alt shift I"/>
             <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="alt shift I"/>
+            <keyboard-shortcut keymap="$default" first-keystroke="alt shift DOWN"/>
+            <keyboard-shortcut keymap="Mac OS X" first-keystroke="alt shift DOWN"/>
+            <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="alt shift DOWN"/>
         </action>
 
         <action id="jp.titze.intellij.helix.selectNextOccurrence"

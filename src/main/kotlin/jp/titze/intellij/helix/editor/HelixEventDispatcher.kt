@@ -446,6 +446,7 @@ class HelixEventDispatcher : IdeEventQueue.EventDispatcher {
     ): Boolean {
         if (handleAltShellShortcut(e, editor)) return true
         if (handleAltAstShortcut(e, editor)) return true
+        if (handleAltSelectionShortcut(e, editor, state)) return true
 
         return when {
             e.keyCode == KeyEvent.VK_BACK_QUOTE || e.keyChar == '`' -> {
@@ -475,11 +476,6 @@ class HelixEventDispatcher : IdeEventQueue.EventDispatcher {
                 true
             }
 
-            e.keyChar == ':' || (e.isShiftDown && e.keyCode == KeyEvent.VK_SEMICOLON) -> {
-                HelixActions.ensureSelectionsForward(editor)
-                true
-            }
-
             e.keyCode == KeyEvent.VK_PERIOD || e.keyChar == '.' -> {
                 HelixActions.repeatLastMotion(editor, state.takeCount() ?: 1)
                 true
@@ -495,11 +491,6 @@ class HelixEventDispatcher : IdeEventQueue.EventDispatcher {
                 true
             }
 
-            !e.isShiftDown && (e.keyCode == KeyEvent.VK_MINUS || e.keyChar == '-') -> {
-                HelixActions.mergeAllSelections(editor)
-                true
-            }
-
             e.keyChar == 'J' || (e.isShiftDown && e.keyCode == KeyEvent.VK_J) -> {
                 HelixActions.joinLines(editor, state.takeCount() ?: 1, selectSpace = true)
                 true
@@ -511,31 +502,79 @@ class HelixEventDispatcher : IdeEventQueue.EventDispatcher {
                 true
             }
 
-            e.keyChar == '_' || (e.isShiftDown && e.keyCode == KeyEvent.VK_MINUS) -> {
-                HelixActions.mergeSelections(editor)
-                true
-            }
-
-            e.keyChar == '(' || (e.isShiftDown && e.keyCode == KeyEvent.VK_9) -> {
-                HelixActions.rotateSelectionsContents(editor, forward = false)
-                true
-            }
-
-            e.keyChar == ')' || (e.isShiftDown && e.keyCode == KeyEvent.VK_0) -> {
-                HelixActions.rotateSelectionsContents(editor, forward = true)
-                true
-            }
-
-            !e.isShiftDown && (e.keyCode == KeyEvent.VK_X || e.keyChar == 'x') -> {
-                HelixMotions.shrinkToLineBounds(editor)
-                true
-            }
-
             else -> false
         }
     }
 
+    private fun handleAltSelectionShortcut(
+        e: KeyEvent,
+        editor: Editor,
+        state: jp.titze.intellij.helix.state.HelixEditorState,
+    ): Boolean = when {
+        e.keyChar == ':' || (e.isShiftDown && e.keyCode == KeyEvent.VK_SEMICOLON) -> {
+            HelixActions.ensureSelectionsForward(editor)
+            true
+        }
+
+        isFlipSelection(e) -> {
+            HelixMotions.flipSelection(editor)
+            true
+        }
+
+        isSplitSelectionOnNewline(e) -> {
+            HelixMotions.splitSelectionOnNewlines(editor)
+            true
+        }
+
+        isRemovePrimarySelection(e) -> {
+            HelixMotions.removePrimarySelection(editor)
+            true
+        }
+
+        isCopySelectionOnPrevLine(e) -> {
+            HelixMotions.copySelectionOnPrevLine(editor, state.takeCount() ?: 1)
+            true
+        }
+
+        !e.isShiftDown && (e.keyCode == KeyEvent.VK_MINUS || e.keyChar == '-') -> {
+            HelixActions.mergeAllSelections(editor)
+            true
+        }
+
+        e.keyChar == '_' || (e.isShiftDown && e.keyCode == KeyEvent.VK_MINUS) -> {
+            HelixActions.mergeSelections(editor)
+            true
+        }
+
+        e.keyChar == '(' || (e.isShiftDown && e.keyCode == KeyEvent.VK_9) -> {
+            HelixActions.rotateSelectionsContents(editor, forward = false)
+            true
+        }
+
+        e.keyChar == ')' || (e.isShiftDown && e.keyCode == KeyEvent.VK_0) -> {
+            HelixActions.rotateSelectionsContents(editor, forward = true)
+            true
+        }
+
+        !e.isShiftDown && (e.keyCode == KeyEvent.VK_X || e.keyChar == 'x') -> {
+            HelixMotions.shrinkToLineBounds(editor)
+            true
+        }
+
+        else -> false
+    }
+
     private fun handleAltAstShortcut(e: KeyEvent, editor: Editor): Boolean = when {
+        isExpandSelection(e) -> {
+            HelixActionDelegate.executeAction("EditorSelectWord", editor)
+            true
+        }
+
+        isShrinkSelection(e) -> {
+            HelixActionDelegate.executeAction("EditorUnSelectWord", editor)
+            true
+        }
+
         !e.isShiftDown && (e.keyCode == KeyEvent.VK_P || e.keyCode == KeyEvent.VK_LEFT) -> {
             HelixActions.selectPrevSibling(editor)
             true
@@ -561,7 +600,7 @@ class HelixEventDispatcher : IdeEventQueue.EventDispatcher {
             true
         }
 
-        e.isShiftDown && (e.keyCode == KeyEvent.VK_I || e.keyChar == 'I') -> {
+        isSelectAllChildren(e) -> {
             HelixActions.selectAllChildren(editor)
             true
         }
@@ -580,6 +619,51 @@ class HelixEventDispatcher : IdeEventQueue.EventDispatcher {
             true
         }
 
+        else -> false
+    }
+
+    private fun isCopySelectionOnPrevLine(e: KeyEvent): Boolean = when {
+        e.keyChar == 'Ç' -> true
+        e.isShiftDown && (e.keyCode == KeyEvent.VK_C || e.keyChar == 'C') -> true
+        else -> false
+    }
+
+    private fun isSplitSelectionOnNewline(e: KeyEvent): Boolean = when {
+        e.isShiftDown -> false
+        e.keyCode == KeyEvent.VK_S || e.keyChar == 's' || e.keyChar == 'ß' -> true
+        else -> false
+    }
+
+    private fun isFlipSelection(e: KeyEvent): Boolean = when {
+        e.isShiftDown -> false
+        e.keyCode == KeyEvent.VK_SEMICOLON || e.keyChar == ';' -> true
+        else -> false
+    }
+
+    private fun isRemovePrimarySelection(e: KeyEvent): Boolean = when {
+        e.isShiftDown -> false
+        e.keyCode == KeyEvent.VK_COMMA || e.keyChar == ',' || e.keyChar == '≤' -> true
+        else -> false
+    }
+
+    private fun isExpandSelection(e: KeyEvent): Boolean = when {
+        e.isShiftDown -> false
+        e.keyCode == KeyEvent.VK_O || e.keyCode == KeyEvent.VK_UP -> true
+        e.keyChar == 'o' || e.keyChar == 'ø' -> true
+        else -> false
+    }
+
+    private fun isShrinkSelection(e: KeyEvent): Boolean = when {
+        e.isShiftDown -> false
+        e.keyCode == KeyEvent.VK_I || e.keyCode == KeyEvent.VK_DOWN -> true
+        e.keyChar == 'i' || e.keyChar == 'ˆ' -> true
+        else -> false
+    }
+
+    private fun isSelectAllChildren(e: KeyEvent): Boolean = when {
+        !e.isShiftDown -> false
+        e.keyCode == KeyEvent.VK_I || e.keyCode == KeyEvent.VK_DOWN -> true
+        e.keyChar == 'I' || e.keyChar == 'ˆ' -> true
         else -> false
     }
 

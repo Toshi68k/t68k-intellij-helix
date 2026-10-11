@@ -921,6 +921,117 @@ class HelixSelectionTest : BasePlatformTestCase() {
         editor.caretModel.primaryCaret.offset shouldBe text.indexOf(')')
     }
 
+    fun testAstExpandShrinkViaEventDispatcher() {
+        val text = "fun process(a: Int, b: String, c: Boolean) {}\n"
+        myFixture.configureByText("test.kt", text)
+        val editor = myFixture.editor
+        val dispatcher = jp.titze.intellij.helix.editor.HelixEventDispatcher()
+
+        // Test Alt-O (expand selection)
+        val caret = editor.caretModel.primaryCaret
+        caret.removeSelection()
+        caret.moveToOffset(text.indexOf("process"))
+        val altO = java.awt.event.KeyEvent(
+            editor.contentComponent,
+            java.awt.event.KeyEvent.KEY_PRESSED,
+            System.currentTimeMillis(),
+            java.awt.event.InputEvent.ALT_DOWN_MASK,
+            java.awt.event.KeyEvent.VK_O,
+            'o',
+        )
+        dispatcher.dispatch(altO).shouldBeTrue()
+        caret.hasSelection().shouldBeTrue()
+
+        // Test Alt-I (shrink selection)
+        val altI = java.awt.event.KeyEvent(
+            editor.contentComponent,
+            java.awt.event.KeyEvent.KEY_PRESSED,
+            System.currentTimeMillis(),
+            java.awt.event.InputEvent.ALT_DOWN_MASK,
+            java.awt.event.KeyEvent.VK_I,
+            'i',
+        )
+        dispatcher.dispatch(altI).shouldBeTrue()
+
+        // Test Alt-Shift-Down (select all children)
+        val paramListStart = text.indexOf('(')
+        val paramListEnd = text.indexOf(')') + 1
+        caret.setSelection(paramListStart, paramListEnd)
+        val altShiftDown = java.awt.event.KeyEvent(
+            editor.contentComponent,
+            java.awt.event.KeyEvent.KEY_PRESSED,
+            System.currentTimeMillis(),
+            java.awt.event.InputEvent.ALT_DOWN_MASK or java.awt.event.InputEvent.SHIFT_DOWN_MASK,
+            java.awt.event.KeyEvent.VK_DOWN,
+            java.awt.event.KeyEvent.CHAR_UNDEFINED,
+        )
+        dispatcher.dispatch(altShiftDown).shouldBeTrue()
+        editor.caretModel.caretCount shouldBe 3
+    }
+
+    fun testAltShortcutsViaEventDispatcher() {
+        val text = "alpha\nbeta\ngamma"
+        myFixture.configureByText("test.txt", text)
+        val editor = myFixture.editor
+        val dispatcher = jp.titze.intellij.helix.editor.HelixEventDispatcher()
+
+        // 1. Alt-S: split selection on newlines
+        HelixMotions.selectAll(editor)
+        val altS = java.awt.event.KeyEvent(
+            editor.contentComponent,
+            java.awt.event.KeyEvent.KEY_PRESSED,
+            System.currentTimeMillis(),
+            java.awt.event.InputEvent.ALT_DOWN_MASK,
+            java.awt.event.KeyEvent.VK_S,
+            's',
+        )
+        dispatcher.dispatch(altS).shouldBeTrue()
+        editor.caretModel.caretCount shouldBe 3
+
+        // 2. Alt-,: remove primary selection
+        val altComma = java.awt.event.KeyEvent(
+            editor.contentComponent,
+            java.awt.event.KeyEvent.KEY_PRESSED,
+            System.currentTimeMillis(),
+            java.awt.event.InputEvent.ALT_DOWN_MASK,
+            java.awt.event.KeyEvent.VK_COMMA,
+            ',',
+        )
+        dispatcher.dispatch(altComma).shouldBeTrue()
+        editor.caretModel.caretCount shouldBe 2
+
+        // 3. Alt-Shift-C: copy selection on prev line
+        editor.caretModel.removeSecondaryCarets()
+        editor.caretModel.primaryCaret.moveToOffset(text.indexOf("beta"))
+        val altShiftC = java.awt.event.KeyEvent(
+            editor.contentComponent,
+            java.awt.event.KeyEvent.KEY_PRESSED,
+            System.currentTimeMillis(),
+            java.awt.event.InputEvent.ALT_DOWN_MASK or java.awt.event.InputEvent.SHIFT_DOWN_MASK,
+            java.awt.event.KeyEvent.VK_C,
+            'C',
+        )
+        dispatcher.dispatch(altShiftC).shouldBeTrue()
+        editor.caretModel.caretCount shouldBe 2
+
+        // 4. Alt-;: flip selection
+        editor.caretModel.removeSecondaryCarets()
+        val caret = editor.caretModel.primaryCaret
+        caret.moveToOffset(5)
+        caret.setSelection(0, 5)
+        val altSemicolon = java.awt.event.KeyEvent(
+            editor.contentComponent,
+            java.awt.event.KeyEvent.KEY_PRESSED,
+            System.currentTimeMillis(),
+            java.awt.event.InputEvent.ALT_DOWN_MASK,
+            java.awt.event.KeyEvent.VK_SEMICOLON,
+            ';',
+        )
+        dispatcher.dispatch(altSemicolon).shouldBeTrue()
+        caret.offset shouldBe 0
+        caret.leadSelectionOffset shouldBe 5
+    }
+
     fun testAstNextSiblingSelection() {
         val text = "fun process(a: Int, b: String, c: Boolean) {}\n"
         myFixture.configureByText("test.kt", text)
