@@ -59,6 +59,13 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   - Non-cancel keystrokes typed inside active prompts flow directly to the prompt input field without triggering Normal mode bindings.
 - **Editor Disposal Safety**:
   - Guarded prompt bar cancellation and caret restoration against disposed editors during tab switching, closing, and test fixture teardown.
+- **Recursive Caret Iteration on New Line Insertion (`o` / `O`)**:
+  - Fixed an `IllegalStateException: Recursive runForEachCaret invocations are not allowed` when pressing `o`
+    (`open_below` / `EditorStartNewLine`) or `O` (`open_above` / `EditorStartNewLineBefore`). The editor now transitions
+    to Insert mode before dispatching the new line action, preventing `HelixEditorActionHandler` from intercepting
+    the internal Enter action as a normal-mode selection collapse.
+  - Configured `HelixEditorActionHandler` with `runForEachCaret = false` and guarded per-caret invocations during
+    Enter handling to avoid nested caret iterations.
 
 ## [0.1.0]
 
