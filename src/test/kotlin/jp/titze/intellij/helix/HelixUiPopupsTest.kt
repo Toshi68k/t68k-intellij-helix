@@ -12,6 +12,7 @@ import jp.titze.intellij.helix.action.HelixCaretUtils
 import jp.titze.intellij.helix.command.HelixCommandPopup
 import jp.titze.intellij.helix.command.HelixCommands
 import jp.titze.intellij.helix.editor.HelixEventDispatcher
+import jp.titze.intellij.helix.keymap.HelixDebugKeymap
 import jp.titze.intellij.helix.keymap.HelixKeyHandler
 import jp.titze.intellij.helix.register.HelixRegisterManager
 import jp.titze.intellij.helix.settings.HelixLineNavigationMode
@@ -1433,6 +1434,166 @@ class HelixUiPopupsTest : BasePlatformTestCase() {
             HelixSelectRegexPopup.isShowing().shouldBeFalse()
         } finally {
             HelixSelectRegexPopup.cancelActive()
+        }
+    }
+
+    fun testBuildAndRunWorkflowCommands() {
+        myFixture.configureByText("test.txt", "sample")
+        val editor = myFixture.editor
+        val executedActions = mutableListOf<String>()
+        HelixActionDelegate.actionExecutor = { id, _ ->
+            executedActions.add(id)
+            true
+        }
+
+        try {
+            executedActions.clear()
+            HelixCommands.execute("run", editor)
+            executedActions shouldBe listOf("RunClass")
+
+            executedActions.clear()
+            HelixCommands.execute("run-context", editor)
+            executedActions shouldBe listOf("RunClass")
+
+            executedActions.clear()
+            HelixCommands.execute("run-target", editor)
+            executedActions shouldBe listOf("Run")
+
+            executedActions.clear()
+            HelixCommands.execute("rerun", editor)
+            executedActions shouldBe listOf("Rerun")
+
+            executedActions.clear()
+            HelixCommands.execute("build", editor)
+            executedActions shouldBe listOf("CompileDirty")
+
+            executedActions.clear()
+            HelixCommands.execute("make", editor)
+            executedActions shouldBe listOf("CompileDirty")
+
+            executedActions.clear()
+            HelixCommands.execute("stop", editor)
+            executedActions shouldBe listOf("Stop")
+
+            executedActions.clear()
+            HelixDebugKeymap.handle('R', editor).shouldBeTrue()
+            executedActions shouldBe listOf("RunClass")
+
+            HelixWhichKeyMenus.debugItems.any { it.key == "R" && it.helixCommand == "run" }.shouldBeTrue()
+        } finally {
+            HelixActionDelegate.actionExecutor = null
+        }
+    }
+
+    fun testGitAndVcsWorkflowCommands() {
+        myFixture.configureByText("test.txt", "sample")
+        val editor = myFixture.editor
+        val executedActions = mutableListOf<String>()
+        HelixActionDelegate.actionExecutor = { id, _ ->
+            executedActions.add(id)
+            true
+        }
+
+        try {
+            executedActions.clear()
+            HelixCommands.execute("blame", editor)
+            executedActions shouldBe listOf("Annotate")
+
+            executedActions.clear()
+            HelixCommands.execute("git-blame", editor)
+            executedActions shouldBe listOf("Annotate")
+
+            executedActions.clear()
+            HelixCommands.execute("diff", editor)
+            executedActions shouldBe listOf("Compare.SameVersion")
+
+            executedActions.clear()
+            HelixCommands.execute("show-diff", editor)
+            executedActions shouldBe listOf("Compare.SameVersion")
+
+            executedActions.clear()
+            HelixCommands.execute("commit", editor)
+            executedActions shouldBe listOf("CheckinProject")
+
+            executedActions.clear()
+            HelixCommands.execute("push", editor)
+            executedActions shouldBe listOf("Vcs.Push")
+
+            executedActions.clear()
+            HelixCommands.execute("pull", editor)
+            executedActions shouldBe listOf("Vcs.UpdateProject")
+
+            executedActions.clear()
+            HelixCommands.execute("vcs-log", editor)
+            executedActions shouldBe listOf("Vcs.Show.Log")
+        } finally {
+            HelixActionDelegate.actionExecutor = null
+        }
+    }
+
+    fun testRefactoringAndNavigationWorkflowCommands() {
+        myFixture.configureByText("test.txt", "sample")
+        val editor = myFixture.editor
+        val executedActions = mutableListOf<String>()
+        HelixActionDelegate.actionExecutor = { id, _ ->
+            executedActions.add(id)
+            true
+        }
+
+        try {
+            executedActions.clear()
+            HelixCommands.execute("goto-implementation", editor)
+            executedActions shouldBe listOf("GotoImplementation")
+
+            executedActions.clear()
+            HelixCommands.execute("goto-type-definition", editor)
+            executedActions shouldBe listOf("GotoTypeDeclaration")
+
+            executedActions.clear()
+            HelixCommands.execute("goto-reference", editor)
+            executedActions shouldBe listOf("FindUsages")
+
+            executedActions.clear()
+            HelixCommands.execute("goto-super", editor)
+            executedActions shouldBe listOf("GotoSuperMethod")
+
+            executedActions.clear()
+            HelixCommands.execute("call-hierarchy", editor)
+            executedActions shouldBe listOf("CallHierarchy")
+
+            executedActions.clear()
+            HelixCommands.execute("type-hierarchy", editor)
+            executedActions shouldBe listOf("TypeHierarchy")
+
+            executedActions.clear()
+            HelixCommands.execute("file-structure", editor)
+            executedActions shouldBe listOf("FileStructurePopup")
+
+            executedActions.clear()
+            HelixCommands.execute("extract-variable", editor)
+            executedActions shouldBe listOf("IntroduceVariable")
+
+            executedActions.clear()
+            HelixCommands.execute("extract-method", editor)
+            executedActions shouldBe listOf("ExtractMethod")
+
+            executedActions.clear()
+            HelixCommands.execute("inline", editor)
+            executedActions shouldBe listOf("Inline")
+
+            executedActions.clear()
+            HelixCommands.execute("change-signature", editor)
+            executedActions shouldBe listOf("ChangeSignature")
+
+            executedActions.clear()
+            HelixCommands.execute("generate", editor)
+            executedActions shouldBe listOf("Generate")
+
+            executedActions.clear()
+            HelixCommands.execute("replace-in-path", editor)
+            executedActions shouldBe listOf("ReplaceInPath")
+        } finally {
+            HelixActionDelegate.actionExecutor = null
         }
     }
 }

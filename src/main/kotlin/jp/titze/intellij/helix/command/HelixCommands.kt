@@ -675,12 +675,12 @@ object HelixCommands {
         ) { editor -> HelixActionDelegate.executeAction("StepOut", editor) },
         HelixCommandItem(
             "dap-terminate",
-            listOf("dap_terminate", "stop", "terminate"),
+            listOf("dap_terminate"),
             "Terminate debug session (space + G t)",
         ) { editor -> HelixActionDelegate.executeAction("Stop", editor) },
         HelixCommandItem(
             "dap-restart",
-            listOf("dap_restart", "restart", "rerun"),
+            listOf("dap_restart", "restart"),
             "Restart debugging session (space + G r)",
         ) { editor -> HelixActionDelegate.executeAction("Rerun", editor) },
         HelixCommandItem(
@@ -713,6 +713,177 @@ object HelixCommands {
             listOf("dap_view_breakpoints", "breakpoints", "list-breakpoints"),
             "View all breakpoints (space + G B)",
         ) { editor -> HelixActionDelegate.executeAction("ViewBreakpoints", editor) },
+        HelixCommandItem(
+            "run",
+            listOf("run-context", "run_context"),
+            "Run context configuration or file (RunClass)",
+        ) { editor ->
+            HelixActionDelegate.executeAction("RunClass", editor) ||
+                HelixActionDelegate.executeAction("Run", editor)
+        },
+        HelixCommandItem(
+            "run-target",
+            listOf("run_target"),
+            "Run active configuration (Run)",
+        ) { editor ->
+            HelixActionDelegate.executeAction("Run", editor)
+        },
+        HelixCommandItem(
+            "rerun",
+            listOf("rerun-test", "rerun_test"),
+            "Rerun last execution (Rerun)",
+        ) { editor ->
+            HelixActionDelegate.executeAction("Rerun", editor)
+        },
+        HelixCommandItem(
+            "build",
+            listOf("make", "compile"),
+            "Build project / compile dirty files (CompileDirty)",
+        ) { editor ->
+            HelixActionDelegate.executeAction("CompileDirty", editor) ||
+                HelixActionDelegate.executeAction("Make", editor)
+        },
+        HelixCommandItem(
+            "stop",
+            listOf("terminate", "kill"),
+            "Stop running or debugging process (Stop)",
+        ) { editor ->
+            HelixActionDelegate.executeAction("Stop", editor)
+        },
+        HelixCommandItem(
+            "blame",
+            listOf("annotate", "git-blame", "git_blame"),
+            "Toggle Git blame annotations (Annotate)",
+        ) { editor ->
+            HelixActionDelegate.executeAction("Annotate", editor)
+        },
+        HelixCommandItem(
+            "diff",
+            listOf("show-diff", "show_diff", "git-diff"),
+            "Compare file with repository version (Compare.SameVersion)",
+        ) { editor ->
+            HelixActionDelegate.executeAction("Compare.SameVersion", editor) ||
+                HelixActionDelegate.executeAction("Diff.ShowDiff", editor)
+        },
+        HelixCommandItem(
+            "commit",
+            listOf("git-commit", "git_commit"),
+            "Open Git commit dialog or tool window (CheckinProject)",
+        ) { editor ->
+            HelixActionDelegate.executeAction("CheckinProject", editor)
+        },
+        HelixCommandItem(
+            "push",
+            listOf("git-push", "git_push"),
+            "Push commits to remote repository (Vcs.Push)",
+        ) { editor ->
+            HelixActionDelegate.executeAction("Vcs.Push", editor)
+        },
+        HelixCommandItem(
+            "pull",
+            listOf("git-pull", "git_pull", "update-project"),
+            "Update project / pull from remote (Vcs.UpdateProject)",
+        ) { editor ->
+            HelixActionDelegate.executeAction("Vcs.UpdateProject", editor)
+        },
+        HelixCommandItem(
+            "vcs-log",
+            listOf("git-log", "git_log"),
+            "Show VCS / Git log (Vcs.Show.Log)",
+        ) { editor ->
+            HelixActionDelegate.executeAction("Vcs.Show.Log", editor)
+        },
+        HelixCommandItem(
+            "goto-implementation",
+            listOf("goto_implementation", "implementation"),
+            "Jump to implementation (gi)",
+        ) { editor ->
+            HelixActionDelegate.executeAction("GotoImplementation", editor)
+        },
+        HelixCommandItem(
+            "goto-type-definition",
+            listOf("goto_type_definition", "type-definition", "type_definition"),
+            "Jump to type definition (gy)",
+        ) { editor ->
+            HelixActionDelegate.executeAction("GotoTypeDeclaration", editor)
+        },
+        HelixCommandItem(
+            "goto-reference",
+            listOf("goto_reference", "reference", "references"),
+            "Find symbol references / usages (gr)",
+        ) { editor ->
+            HelixActionDelegate.executeAction("FindUsages", editor)
+        },
+        HelixCommandItem(
+            "goto-super",
+            listOf("goto_super", "super"),
+            "Navigate to super method or class (GotoSuperMethod)",
+        ) { editor ->
+            HelixActionDelegate.executeAction("GotoSuperMethod", editor)
+        },
+        HelixCommandItem(
+            "call-hierarchy",
+            listOf("call_hierarchy"),
+            "Open Call Hierarchy tool window (CallHierarchy)",
+        ) { editor ->
+            HelixActionDelegate.executeAction("CallHierarchy", editor)
+        },
+        HelixCommandItem(
+            "type-hierarchy",
+            listOf("type_hierarchy", "hierarchy"),
+            "Open Type Hierarchy tool window (TypeHierarchy)",
+        ) { editor ->
+            HelixActionDelegate.executeAction("TypeHierarchy", editor)
+        },
+        HelixCommandItem(
+            "file-structure",
+            listOf("file_structure", "structure"),
+            "Open file structure outline (FileStructurePopup)",
+        ) { editor ->
+            HelixActionDelegate.executeAction("FileStructurePopup", editor)
+        },
+        HelixCommandItem(
+            "extract-variable",
+            listOf("extract_variable", "extract-var", "extract_var"),
+            "Refactor extract variable (IntroduceVariable)",
+        ) { editor ->
+            HelixActionDelegate.executeAction("IntroduceVariable", editor)
+        },
+        HelixCommandItem(
+            "extract-method",
+            listOf("extract_method"),
+            "Refactor extract method (ExtractMethod)",
+        ) { editor ->
+            HelixActionDelegate.executeAction("ExtractMethod", editor)
+        },
+        HelixCommandItem(
+            "inline",
+            listOf("inline-variable", "inline_variable"),
+            "Refactor inline variable or method (Inline)",
+        ) { editor ->
+            HelixActionDelegate.executeAction("Inline", editor)
+        },
+        HelixCommandItem(
+            "change-signature",
+            listOf("change_signature"),
+            "Refactor change method signature (ChangeSignature)",
+        ) { editor ->
+            HelixActionDelegate.executeAction("ChangeSignature", editor)
+        },
+        HelixCommandItem(
+            "generate",
+            listOf("gen"),
+            "Generate code constructors, getters, setters (Generate)",
+        ) { editor ->
+            HelixActionDelegate.executeAction("Generate", editor)
+        },
+        HelixCommandItem(
+            "replace-in-path",
+            listOf("replace_in_path", "replace-in-files"),
+            "Find and replace in project files (ReplaceInPath)",
+        ) { editor ->
+            HelixActionDelegate.executeAction("ReplaceInPath", editor)
+        },
     )
 
     fun execute(cmd: String, editor: Editor) {

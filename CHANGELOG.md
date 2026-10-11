@@ -25,6 +25,15 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **Command Palette Aliases**:
   - Added `:update` / `:u` alias for `SaveAll`.
   - Added `:exit` / `:xit` alias for save and exit (`:wq` / `:x`).
+- **Developer Workflow & Execution Commands**:
+  - Added `:run` / `:run-context` (`RunClass`), `:run-target` (`Run`), `:rerun` (`Rerun`), `:build` / `:make` / `:compile` (`CompileDirty`), and `:stop` / `:terminate` / `:kill` (`Stop`).
+  - Added `<space + G R>` chord to run context configuration without debugger (`RunClass`).
+- **Git & VCS Palette Commands**:
+  - Added `:blame` / `:annotate` (`Annotate`), `:diff` / `:show-diff` (`Compare.SameVersion`), `:commit` (`CheckinProject`), `:push` (`Vcs.Push`), `:pull` (`Vcs.UpdateProject`), and `:vcs-log` (`Vcs.Show.Log`).
+- **Code Navigation & Hierarchy Commands**:
+  - Added `:goto-implementation` (`GotoImplementation`), `:goto-type-definition` (`GotoTypeDeclaration`), `:goto-reference` (`FindUsages`), `:goto-super` (`GotoSuperMethod`), `:call-hierarchy` (`CallHierarchy`), `:type-hierarchy` (`TypeHierarchy`), and `:file-structure` (`FileStructurePopup`).
+- **Refactoring & Code Generation Commands**:
+  - Added `:extract-variable` (`IntroduceVariable`), `:extract-method` (`ExtractMethod`), `:inline` (`Inline`), `:change-signature` (`ChangeSignature`), `:generate` (`Generate`), and `:replace-in-path` (`ReplaceInPath`).
 
 ### Fixed
 
