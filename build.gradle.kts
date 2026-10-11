@@ -59,7 +59,7 @@ detekt {
 
 spotless {
     kotlin {
-        target("**/*.kt")
+        target("src/**/*.kt")
         targetExclude("**/build/**", "**/.gradle/**")
         licenseHeaderFile(rootProject.file("config/spotless/copyright.kt"))
     }
