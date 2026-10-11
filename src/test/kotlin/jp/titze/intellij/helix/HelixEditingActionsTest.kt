@@ -25,6 +25,7 @@ class HelixEditingActionsTest : BasePlatformTestCase() {
     }
 
     override fun tearDown() {
+        jp.titze.intellij.helix.editor.HelixEditorActionHandler.uninstall()
         jp.titze.intellij.helix.keymap.HelixShortcutPolicy.macOverride = null
         HelixRegisterManager.clear()
         jp.titze.intellij.helix.motion.HelixMotionHistory.lastMotion = null
@@ -1168,5 +1169,56 @@ class HelixEditingActionsTest : BasePlatformTestCase() {
         HelixKeyHandler.handleKey('p', editor).shouldBeTrue()
 
         editor.document.text shouldBe "hello !!!world"
+    }
+
+    fun testOpenNewLineBelowWithOKeyHandler() {
+        myFixture.configureByText("test.txt", "first line\nsecond line")
+        val editor = myFixture.editor
+        val state = HelixStateManager.getOrCreate(editor)
+        jp.titze.intellij.helix.editor.HelixEditorActionHandler.install()
+        try {
+            editor.caretModel.primaryCaret.moveToOffset(2)
+            HelixKeyHandler.handleKey('o', editor)
+            state.mode shouldBe HelixMode.INSERT
+            editor.document.text shouldBe "first line\n\nsecond line"
+            editor.caretModel.primaryCaret.offset shouldBe 11
+        } finally {
+            jp.titze.intellij.helix.editor.HelixEditorActionHandler.uninstall()
+        }
+    }
+
+    fun testOpenNewLineAboveWithShiftOKeyHandler() {
+        myFixture.configureByText("test.txt", "first line\nsecond line")
+        val editor = myFixture.editor
+        val state = HelixStateManager.getOrCreate(editor)
+        jp.titze.intellij.helix.editor.HelixEditorActionHandler.install()
+        try {
+            val line2Offset = editor.document.getLineStartOffset(1)
+            editor.caretModel.primaryCaret.moveToOffset(line2Offset + 2)
+            HelixKeyHandler.handleKey('O', editor)
+            state.mode shouldBe HelixMode.INSERT
+            editor.document.text shouldBe "first line\n\nsecond line"
+            editor.caretModel.primaryCaret.offset shouldBe 11
+        } finally {
+            jp.titze.intellij.helix.editor.HelixEditorActionHandler.uninstall()
+        }
+    }
+
+    fun testNormalModeEnterCollapsesSelectionWithoutRecursiveException() {
+        myFixture.configureByText("test.txt", "line one\nline two\nline three")
+        val editor = myFixture.editor
+        jp.titze.intellij.helix.editor.HelixEditorActionHandler.install()
+        try {
+            editor.caretModel.primaryCaret.moveToOffset(0)
+            editor.caretModel.primaryCaret.setSelection(0, 4)
+            val secondCaret = editor.caretModel.addCaret(editor.offsetToVisualPosition(9), false)
+            secondCaret?.setSelection(9, 13)
+
+            myFixture.performEditorAction(com.intellij.openapi.actionSystem.IdeActions.ACTION_EDITOR_ENTER)
+
+            editor.caretModel.allCarets.forEach { it.hasSelection().shouldBeFalse() }
+        } finally {
+            jp.titze.intellij.helix.editor.HelixEditorActionHandler.uninstall()
+        }
     }
 }

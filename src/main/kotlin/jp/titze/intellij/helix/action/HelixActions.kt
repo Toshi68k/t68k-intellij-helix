@@ -270,6 +270,16 @@ object HelixActions {
         HelixStateManager.getOrCreate(editor).setMode(HelixMode.INSERT)
     }
 
+    fun openNewLineBelow(editor: Editor) {
+        enterInsert(editor)
+        HelixActionDelegate.executeAction("EditorStartNewLine", editor)
+    }
+
+    fun openNewLineAbove(editor: Editor) {
+        enterInsert(editor)
+        HelixActionDelegate.executeAction("EditorStartNewLineBefore", editor)
+    }
+
     fun toggleSelectMode(editor: Editor) {
         val state = HelixStateManager.getOrCreate(editor)
         if (state.mode == HelixMode.SELECT) {

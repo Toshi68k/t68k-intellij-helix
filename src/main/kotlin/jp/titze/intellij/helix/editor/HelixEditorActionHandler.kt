@@ -12,7 +12,7 @@ import jp.titze.intellij.helix.motion.HelixMotions
 import jp.titze.intellij.helix.state.HelixStateManager
 
 class HelixEditorActionHandler(private val actionId: String, private val originalHandler: EditorActionHandler?) :
-    EditorActionHandler() {
+    EditorActionHandler(false) {
 
     override fun doExecute(editor: Editor, caret: Caret?, dataContext: DataContext) {
         if (!HelixEditorEligibility.isActive(editor)) {
@@ -55,9 +55,12 @@ class HelixEditorActionHandler(private val actionId: String, private val origina
                     HelixKeyHandler.handleKey('\n', editor)
                     return
                 }
-                // In Helix, <ret> collapses selection and resets multi-caret
-                HelixMotions.collapseSelection(editor)
-                HelixMotions.keepOnlyPrimaryCaret(editor)
+                if (caret != null) {
+                    caret.removeSelection()
+                } else {
+                    // In Helix, <ret> collapses selection to a single cursor
+                    HelixMotions.collapseSelection(editor)
+                }
             }
             // For Delete or other editing actions in normal mode, do nothing
         }

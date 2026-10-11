@@ -335,15 +335,9 @@ object HelixKeyHandler {
 
             'A' -> HelixActions.enterInsertLineEnd(editor)
 
-            'o' -> {
-                HelixActionDelegate.executeAction("EditorStartNewLine", editor)
-                HelixActions.enterInsert(editor)
-            }
+            'o' -> HelixActions.openNewLineBelow(editor)
 
-            'O' -> {
-                HelixActionDelegate.executeAction("EditorStartNewLineBefore", editor)
-                HelixActions.enterInsert(editor)
-            }
+            'O' -> HelixActions.openNewLineAbove(editor)
 
             // Mode & History & IDE
             'v' -> HelixActions.toggleSelectMode(editor)
