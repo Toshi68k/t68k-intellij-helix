@@ -1130,4 +1130,147 @@ class HelixMotionsTest : BasePlatformTestCase() {
         dispatcher.dispatch(homeEvent).shouldBeTrue()
         caret.offset shouldBe 0
     }
+
+    fun testHelixEventDispatcherPreservesCountForTypedMotions() {
+        val lines = (1..20).joinToString("\n") { "line $it" }
+        myFixture.configureByText("test.txt", lines)
+        val editor = myFixture.editor
+        val state = HelixStateManager.getOrCreate(editor)
+        val dispatcher = HelixEventDispatcher()
+
+        // 1. User types '5'
+        HelixKeyHandler.handleKey('5', editor)
+        state.count shouldBe 5
+
+        // 2. User presses 'j' -> KEY_PRESSED event arrives at dispatcher
+        val jPressed = java.awt.event.KeyEvent(
+            editor.contentComponent,
+            java.awt.event.KeyEvent.KEY_PRESSED,
+            System.currentTimeMillis(),
+            0,
+            java.awt.event.KeyEvent.VK_J,
+            'j',
+        )
+        // Dispatcher should not consume 'j', and crucially must NOT drain the count!
+        dispatcher.dispatch(jPressed).shouldBeFalse()
+        state.count shouldBe 5
+
+        // 3. KEY_TYPED arrives and triggers handleKey('j')
+        HelixKeyHandler.handleKey('j', editor)
+        editor.document.getLineNumber(editor.caretModel.offset) shouldBe 5
+        state.count.shouldBeNull()
+
+        // 4. Test count with '3x' through dispatcher
+        HelixKeyHandler.handleKey('3', editor)
+        state.count shouldBe 3
+        val xPressed = java.awt.event.KeyEvent(
+            editor.contentComponent,
+            java.awt.event.KeyEvent.KEY_PRESSED,
+            System.currentTimeMillis(),
+            0,
+            java.awt.event.KeyEvent.VK_X,
+            'x',
+        )
+        dispatcher.dispatch(xPressed).shouldBeFalse()
+        state.count shouldBe 3
+
+        HelixKeyHandler.handleKey('x', editor)
+        val caret = editor.caretModel.primaryCaret
+        caret.selectedText shouldBe "line 6\nline 7\nline 8\n"
+        state.count.shouldBeNull()
+    }
+
+    fun testSelectLineWithCount3x() {
+        myFixture.configureByText("test.txt", "line 1\nline 2\nline 3\nline 4\nline 5\n")
+        val editor = myFixture.editor
+        val caret = editor.caretModel.primaryCaret
+        caret.moveToOffset(0)
+
+        // 3x selects line 1, line 2, line 3
+        HelixKeyHandler.handleKey('3', editor)
+        HelixKeyHandler.handleKey('x', editor)
+        caret.selectedText shouldBe "line 1\nline 2\nline 3\n"
+
+        // 2x extends selection by line 4 and line 5
+        HelixKeyHandler.handleKey('2', editor)
+        HelixKeyHandler.handleKey('x', editor)
+        caret.selectedText shouldBe "line 1\nline 2\nline 3\nline 4\nline 5\n"
+    }
+
+    fun testExtendToLineBoundsWithCount3X() {
+        myFixture.configureByText("test.txt", "line 1\nline 2\nline 3\nline 4\n")
+        val editor = myFixture.editor
+        val caret = editor.caretModel.primaryCaret
+        caret.moveToOffset(2)
+
+        HelixKeyHandler.handleKey('3', editor)
+        HelixKeyHandler.handleKey('X', editor)
+        caret.selectedText shouldBe "line 1\nline 2\nline 3\n"
+    }
+
+    fun testWordMotionsWithCounts() {
+        myFixture.configureByText("test.txt", "one two three four five six")
+        val editor = myFixture.editor
+        val caret = editor.caretModel.primaryCaret
+        caret.moveToOffset(0)
+
+        // 3w moves forward 3 words ("one ", "two ", "three ") to start of "four"
+        HelixKeyHandler.handleKey('3', editor)
+        HelixKeyHandler.handleKey('w', editor)
+        caret.offset shouldBe 14
+        caret.selectedText shouldBe "one two three "
+
+        // 2b moves backward 2 words to start of "two"
+        HelixKeyHandler.handleKey('2', editor)
+        HelixKeyHandler.handleKey('b', editor)
+        caret.offset shouldBe 4
+        caret.selectedText shouldBe "two three "
+
+        // 3e moves to end of 3rd word forward from "two" ("four")
+        HelixKeyHandler.handleKey('3', editor)
+        HelixKeyHandler.handleKey('e', editor)
+        caret.offset shouldBe 18
+        caret.selectedText shouldBe "four"
+    }
+
+    fun testFindCharMotionsWithCounts() {
+        myFixture.configureByText("test.txt", "abc-abc-abc-abc")
+        val editor = myFixture.editor
+        val caret = editor.caretModel.primaryCaret
+        caret.moveToOffset(0)
+
+        // 3fc finds 3rd 'c'
+        HelixKeyHandler.handleKey('3', editor)
+        HelixKeyHandler.handleKey('f', editor)
+        HelixKeyHandler.handleKey('c', editor)
+        // 3rd 'c' is at index 10, inclusive selection puts offset at 11
+        caret.offset shouldBe 11
+        caret.selectedText shouldBe "abc-abc-abc"
+
+        // 2Fa finds 2nd 'a' backward
+        HelixKeyHandler.handleKey('2', editor)
+        HelixKeyHandler.handleKey('F', editor)
+        HelixKeyHandler.handleKey('a', editor)
+        // 2nd 'a' backward from offset 11 is at index 4
+        caret.offset shouldBe 4
+    }
+
+    fun testSelectModeWithMotionCounts() {
+        val lines = (1..10).joinToString("\n") { "line $it" }
+        myFixture.configureByText("test.txt", lines)
+        val editor = myFixture.editor
+        val caret = editor.caretModel.primaryCaret
+        caret.moveToOffset(0)
+
+        // Enter SELECT mode
+        HelixKeyHandler.handleKey('v', editor)
+        HelixStateManager.getOrCreate(editor).mode shouldBe HelixMode.SELECT
+
+        // 4j extends selection down 4 lines
+        HelixKeyHandler.handleKey('4', editor)
+        HelixKeyHandler.handleKey('j', editor)
+        caret.logicalPosition.line shouldBe 4
+        caret.hasSelection().shouldBeTrue()
+        caret.selectedText shouldBe "line 1\nline 2\nline 3\nline 4\n"
+    }
 }

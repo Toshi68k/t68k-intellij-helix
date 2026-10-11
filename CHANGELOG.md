@@ -37,6 +37,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- **Numeric Count Prefixes on Motions and Selections (`[count]`)**:
+  - Fixed an issue in `HelixEventDispatcher` where `KEY_PRESSED` events on non-arrow keys eagerly consumed and cleared pending numeric counts before the subsequent `KEY_TYPED` event reached `HelixKeyHandler`. Count prefixes on standard motions (e.g. `5j`, `3k`, `3x`, `3X`, `2w`, `3b`, `2e`, `2fa`, etc.) now reliably repeat motions and line selections $N$ times.
+  - Fixed line selection downwards extension in `HelixMotions.selectLine` to safely maintain positive selection ranges regardless of initial selection orientation.
 - **Helix View Mode Compliance (`z` / `Z`)**:
   - Fixed `zc` to vertically center the line in the viewport (`align_view_center`), matching the official Helix
     specification where both `z` and `c` center the view.

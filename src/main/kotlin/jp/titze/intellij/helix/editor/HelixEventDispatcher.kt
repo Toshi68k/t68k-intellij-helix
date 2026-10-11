@@ -376,15 +376,14 @@ class HelixEventDispatcher : IdeEventQueue.EventDispatcher {
             }
         }
 
-        val count = state.takeCount() ?: 1
         return when (e.keyCode) {
             KeyEvent.VK_PAGE_DOWN -> {
-                HelixMotions.pageDown(editor, count)
+                HelixMotions.pageDown(editor, state.takeCount() ?: 1)
                 true
             }
 
             KeyEvent.VK_PAGE_UP -> {
-                HelixMotions.pageUp(editor, count)
+                HelixMotions.pageUp(editor, state.takeCount() ?: 1)
                 true
             }
 
@@ -402,25 +401,25 @@ class HelixEventDispatcher : IdeEventQueue.EventDispatcher {
 
             KeyEvent.VK_LEFT -> {
                 HelixWhichKeyPopup.hide()
-                HelixMotions.moveLeft(editor, count)
+                HelixMotions.moveLeft(editor, state.takeCount() ?: 1)
                 true
             }
 
             KeyEvent.VK_RIGHT -> {
                 HelixWhichKeyPopup.hide()
-                HelixMotions.moveRight(editor, count)
+                HelixMotions.moveRight(editor, state.takeCount() ?: 1)
                 true
             }
 
             KeyEvent.VK_UP -> {
                 HelixWhichKeyPopup.hide()
-                handleVerticalArrow(editor, count, isUp = true)
+                handleVerticalArrow(editor, state.takeCount() ?: 1, isUp = true)
                 true
             }
 
             KeyEvent.VK_DOWN -> {
                 HelixWhichKeyPopup.hide()
-                handleVerticalArrow(editor, count, isUp = false)
+                handleVerticalArrow(editor, state.takeCount() ?: 1, isUp = false)
                 true
             }
 
