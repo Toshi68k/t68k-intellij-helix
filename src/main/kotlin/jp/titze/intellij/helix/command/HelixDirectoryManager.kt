@@ -1,3 +1,6 @@
+// Copyright (c) Thorsten Titze
+// SPDX-License-Identifier: MIT
+
 package jp.titze.intellij.helix.command
 
 import com.intellij.openapi.editor.Editor

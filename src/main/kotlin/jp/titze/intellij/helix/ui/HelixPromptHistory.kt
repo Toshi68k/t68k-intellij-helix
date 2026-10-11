@@ -1,3 +1,6 @@
+// Copyright (c) Thorsten Titze
+// SPDX-License-Identifier: MIT
+
 package jp.titze.intellij.helix.ui
 
 import jp.titze.intellij.helix.settings.HelixSettings

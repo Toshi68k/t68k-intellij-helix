@@ -1,3 +1,6 @@
+// Copyright (c) Thorsten Titze
+// SPDX-License-Identifier: MIT
+
 package jp.titze.intellij.helix.register
 
 data class HelixRegisterItem(val register: Char, val description: String, val entry: HelixRegisterEntry?) {
