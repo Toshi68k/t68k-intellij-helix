@@ -28,6 +28,14 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- **Helix View Mode Compliance (`z` / `Z`)**:
+  - Fixed `zc` to vertically center the line in the viewport (`align_view_center`), matching the official Helix
+    specification where both `z` and `c` center the view.
+  - Removed accidental Vim folding chords (`zc`, `zf`, `zo`, `zM`, `zR`) from View mode so typing view chords
+    no longer inadvertently collapses or expands code regions. Code folding remains fully accessible via
+    `:fold`, `:unfold`, `:fold-all`, and `:unfold-all` commands.
+  - Added support for `f` / `Ctrl+f` (`page_down`), `d` / `Ctrl+d` (`page_cursor_half_down`), and `u` / `Ctrl+u`
+    (`page_cursor_half_up`) in View mode.
 - **Search & Regex Prompt Bar Cancellation**:
   - Pressing <kbd>Ctrl+c</kbd>, <kbd>Esc</kbd>, or <kbd>Ctrl+[</kbd> inside the active search or regex prompt bar now cleanly dismisses the bar without triggering line comments (`CommentByLineComment`) on the editor.
   - Non-cancel keystrokes typed inside active prompts flow directly to the prompt input field without triggering Normal mode bindings.

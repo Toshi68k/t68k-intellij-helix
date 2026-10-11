@@ -1128,32 +1128,52 @@ class HelixUiPopupsTest : BasePlatformTestCase() {
         }
 
         try {
-            // zc -> CollapseRegion
-            HelixKeyHandler.handleKey('z', editor)
+            // zc -> align_view_center (Helix standard)
+            HelixKeyHandler.handleKey('z', editor).shouldBeTrue()
             state.pendingSequence shouldBe "z"
-            HelixKeyHandler.handleKey('c', editor)
+            HelixKeyHandler.handleKey('c', editor).shouldBeTrue()
             state.pendingSequence.isEmpty().shouldBeTrue()
-            executedActions.last() shouldBe "CollapseRegion"
 
-            // zf -> CollapseRegion
-            HelixKeyHandler.handleKey('z', editor)
-            HelixKeyHandler.handleKey('f', editor)
-            executedActions.last() shouldBe "CollapseRegion"
+            // zz -> align_view_center
+            HelixKeyHandler.handleKey('z', editor).shouldBeTrue()
+            HelixKeyHandler.handleKey('z', editor).shouldBeTrue()
+            state.pendingSequence.isEmpty().shouldBeTrue()
 
-            // zo -> ExpandRegion
-            HelixKeyHandler.handleKey('z', editor)
-            HelixKeyHandler.handleKey('o', editor)
-            executedActions.last() shouldBe "ExpandRegion"
+            // zt -> align_view_top
+            HelixKeyHandler.handleKey('z', editor).shouldBeTrue()
+            HelixKeyHandler.handleKey('t', editor).shouldBeTrue()
+            state.pendingSequence.isEmpty().shouldBeTrue()
 
-            // zM -> CollapseAllRegions
-            HelixKeyHandler.handleKey('z', editor)
-            HelixKeyHandler.handleKey('M', editor)
-            executedActions.last() shouldBe "CollapseAllRegions"
+            // zb -> align_view_bottom
+            HelixKeyHandler.handleKey('z', editor).shouldBeTrue()
+            HelixKeyHandler.handleKey('b', editor).shouldBeTrue()
+            state.pendingSequence.isEmpty().shouldBeTrue()
 
-            // zR -> ExpandAllRegions
-            HelixKeyHandler.handleKey('z', editor)
-            HelixKeyHandler.handleKey('R', editor)
-            executedActions.last() shouldBe "ExpandAllRegions"
+            // zm -> align_view_middle
+            HelixKeyHandler.handleKey('z', editor).shouldBeTrue()
+            HelixKeyHandler.handleKey('m', editor).shouldBeTrue()
+            state.pendingSequence.isEmpty().shouldBeTrue()
+
+            // zj, zk -> scroll_down, scroll_up
+            HelixKeyHandler.handleKey('z', editor).shouldBeTrue()
+            HelixKeyHandler.handleKey('j', editor).shouldBeTrue()
+            HelixKeyHandler.handleKey('z', editor).shouldBeTrue()
+            HelixKeyHandler.handleKey('k', editor).shouldBeTrue()
+
+            // zd, zu -> half page
+            HelixKeyHandler.handleKey('z', editor).shouldBeTrue()
+            HelixKeyHandler.handleKey('d', editor).shouldBeTrue()
+            HelixKeyHandler.handleKey('z', editor).shouldBeTrue()
+            HelixKeyHandler.handleKey('u', editor).shouldBeTrue()
+
+            // zf, zF -> full page
+            HelixKeyHandler.handleKey('z', editor).shouldBeTrue()
+            HelixKeyHandler.handleKey('f', editor).shouldBeTrue()
+            HelixKeyHandler.handleKey('z', editor).shouldBeTrue()
+            HelixKeyHandler.handleKey('F', editor).shouldBeTrue()
+
+            // Folding actions should NOT be invoked by View mode chords
+            executedActions.isEmpty().shouldBeTrue()
         } finally {
             jp.titze.intellij.helix.action.HelixActionDelegate.actionExecutor = originalExecutor
         }
@@ -1196,16 +1216,17 @@ class HelixUiPopupsTest : BasePlatformTestCase() {
     fun testWhichKeyViewMenuRegistration() {
         val (title, items) = HelixWhichKeyMenus.getMenu("z") ?: error("View menu not registered")
         title shouldBe "VIEW MENU"
-        items.any { it.key == "c" && it.helixCommand == "fold" && it.intelliJAction == "CollapseRegion" }.shouldBeTrue()
-        items.any { it.key == "f" && it.helixCommand == "fold" && it.intelliJAction == "CollapseRegion" }.shouldBeTrue()
-        items.any { it.key == "o" && it.helixCommand == "unfold" && it.intelliJAction == "ExpandRegion" }.shouldBeTrue()
-        items.any {
-            it.key == "M" && it.helixCommand == "fold_all" && it.intelliJAction == "CollapseAllRegions"
-        }.shouldBeTrue()
-        items.any {
-            it.key == "R" && it.helixCommand == "unfold_all" && it.intelliJAction == "ExpandAllRegions"
-        }.shouldBeTrue()
         items.any { it.key == "z" && it.helixCommand == "align_view_center" }.shouldBeTrue()
+        items.any { it.key == "c" && it.helixCommand == "align_view_center" }.shouldBeTrue()
+        items.any { it.key == "t" && it.helixCommand == "align_view_top" }.shouldBeTrue()
+        items.any { it.key == "b" && it.helixCommand == "align_view_bottom" }.shouldBeTrue()
+        items.any { it.key == "m" && it.helixCommand == "align_view_middle" }.shouldBeTrue()
+        items.any { it.key == "j" && it.helixCommand == "scroll_down" }.shouldBeTrue()
+        items.any { it.key == "k" && it.helixCommand == "scroll_up" }.shouldBeTrue()
+        items.any { it.key == "d" && it.helixCommand == "page_cursor_half_down" }.shouldBeTrue()
+        items.any { it.key == "u" && it.helixCommand == "page_cursor_half_up" }.shouldBeTrue()
+        items.any { it.key == "f" && it.helixCommand == "page_down" }.shouldBeTrue()
+        items.any { it.key == "F" && it.helixCommand == "page_up" }.shouldBeTrue()
     }
 
     fun testDirectoryFilePickerPopupScanFilterAndOpen() {

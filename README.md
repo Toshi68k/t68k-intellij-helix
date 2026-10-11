@@ -374,26 +374,23 @@ interactive, non-intrusive **Which-Key popup** appears in authentic Helix cyan:
 Holding Ctrl during chords, e.g. `Ctrl+w Ctrl+v`, `Ctrl+w Ctrl+w`, etc. is also fully supported. For saving, use `:w` /
 `:wa` or `Ctrl+s`.)*
 
-#### View Mode & Code Folding (`z` / `Z`)
+#### View Mode (`z` / `Z`)
 
-| Key         | Helix Command       | IntelliJ Action      | Description                                       |
-|-------------|---------------------|----------------------|---------------------------------------------------|
-| `zc` / `zf` | `fold`              | `CollapseRegion`     | Fold block under cursor                           |
-| `zo`        | `unfold`            | `ExpandRegion`       | Unfold block under cursor                         |
-| `zM`        | `fold_all`          | `CollapseAllRegions` | Fold all methods and classes in file              |
-| `zR`        | `unfold_all`        | `ExpandAllRegions`   | Expand all folds in file                          |
-| `zz`        | `align_view_center` |                      | Center current selection vertically in viewport   |
-| `zt`        | `align_view_top`    |                      | Align current selection to top of viewport        |
-| `zb`        | `align_view_bottom` |                      | Align current selection to bottom of viewport     |
-| `zm`        | `align_view_middle` |                      | Center current selection horizontally in viewport |
-| `zj`        | `scroll_down`       |                      | Scroll viewport downwards                         |
-| `zk`        | `scroll_up`         |                      | Scroll viewport upwards                           |
-| `zd`        | `half_page_down`    |                      | Scroll viewport half page down                    |
-| `zu`        | `half_page_up`      |                      | Scroll viewport half page up                      |
-| `zF`        | `page_up`           |                      | Scroll viewport page up                           |
+| Key         | Helix Command           | Description                                       |
+|-------------|-------------------------|---------------------------------------------------|
+| `zz` / `zc` | `align_view_center`     | Center current selection vertically in viewport   |
+| `zt`        | `align_view_top`        | Align current selection to top of viewport        |
+| `zb`        | `align_view_bottom`     | Align current selection to bottom of viewport     |
+| `zm`        | `align_view_middle`     | Center current selection horizontally in viewport |
+| `zj`        | `scroll_down`           | Scroll viewport downwards                         |
+| `zk`        | `scroll_up`             | Scroll viewport upwards                           |
+| `zd`        | `page_cursor_half_down` | Scroll viewport half page down                    |
+| `zu`        | `page_cursor_half_up`   | Scroll viewport half page up                      |
+| `zf`        | `page_down`             | Scroll viewport page down                         |
+| `zF`        | `page_up`               | Scroll viewport page up                           |
 
 *(Note: `Z` enters sticky view mode where view and scroll actions can be repeated without re-typing `z` until `Esc` is
-pressed.)*
+pressed. Code folding is available via `:fold`, `:unfold`, `:fold-all`, and `:unfold-all` commands.)*
 
 #### Pickers & Space Menu (`space`)
 
