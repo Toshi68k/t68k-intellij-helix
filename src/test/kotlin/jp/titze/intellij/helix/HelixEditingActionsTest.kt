@@ -1224,4 +1224,58 @@ class HelixEditingActionsTest : BasePlatformTestCase() {
             jp.titze.intellij.helix.editor.HelixEditorActionHandler.uninstall()
         }
     }
+
+    fun testSingleLineIndentAndUnindent() {
+        myFixture.configureByText("test.txt", "line one\nline two")
+        val editor = myFixture.editor
+        editor.caretModel.primaryCaret.moveToOffset(0)
+
+        HelixKeyHandler.handleKey('>', editor)
+        editor.document.text shouldBe "    line one\nline two"
+
+        HelixKeyHandler.handleKey('<', editor)
+        editor.document.text shouldBe "line one\nline two"
+    }
+
+    fun testMultiLineIndentAndUnindentWithLineSelection() {
+        myFixture.configureByText("test.txt", "line one\nline two\nline three")
+        val editor = myFixture.editor
+        editor.caretModel.primaryCaret.moveToOffset(0)
+
+        HelixMotions.selectLine(editor, 2)
+        editor.caretModel.primaryCaret.hasSelection().shouldBeTrue()
+
+        HelixKeyHandler.handleKey('>', editor)
+        editor.document.text shouldBe "    line one\n    line two\nline three"
+
+        HelixKeyHandler.handleKey('<', editor)
+        editor.document.text shouldBe "line one\nline two\nline three"
+    }
+
+    fun testIndentAndUnindentWithCount() {
+        myFixture.configureByText("test.txt", "line one\nline two")
+        val editor = myFixture.editor
+        editor.caretModel.primaryCaret.moveToOffset(0)
+
+        HelixKeyHandler.handleKey('2', editor)
+        HelixKeyHandler.handleKey('>', editor)
+        editor.document.text shouldBe "        line one\nline two"
+
+        HelixKeyHandler.handleKey('2', editor)
+        HelixKeyHandler.handleKey('<', editor)
+        editor.document.text shouldBe "line one\nline two"
+    }
+
+    fun testMultiCaretIndentWithoutSelection() {
+        myFixture.configureByText("test.txt", "line one\nline two\nline three")
+        val editor = myFixture.editor
+        editor.caretModel.primaryCaret.moveToOffset(editor.document.getLineStartOffset(1))
+        editor.caretModel.addCaret(editor.offsetToVisualPosition(editor.document.getLineStartOffset(2)), false)
+
+        HelixKeyHandler.handleKey('>', editor)
+        editor.document.text shouldBe "line one\n    line two\n    line three"
+
+        HelixKeyHandler.handleKey('<', editor)
+        editor.document.text shouldBe "line one\nline two\nline three"
+    }
 }

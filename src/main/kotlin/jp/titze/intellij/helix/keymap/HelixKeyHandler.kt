@@ -360,9 +360,9 @@ object HelixKeyHandler {
 
             '=' -> HelixActionDelegate.executeAction("ReformatCode", editor)
 
-            '>' -> HelixActionDelegate.executeAction("EditorIndentSelection", editor)
+            '>' -> repeat(count) { HelixActionDelegate.executeAction("EditorIndentLineOrSelection", editor) }
 
-            '<' -> HelixActionDelegate.executeAction("EditorUnindentSelection", editor)
+            '<' -> repeat(count) { HelixActionDelegate.executeAction("EditorUnindentSelection", editor) }
 
             '~' -> HelixActions.toggleCase(editor, count)
 
