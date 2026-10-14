@@ -1,4 +1,4 @@
-<idea-plugin>
+<idea-plugin require-restart="true">
     <id>jp.titze.helix</id>
     <name>Helix Keymap (T68k)</name>
     <vendor url="https://github.com/Toshi68k">Thorsten Titze</vendor>

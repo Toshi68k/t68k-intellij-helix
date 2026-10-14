@@ -49,13 +49,14 @@ combining the authentic Helix selection-first workflow with native IntelliJ IDE 
 1. In your JetBrains IDE, open **Settings / Preferences** (`Cmd+,` on macOS, `Ctrl+Alt+S` on Windows/Linux).
 2. Navigate to **Plugins** &rarr; **Marketplace**.
 3. Search for **Helix Keymap (T68k)** and click **Install**.
-4. The plugin supports dynamic loading and can be used immediately without restarting.
+4. Restart the IDE when prompted to complete the installation.
 
 ### Manual Installation (From Disk)
 1. Download `t68k-intellij-helix-<version>.zip` from [GitHub Releases](https://github.com/Toshi68k/t68k-intellij-helix/releases).
 2. Open **Settings / Preferences** &rarr; **Plugins**.
 3. Click the gear icon (&gear;) &rarr; **Install Plugin from Disk...**.
 4. Select the downloaded `.zip` archive.
+5. Restart the IDE when prompted.
 
 ---
 
