@@ -5,6 +5,14 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.2]
+
+### Fixed
+
+- **IDE Restart Requirement**:
+  - Explicitly declared `require-restart="true"` in `plugin.xml` so the IntelliJ Plugin Manager prompts the user to restart the IDE upon installation or update, ensuring global typed action handlers, editor listeners, and caret states are reliably initialized across all open editors.
+  - Updated installation instructions in `README.md` to instruct restarting the IDE after installation.
+
 ## [0.2.1]
 
 ### Added
