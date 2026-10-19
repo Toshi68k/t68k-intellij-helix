@@ -11,6 +11,8 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 import jp.titze.intellij.helix.action.HelixActionDelegate
 import jp.titze.intellij.helix.config.HelixConfigLoader
+import jp.titze.intellij.helix.config.HelixConfigResult
+import jp.titze.intellij.helix.config.HelixConfigWatcher
 import jp.titze.intellij.helix.config.HelixTomlParser
 import jp.titze.intellij.helix.keymap.HelixCommandRegistry
 import jp.titze.intellij.helix.keymap.HelixKeyHandler
@@ -19,6 +21,7 @@ import jp.titze.intellij.helix.keymap.HelixKeymapManager
 import jp.titze.intellij.helix.keymap.HelixKeymapResult
 import jp.titze.intellij.helix.keymap.HelixKeymapTrie
 import jp.titze.intellij.helix.register.HelixRegisterManager
+import jp.titze.intellij.helix.settings.HelixSettings
 import jp.titze.intellij.helix.state.HelixMode
 import jp.titze.intellij.helix.state.HelixStateManager
 import jp.titze.intellij.helix.ui.HelixWhichKeyMenus
@@ -31,11 +34,17 @@ class HelixKeymapTest : BasePlatformTestCase() {
         super.setUp()
         HelixRegisterManager.clear()
         HelixKeymapManager.resetToDefaults()
+        HelixConfigWatcher.explicitWatchedFile = null
+        HelixConfigWatcher.onReloadCallback = null
+        HelixSettings.instance.customConfigPath = ""
     }
 
     override fun tearDown() {
         HelixRegisterManager.clear()
         HelixKeymapManager.resetToDefaults()
+        HelixConfigWatcher.explicitWatchedFile = null
+        HelixConfigWatcher.onReloadCallback = null
+        HelixSettings.instance.customConfigPath = ""
         super.tearDown()
     }
 
@@ -233,6 +242,9 @@ class HelixKeymapTest : BasePlatformTestCase() {
     }
 
     fun testConfigLoaderExecution() {
+        myFixture.configureByText("test.txt", "line1\nline2\nline3")
+        val editor = myFixture.editor
+
         val tempFile = File.createTempFile("helix-test-config", ".toml")
         try {
             tempFile.writeText(
@@ -247,8 +259,6 @@ class HelixKeymapTest : BasePlatformTestCase() {
             loadResult.errors.isEmpty().shouldBeTrue()
             loadResult.bindingCount shouldBe 2
 
-            myFixture.configureByText("test.txt", "line1\nline2\nline3")
-            val editor = myFixture.editor
             val executedActions = mutableListOf<String>()
             HelixActionDelegate.actionExecutor = { actionId, _ ->
                 executedActions.add(actionId)
@@ -270,6 +280,73 @@ class HelixKeymapTest : BasePlatformTestCase() {
                 HelixActionDelegate.actionExecutor = null
             }
         } finally {
+            tempFile.delete()
+        }
+    }
+
+    fun testConfigWatcherPathMatching() {
+        val userHome = System.getProperty("user.home")
+        HelixConfigWatcher.isMatchingConfigPath("$userHome/.config/helix/config.toml").shouldBeTrue()
+        HelixConfigWatcher.isMatchingConfigPath("/some/path/to/other.toml").shouldBeFalse()
+        HelixConfigWatcher.isMatchingConfigPath("$userHome/.config/helix/other.txt").shouldBeFalse()
+
+        val tempCustom = File.createTempFile("custom-helix", "config.toml")
+        try {
+            HelixSettings.instance.customConfigPath = tempCustom.absolutePath
+            HelixConfigWatcher.isMatchingConfigPath(tempCustom.absolutePath).shouldBeTrue()
+        } finally {
+            HelixSettings.instance.customConfigPath = ""
+            tempCustom.delete()
+        }
+    }
+
+    fun testConfigWatcherAutoReload() {
+        val tempFile = File.createTempFile("helix-watch-test", "config.toml")
+        try {
+            tempFile.writeText(
+                """
+                [keys.normal]
+                "x" = ":action Cut"
+                """.trimIndent(),
+            )
+            HelixSettings.instance.customConfigPath = tempFile.absolutePath
+            HelixConfigWatcher.explicitWatchedFile = tempFile
+
+            var reloadedResult: HelixConfigResult? = null
+            HelixConfigWatcher.onReloadCallback = { reloadedResult = it }
+
+            val vf = com.intellij.openapi.vfs.LocalFileSystem.getInstance()
+                .refreshAndFindFileByIoFile(tempFile)
+            vf.shouldNotBeNull()
+            val mockEvent = com.intellij.openapi.vfs.newvfs.events.VFileContentChangeEvent(
+                this,
+                vf,
+                0L,
+                1L,
+            )
+
+            tempFile.writeText(
+                """
+                [keys.normal]
+                "x" = ":action Copy"
+                """.trimIndent(),
+            )
+
+            HelixConfigWatcher.lastReloadTime = 0L
+            val watcher = HelixConfigWatcher()
+            watcher.after(listOf(mockEvent))
+
+            reloadedResult.shouldNotBeNull()
+            reloadedResult?.bindingCount shouldBe 1
+
+            val strokeX = HelixKeyStroke.fromString("x")
+            val trieResult = HelixKeymapManager.resolve(HelixMode.NORMAL, listOf(strokeX))
+            trieResult.shouldBeInstanceOf<HelixKeymapResult.Leaf>()
+            trieResult.command shouldBe ":action Copy"
+        } finally {
+            HelixConfigWatcher.explicitWatchedFile = null
+            HelixConfigWatcher.onReloadCallback = null
+            HelixSettings.instance.customConfigPath = ""
             tempFile.delete()
         }
     }

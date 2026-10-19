@@ -7,6 +7,7 @@ import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.string.shouldContain
 import jp.titze.intellij.helix.HelixBundle
 import jp.titze.intellij.helix.jumplist.HelixJumpListService
 import jp.titze.intellij.helix.keymap.HelixKeyContext
@@ -309,5 +310,44 @@ class HelixSettingsTest : BasePlatformTestCase() {
         configurable.reset()
         configurable.isModified.shouldBeFalse()
         configurable.disposeUIResources()
+    }
+
+    fun testCustomConfigPathInSettingsAndConfigurable() {
+        val configurable = HelixConfigurable()
+        configurable.createComponent()
+        val settings = HelixSettings.instance
+        val originalPath = settings.customConfigPath
+
+        try {
+            settings.customConfigPath = ""
+            configurable.reset()
+            configurable.isModified.shouldBeFalse()
+
+            settings.customConfigPath = "/custom/path/config.toml"
+            configurable.isModified.shouldBeTrue()
+
+            configurable.reset()
+            configurable.isModified.shouldBeFalse()
+        } finally {
+            settings.customConfigPath = originalPath
+            configurable.disposeUIResources()
+        }
+    }
+
+    fun testHelixConfigPathPanelStatus() {
+        val panel = HelixConfigPathPanel()
+        panel.pathField.text = "/non/existent/path/config.toml"
+        panel.refreshStatus()
+        panel.statusLabel.text.shouldContain("No config file found")
+
+        val tempFile = java.io.File.createTempFile("helix-test-config", ".toml")
+        try {
+            tempFile.writeText("[keys.normal]\nesc = \"collapse_selection\"\n")
+            panel.pathField.text = tempFile.absolutePath
+            panel.refreshStatus()
+            panel.statusLabel.text.shouldContain("1 custom bindings loaded")
+        } finally {
+            tempFile.delete()
+        }
     }
 }

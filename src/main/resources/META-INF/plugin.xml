@@ -97,6 +97,11 @@
                                  key="settings.displayName"/>
     </extensions>
 
+    <applicationListeners>
+        <listener class="jp.titze.intellij.helix.config.HelixConfigWatcher"
+                  topic="com.intellij.openapi.vfs.newvfs.BulkFileListener"/>
+    </applicationListeners>
+
     <projectListeners>
         <listener class="jp.titze.intellij.helix.editor.HelixFileEditorListener"
                   topic="com.intellij.openapi.fileEditor.FileEditorManagerListener"/>

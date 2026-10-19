@@ -5,6 +5,26 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+
+- **Configurable Keymaps (`config.toml`)**:
+  - Authentic Helix-style key rebinding via `~/.config/helix/config.toml` (or a custom path configured in IDE Settings).
+  - Pure-Kotlin, zero-dependency TOML parser supporting `[keys.normal]`, `[keys.insert]`, `[keys.select]`, and nested table / dotted-key chord prefixes (e.g. `[keys.normal.space]`, `"g"."l"`).
+  - Support for canonical Helix command names (e.g. `move_line_down`, `half_page_down`, `file_picker`, `wclose`).
+  - Support for multi-command macro sequences (`["half_page_down", "align_view_center"]`).
+  - Support for direct IntelliJ action execution via `:action <ActionId>`.
+  - Support for key unbinding / disabling via `"no_op"`.
+  - Dynamic Which-Key integration: custom keybindings and chord overlays automatically reflect in Which-Key hint menus in real time.
+- **Automatic Live Reloading (VFS File Watcher)**:
+  - Built-in `BulkFileListener` file watcher automatically monitors `config.toml` changes (saved inside IntelliJ or by external editors) and reloads keymaps live with debounced status bar feedback.
+  - Added `:config-reload` / `:reload-config` command palette actions for on-demand keymap reloading.
+  - Added `:config-open` command palette action to open or initialize the active configuration file (automatically generating a commented starter template if missing).
+- **Keymap Configuration Settings UI**:
+  - Added dedicated **Keymap Configuration File** section under **Settings &rarr; Tools &rarr; Helix Keymap**.
+  - `TextFieldWithBrowseButton` file chooser restricted to `.toml` files with placeholder hint for default discovery.
+  - Quick action controls: **Open in Editor**, **Reload Keymap**, and **Reset to Default**.
+  - Live status indicator showing active configuration file path, loaded binding counts, or syntax error diagnostics.
+
 ## [0.2.2]
 
 ### Fixed

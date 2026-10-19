@@ -50,6 +50,7 @@ class HelixConfigurable : SearchableConfigurable {
     private var scratchBufferRadio: JBRadioButton? = null
     private val activationPanel = HelixActivationPanel()
     private val ctrlKeyPanel = HelixCtrlKeyPanel()
+    private val configPathPanel = HelixConfigPathPanel()
 
     override fun getId(): String = "jp.titze.intellij.helix.settings"
 
@@ -65,6 +66,8 @@ class HelixConfigurable : SearchableConfigurable {
         contentBox.add(activationPanel.panel)
         contentBox.add(Box.createVerticalStrut(JBUI.scale(20)))
         contentBox.add(ctrlKeyPanel.panel)
+        contentBox.add(Box.createVerticalStrut(JBUI.scale(20)))
+        contentBox.add(configPathPanel.panel)
         contentBox.add(Box.createVerticalStrut(JBUI.scale(20)))
         contentBox.add(createSearchSection())
         contentBox.add(Box.createVerticalStrut(JBUI.scale(20)))
@@ -421,6 +424,7 @@ class HelixConfigurable : SearchableConfigurable {
         val modifiedChecks = listOf(
             activationPanel.isModified(settings),
             ctrlKeyPanel.isModified(settings),
+            configPathPanel.isModified(settings),
             getSelectedSearchUiMode() != settings.searchUiMode,
             getSelectedLineNavigationMode() != settings.lineNavigationMode,
             promptHistorySpinner?.number != settings.promptHistoryMaxEntries,
@@ -440,6 +444,7 @@ class HelixConfigurable : SearchableConfigurable {
         val settings = HelixSettings.instance
         activationPanel.apply(settings)
         ctrlKeyPanel.apply(settings)
+        configPathPanel.apply(settings)
         settings.searchUiMode = getSelectedSearchUiMode()
         settings.lineNavigationMode = getSelectedLineNavigationMode()
         promptHistorySpinner?.let {
@@ -466,6 +471,7 @@ class HelixConfigurable : SearchableConfigurable {
         val settings = HelixSettings.instance
         activationPanel.reset(settings)
         ctrlKeyPanel.reset(settings)
+        configPathPanel.reset(settings)
         stockHelixRadio?.isSelected = (settings.searchUiMode == HelixSearchUiMode.STOCK_HELIX)
         popupRadio?.isSelected = (settings.searchUiMode == HelixSearchUiMode.POPUP)
         stockLineNavRadio?.isSelected = (settings.lineNavigationMode == HelixLineNavigationMode.HELIX_STANDARD)

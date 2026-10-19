@@ -38,11 +38,12 @@ combining the authentic Helix selection-first workflow with native IntelliJ IDE 
       interactive Command Palette or Registers picker.
     - **Flash-on-Yank**: Instant, subtle Helix-themed visual feedback highlight across single and multiple carets when
       yanking selections.
-- **Command Palette (`:`)**: Lightweight command prompt supporting standard Helix buffer commands (`:w`, `:q`, `:wq`,
-  `:wa`, `:qa`, `:vsp`, `:sp`, `:format`, `:increment`, `:decrement`, `:toggle-helix`, `:config-open`, `:config-reload`).
+- **Command Palette (`:`)**: Lightweight command prompt supporting standard Helix buffer commands (`:w`, `:q`,
+  `:wq`, `:wa`, `:qa`, `:vsp`, `:sp`, `:format`, `:increment`, `:decrement`, `:toggle-helix`, `:config-open`,
+  `:config-reload`).
 - **Configurable Keymaps (`config.toml`)**: Authentic Helix key rebinding via `~/.config/helix/config.toml` (or custom
   path). Supports canonical Helix command names, multi-command macro sequences, direct IntelliJ actions
-  (`:action <ActionId>`), and live reload without restarting the IDE.
+  (`:action <ActionId>`), and automatic live reload on save without restarting the IDE.
 - **Dynamic Which-Key Menus**: Which-Key hints automatically adapt to user keybindings and chord overlays in real time.
 
 ---
@@ -682,14 +683,17 @@ Configure Helix Keymap preferences under **Preferences / Settings &rarr; Tools &
   type/language (`NewScratchFile`) or opens an instant plain-text buffer without dialog (`NewScratchBuffer`). Can also be
   changed via `:toggle-scratch-mode` or `:set scratch-mode=interactive|buffer`.
 - **Color Theme**: Choose between Sync with IDE, Dark, or Light themes for all Helix overlays.
+- **Keymap Configuration File**: Browse or specify a custom `config.toml` path, open/create it directly in the editor,
+  manually reload keymaps, reset to default, and monitor live binding count and status.
 
 #### Keymap Customization (`config.toml`)
 
 Helix Keymap supports authentic Helix-style key rebinding via `~/.config/helix/config.toml` (or a custom path
 configured under **Settings &rarr; Tools &rarr; Helix Keymap**).
 
-Run `:config-open` in the Command Palette (`:`) to immediately open or initialize your configuration file, and
-`:config-reload` to reload your configuration live without restarting the IDE:
+Run `:config-open` in the Command Palette (`:`) to immediately open or initialize your configuration file.
+Any changes saved to `config.toml` (inside IntelliJ or externally) are **automatically reloaded live** by the built-in
+VFS file watcher (you can also force a reload at any time via `:config-reload`):
 
 ```toml
 # ~/.config/helix/config.toml

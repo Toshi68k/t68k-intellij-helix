@@ -39,6 +39,39 @@ object HelixConfigLoader {
         return null
     }
 
+    fun getTargetConfigFile(): File {
+        val customPath = HelixSettings.instance.customConfigPath.trim()
+        if (customPath.isNotEmpty()) {
+            return File(customPath)
+        }
+        val userHome = System.getProperty("user.home")
+        return if (!userHome.isNullOrEmpty()) {
+            File(userHome, ".config/helix/config.toml")
+        } else {
+            val ideConfig = PathManager.getConfigPath()
+            File(ideConfig, "helix/config.toml")
+        }
+    }
+
+    fun openOrCreateConfigFile(project: com.intellij.openapi.project.Project?): Boolean {
+        val fileToOpen = findConfigFile() ?: getTargetConfigFile()
+        try {
+            fileToOpen.parentFile?.mkdirs()
+            if (!fileToOpen.exists()) {
+                fileToOpen.writeText(getStarterConfigTemplate())
+            }
+        } catch (_: java.io.IOException) {
+            // Ignore creation failure
+        }
+        val vf = com.intellij.openapi.vfs.LocalFileSystem.getInstance().refreshAndFindFileByIoFile(fileToOpen)
+            ?: return false
+        if (project != null && !project.isDisposed) {
+            com.intellij.openapi.fileEditor.OpenFileDescriptor(project, vf).navigate(true)
+            return true
+        }
+        return false
+    }
+
     fun loadConfig(explicitFile: File? = null): HelixConfigResult {
         val file = explicitFile ?: findConfigFile()
         if (file == null || !file.exists()) {
