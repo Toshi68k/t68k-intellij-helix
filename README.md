@@ -39,7 +39,11 @@ combining the authentic Helix selection-first workflow with native IntelliJ IDE 
     - **Flash-on-Yank**: Instant, subtle Helix-themed visual feedback highlight across single and multiple carets when
       yanking selections.
 - **Command Palette (`:`)**: Lightweight command prompt supporting standard Helix buffer commands (`:w`, `:q`, `:wq`,
-  `:wa`, `:qa`, `:vsp`, `:sp`, `:format`, `:increment`, `:decrement`, `:toggle-helix`).
+  `:wa`, `:qa`, `:vsp`, `:sp`, `:format`, `:increment`, `:decrement`, `:toggle-helix`, `:config-open`, `:config-reload`).
+- **Configurable Keymaps (`config.toml`)**: Authentic Helix key rebinding via `~/.config/helix/config.toml` (or custom
+  path). Supports canonical Helix command names, multi-command macro sequences, direct IntelliJ actions
+  (`:action <ActionId>`), and live reload without restarting the IDE.
+- **Dynamic Which-Key Menus**: Which-Key hints automatically adapt to user keybindings and chord overlays in real time.
 
 ---
 
@@ -636,6 +640,8 @@ to execute):
 - `:change-signature` &rarr; Refactor change method signature (`ChangeSignature`)
 - `:generate` / `:gen` &rarr; Generate code (constructors, getters, setters) (`Generate`)
 - `:replace-in-path` / `:replace-in-files` &rarr; Find and replace in project files (`ReplaceInPath`)
+- `:config-reload` / `:reload-config` &rarr; Reload keymap bindings from `config.toml`
+- `:config-open` &rarr; Open active `config.toml` configuration file (creates starter template if missing)
 
 #### Search & Selection UI Modes
 
@@ -676,6 +682,42 @@ Configure Helix Keymap preferences under **Preferences / Settings &rarr; Tools &
   type/language (`NewScratchFile`) or opens an instant plain-text buffer without dialog (`NewScratchBuffer`). Can also be
   changed via `:toggle-scratch-mode` or `:set scratch-mode=interactive|buffer`.
 - **Color Theme**: Choose between Sync with IDE, Dark, or Light themes for all Helix overlays.
+
+#### Keymap Customization (`config.toml`)
+
+Helix Keymap supports authentic Helix-style key rebinding via `~/.config/helix/config.toml` (or a custom path
+configured under **Settings &rarr; Tools &rarr; Helix Keymap**).
+
+Run `:config-open` in the Command Palette (`:`) to immediately open or initialize your configuration file, and
+`:config-reload` to reload your configuration live without restarting the IDE:
+
+```toml
+# ~/.config/helix/config.toml
+
+[keys.normal]
+"C-s" = ":w"
+"X" = "extend_line_up"
+"C-d" = ["half_page_down", "align_view_center"]
+"backspace" = "no_op"
+
+# Chords and nested prefixes (table or dotted key syntax)
+[keys.normal.space]
+t = ":action ActivateTerminalToolWindow"
+"g"."l" = ":action Vcs.Show.Log"
+
+[keys.insert]
+"C-h" = "delete_char_backward"
+
+[keys.select]
+"%" = "match_brackets"
+```
+
+- **Canonical Commands**: Supports canonical Helix command names (e.g. `move_line_down`, `half_page_down`,
+  `file_picker`, `wclose`).
+- **Macro Lists**: Bind arrays of commands that execute in order (e.g., `["half_page_down", "align_view_center"]`).
+- **Direct IntelliJ Actions**: Execute native JetBrains actions using the `:action <ActionId>` syntax.
+- **Unbinding / No-op**: Map keys to `"no_op"` to disable unwanted default keybindings.
+- **Dynamic Which-Key**: Custom bindings and chord overlays automatically reflect in Which-Key hint menus.
 
 ---
 

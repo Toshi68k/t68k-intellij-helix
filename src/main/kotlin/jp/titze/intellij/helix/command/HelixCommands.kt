@@ -8,9 +8,11 @@ import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileEditor.OpenFileDescriptor
 import com.intellij.openapi.vfs.LocalFileSystem
+import com.intellij.openapi.wm.WindowManager
 import jp.titze.intellij.helix.action.HelixActionDelegate
 import jp.titze.intellij.helix.action.HelixActions
 import jp.titze.intellij.helix.action.HelixShellActions
+import jp.titze.intellij.helix.config.HelixConfigLoader
 import jp.titze.intellij.helix.jumplist.HelixJumpListService
 import jp.titze.intellij.helix.keymap.HelixKeyHandler
 import jp.titze.intellij.helix.motion.HelixFileNavigation
@@ -48,6 +50,48 @@ data class HelixCommandItem(
 object HelixCommands {
 
     val COMMANDS = listOf(
+        HelixCommandItem(
+            "config-reload",
+            listOf("reload-config"),
+            "Reload Helix keymap configuration from config.toml",
+        ) { editor ->
+            val result = HelixConfigLoader.loadConfig()
+            val msg = if (result.file != null) {
+                "Helix: Loaded ${result.bindingCount} custom bindings from ${result.file.name}"
+            } else {
+                "Helix: Reset keymap to defaults (no config.toml found)"
+            }
+            editor.project?.let { proj ->
+                WindowManager.getInstance().getStatusBar(proj)?.info = msg
+            }
+        },
+        HelixCommandItem(
+            "config-open",
+            emptyList(),
+            "Open or create Helix config.toml in editor",
+        ) { editor ->
+            val project = editor.project ?: return@HelixCommandItem
+            val existing = HelixConfigLoader.findConfigFile()
+            val fileToOpen = if (existing != null) {
+                existing
+            } else {
+                val userHome = System.getProperty("user.home")
+                val target = File(userHome, ".config/helix/config.toml")
+                try {
+                    target.parentFile?.mkdirs()
+                    if (!target.exists()) {
+                        target.writeText(HelixConfigLoader.getStarterConfigTemplate())
+                    }
+                } catch (_: java.io.IOException) {
+                    // Ignore creation failure
+                }
+                target
+            }
+            val vf = LocalFileSystem.getInstance().refreshAndFindFileByIoFile(fileToOpen)
+            if (vf != null) {
+                OpenFileDescriptor(project, vf).navigate(true)
+            }
+        },
         HelixCommandItem("toggle-helix", emptyList(), "Toggle Helix modal editing mode globally") { _ ->
             val settings = jp.titze.intellij.helix.settings.HelixSettings.instance
             settings.enabled = !settings.enabled

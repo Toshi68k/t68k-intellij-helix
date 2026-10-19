@@ -97,7 +97,8 @@ object HelixWhichKeyPopup {
         hide()
         currentPrefix = prefix
 
-        val (title, items) = HelixWhichKeyMenus.getMenu(prefix) ?: return
+        val mode = HelixStateManager.getOrCreate(editor).mode
+        val (title, items) = HelixWhichKeyMenus.getMenu(prefix, mode) ?: return
 
         val component = editor.component
         val visibleRect = component.visibleRect

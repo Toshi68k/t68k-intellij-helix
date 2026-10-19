@@ -16,6 +16,10 @@ import com.intellij.openapi.components.Service
 @Service(Service.Level.APP)
 class HelixPluginLifecycle : Disposable {
 
+    init {
+        jp.titze.intellij.helix.config.HelixConfigLoader.loadConfig()
+    }
+
     override fun dispose() {
         HelixEventDispatcher.uninstall()
         HelixTypedActionHandler.uninstall()

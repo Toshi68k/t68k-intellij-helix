@@ -77,8 +77,28 @@ object HelixKeyHandler {
         }
     }
 
-    private fun handlePrefixInitiation(charTyped: Char, editor: Editor, state: HelixEditorState): Boolean =
-        when (charTyped) {
+    private val PARAMETRIC_PREFIXES = setOf("r", "f", "t", "F", "T", "\"", "C-r")
+
+    private fun isParametricPrefix(prefix: String): Boolean = prefix in PARAMETRIC_PREFIXES || prefix.startsWith("C-w")
+
+    private fun handlePrefixInitiation(charTyped: Char, editor: Editor, state: HelixEditorState): Boolean {
+        if (charTyped == '\u0017') {
+            state.clearSelectedRegister()
+            startWindowChord(editor)
+            return true
+        }
+
+        val stroke = HelixKeyStroke.fromChar(charTyped)
+        val trieStep = HelixKeymapManager.resolveStep(state.mode, "", stroke)
+        if (trieStep is HelixKeymapResult.Branch) {
+            state.clearSelectedRegister()
+            state.appendKey(charTyped)
+            val menuPrefix = if (charTyped == ' ') " " else charTyped.toString()
+            HelixWhichKeyPopup.show(editor, menuPrefix)
+            return true
+        }
+
+        return when (charTyped) {
             'g', ' ', '[', ']', 'm', 'z', 'Z', '"' -> {
                 state.clearSelectedRegister()
                 state.appendKey(charTyped)
@@ -108,8 +128,27 @@ object HelixKeyHandler {
 
             else -> false
         }
+    }
 
     private fun handlePendingSequence(prefix: String, ch: Char, editor: Editor, state: HelixEditorState): Boolean {
+        if (!isParametricPrefix(prefix)) {
+            val stroke = HelixKeyStroke.fromChar(ch)
+            val trieStep = HelixKeymapManager.resolveStep(state.mode, prefix, stroke)
+            if (trieStep is HelixKeymapResult.Leaf) {
+                state.clearPendingSequence()
+                if (prefix != "Z") {
+                    HelixWhichKeyPopup.hide()
+                }
+                val count = state.takeCount() ?: 1
+                return HelixCommandRegistry.execute(trieStep.command, editor, count)
+            } else if (trieStep is HelixKeymapResult.Branch) {
+                val nextPrefix = if (prefix == " ") " $ch" else "$prefix $ch"
+                state.setPendingSequence(nextPrefix)
+                HelixWhichKeyPopup.show(editor, nextPrefix)
+                return true
+            }
+        }
+
         if (prefix != "Z") {
             HelixWhichKeyPopup.hide()
         }
@@ -308,6 +347,12 @@ object HelixKeyHandler {
     private fun handleSingleKey(ch: Char, editor: Editor, state: HelixEditorState): Boolean {
         val rawCount = state.takeCount()
         val count = rawCount ?: 1
+
+        val stroke = HelixKeyStroke.fromChar(ch)
+        val trieStep = HelixKeymapManager.resolveStep(state.mode, "", stroke)
+        if (trieStep is HelixKeymapResult.Leaf && ch != 'G') {
+            return HelixCommandRegistry.execute(trieStep.command, editor, count)
+        }
 
         if (handleMotionKey(ch, editor, count, rawCount)) {
             return true
