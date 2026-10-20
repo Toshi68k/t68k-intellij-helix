@@ -9,7 +9,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
-- **Configurable Keymaps (`config.toml`)**:
+- **[BETA] Configurable Keymaps (`config.toml`)**:
   - Authentic Helix-style key rebinding via `~/.config/helix/config.toml` (or custom path configured in IDE Settings).
   - Pure-Kotlin, zero-dependency TOML parser supporting `[keys.normal]`, `[keys.insert]`, `[keys.select]`, nested submode prefixes (`[keys.normal.space]`, `[keys.normal.g]`, `[keys.normal.z]`, `[keys.normal."C-w"]`), and top-level shorthand tables (`[keys.space]`, `[keys.goto]`, `[keys.view]`, `[keys.match]`, `[keys.window]`).
   - Word modifier support in key sequences (e.g. `ctrl-s`, `control-s`, `alt-x`, `shift-tab`, `meta-f`, `insert`).
