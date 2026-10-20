@@ -5,16 +5,26 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.3.0]
+
 ### Added
 
 - **Configurable Keymaps (`config.toml`)**:
-  - Authentic Helix-style key rebinding via `~/.config/helix/config.toml` (or a custom path configured in IDE Settings).
-  - Pure-Kotlin, zero-dependency TOML parser supporting `[keys.normal]`, `[keys.insert]`, `[keys.select]`, and nested table / dotted-key chord prefixes (e.g. `[keys.normal.space]`, `"g"."l"`).
-  - Support for canonical Helix command names (e.g. `move_line_down`, `half_page_down`, `file_picker`, `wclose`).
-  - Support for multi-command macro sequences (`["half_page_down", "align_view_center"]`).
-  - Support for direct IntelliJ action execution via `:action <ActionId>`.
-  - Support for key unbinding / disabling via `"no_op"`.
+  - Authentic Helix-style key rebinding via `~/.config/helix/config.toml` (or custom path configured in IDE Settings).
+  - Pure-Kotlin, zero-dependency TOML parser supporting `[keys.normal]`, `[keys.insert]`, `[keys.select]`, nested submode prefixes (`[keys.normal.space]`, `[keys.normal.g]`, `[keys.normal.z]`, `[keys.normal."C-w"]`), and top-level shorthand tables (`[keys.space]`, `[keys.goto]`, `[keys.view]`, `[keys.match]`, `[keys.window]`).
+  - Word modifier support in key sequences (e.g. `ctrl-s`, `control-s`, `alt-x`, `shift-tab`, `meta-f`, `insert`).
+  - Comprehensive canonical Helix command registry parity:
+    - **Motions & Jumps**: `move_char_left`, `move_line_down`, `page_down`, `half_page_down`, `goto_line_start`, etc.
+    - **Unimpaired Navigation**: `goto_prev_paragraph`, `goto_next_paragraph`, `goto_prev_comment`, `goto_next_comment`, `goto_prev_function`, `goto_next_function`, `goto_prev_class`, `goto_next_class`, `goto_prev_diag`, `goto_next_diag`, `goto_prev_change`, `goto_next_change`, `goto_prev_xml_element`, `goto_next_xml_element`.
+    - **Surround, Match & Textobjects**: `match_brackets`, `surround_add`, `surround_replace`, `surround_delete`, `select_textobject_around`, `select_textobject_inner`.
+    - **Selection Grooming**: `flip_selections`, `ensure_selections_forward`, `clear_selection`, `remove_primary_selection`, `merge_selections`, `merge_consecutive_selections`, `copy_selection_on_prev_line`, `expand_selection`, `shrink_selection`, `select_next_sibling`, `select_prev_sibling`.
+    - **Insert Mode Commands**: `delete_char_backward`, `delete_char_forward`, `insert_newline`, `delete_word_backward`, `delete_word_forward`, `kill_to_line_start`, `kill_to_line_end`, `insert_register`, `signature_help`, `completion`.
+    - **Numbers & Math**: `increment` (`C-a`), `decrement` (`C-x`).
+  - Multi-command macro sequences (`["half_page_down", "align_view_center"]`).
+  - Direct IntelliJ action execution via `:action <ActionId>`.
+  - Key unbinding / disabling via `"no_op"`.
   - Dynamic Which-Key integration: custom keybindings and chord overlays automatically reflect in Which-Key hint menus in real time.
+  - Live configuration validation: unknown commands or invalid syntax are detected and reported as diagnostics.
 - **Automatic Live Reloading (VFS File Watcher)**:
   - Built-in `BulkFileListener` file watcher automatically monitors `config.toml` changes (saved inside IntelliJ or by external editors) and reloads keymaps live with debounced status bar feedback.
   - Added `:config-reload` / `:reload-config` command palette actions for on-demand keymap reloading.
@@ -22,8 +32,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **Keymap Configuration Settings UI**:
   - Added dedicated **Keymap Configuration File** section under **Settings &rarr; Tools &rarr; Helix Keymap**.
   - `TextFieldWithBrowseButton` file chooser restricted to `.toml` files with placeholder hint for default discovery.
+  - Dedicated `~/.config/helix/intellij.toml` configuration target prevents IDE-specific `:action` commands from causing syntax errors in terminal Helix (`hx`), while retaining `config.toml` as an automatic fallback.
+  - Live CLI conflict warning in the settings panel when pointing to `config.toml` to guard terminal dotfiles from inadvertent breakage.
   - Quick action controls: **Open in Editor**, **Reload Keymap**, and **Reset to Default**.
-  - Live status indicator showing active configuration file path, loaded binding counts, or syntax error diagnostics.
+  - Live status indicator showing active configuration file path, loaded binding counts, or syntax and validation diagnostics.
 
 ## [0.2.2]
 

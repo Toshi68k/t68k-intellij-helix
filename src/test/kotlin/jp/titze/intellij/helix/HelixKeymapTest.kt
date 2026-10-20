@@ -350,4 +350,138 @@ class HelixKeymapTest : BasePlatformTestCase() {
             tempFile.delete()
         }
     }
+
+    fun testShorthandSectionHeadersAndAliases() {
+        val toml = """
+            [keys.space]
+            t = ":action ActivateTerminalToolWindow"
+
+            [keys.goto]
+            d = "goto_definition"
+
+            [keys.view]
+            c = "align_view_center"
+
+            [keys.match]
+            m = "match_brackets"
+
+            [keys.window]
+            v = "vsplit"
+
+            [keys.normal.goto]
+            x = ":action CustomGoto"
+
+            [keys.normal.window]
+            s = "hsplit"
+        """.trimIndent()
+
+        val result = HelixTomlParser.parse(toml)
+        result.errors.isEmpty().shouldBeTrue()
+
+        val bindings = result.bindings
+        bindings.any { it.sequence == "space t" && it.action == ":action ActivateTerminalToolWindow" }.shouldBeTrue()
+        bindings.any { it.sequence == "g d" && it.action == "goto_definition" }.shouldBeTrue()
+        bindings.any { it.sequence == "z c" && it.action == "align_view_center" }.shouldBeTrue()
+        bindings.any { it.sequence == "m m" && it.action == "match_brackets" }.shouldBeTrue()
+        bindings.any { it.sequence == "C-w v" && it.action == "vsplit" }.shouldBeTrue()
+        bindings.any { it.sequence == "g x" && it.action == ":action CustomGoto" }.shouldBeTrue()
+        bindings.any { it.sequence == "C-w s" && it.action == "hsplit" }.shouldBeTrue()
+    }
+
+    fun testWordModifierKeyStrokes() {
+        val ctrlS = HelixKeyStroke.fromString("ctrl-s")
+        ctrlS.isCtrl.shouldBeTrue()
+        ctrlS.keyChar shouldBe 's'
+
+        val controlS = HelixKeyStroke.fromString("control-s")
+        controlS.isCtrl.shouldBeTrue()
+        controlS.keyChar shouldBe 's'
+
+        val altX = HelixKeyStroke.fromString("alt-x")
+        altX.isAlt.shouldBeTrue()
+        altX.keyChar shouldBe 'x'
+
+        val shiftTab = HelixKeyStroke.fromString("shift-tab")
+        shiftTab.isShift.shouldBeTrue()
+        shiftTab.keyCode shouldBe java.awt.event.KeyEvent.VK_TAB
+
+        val metaF = HelixKeyStroke.fromString("meta-f")
+        metaF.isMeta.shouldBeTrue()
+        metaF.keyChar shouldBe 'f'
+
+        val ins = HelixKeyStroke.fromString("ins")
+        ins.keyCode shouldBe java.awt.event.KeyEvent.VK_INSERT
+
+        val insert = HelixKeyStroke.fromString("insert")
+        insert.keyCode shouldBe java.awt.event.KeyEvent.VK_INSERT
+    }
+
+    fun testExtendedCommandsRegistered() {
+        HelixCommandRegistry.get("match_brackets").shouldNotBeNull()
+        HelixCommandRegistry.get("surround_add").shouldNotBeNull()
+        HelixCommandRegistry.get("surround_delete").shouldNotBeNull()
+        HelixCommandRegistry.get("surround_replace").shouldNotBeNull()
+        HelixCommandRegistry.get("select_textobject_around").shouldNotBeNull()
+        HelixCommandRegistry.get("select_textobject_inner").shouldNotBeNull()
+        HelixCommandRegistry.get("goto_prev_paragraph").shouldNotBeNull()
+        HelixCommandRegistry.get("goto_next_paragraph").shouldNotBeNull()
+        HelixCommandRegistry.get("goto_prev_comment").shouldNotBeNull()
+        HelixCommandRegistry.get("goto_next_comment").shouldNotBeNull()
+        HelixCommandRegistry.get("goto_prev_function").shouldNotBeNull()
+        HelixCommandRegistry.get("goto_next_function").shouldNotBeNull()
+        HelixCommandRegistry.get("goto_prev_diag").shouldNotBeNull()
+        HelixCommandRegistry.get("goto_next_diag").shouldNotBeNull()
+        HelixCommandRegistry.get("flip_selections").shouldNotBeNull()
+        HelixCommandRegistry.get("ensure_selections_forward").shouldNotBeNull()
+        HelixCommandRegistry.get("merge_selections").shouldNotBeNull()
+        HelixCommandRegistry.get("merge_consecutive_selections").shouldNotBeNull()
+        HelixCommandRegistry.get("copy_selection_on_prev_line").shouldNotBeNull()
+        HelixCommandRegistry.get("delete_char_backward").shouldNotBeNull()
+        HelixCommandRegistry.get("delete_char_forward").shouldNotBeNull()
+        HelixCommandRegistry.get("insert_newline").shouldNotBeNull()
+        HelixCommandRegistry.get("increment").shouldNotBeNull()
+        HelixCommandRegistry.get("decrement").shouldNotBeNull()
+    }
+
+    fun testValidationDiagnosticsOnUnknownCommands() {
+        val toml = """
+            [keys.normal]
+            "x" = "non_existent_command_xyz"
+            "y" = "move_char_left"
+            "z" = ["half_page_down", "bad_macro_command"]
+        """.trimIndent()
+
+        val validation = HelixConfigLoader.validateConfig(toml)
+        validation.errors.size shouldBe 2
+        validation.errors.any { it.contains("non_existent_command_xyz") }.shouldBeTrue()
+        validation.errors.any { it.contains("bad_macro_command") }.shouldBeTrue()
+        validation.bindingCount shouldBe 3
+    }
+
+    fun testTargetConfigFileDefaultsToIntellijToml() {
+        val target = HelixConfigLoader.getTargetConfigFile()
+        target.name shouldBe "intellij.toml"
+        HelixConfigLoader.isCliConfigFile(target).shouldBeFalse()
+        HelixConfigLoader.isCliConfigFile(File("/path/to/config.toml")).shouldBeTrue()
+        HelixConfigLoader.isCliConfigFile(File("/path/to/my-config.toml")).shouldBeFalse()
+    }
+
+    fun testConfigWatcherMatchesBothTomlFiles() {
+        val userHome = System.getProperty("user.home")
+        if (!userHome.isNullOrEmpty()) {
+            val intellijPath = "$userHome/.config/helix/intellij.toml"
+            val configPath = "$userHome/.config/helix/config.toml"
+            val randomPath = "$userHome/.config/helix/other.toml"
+
+            HelixConfigWatcher.isMatchingConfigPath(intellijPath).shouldBeTrue()
+            HelixConfigWatcher.isMatchingConfigPath(configPath).shouldBeTrue()
+            HelixConfigWatcher.isMatchingConfigPath(randomPath).shouldBeFalse()
+        }
+    }
+
+    fun testStarterConfigTemplatePointsToIntellijToml() {
+        val template = HelixConfigLoader.getStarterConfigTemplate()
+        template.contains("intellij.toml").shouldBeTrue()
+        template.contains(":action ActivateTerminalToolWindow").shouldBeTrue()
+    }
 }

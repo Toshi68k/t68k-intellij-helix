@@ -41,9 +41,10 @@ combining the authentic Helix selection-first workflow with native IntelliJ IDE 
 - **Command Palette (`:`)**: Lightweight command prompt supporting standard Helix buffer commands (`:w`, `:q`,
   `:wq`, `:wa`, `:qa`, `:vsp`, `:sp`, `:format`, `:increment`, `:decrement`, `:toggle-helix`, `:config-open`,
   `:config-reload`).
-- **Configurable Keymaps (`config.toml`)**: Authentic Helix key rebinding via `~/.config/helix/config.toml` (or custom
-  path). Supports canonical Helix command names, multi-command macro sequences, direct IntelliJ actions
-  (`:action <ActionId>`), and automatic live reload on save without restarting the IDE.
+- **Configurable Keymaps (`intellij.toml` / `config.toml`)**: Authentic Helix key rebinding via
+  `~/.config/helix/intellij.toml` (or fallback `~/.config/helix/config.toml` / custom path). Dedicated `intellij.toml`
+  protects your CLI Helix setup while supporting direct IntelliJ actions (`:action <ActionId>`), multi-command macros,
+  and automatic live reload on save without restarting the IDE.
 - **Dynamic Which-Key Menus**: Which-Key hints automatically adapt to user keybindings and chord overlays in real time.
 
 ---
@@ -641,8 +642,8 @@ to execute):
 - `:change-signature` &rarr; Refactor change method signature (`ChangeSignature`)
 - `:generate` / `:gen` &rarr; Generate code (constructors, getters, setters) (`Generate`)
 - `:replace-in-path` / `:replace-in-files` &rarr; Find and replace in project files (`ReplaceInPath`)
-- `:config-reload` / `:reload-config` &rarr; Reload keymap bindings from `config.toml`
-- `:config-open` &rarr; Open active `config.toml` configuration file (creates starter template if missing)
+- `:config-reload` / `:reload-config` &rarr; Reload keymap bindings from `intellij.toml` or `config.toml`
+- `:config-open` &rarr; Open active `intellij.toml` (or custom config) in editor (creates starter template if missing)
 
 #### Search & Selection UI Modes
 
@@ -683,20 +684,27 @@ Configure Helix Keymap preferences under **Preferences / Settings &rarr; Tools &
   type/language (`NewScratchFile`) or opens an instant plain-text buffer without dialog (`NewScratchBuffer`). Can also be
   changed via `:toggle-scratch-mode` or `:set scratch-mode=interactive|buffer`.
 - **Color Theme**: Choose between Sync with IDE, Dark, or Light themes for all Helix overlays.
-- **Keymap Configuration File**: Browse or specify a custom `config.toml` path, open/create it directly in the editor,
-  manually reload keymaps, reset to default, and monitor live binding count and status.
+- **Keymap Configuration File**: Browse or specify a custom `intellij.toml` or `config.toml` path,
+  open/create it directly in the editor, manually reload keymaps, reset to default, and monitor live binding count,
+  diagnostics, and CLI safety warnings.
 
-#### Keymap Customization (`config.toml`)
+#### Keymap Customization (`intellij.toml` / `config.toml`)
 
-Helix Keymap supports authentic Helix-style key rebinding via `~/.config/helix/config.toml` (or a custom path
-configured under **Settings &rarr; Tools &rarr; Helix Keymap**).
+Helix Keymap supports authentic Helix-style key rebinding with safe separation between IntelliJ and terminal Helix:
 
-Run `:config-open` in the Command Palette (`:`) to immediately open or initialize your configuration file.
-Any changes saved to `config.toml` (inside IntelliJ or externally) are **automatically reloaded live** by the built-in
+- **Primary IDE Target (`~/.config/helix/intellij.toml`)**: Dedicated to IntelliJ Helix. It protects your CLI Helix setup
+  from parse errors while allowing you to freely bind native IntelliJ actions via `:action <ActionId>`.
+- **CLI Fallback (`~/.config/helix/config.toml`)**: If `intellij.toml` does not exist, the plugin reads standard
+  keybindings from your terminal `config.toml`.
+- **Custom Path**: Configurable under **Settings &rarr; Tools &rarr; Helix Keymap**. If pointed to `config.toml`,
+  a safety warning alerts you that `:action` bindings may affect CLI Helix.
+
+Run `:config-open` in the Command Palette (`:`) to immediately open or initialize your `intellij.toml` configuration file.
+Any changes saved to the active config file (inside IntelliJ or externally) are **automatically reloaded live** by the built-in
 VFS file watcher (you can also force a reload at any time via `:config-reload`):
 
 ```toml
-# ~/.config/helix/config.toml
+# ~/.config/helix/intellij.toml
 
 [keys.normal]
 "C-s" = ":w"
@@ -704,10 +712,13 @@ VFS file watcher (you can also force a reload at any time via `:config-reload`):
 "C-d" = ["half_page_down", "align_view_center"]
 "backspace" = "no_op"
 
-# Chords and nested prefixes (table or dotted key syntax)
-[keys.normal.space]
+# Chords and nested prefixes (table, dotted key, or shorthand section syntax)
+[keys.space] # shorthand for [keys.normal.space]
 t = ":action ActivateTerminalToolWindow"
 "g"."l" = ":action Vcs.Show.Log"
+
+[keys.goto] # shorthand for [keys.normal.goto]
+D = "goto_type_definition"
 
 [keys.insert]
 "C-h" = "delete_char_backward"
@@ -717,10 +728,11 @@ t = ":action ActivateTerminalToolWindow"
 ```
 
 - **Canonical Commands**: Supports canonical Helix command names (e.g. `move_line_down`, `half_page_down`,
-  `file_picker`, `wclose`).
+  `file_picker`, `wclose`, `goto_prev_diag`, `surround_add`, `delete_char_backward`, etc.).
 - **Macro Lists**: Bind arrays of commands that execute in order (e.g., `["half_page_down", "align_view_center"]`).
 - **Direct IntelliJ Actions**: Execute native JetBrains actions using the `:action <ActionId>` syntax.
 - **Unbinding / No-op**: Map keys to `"no_op"` to disable unwanted default keybindings.
+- **Config Diagnostics**: Live validation in settings alerts you to unrecognized commands, missing files, or syntax issues.
 - **Dynamic Which-Key**: Custom bindings and chord overlays automatically reflect in Which-Key hint menus.
 
 ---
@@ -729,11 +741,11 @@ t = ":action ActivateTerminalToolWindow"
 
 ### From Pre-built Plugin Package
 
-1. Build the distribution or download the `.zip` from `build/distributions/t68k-intellij-helix-0.1.0.zip`.
+1. Build the distribution or download the `.zip` from `build/distributions/t68k-intellij-helix-x.y.z.zip`.
 2. In IntelliJ IDEA, open **Settings / Preferences** (`Cmd+,` on macOS, `Ctrl+Alt+S` on Linux/Windows).
 3. Navigate to **Plugins**.
 4. Click the gear icon (⚙️) at the top-right and select **Install Plugin from Disk...**.
-5. Select `t68k-intellij-helix-0.1.0.zip` and restart the IDE.
+5. Select `t68k-intellij-helix-x.y.z.zip` and restart the IDE.
 
 ---
 
@@ -753,7 +765,7 @@ t = ":action ActivateTerminalToolWindow"
 The installable `.zip` will be produced at:
 
 ```
-build/distributions/t68k-intellij-helix-0.1.0.zip
+build/distributions/t68k-intellij-helix-x.y.z.zip
 ```
 
 ### Run Unit Tests

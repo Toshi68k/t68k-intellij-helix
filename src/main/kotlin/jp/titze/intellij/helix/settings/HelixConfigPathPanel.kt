@@ -13,7 +13,6 @@ import com.intellij.util.ui.UIUtil
 import jp.titze.intellij.helix.HelixBundle
 import jp.titze.intellij.helix.config.HelixConfigLoader
 import jp.titze.intellij.helix.config.HelixConfigWatcher
-import jp.titze.intellij.helix.config.HelixTomlParser
 import java.awt.BorderLayout
 import java.awt.FlowLayout
 import java.io.File
@@ -26,6 +25,7 @@ class HelixConfigPathPanel {
 
     val pathField = TextFieldWithBrowseButton()
     val statusLabel = JBLabel()
+    val warningLabel = JBLabel()
     val panel: JPanel = JPanel(BorderLayout(0, 8))
 
     init {
@@ -66,6 +66,13 @@ class HelixConfigPathPanel {
         statusLabel.font = JBUI.Fonts.smallFont()
         statusLabel.foreground = UIUtil.getContextHelpForeground()
 
+        warningLabel.font = JBUI.Fonts.smallFont()
+        warningLabel.foreground = com.intellij.ui.JBColor.namedColor(
+            "Label.warningForeground",
+            com.intellij.ui.JBColor(0x9E6200, 0xDB9D38),
+        )
+        warningLabel.isVisible = false
+
         val helpLabel = JBLabel(HelixBundle.message("settings.config.help"))
         helpLabel.font = JBUI.Fonts.smallFont()
         helpLabel.foreground = UIUtil.getContextHelpForeground()
@@ -73,6 +80,7 @@ class HelixConfigPathPanel {
         pathField.alignmentX = java.awt.Component.LEFT_ALIGNMENT
         buttonPanel.alignmentX = java.awt.Component.LEFT_ALIGNMENT
         statusLabel.alignmentX = java.awt.Component.LEFT_ALIGNMENT
+        warningLabel.alignmentX = java.awt.Component.LEFT_ALIGNMENT
         helpLabel.alignmentX = java.awt.Component.LEFT_ALIGNMENT
 
         val contentBox = JPanel()
@@ -84,6 +92,8 @@ class HelixConfigPathPanel {
         contentBox.add(buttonPanel)
         contentBox.add(Box.createVerticalStrut(JBUI.scale(6)))
         contentBox.add(statusLabel)
+        contentBox.add(Box.createVerticalStrut(JBUI.scale(4)))
+        contentBox.add(warningLabel)
         contentBox.add(Box.createVerticalStrut(JBUI.scale(8)))
         contentBox.add(helpLabel)
 
@@ -100,6 +110,11 @@ class HelixConfigPathPanel {
         descriptor.withExtensionFilter("toml")
 
         pathField.addBrowseFolderListener(null, descriptor)
+        pathField.textField.document.addDocumentListener(object : javax.swing.event.DocumentListener {
+            override fun insertUpdate(e: javax.swing.event.DocumentEvent?) = refreshStatus()
+            override fun removeUpdate(e: javax.swing.event.DocumentEvent?) = refreshStatus()
+            override fun changedUpdate(e: javax.swing.event.DocumentEvent?) = refreshStatus()
+        })
     }
 
     fun refreshStatus() {
@@ -109,24 +124,32 @@ class HelixConfigPathPanel {
             val defaultTarget = HelixConfigLoader.getTargetConfigFile().absolutePath
             statusLabel.text = HelixBundle.message("settings.config.status.default", defaultTarget)
             statusLabel.foreground = UIUtil.getContextHelpForeground()
+            warningLabel.isVisible = false
             return
         }
 
-        val parseResult = try {
-            HelixTomlParser.parse(file.readText())
+        if (HelixConfigLoader.isCliConfigFile(file)) {
+            warningLabel.text = HelixBundle.message("settings.config.warning.cliConfig", file.name)
+            warningLabel.isVisible = true
+        } else {
+            warningLabel.isVisible = false
+        }
+
+        val result = try {
+            HelixConfigLoader.validateConfig(file.readText())
         } catch (e: Exception) {
             statusLabel.text = HelixBundle.message("settings.config.status.error", e.message ?: "read error")
             statusLabel.foreground = com.intellij.util.ui.NamedColorUtil.getErrorForeground()
             return
         }
 
-        if (parseResult.errors.isNotEmpty()) {
-            statusLabel.text = HelixBundle.message("settings.config.status.error", parseResult.errors.first())
+        if (result.errors.isNotEmpty()) {
+            statusLabel.text = HelixBundle.message("settings.config.status.error", result.errors.first())
             statusLabel.foreground = com.intellij.util.ui.NamedColorUtil.getErrorForeground()
         } else {
             statusLabel.text = HelixBundle.message(
                 "settings.config.status.active",
-                parseResult.bindings.size,
+                result.bindingCount,
                 file.name,
             )
             statusLabel.foreground = UIUtil.getContextHelpForeground()

@@ -75,22 +75,34 @@ object HelixTomlParser {
         return line
     }
 
+    private fun normalizePrefixPart(part: String): String = when (part.lowercase()) {
+        "goto" -> "g"
+        "view" -> "z"
+        "match" -> "m"
+        "window" -> "C-w"
+        else -> part
+    }
+
     private fun parseSectionHeader(header: String): Pair<HelixMode?, String> {
         val parts = splitDottedKeys(header)
-        if (parts.isEmpty() || parts[0] != "keys" || parts.size < 2) {
+        if (parts.isEmpty() || parts[0].lowercase() != "keys" || parts.size < 2) {
             return null to ""
         }
 
-        val mode = when (parts[1].lowercase()) {
-            "normal" -> HelixMode.NORMAL
-            "select" -> HelixMode.SELECT
-            "insert" -> HelixMode.INSERT
-            else -> return null to ""
-        }
+        val firstSub = parts[1].lowercase()
+        val rest = parts.drop(2).map { normalizePrefixPart(it) }
 
-        val prefixParts = parts.drop(2)
-        val prefix = prefixParts.joinToString(" ")
-        return mode to prefix
+        return when (firstSub) {
+            "normal" -> HelixMode.NORMAL to rest.joinToString(" ")
+            "select" -> HelixMode.SELECT to rest.joinToString(" ")
+            "insert" -> HelixMode.INSERT to rest.joinToString(" ")
+            "space" -> HelixMode.NORMAL to (listOf("space") + rest).joinToString(" ")
+            "goto", "g" -> HelixMode.NORMAL to (listOf("g") + rest).joinToString(" ")
+            "view", "z" -> HelixMode.NORMAL to (listOf("z") + rest).joinToString(" ")
+            "match", "m" -> HelixMode.NORMAL to (listOf("m") + rest).joinToString(" ")
+            "window" -> HelixMode.NORMAL to (listOf("C-w") + rest).joinToString(" ")
+            else -> null to ""
+        }
     }
 
     private fun parseKeyValue(

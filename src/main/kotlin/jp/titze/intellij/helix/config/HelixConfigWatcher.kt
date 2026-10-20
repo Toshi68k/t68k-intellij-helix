@@ -36,6 +36,7 @@ class HelixConfigWatcher : BulkFileListener {
     companion object {
         private const val DEBOUNCE_MS = 200L
         private const val CONFIG_FILE_NAME = "config.toml"
+        private const val INTELLIJ_CONFIG_FILE_NAME = "intellij.toml"
 
         @Volatile
         var isEnabled: Boolean = true
@@ -52,7 +53,7 @@ class HelixConfigWatcher : BulkFileListener {
         fun isRelevantEvent(event: VFileEvent): Boolean = isMatchingConfigPath(event.path)
 
         fun isMatchingConfigPath(path: String): Boolean {
-            if (!path.endsWith(CONFIG_FILE_NAME)) return false
+            if (!isTomlConfigPath(path)) return false
 
             val candidate = canonicalOrAbsolute(File(path))
 
@@ -64,13 +65,26 @@ class HelixConfigWatcher : BulkFileListener {
             val custom = HelixSettings.instance.customConfigPath.trim()
             if (matchesFile(candidate, custom)) return true
 
-            val userHome = System.getProperty("user.home")
-            if (!userHome.isNullOrEmpty() && matchesFile(candidate, "$userHome/.config/helix/$CONFIG_FILE_NAME")) {
-                return true
-            }
+            if (matchesUserHomeConfig(candidate)) return true
+            return matchesIdeConfig(candidate)
+        }
 
+        private fun isTomlConfigPath(path: String): Boolean =
+            path.endsWith(CONFIG_FILE_NAME) || path.endsWith(INTELLIJ_CONFIG_FILE_NAME)
+
+        private fun matchesUserHomeConfig(candidate: File): Boolean {
+            val userHome = System.getProperty("user.home")
+            if (userHome.isNullOrEmpty()) return false
+            val base = "$userHome/.config/helix"
+            return matchesFile(candidate, "$base/$INTELLIJ_CONFIG_FILE_NAME") ||
+                matchesFile(candidate, "$base/$CONFIG_FILE_NAME")
+        }
+
+        private fun matchesIdeConfig(candidate: File): Boolean {
             val ideConfig = PathManager.getConfigPath()
-            return matchesFile(candidate, "$ideConfig/helix/$CONFIG_FILE_NAME")
+            val base = "$ideConfig/helix"
+            return matchesFile(candidate, "$base/$INTELLIJ_CONFIG_FILE_NAME") ||
+                matchesFile(candidate, "$base/$CONFIG_FILE_NAME")
         }
 
         private fun matchesFile(candidate: File, targetPath: String): Boolean {

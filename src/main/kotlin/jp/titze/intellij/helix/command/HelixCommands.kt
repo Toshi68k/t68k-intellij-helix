@@ -52,7 +52,7 @@ object HelixCommands {
         HelixCommandItem(
             "config-reload",
             listOf("reload-config"),
-            "Reload Helix keymap configuration from config.toml",
+            "Reload Helix keymap configuration from intellij.toml or config.toml",
         ) { _ ->
             val result = HelixConfigLoader.loadConfig()
             jp.titze.intellij.helix.config.HelixConfigWatcher.notifyReloadResult(result)
@@ -60,7 +60,7 @@ object HelixCommands {
         HelixCommandItem(
             "config-open",
             emptyList(),
-            "Open or create Helix config.toml in editor",
+            "Open or create Helix intellij.toml in editor",
         ) { editor ->
             HelixConfigLoader.openOrCreateConfigFile(editor.project)
         },

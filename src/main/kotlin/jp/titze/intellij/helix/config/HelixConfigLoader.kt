@@ -13,6 +13,11 @@ data class HelixConfigResult(val file: File?, val bindingCount: Int, val errors:
 
 object HelixConfigLoader {
 
+    const val INTELLIJ_CONFIG_FILE = "intellij.toml"
+    const val CLI_CONFIG_FILE = "config.toml"
+
+    fun isCliConfigFile(file: File): Boolean = file.name.equals(CLI_CONFIG_FILE, ignoreCase = true)
+
     fun findConfigFile(): File? {
         val customPath = HelixSettings.instance.customConfigPath.trim()
         if (customPath.isNotEmpty()) {
@@ -24,14 +29,22 @@ object HelixConfigLoader {
 
         val userHome = System.getProperty("user.home")
         if (!userHome.isNullOrEmpty()) {
-            val canonicalFile = File(userHome, ".config/helix/config.toml")
+            val intellijFile = File(userHome, ".config/helix/$INTELLIJ_CONFIG_FILE")
+            if (intellijFile.exists() && intellijFile.isFile) {
+                return intellijFile
+            }
+            val canonicalFile = File(userHome, ".config/helix/$CLI_CONFIG_FILE")
             if (canonicalFile.exists() && canonicalFile.isFile) {
                 return canonicalFile
             }
         }
 
         val ideConfig = PathManager.getConfigPath()
-        val ideConfigFile = File(ideConfig, "helix/config.toml")
+        val ideIntellijFile = File(ideConfig, "helix/$INTELLIJ_CONFIG_FILE")
+        if (ideIntellijFile.exists() && ideIntellijFile.isFile) {
+            return ideIntellijFile
+        }
+        val ideConfigFile = File(ideConfig, "helix/$CLI_CONFIG_FILE")
         if (ideConfigFile.exists() && ideConfigFile.isFile) {
             return ideConfigFile
         }
@@ -46,15 +59,15 @@ object HelixConfigLoader {
         }
         val userHome = System.getProperty("user.home")
         return if (!userHome.isNullOrEmpty()) {
-            File(userHome, ".config/helix/config.toml")
+            File(userHome, ".config/helix/$INTELLIJ_CONFIG_FILE")
         } else {
             val ideConfig = PathManager.getConfigPath()
-            File(ideConfig, "helix/config.toml")
+            File(ideConfig, "helix/$INTELLIJ_CONFIG_FILE")
         }
     }
 
     fun openOrCreateConfigFile(project: com.intellij.openapi.project.Project?): Boolean {
-        val fileToOpen = findConfigFile() ?: getTargetConfigFile()
+        val fileToOpen = getTargetConfigFile()
         try {
             fileToOpen.parentFile?.mkdirs()
             if (!fileToOpen.exists()) {
@@ -72,6 +85,41 @@ object HelixConfigLoader {
         return false
     }
 
+    fun isValidActionName(actionName: String): Boolean {
+        val trimmed = actionName.trim()
+        if (trimmed == "no_op" || trimmed.isEmpty()) return true
+        if (trimmed.startsWith(":action ") || trimmed.startsWith(":")) return true
+        if (HelixCommandRegistry.get(trimmed) != null) return true
+        val app = com.intellij.openapi.application.ApplicationManager.getApplication() ?: return true
+        val am = app.getServiceIfCreated(com.intellij.openapi.actionSystem.ActionManager::class.java) ?: return true
+        return am.getAction(trimmed) != null
+    }
+
+    fun validateConfig(content: String): HelixConfigResult {
+        val parseResult = HelixTomlParser.parse(content)
+        val diagnostics = mutableListOf<String>()
+        diagnostics.addAll(parseResult.errors)
+        for (binding in parseResult.bindings) {
+            validateBinding(binding, diagnostics)
+        }
+        return HelixConfigResult(null, parseResult.bindings.size, diagnostics)
+    }
+
+    private fun validateBinding(binding: HelixParsedBinding, diagnostics: MutableList<String>) {
+        val action = binding.action
+        if (action is String) {
+            if (!isValidActionName(action)) {
+                diagnostics.add("Unknown command '$action' for key '${binding.sequence}'")
+            }
+        } else if (action is List<*>) {
+            for (item in action) {
+                if (item is String && !isValidActionName(item)) {
+                    diagnostics.add("Unknown command '$item' in macro for key '${binding.sequence}'")
+                }
+            }
+        }
+    }
+
     fun loadConfig(explicitFile: File? = null): HelixConfigResult {
         val file = explicitFile ?: findConfigFile()
         if (file == null || !file.exists()) {
@@ -85,16 +133,17 @@ object HelixConfigLoader {
             return HelixConfigResult(file, 0, listOf("Failed to read file: ${ex.message}"))
         }
 
-        val parseResult = HelixTomlParser.parse(content)
+        val validated = validateConfig(content)
         HelixKeymapManager.resetToDefaults()
 
+        val parseResult = HelixTomlParser.parse(content)
         var boundCount = 0
         for (binding in parseResult.bindings) {
             applyBinding(binding)
             boundCount++
         }
 
-        return HelixConfigResult(file, boundCount, parseResult.errors)
+        return HelixConfigResult(file, boundCount, validated.errors)
     }
 
     private fun applyBinding(binding: HelixParsedBinding) {
@@ -112,17 +161,20 @@ object HelixConfigLoader {
     }
 
     fun getStarterConfigTemplate(): String = """
-        # Helix Keymap Configuration for IntelliJ
-        # Location: ~/.config/helix/config.toml
+        # IntelliJ Helix Keymap Configuration
+        # Location: ~/.config/helix/intellij.toml
+        #
+        # Dedicated to IntelliJ Helix and safe from CLI Helix conflicts!
+        # You can freely bind native IDE actions via ':action <ActionId>'.
 
         [keys.normal]
         "C-s" = ":w"
         "C-/" = "toggle_comments"
-        
+
         # Leader shortcuts (Space)
-        [keys.normal.space]
+        [keys.space]
         t = ":action ActivateTerminalToolWindow"
-        
+
         # Multi-command macros
         [keys.normal]
         "C-d" = ["half_page_down", "align_view_center"]

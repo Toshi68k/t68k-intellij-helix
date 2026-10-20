@@ -124,14 +124,50 @@ data class HelixKeyStroke(
             var isMeta = false
 
             var remainder = trimmed
-            while (remainder.length > 2 && remainder[1] == '-') {
-                when (remainder[0].uppercaseChar()) {
-                    'C' -> isCtrl = true
-                    'A' -> isAlt = true
-                    'M' -> isMeta = true
-                    'S' -> isShift = true
+            var matchedModifier = true
+            while (matchedModifier && remainder.length > 1) {
+                val lower = remainder.lowercase()
+                when {
+                    lower.startsWith("ctrl-") -> {
+                        isCtrl = true
+                        remainder = remainder.substring(5)
+                    }
+
+                    lower.startsWith("control-") -> {
+                        isCtrl = true
+                        remainder = remainder.substring(8)
+                    }
+
+                    lower.startsWith("alt-") -> {
+                        isAlt = true
+                        remainder = remainder.substring(4)
+                    }
+
+                    lower.startsWith("shift-") -> {
+                        isShift = true
+                        remainder = remainder.substring(6)
+                    }
+
+                    lower.startsWith("meta-") -> {
+                        isMeta = true
+                        remainder = remainder.substring(5)
+                    }
+
+                    remainder.length > 2 && remainder[1] == '-' -> {
+                        when (remainder[0].uppercaseChar()) {
+                            'C' -> isCtrl = true
+                            'A' -> isAlt = true
+                            'M' -> isMeta = true
+                            'S' -> isShift = true
+                            else -> matchedModifier = false
+                        }
+                        if (matchedModifier) {
+                            remainder = remainder.substring(2)
+                        }
+                    }
+
+                    else -> matchedModifier = false
                 }
-                remainder = remainder.substring(2)
             }
 
             return parseKeyComponent(remainder, isCtrl, isAlt, isShift, isMeta)
@@ -168,6 +204,8 @@ data class HelixKeyStroke(
                 "esc", "escape" -> HelixKeyStroke('\u001b', KeyEvent.VK_ESCAPE, isCtrl, isAlt, isShift, isMeta)
 
                 "del", "delete" -> HelixKeyStroke(null, KeyEvent.VK_DELETE, isCtrl, isAlt, isShift, isMeta)
+
+                "ins", "insert" -> HelixKeyStroke(null, KeyEvent.VK_INSERT, isCtrl, isAlt, isShift, isMeta)
 
                 "up" -> HelixKeyStroke(null, KeyEvent.VK_UP, isCtrl, isAlt, isShift, isMeta)
 

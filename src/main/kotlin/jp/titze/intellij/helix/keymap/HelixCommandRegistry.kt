@@ -93,6 +93,7 @@ object HelixCommandRegistry {
         registerSelectAndHistory()
         registerPickersAndLeader()
         registerViewAndWindow()
+        HelixExtendedCommands.registerAll()
     }
 
     private fun registerMotions() {

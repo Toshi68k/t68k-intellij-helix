@@ -60,6 +60,8 @@ object HelixDefaultKeymap {
         bind(trie, "C-u", "half_page_up", "Half page up")
         bind(trie, "C-o", "jump_backward", "Jump backward")
         bind(trie, "C-s", "save_selection", "Save jump location")
+        bind(trie, "C-a", "increment", "Increment number")
+        bind(trie, "C-x", "decrement", "Decrement number")
     }
 
     private fun populateSingleKeyActions(trie: HelixKeymapTrie) {
@@ -176,5 +178,13 @@ object HelixDefaultKeymap {
 
     private fun populateInsert(trie: HelixKeymapTrie) {
         bind(trie, "C-s", ":w", "Save")
+        bind(trie, "C-h", "delete_char_backward", "Delete char backward")
+        bind(trie, "C-d", "delete_char_forward", "Delete char forward")
+        bind(trie, "C-w", "delete_word_backward", "Delete word backward")
+        bind(trie, "C-u", "kill_to_line_start", "Kill to line start")
+        bind(trie, "C-k", "kill_to_line_end", "Kill to line end")
+        bind(trie, "C-r", "insert_register", "Insert register")
+        bind(trie, "C-p", "signature_help", "Signature help")
+        bind(trie, "C-x", "completion", "Completion")
     }
 }
