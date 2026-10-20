@@ -11,6 +11,7 @@ import com.intellij.openapi.vfs.LocalFileSystem
 import jp.titze.intellij.helix.action.HelixActionDelegate
 import jp.titze.intellij.helix.action.HelixActions
 import jp.titze.intellij.helix.action.HelixShellActions
+import jp.titze.intellij.helix.config.HelixConfigLoader
 import jp.titze.intellij.helix.jumplist.HelixJumpListService
 import jp.titze.intellij.helix.keymap.HelixKeyHandler
 import jp.titze.intellij.helix.motion.HelixFileNavigation
@@ -48,6 +49,21 @@ data class HelixCommandItem(
 object HelixCommands {
 
     val COMMANDS = listOf(
+        HelixCommandItem(
+            "config-reload",
+            listOf("reload-config"),
+            "Reload Helix keymap configuration from intellij.toml or config.toml",
+        ) { _ ->
+            val result = HelixConfigLoader.loadConfig()
+            jp.titze.intellij.helix.config.HelixConfigWatcher.notifyReloadResult(result)
+        },
+        HelixCommandItem(
+            "config-open",
+            emptyList(),
+            "Open or create Helix intellij.toml in editor",
+        ) { editor ->
+            HelixConfigLoader.openOrCreateConfigFile(editor.project)
+        },
         HelixCommandItem("toggle-helix", emptyList(), "Toggle Helix modal editing mode globally") { _ ->
             val settings = jp.titze.intellij.helix.settings.HelixSettings.instance
             settings.enabled = !settings.enabled

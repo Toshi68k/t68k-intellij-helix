@@ -4,8 +4,13 @@
 package jp.titze.intellij.helix.ui
 
 import jp.titze.intellij.helix.HelixBundle
+import jp.titze.intellij.helix.keymap.HelixCommandRegistry
+import jp.titze.intellij.helix.keymap.HelixKeyStroke
+import jp.titze.intellij.helix.keymap.HelixKeymapManager
+import jp.titze.intellij.helix.keymap.HelixKeymapNode
 import jp.titze.intellij.helix.settings.HelixLineNavigationMode
 import jp.titze.intellij.helix.settings.HelixSettings
+import jp.titze.intellij.helix.state.HelixMode
 
 data class WhichKeyItem(
     val key: String,
@@ -222,7 +227,27 @@ object HelixWhichKeyMenus {
         WhichKeyItem("B", "View breakpoints", "dap_view_breakpoints", "ViewBreakpoints"),
     )
 
-    fun getMenu(prefix: String): Pair<String, List<WhichKeyItem>>? = when (prefix) {
+    fun getMenu(prefix: String): Pair<String, List<WhichKeyItem>>? = getMenu(prefix, HelixMode.NORMAL)
+
+    fun getMenu(prefix: String, mode: HelixMode): Pair<String, List<WhichKeyItem>>? {
+        val base = getBaseMenu(prefix)
+        val branchChildren = HelixKeymapManager.getBranchChildren(mode, prefix)
+
+        if (base == null && branchChildren == null) {
+            return null
+        }
+
+        val title = base?.first ?: "${prefix.trim().uppercase()} MENU"
+        val baseItems = base?.second ?: emptyList()
+
+        if (branchChildren == null) {
+            return title to baseItems
+        }
+
+        return title to mergeMenuItems(baseItems, branchChildren)
+    }
+
+    private fun getBaseMenu(prefix: String): Pair<String, List<WhichKeyItem>>? = when (prefix) {
         " " -> HelixBundle.message("whichKey.menu.space") to spaceItems
         " G", "space G", "G", "dap" -> HelixBundle.message("whichKey.menu.debug") to debugItems
         "g" -> HelixBundle.message("whichKey.menu.goto") to gotoItems
@@ -238,4 +263,33 @@ object HelixWhichKeyMenus {
         "C-r", "Ctrl+r", "\u0012" -> HelixBundle.message("whichKey.menu.insertRegister") to registerItems
         else -> null
     }
+
+    private fun mergeMenuItems(
+        baseItems: List<WhichKeyItem>,
+        branchChildren: Map<HelixKeyStroke, HelixKeymapNode>,
+    ): List<WhichKeyItem> {
+        val result = baseItems.toMutableList()
+        for ((stroke, child) in branchChildren) {
+            val keyStr = stroke.toDisplayString()
+            val action = child.action ?: ""
+            val label = child.label ?: HelixCommandRegistry.get(action)?.description ?: action
+            val intelliJ = child.intelliJAction
+                ?: HelixCommandRegistry.get(action)?.intelliJAction
+                ?: extractIntelliJAction(action)
+
+            val existingIndex = result.indexOfFirst { it.key == keyStr }
+            if (existingIndex >= 0) {
+                val baseItem = result[existingIndex]
+                if (action != baseItem.helixCommand) {
+                    result[existingIndex] = WhichKeyItem(keyStr, label, action, intelliJ)
+                }
+            } else {
+                result.add(WhichKeyItem(keyStr, label, action, intelliJ))
+            }
+        }
+        return result
+    }
+
+    private fun extractIntelliJAction(action: String): String =
+        if (action.startsWith(":action ")) action.removePrefix(":action ").trim() else ""
 }

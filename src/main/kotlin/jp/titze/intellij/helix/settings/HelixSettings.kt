@@ -61,6 +61,7 @@ class HelixSettingsState {
     var activateInCommitMessage: Boolean = false
     var activateInOtherEditors: Boolean = false
     var ctrlKeyOverrides: MutableMap<String, String> = mutableMapOf()
+    var customConfigPath: String = ""
 }
 
 @Service(Service.Level.APP)
@@ -224,6 +225,12 @@ class HelixSettings : PersistentStateComponent<HelixSettingsState> {
     override fun loadState(state: HelixSettingsState) {
         myState = state
     }
+
+    var customConfigPath: String
+        get() = myState.customConfigPath
+        set(value) {
+            myState.customConfigPath = value
+        }
 
     companion object {
         const val DEFAULT_JUMP_LIST_MAX_ENTRIES = 100
