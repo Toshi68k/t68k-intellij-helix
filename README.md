@@ -663,30 +663,44 @@ Helix Keymap supports two switchable search and regex prompt styles:
 - In IntelliJ Settings: **Preferences / Settings &rarr; Tools &rarr; Helix Keymap**
 - In the `:` Command Picker: `:toggle-search-ui`, `:set search-ui=inline`, or `:set search-ui=popup`
 
-#### Editor Behavior Settings
+#### Settings & Visual Keymap Explorer
 
-Configure Helix Keymap preferences under **Preferences / Settings &rarr; Tools &rarr; Helix Keymap**:
+Configure Helix Keymap preferences under **Preferences / Settings &rarr; Tools &rarr; Helix Keymap**, organized into 4 dedicated tabs:
 
-- **Line Navigation (Vertical Movement)** *(default: Stock Helix)*: Toggle between **Stock Helix** (`j`/`k` move by
-  visual screen lines respecting soft wraps, `gj`/`gk` jump physical document lines) and **Vim Standard** (`j`/`k` move
-  by physical lines, `gj`/`gk` move by visual lines). Can also be changed via `:toggle-line-nav` or
-  `:set line-nav=helix|vim`.
-- **Which-Key Chord Menus**: Enable or disable Which-Key chord popups on chord prefixes (`Space`, `g`, `m`, `[`, `]`,
-  `z`, `Ctrl+w`), choose default hint display style (Helix command names vs IntelliJ Action IDs), and set maximum
-  columns (3 columns compact vs 2 columns classic).
-- **Reset to Normal mode on tab switch / file open** *(default: enabled)*: Ensures each tab starts in **Normal** mode
-  with block cursor whenever a file is opened or tabs are switched. Can be disabled if you prefer retaining active modes
-  (such as Insert mode) across tabs.
-- **Search and Selection Prompt UI**: Toggle between Stock Helix inline bottom bar or Popup dialog.
-- **Prompt History Capacity**: Set maximum remembered prompt history entries per category (10–500, default: 100).
-- **Jump List Capacity**: Set maximum recorded jump entries (10–1000).
-- **Scratch Window Splits** *(default: Interactive)*: Configure whether `<C-w>ns` / `<C-w>nv` prompts for file
-  type/language (`NewScratchFile`) or opens an instant plain-text buffer without dialog (`NewScratchBuffer`). Can also be
-  changed via `:toggle-scratch-mode` or `:set scratch-mode=interactive|buffer`.
-- **Color Theme**: Choose between Sync with IDE, Dark, or Light themes for all Helix overlays.
-- **Keymap Configuration File**: Browse or specify a custom `intellij.toml` or `config.toml` path,
-  open/create it directly in the editor, manually reload keymaps, reset to default, and monitor live binding count,
-  diagnostics, and CLI safety warnings.
+##### Tab 1: General
+Structured into 3 cohesive domains with native IntelliJ section dividers:
+- **Activation & Editor Scope**:
+  - **Master Enable**: Toggle Helix modal editing across the IDE.
+  - **Editor Environments**: Configure active scopes for Main text editors, Diff viewers, Consoles, and Commit messages.
+  - **Color Theme**: Choose between Sync with IDE, Dark, or Light themes for all Helix overlays.
+- **Editing & Navigation Behavior**:
+  - **Line Navigation (Vertical Movement)** *(default: Stock Helix)*: Toggle between **Stock Helix** (`j`/`k` move visual screen lines, `gj`/`gk` jump physical document lines) and **Vim Standard** (`j`/`k` move physical lines, `gj`/`gk` move visual lines). Also toggled via `:toggle-line-nav`.
+  - **Scratch Window Splits** *(default: Interactive)*: Configure whether `<C-w>ns` / `<C-w>nv` prompts for file language (`NewScratchFile`) or opens an instant plain-text buffer (`NewScratchBuffer`).
+  - **System Clipboard**: Toggle synchronization of system clipboard with the default `"` register.
+  - **Reset to Normal Mode on Tab Switch** *(default: enabled)*: Ensures each tab starts in Normal mode with a block cursor.
+  - **Jump List Capacity**: Set maximum recorded jump entries (10–1000).
+- **Visual Prompts & Feedback**:
+  - **Search & Selection Prompt UI**: Toggle between Stock Helix inline bottom bar and Popup dialog.
+  - **Prompt History Capacity**: Set maximum remembered prompt history entries per category (10–500, default: 100).
+  - **Which-Key Chord Menus**: Enable or disable Which-Key chord popups, choose hint display style (Helix command names vs IntelliJ Action IDs), and configure column layout (3 columns compact vs 2 columns classic).
+
+##### Tab 2: Keybindings (Visual Keymap Explorer)
+An interactive explorer for discovering, searching, and inspecting active Helix keybindings:
+- **Mode Selector**: Switch between **Normal**, **Select**, and **Insert** modes.
+- **Prefix Filter**: Filter table to specific chord families (`All`, `Space Chords`, `Goto (g)`, `View (z)`, `Match (m)`, `Window (Ctrl-w)`, `Bracket ([ / ])`, or `Single Keys`).
+- **Live Search**: Real-time filtering by shortcut sequence, canonical Helix command, or action description.
+- **Find Shortcut by Keystroke (`[⌨]`)**: Click the keyboard recorder button and press any key combination or chord (e.g. `space f`, `g d`, `C-s`) to instantly look up the assigned command.
+- **Provenance Badges**: Clearly shows whether each binding is stock `[Default]`, custom from `[custom: intellij]`, `[custom: config]`, or disabled `[no_op]`.
+- **Direct Links**: Quick buttons to open the active TOML configuration or refresh active keybindings.
+
+##### Tab 3: Ctrl Keys
+Manage OS-level keystroke ownership for all 26 control keys (`Ctrl+A` through `Ctrl+Z`) in Normal and Insert modes, choosing whether IntelliJ IDEA or Helix processes each shortcut.
+
+##### Tab 4: Config File (TOML)
+Manage and diagnose your `intellij.toml` or `config.toml` configuration:
+- Configure custom file paths with file chooser.
+- Inspect live diagnostics: active binding count, syntax error reporting, and CLI compatibility warnings.
+- Quick actions: **Open in Editor**, **Reload Keymap**, and **Reset to Default**.
 
 #### Keymap Customization (`intellij.toml` / `config.toml`)
 
@@ -822,6 +836,7 @@ t68k-intellij-helix/
 │           ├── HelixUiPopupsTest.kt           # Tests for popups and menus
 │           ├── HelixShellActionsTest.kt       # Tests for shell execution and piping
 │           └── settings/
+│               ├── HelixKeymapBrowserTest.kt  # Tests for visual keymap explorer and tabbed settings
 │               └── HelixSettingsTest.kt       # Tests for plugin settings, scope, and shortcut policies
 └── README.md
 ```

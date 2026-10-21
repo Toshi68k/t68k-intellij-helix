@@ -14,6 +14,7 @@ import jp.titze.intellij.helix.HelixBundle
 import jp.titze.intellij.helix.config.HelixConfigLoader
 import jp.titze.intellij.helix.config.HelixConfigWatcher
 import java.awt.BorderLayout
+import java.awt.Dimension
 import java.awt.FlowLayout
 import java.io.File
 import javax.swing.Box
@@ -21,6 +22,9 @@ import javax.swing.BoxLayout
 import javax.swing.JButton
 import javax.swing.JPanel
 
+/**
+ * Settings panel for managing the Helix TOML configuration file path, diagnostics, and reload actions.
+ */
 class HelixConfigPathPanel {
 
     val pathField = TextFieldWithBrowseButton()
@@ -29,9 +33,10 @@ class HelixConfigPathPanel {
     val panel: JPanel = JPanel(BorderLayout(0, 8))
 
     init {
+        panel.border = JBUI.Borders.empty(16)
+
         val titleLabel = JBLabel(HelixBundle.message("settings.config.title"))
         titleLabel.font = JBUI.Fonts.label().asBold()
-        panel.add(titleLabel, BorderLayout.NORTH)
 
         setupPathField()
 
@@ -83,21 +88,30 @@ class HelixConfigPathPanel {
         warningLabel.alignmentX = java.awt.Component.LEFT_ALIGNMENT
         helpLabel.alignmentX = java.awt.Component.LEFT_ALIGNMENT
 
+        pathField.maximumSize = Dimension(
+            Int.MAX_VALUE,
+            maxOf(pathField.preferredSize.height, JBUI.scale(30)),
+        )
+
         val contentBox = JPanel()
         contentBox.layout = BoxLayout(contentBox, BoxLayout.Y_AXIS)
         contentBox.border = JBUI.Borders.emptyLeft(12)
 
         contentBox.add(pathField)
-        contentBox.add(Box.createVerticalStrut(JBUI.scale(6)))
+        contentBox.add(Box.createVerticalStrut(JBUI.scale(8)))
         contentBox.add(buttonPanel)
-        contentBox.add(Box.createVerticalStrut(JBUI.scale(6)))
+        contentBox.add(Box.createVerticalStrut(JBUI.scale(8)))
         contentBox.add(statusLabel)
         contentBox.add(Box.createVerticalStrut(JBUI.scale(4)))
         contentBox.add(warningLabel)
         contentBox.add(Box.createVerticalStrut(JBUI.scale(8)))
         contentBox.add(helpLabel)
 
-        panel.add(contentBox, BorderLayout.CENTER)
+        val topContainer = JPanel(BorderLayout(0, 8))
+        topContainer.add(titleLabel, BorderLayout.NORTH)
+        topContainer.add(contentBox, BorderLayout.CENTER)
+
+        panel.add(topContainer, BorderLayout.NORTH)
         refreshStatus()
     }
 
