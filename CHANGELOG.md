@@ -5,6 +5,20 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.3.2]
+
+### Fixed
+
+- **Comprehensive Default Keymap Trie Population & Category Parity**:
+  - Populated all **Match (`MATCH`)** chords (`mm`, `ms`, `mr`, `md`, `ma`, `mi`) in the default runtime trie so that match/surround actions and text objects are fully discoverable and searchable in the Keybindings Explorer.
+  - Populated all **Bracket / Unimpaired (`BRACKET`)** navigation chords for both `[` (backward) and `]` (forward): paragraph (`p`), comment (`c`), function (`f`), class/type (`t`), diagnostic/error (`d`, `D`), change (`g`, `G`), entry (`e`), spelling error (`s`), test (`T`), parameter (`a`), and blank lines (`space`).
+  - Populated missing **Goto (`GOTO`)** chords (`g.`, `g|`, `gw`), **View (`VIEW`)** chords (`zd`, `zu`, `zf`, `zF`), **Window (`WINDOW`)** split and view swap chords (`C-w f`, `C-w F`, `C-w H`, `C-w J`, `C-w K`, `C-w L`), and **Space (`SPACE`)** chords (`space '`, `space h`, `space w`).
+  - Populated missing **Standalone Motions & Alt Chords (`STANDALONE`)**: `G`, `q`, `Q`, `A-d`, `A-c`, `A-.`, `A-;`, `A-:`, `A-k`, `A-K`, `A-s`, `A-,`, `A-C`, `A--`, `A-_`, `A-x`, `A-o`, `A-i`, `A-p`, `A-n`.
+- **Extended Canonical Commands & Parametric Submode Routing**:
+  - Registered unimpaired commands in `HelixExtendedCommands` with repeat bracket motion history tracking (`HelixMotionHistory.recordBracket`).
+  - Registered DAP canonical commands (`dap_toggle_breakpoint`, `dap_continue`, `dap_step_in`, `dap_next`, `dap_step_out`, `dap_pause`, `dap_restart`, etc.) and window view swapping commands (`swap_view_left`, `swap_view_down`, etc.).
+  - Enhanced `HelixKeyHandler` with parametric submode bypass so that multi-step textobject and surround sequences (`mi`, `ma`, `ms`) delegate directly to `HelixMatchKeymap`.
+
 ## [0.3.1]
 
 ### Added

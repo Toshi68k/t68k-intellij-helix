@@ -79,7 +79,10 @@ object HelixKeyHandler {
 
     private val PARAMETRIC_PREFIXES = setOf("r", "f", "t", "F", "T", "\"", "C-r")
 
-    private fun isParametricPrefix(prefix: String): Boolean = prefix in PARAMETRIC_PREFIXES || prefix.startsWith("C-w")
+    private fun isParametricPrefix(prefix: String): Boolean =
+        prefix in PARAMETRIC_PREFIXES || prefix.startsWith("C-w") || isMatchSubmenu(prefix)
+
+    private fun isMatchSubmenu(prefix: String): Boolean = prefix.startsWith("m") && prefix != "m"
 
     private fun handlePrefixInitiation(charTyped: Char, editor: Editor, state: HelixEditorState): Boolean {
         if (charTyped == '\u0017') {
