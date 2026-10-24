@@ -32,6 +32,8 @@ data class HelixKeybindingRow(
     val description: String,
     val source: BindingSource,
     val prefixGroup: KeymapPrefixGroup,
+    val isShadowed: Boolean = false,
+    val conflictReason: String? = null,
 )
 
 /**
@@ -63,6 +65,12 @@ object HelixKeymapExtractor {
             val source = determineSource(currentPath, action, mode, defaultTrie)
             val prefixGroup = determinePrefixGroup(rawSequence)
             val description = resolveDescription(node, action)
+            val isShadowed = node.children.isNotEmpty()
+            val conflictReason = if (isShadowed) {
+                "Shadowed: shortcut '$displayShortcut' binds '$action', but child chords take precedence"
+            } else {
+                null
+            }
 
             outRows.add(
                 HelixKeybindingRow(
@@ -73,6 +81,8 @@ object HelixKeymapExtractor {
                     description = description,
                     source = source,
                     prefixGroup = prefixGroup,
+                    isShadowed = isShadowed,
+                    conflictReason = conflictReason,
                 ),
             )
         }

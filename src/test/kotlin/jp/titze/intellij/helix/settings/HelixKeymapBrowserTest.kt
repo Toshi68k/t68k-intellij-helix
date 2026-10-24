@@ -13,6 +13,8 @@ import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.types.shouldBeInstanceOf
 import jp.titze.intellij.helix.editor.HelixInsertTracker
 import jp.titze.intellij.helix.keymap.BindingSource
+import jp.titze.intellij.helix.keymap.HelixActionExtractor
+import jp.titze.intellij.helix.keymap.HelixIntelliJAction
 import jp.titze.intellij.helix.keymap.HelixKeymapExtractor
 import jp.titze.intellij.helix.keymap.HelixKeymapManager
 import jp.titze.intellij.helix.keymap.KeymapPrefixGroup
@@ -111,6 +113,40 @@ class HelixKeymapBrowserTest : BasePlatformTestCase() {
 
         configurable.isModified.shouldBeFalse()
         configurable.disposeUIResources()
+    }
+
+    fun testActionExtractorFiltersQueries() {
+        val actions = listOf(
+            HelixIntelliJAction("ReformatCode", "Reformat Code", "Formats active file", "⌥⌘L"),
+            HelixIntelliJAction("ActivateTerminalToolWindow", "Terminal", "Opens terminal", "⌥F12"),
+            HelixIntelliJAction("Git.Commit", "Commit...", "Commit changes to git", "⌘K"),
+        )
+
+        val emptyFilter = HelixActionExtractor.filterActions(actions, "")
+        emptyFilter.size shouldBe 3
+
+        val termFilter = HelixActionExtractor.filterActions(actions, "terminal")
+        termFilter.size shouldBe 1
+        termFilter.first().actionId shouldBe "ActivateTerminalToolWindow"
+
+        val multiTermFilter = HelixActionExtractor.filterActions(actions, "format file")
+        multiTermFilter.size shouldBe 1
+        multiTermFilter.first().actionId shouldBe "ReformatCode"
+
+        val noMatch = HelixActionExtractor.filterActions(actions, "nonexistentaction")
+        noMatch.isEmpty().shouldBeTrue()
+    }
+
+    fun testKeymapExtractorFlagsShadowedRows() {
+        HelixKeymapManager.bind(HelixMode.NORMAL, "g", "move_char_left")
+
+        val normalRows = HelixKeymapExtractor.extractRows(HelixMode.NORMAL)
+        val gRow = normalRows.firstOrNull { it.rawSequence == "g" }
+        gRow.shouldNotBeNull()
+        gRow.command shouldBe "move_char_left"
+        gRow.isShadowed.shouldBeTrue()
+        gRow.conflictReason.shouldNotBeNull()
+        gRow.conflictReason!!.contains("child chords take precedence").shouldBeTrue()
     }
 
     private fun Int.shouldBeGreaterThan(other: Int) {

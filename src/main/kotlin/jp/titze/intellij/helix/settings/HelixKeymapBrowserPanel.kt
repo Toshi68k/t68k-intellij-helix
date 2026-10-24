@@ -3,7 +3,9 @@
 
 package jp.titze.intellij.helix.settings
 
+import com.intellij.openapi.ide.CopyPasteManager
 import com.intellij.openapi.project.ProjectManager
+import com.intellij.ui.JBColor
 import com.intellij.ui.SearchTextField
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.table.JBTable
@@ -18,7 +20,9 @@ import jp.titze.intellij.helix.keymap.KeymapPrefixGroup
 import jp.titze.intellij.helix.state.HelixMode
 import java.awt.BorderLayout
 import java.awt.Component
+import java.awt.Dimension
 import java.awt.FlowLayout
+import java.awt.datatransfer.StringSelection
 import java.awt.font.TextAttribute
 import javax.swing.Box
 import javax.swing.JButton
@@ -77,8 +81,26 @@ class HelixKeymapBrowserPanel {
         val rightControls = JPanel(BorderLayout(4, 0))
         searchField.textEditor.emptyText.text = HelixBundle.message("settings.keymap.search.placeholder")
         recordButton.toolTipText = HelixBundle.message("settings.keymap.record.tooltip")
+
+        val actionButtons = JPanel(FlowLayout(FlowLayout.LEFT, 4, 0))
+        actionButtons.add(recordButton)
+
+        val browseActionsBtn = JButton(HelixBundle.message("settings.keymap.btn.browseActions"))
+        browseActionsBtn.toolTipText = HelixBundle.message("settings.keymap.browseActions.tooltip")
+        browseActionsBtn.addActionListener {
+            val dialog = HelixActionPickerDialog(panel)
+            if (dialog.showAndGet()) {
+                val cmd = dialog.selectedTomlCommand
+                if (cmd != null) {
+                    CopyPasteManager.getInstance().setContents(StringSelection(cmd))
+                    statusLabel.text = HelixBundle.message("settings.keymap.status.copiedAction", cmd)
+                }
+            }
+        }
+        actionButtons.add(browseActionsBtn)
+
         rightControls.add(searchField, BorderLayout.CENTER)
-        rightControls.add(recordButton, BorderLayout.EAST)
+        rightControls.add(actionButtons, BorderLayout.EAST)
 
         bar.add(leftControls, BorderLayout.WEST)
         bar.add(rightControls, BorderLayout.CENTER)
@@ -118,6 +140,7 @@ class HelixKeymapBrowserPanel {
         table.fillsViewportHeight = true
         table.setShowGrid(false)
         table.rowHeight = JBUI.scale(24)
+        table.preferredScrollableViewportSize = Dimension(JBUI.scale(550), JBUI.scale(220))
 
         table.columnModel.getColumn(0).preferredWidth = JBUI.scale(120)
         table.columnModel.getColumn(1).preferredWidth = JBUI.scale(220)
@@ -174,7 +197,16 @@ class HelixKeymapBrowserPanel {
 
     private fun updateStatus(visibleCount: Int) {
         val customCount = allRowsForCurrentMode.count { it.source != BindingSource.DEFAULT }
-        statusLabel.text = HelixBundle.message("settings.keymap.status.count", visibleCount, customCount)
+        val shadowedCount = allRowsForCurrentMode.count { it.isShadowed }
+        val baseMsg = HelixBundle.message("settings.keymap.status.count", visibleCount, customCount)
+        if (shadowedCount > 0) {
+            val warning = HelixBundle.message("settings.keymap.conflict.warning", shadowedCount)
+            statusLabel.text = "$baseMsg  •  $warning"
+            statusLabel.foreground = JBColor.RED
+        } else {
+            statusLabel.text = baseMsg
+            statusLabel.foreground = UIUtil.getContextHelpForeground()
+        }
     }
 
     class HelixKeymapTableModel : AbstractTableModel() {
@@ -210,7 +242,7 @@ class HelixKeymapBrowserPanel {
         }
     }
 
-    private class SourceCellRenderer : DefaultTableCellRenderer() {
+    private inner class SourceCellRenderer : DefaultTableCellRenderer() {
         override fun getTableCellRendererComponent(
             table: JTable?,
             value: Any?,
@@ -221,31 +253,46 @@ class HelixKeymapBrowserPanel {
         ): Component {
             val comp = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column)
             val source = value as? BindingSource ?: return comp
+            val modelRow = table?.convertRowIndexToModel(row) ?: row
+            val rowData = tableModel.getRow(modelRow)
 
-            text = "[${source.displayName}]"
-            if (!isSelected) {
-                when (source) {
-                    BindingSource.DEFAULT -> {
-                        foreground = UIUtil.getContextHelpForeground()
-                    }
-
-                    BindingSource.CUSTOM_INTELLIJ -> {
-                        foreground = JBUI.CurrentTheme.Link.Foreground.ENABLED
-                    }
-
-                    BindingSource.CUSTOM_CONFIG -> {
-                        foreground = JBUI.CurrentTheme.Focus.focusColor()
-                    }
-
-                    BindingSource.NO_OP -> {
-                        foreground = JBUI.CurrentTheme.Label.disabledForeground()
-                        val attributes = font.attributes.toMutableMap()
-                        attributes[TextAttribute.STRIKETHROUGH] = TextAttribute.STRIKETHROUGH_ON
-                        font = font.deriveFont(attributes)
-                    }
+            if (rowData != null && rowData.isShadowed) {
+                text = "[${source.displayName}] ⚠"
+                toolTipText = rowData.conflictReason
+                if (!isSelected) {
+                    foreground = JBColor.RED
+                }
+            } else {
+                text = "[${source.displayName}]"
+                toolTipText = null
+                if (!isSelected) {
+                    applySourceForeground(source)
                 }
             }
             return comp
+        }
+
+        private fun applySourceForeground(source: BindingSource) {
+            when (source) {
+                BindingSource.DEFAULT -> {
+                    foreground = UIUtil.getContextHelpForeground()
+                }
+
+                BindingSource.CUSTOM_INTELLIJ -> {
+                    foreground = JBUI.CurrentTheme.Link.Foreground.ENABLED
+                }
+
+                BindingSource.CUSTOM_CONFIG -> {
+                    foreground = JBUI.CurrentTheme.Focus.focusColor()
+                }
+
+                BindingSource.NO_OP -> {
+                    foreground = JBUI.CurrentTheme.Label.disabledForeground()
+                    val attributes = font.attributes.toMutableMap()
+                    attributes[TextAttribute.STRIKETHROUGH] = TextAttribute.STRIKETHROUGH_ON
+                    font = font.deriveFont(attributes)
+                }
+            }
         }
     }
 }

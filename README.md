@@ -690,6 +690,8 @@ An interactive explorer for discovering, searching, and inspecting active Helix 
 - **Prefix Filter**: Filter table to specific chord families (`All`, `Space Chords`, `Goto (g)`, `View (z)`, `Match (m)`, `Window (Ctrl-w)`, `Bracket ([ / ])`, or `Single Keys`).
 - **Live Search**: Real-time filtering by shortcut sequence, canonical Helix command, or action description.
 - **Find Shortcut by Keystroke (`[⌨]`)**: Click the keyboard recorder button and press any key combination or chord (e.g. `space f`, `g d`, `C-s`) to instantly look up the assigned command.
+- **IntelliJ Action Discovery (`[ 🔍 Browse Actions... ]`)**: Launch a searchable action picker dialog to explore all registered IntelliJ IDE actions, inspect native IDE shortcuts, and copy ready-to-paste `:action <ActionId>` commands.
+- **Trie Conflict & Shadowing Warnings**: Automatic trie analysis detects shadowed shortcuts (e.g. binding `g` or `space` directly when child chords `gd`, `gh`, `space f` exist). Shadowed bindings are flagged with `⚠`, conflict tooltips, and diagnostics during TOML configuration validation.
 - **Provenance Badges**: Clearly shows whether each binding is stock `[Default]`, custom from `[custom: intellij]`, `[custom: config]`, or disabled `[no_op]`.
 - **Direct Links**: Quick buttons to open the active TOML configuration or refresh active keybindings.
 
