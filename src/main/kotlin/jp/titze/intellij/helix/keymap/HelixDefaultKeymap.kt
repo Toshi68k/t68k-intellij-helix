@@ -23,6 +23,8 @@ object HelixDefaultKeymap {
         populateGotoChords(trie)
         populateViewChords(trie)
         populateWindowChords(trie)
+        populateMatchChords(trie)
+        populateBracketChords(trie)
     }
 
     private fun bind(trie: HelixKeymapTrie, seq: String, cmd: String, label: String? = null) {
@@ -54,6 +56,7 @@ object HelixDefaultKeymap {
         bind(trie, "(", "rotate_selections_backward", "Rotate selections backward")
         bind(trie, ")", "rotate_selections_forward", "Rotate selections forward")
         bind(trie, "C", "copy_selection_on_next_line", "Copy selection on next line")
+        bind(trie, "G", "goto_last_line", "Goto last line")
         bind(trie, "C-f", "page_down", "Page down")
         bind(trie, "C-b", "page_up", "Page up")
         bind(trie, "C-d", "half_page_down", "Half page down")
@@ -81,6 +84,8 @@ object HelixDefaultKeymap {
         bind(trie, "v", "select_mode", "Select mode")
         bind(trie, "u", "undo", "Undo")
         bind(trie, "U", "redo", "Redo")
+        bind(trie, "q", "replay_macro", "Replay macro")
+        bind(trie, "Q", "record_macro", "Record macro")
         bind(trie, "K", "keep_selections", "Keep matching selections")
         bind(trie, "=", "format_selections", "Format selections")
         bind(trie, ">", "indent", "Indent")
@@ -100,6 +105,23 @@ object HelixDefaultKeymap {
         bind(trie, "|", "shell_pipe", "Pipe through shell")
         bind(trie, "!", "shell_insert", "Insert from shell")
         bind(trie, "$", "shell_keep_pipe", "Filter through shell")
+        bind(trie, "A-d", "delete_selection_noyank", "Delete selection without yanking")
+        bind(trie, "A-c", "change_selection_noyank", "Change selection without yanking")
+        bind(trie, "A-.", "repeat_last_motion", "Repeat last motion")
+        bind(trie, "A-;", "flip_selections", "Flip selection cursor and anchor")
+        bind(trie, "A-:", "ensure_selections_forward", "Ensure selections are forward")
+        bind(trie, "A-k", "keep_selections", "Keep matching selections")
+        bind(trie, "A-K", "remove_selections", "Remove matching selections")
+        bind(trie, "A-s", "split_selection_on_newlines", "Split selection on newlines")
+        bind(trie, "A-,", "remove_primary_selection", "Remove primary selection")
+        bind(trie, "A-C", "copy_selection_on_prev_line", "Copy selection on previous line")
+        bind(trie, "A--", "merge_consecutive_selections", "Merge all selections")
+        bind(trie, "A-_", "merge_selections", "Merge contiguous selections")
+        bind(trie, "A-x", "shrink_to_line_bounds", "Shrink to line bounds")
+        bind(trie, "A-o", "expand_selection", "Expand selection")
+        bind(trie, "A-i", "shrink_selection", "Shrink selection")
+        bind(trie, "A-p", "select_prev_sibling", "Select previous sibling")
+        bind(trie, "A-n", "select_next_sibling", "Select next sibling")
     }
 
     private fun populateSpaceChords(trie: HelixKeymapTrie) {
@@ -126,6 +148,9 @@ object HelixDefaultKeymap {
         bind(trie, "space P", "paste_clipboard_before", "Paste clipboard before")
         bind(trie, "space R", "replace_clipboard", "Replace with clipboard")
         bind(trie, "space k", "hover", "Hover / Documentation")
+        bind(trie, "space '", "last_picker", "Open last picker")
+        bind(trie, "space h", "select_references", "Find references / usages")
+        bind(trie, "space w", "window_mode", "Window mode")
         bind(trie, "space ?", "command_palette", "Command palette")
     }
 
@@ -137,7 +162,7 @@ object HelixDefaultKeymap {
         bind(trie, "g r", "goto_reference", "Goto reference")
         bind(trie, "g n", "goto_next_buffer", "Next buffer")
         bind(trie, "g p", "goto_previous_buffer", "Previous buffer")
-        bind(trie, "g .", "goto_last_change", "Jump to last change")
+        bind(trie, "g .", "goto_last_modification", "Jump to last change")
         bind(trie, "g h", "goto_line_start", "Goto line start")
         bind(trie, "g l", "goto_line_end", "Goto line end")
         bind(trie, "g s", "goto_first_nonwhitespace", "Goto first non-whitespace")
@@ -149,6 +174,8 @@ object HelixDefaultKeymap {
         bind(trie, "g e", "goto_last_line", "Goto last line")
         bind(trie, "g a", "goto_last_accessed_file", "Last accessed file")
         bind(trie, "g m", "goto_last_modified_file", "Last modified file")
+        bind(trie, "g |", "goto_column", "Goto column")
+        bind(trie, "g w", "goto_word", "Jump to word")
     }
 
     private fun populateViewChords(trie: HelixKeymapTrie) {
@@ -159,6 +186,10 @@ object HelixDefaultKeymap {
         bind(trie, "z m", "align_view_middle", "Align view middle")
         bind(trie, "z j", "scroll_down", "Scroll view down")
         bind(trie, "z k", "scroll_up", "Scroll view up")
+        bind(trie, "z d", "page_cursor_half_down", "Scroll half page down")
+        bind(trie, "z u", "page_cursor_half_up", "Scroll half page up")
+        bind(trie, "z f", "page_down", "Scroll page down")
+        bind(trie, "z F", "page_up", "Scroll page up")
     }
 
     private fun populateWindowChords(trie: HelixKeymapTrie) {
@@ -174,6 +205,55 @@ object HelixDefaultKeymap {
         bind(trie, "C-w q", "wclose", "Close split")
         bind(trie, "C-w c", "wclose", "Close split")
         bind(trie, "C-w o", "wonly", "Close other splits")
+        bind(trie, "C-w f", "goto_file_hsplit", "Goto file (horizontal split)")
+        bind(trie, "C-w F", "goto_file_vsplit", "Goto file (vertical split)")
+        bind(trie, "C-w H", "swap_view_left", "Swap split left")
+        bind(trie, "C-w J", "swap_view_down", "Swap split down")
+        bind(trie, "C-w K", "swap_view_up", "Swap split up")
+        bind(trie, "C-w L", "swap_view_right", "Swap split right")
+    }
+
+    private fun populateMatchChords(trie: HelixKeymapTrie) {
+        bind(trie, "m m", "match_brackets", "Match opening/closing bracket")
+        bind(trie, "m s", "surround_add", "Surround add")
+        bind(trie, "m r", "surround_replace", "Surround replace")
+        bind(trie, "m d", "surround_delete", "Surround delete")
+        bind(trie, "m a", "select_textobject_around", "Select textobject around")
+        bind(trie, "m i", "select_textobject_inner", "Select textobject inner")
+    }
+
+    private fun populateBracketChords(trie: HelixKeymapTrie) {
+        bind(trie, "[ d", "goto_prev_diag", "Previous diagnostic")
+        bind(trie, "[ D", "goto_first_diag", "First diagnostic")
+        bind(trie, "[ f", "goto_prev_function", "Previous function")
+        bind(trie, "[ t", "goto_prev_class", "Previous type definition")
+        bind(trie, "[ a", "goto_prev_parameter", "Previous parameter")
+        bind(trie, "[ c", "goto_prev_comment", "Previous comment")
+        bind(trie, "[ T", "goto_prev_test", "Previous test")
+        bind(trie, "[ p", "goto_prev_paragraph", "Previous paragraph")
+        bind(trie, "[ g", "goto_prev_change", "Previous VCS change")
+        bind(trie, "[ G", "goto_first_change", "First VCS change")
+        bind(trie, "[ e", "goto_prev_entry", "Previous entry")
+        bind(trie, "[ s", "goto_prev_spelling_error", "Previous spelling error")
+        bind(trie, "[ space", "add_newline_above", "Add newline above")
+        bind(trie, "[ b", "goto_previous_buffer", "Previous buffer / tab")
+        bind(trie, "[ x", "goto_prev_xml_element", "Previous XML/HTML element")
+
+        bind(trie, "] d", "goto_next_diag", "Next diagnostic")
+        bind(trie, "] D", "goto_last_diag", "Last diagnostic")
+        bind(trie, "] f", "goto_next_function", "Next function")
+        bind(trie, "] t", "goto_next_class", "Next type definition")
+        bind(trie, "] a", "goto_next_parameter", "Next parameter")
+        bind(trie, "] c", "goto_next_comment", "Next comment")
+        bind(trie, "] T", "goto_next_test", "Next test")
+        bind(trie, "] p", "goto_next_paragraph", "Next paragraph")
+        bind(trie, "] g", "goto_next_change", "Next VCS change")
+        bind(trie, "] G", "goto_last_change", "Last VCS change")
+        bind(trie, "] e", "goto_next_entry", "Next entry")
+        bind(trie, "] s", "goto_next_spelling_error", "Next spelling error")
+        bind(trie, "] space", "add_newline_below", "Add newline below")
+        bind(trie, "] b", "goto_next_buffer", "Next buffer / tab")
+        bind(trie, "] x", "goto_next_xml_element", "Next XML/HTML element")
     }
 
     private fun populateInsert(trie: HelixKeymapTrie) {
@@ -186,5 +266,9 @@ object HelixDefaultKeymap {
         bind(trie, "C-r", "insert_register", "Insert register")
         bind(trie, "C-p", "signature_help", "Signature help")
         bind(trie, "C-x", "completion", "Completion")
+        bind(trie, "C-a", "insert_at_line_start", "Insert line start")
+        bind(trie, "C-e", "insert_at_line_end", "Insert line end")
+        bind(trie, "A-backspace", "delete_word_backward", "Delete word backward")
+        bind(trie, "A-d", "delete_word_forward", "Delete word forward")
     }
 }

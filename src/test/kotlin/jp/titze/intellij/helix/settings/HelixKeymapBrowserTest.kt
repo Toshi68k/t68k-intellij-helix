@@ -61,6 +61,35 @@ class HelixKeymapBrowserTest : BasePlatformTestCase() {
         moveH.shouldNotBeNull()
         moveH.command shouldBe "move_char_left"
         moveH.prefixGroup shouldBe KeymapPrefixGroup.STANDALONE
+
+        val matchMm = normalRows.firstOrNull { it.rawSequence == "m m" }
+        matchMm.shouldNotBeNull()
+        matchMm.command shouldBe "match_brackets"
+        matchMm.prefixGroup shouldBe KeymapPrefixGroup.MATCH
+
+        val matchMs = normalRows.firstOrNull { it.rawSequence == "m s" }
+        matchMs.shouldNotBeNull()
+        matchMs.command shouldBe "surround_add"
+        matchMs.prefixGroup shouldBe KeymapPrefixGroup.MATCH
+
+        val bracketPrevDiag = normalRows.firstOrNull { it.rawSequence == "[ d" }
+        bracketPrevDiag.shouldNotBeNull()
+        bracketPrevDiag.command shouldBe "goto_prev_diag"
+        bracketPrevDiag.prefixGroup shouldBe KeymapPrefixGroup.BRACKET
+
+        val bracketNextDiag = normalRows.firstOrNull { it.rawSequence == "] d" }
+        bracketNextDiag.shouldNotBeNull()
+        bracketNextDiag.command shouldBe "goto_next_diag"
+        bracketNextDiag.prefixGroup shouldBe KeymapPrefixGroup.BRACKET
+    }
+
+    fun testAllPrefixGroupsHaveDefaultBindings() {
+        val normalRows = HelixKeymapExtractor.extractRows(HelixMode.NORMAL)
+        val groups = KeymapPrefixGroup.entries.filter { it != KeymapPrefixGroup.ALL }
+        for (group in groups) {
+            val count = normalRows.count { it.prefixGroup == group }
+            (count > 0).shouldBeTrue()
+        }
     }
 
     fun testCustomAndNoOpBindingDetection() {
