@@ -17,6 +17,7 @@ import jp.titze.intellij.helix.config.HelixTomlParser
 import jp.titze.intellij.helix.keymap.HelixCommandRegistry
 import jp.titze.intellij.helix.keymap.HelixKeyHandler
 import jp.titze.intellij.helix.keymap.HelixKeyStroke
+import jp.titze.intellij.helix.keymap.HelixKeymapConflictDetector
 import jp.titze.intellij.helix.keymap.HelixKeymapManager
 import jp.titze.intellij.helix.keymap.HelixKeymapResult
 import jp.titze.intellij.helix.keymap.HelixKeymapTrie
@@ -448,7 +449,7 @@ class HelixKeymapTest : BasePlatformTestCase() {
             [keys.normal]
             "x" = "non_existent_command_xyz"
             "y" = "move_char_left"
-            "z" = ["half_page_down", "bad_macro_command"]
+            "q" = ["half_page_down", "bad_macro_command"]
         """.trimIndent()
 
         val validation = HelixConfigLoader.validateConfig(toml)
@@ -483,5 +484,35 @@ class HelixKeymapTest : BasePlatformTestCase() {
         val template = HelixConfigLoader.getStarterConfigTemplate()
         template.contains("intellij.toml").shouldBeTrue()
         template.contains(":action ActivateTerminalToolWindow").shouldBeTrue()
+    }
+
+    fun testDefaultKeymapsHaveZeroShadowedConflicts() {
+        val conflicts = HelixKeymapConflictDetector.detectAllActiveConflicts()
+        conflicts.isEmpty().shouldBeTrue()
+    }
+
+    fun testConflictDetectorIdentifiesShadowedLeaf() {
+        val trie = HelixKeymapTrie()
+        trie.bind(listOf(HelixKeyStroke.fromChar('g'), HelixKeyStroke.fromChar('d')), "goto_definition")
+        trie.bind(listOf(HelixKeyStroke.fromChar('g')), "move_char_left")
+
+        val conflicts = HelixKeymapConflictDetector.detectConflicts(HelixMode.NORMAL, trie)
+        conflicts.size shouldBe 1
+        val conflict = conflicts.first()
+        conflict.rawSequence shouldBe "g"
+        conflict.action shouldBe "move_char_left"
+        conflict.childChords.contains("g + d").shouldBeTrue()
+        conflict.description.contains("shadowed").shouldBeTrue()
+    }
+
+    fun testValidateConfigReportsShadowedConflictDiagnostics() {
+        val toml = """
+            [keys.normal]
+            g = "move_char_left"
+        """.trimIndent()
+
+        val result = HelixConfigLoader.validateConfig(toml)
+        result.errors.isNotEmpty().shouldBeTrue()
+        result.errors.any { it.contains("Conflict:") && it.contains("shadowed") }.shouldBeTrue()
     }
 }

@@ -81,6 +81,7 @@ class HelixCtrlKeyPanel {
     val panel: JPanel = JPanel(BorderLayout(0, 8))
 
     init {
+        panel.border = JBUI.Borders.empty(16)
         val titleLabel = JBLabel(HelixBundle.message("settings.ctrlKey.title"))
         titleLabel.font = JBUI.Fonts.label().asBold()
         panel.add(titleLabel, BorderLayout.NORTH)

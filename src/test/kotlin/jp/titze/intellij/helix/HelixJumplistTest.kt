@@ -11,6 +11,17 @@ import jp.titze.intellij.helix.jumplist.HelixJumpListService
 import jp.titze.intellij.helix.keymap.HelixKeyHandler
 
 class HelixJumplistTest : BasePlatformTestCase() {
+
+    override fun setUp() {
+        super.setUp()
+        jp.titze.intellij.helix.keymap.HelixKeymapManager.resetToDefaults()
+    }
+
+    override fun tearDown() {
+        jp.titze.intellij.helix.keymap.HelixKeymapManager.resetToDefaults()
+        super.tearDown()
+    }
+
     fun testManualSaveJumpWithCtrlS() {
         myFixture.configureByText("jump_test.txt", "line 1\nline 2\nline 3\nline 4\nline 5")
         val editor = myFixture.editor

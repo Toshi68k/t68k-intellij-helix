@@ -5,6 +5,7 @@ package jp.titze.intellij.helix.config
 
 import com.intellij.openapi.application.PathManager
 import jp.titze.intellij.helix.keymap.HelixCommandRegistry
+import jp.titze.intellij.helix.keymap.HelixKeymapConflictDetector
 import jp.titze.intellij.helix.keymap.HelixKeymapManager
 import jp.titze.intellij.helix.settings.HelixSettings
 import java.io.File
@@ -101,6 +102,10 @@ object HelixConfigLoader {
         diagnostics.addAll(parseResult.errors)
         for (binding in parseResult.bindings) {
             validateBinding(binding, diagnostics)
+        }
+        val conflicts = HelixKeymapConflictDetector.detectConflictsInBindings(parseResult.bindings)
+        for (conflict in conflicts) {
+            diagnostics.add("Conflict: ${conflict.description}")
         }
         return HelixConfigResult(null, parseResult.bindings.size, diagnostics)
     }

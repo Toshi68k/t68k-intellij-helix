@@ -5,6 +5,30 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+
+- **Tabbed Settings & Visual Keymap Explorer**:
+  - Replaced the monolithic vertical settings layout with a modern `JBTabbedPane` featuring 4 organized tabs: **General**, **Keybindings**, **Ctrl Keys**, and **Config File (TOML)**.
+  - **Structured General Settings Tab (Tab 1)**:
+    - Grouped settings into 3 cohesive domains using native IntelliJ `TitledSeparator` dividers:
+      1. **Activation & Editor Scope**: Master activation switch, editor targets (Diff, Console, Commit, Other), and Color Theme.
+      2. **Editing & Navigation Behavior**: Line navigation (`gh`/`gl` vs `0`/`$`), Scratch splits, Clipboard synchronization, Tab-switch Normal reset, and Jump list capacity.
+      3. **Visual Prompts & Feedback**: Search prompt UI style & history size, Which-Key popup hints (hint mode, column layout).
+
+  - **Visual Keybindings Explorer (Tab 2)**:
+    - Interactive, searchable table displaying all active runtime bindings from `HelixKeymapManager` across Normal, Select, and Insert modes.
+    - Chords filter dropdown (All, Space, Goto, View, Match, Window, Bracket, Single keys & other).
+    - Real-time text search filtering across shortcut combinations, canonical Helix commands, and action descriptions.
+    - **Find Shortcut by Keystroke (`[⌨]`)**: Shortcut recorder dialog capturing keystrokes and chords (e.g. `space f`, `g d`, `C-s`) to instantly locate bindings.
+    - **IntelliJ Action Discovery (`[ 🔍 Browse Actions... ]`)**: Searchable action picker dialog (`HelixActionPickerDialog`) allowing users to discover, search, and copy `:action <ActionId>` commands for any registered IntelliJ IDE action with shortcut and description preview.
+    - Provenance badges identifying binding sources (`[Default]`, `[custom: intellij]`, `[custom: config]`, `[no_op]`).
+    - Quick actions to open active TOML configuration file or refresh table data.
+    - Visual conflict warnings (`⚠`) highlighting shadowed keybindings where a shortcut cannot fire due to child chords taking precedence.
+  - **Keymap Trie Extractor (`HelixKeymapExtractor`)**: Flattens nested prefix tries into tabular rows with human-readable chord formatting and deterministic provenance detection.
+  - **Prefix Collision & Trie Shadowing Detector (`HelixKeymapConflictDetector`)**:
+    - Automated prefix trie analysis detecting shadowed bindings where a single key has an action assigned but is masked by child chords (e.g. binding `g` or `space` directly when child chords `gd`, `gh`, `space f` exist).
+    - Integrated into `HelixConfigLoader.validateConfig()`: TOML files containing shadowed shortcuts are automatically flagged with conflict diagnostics and child chord lists.
+
 ## [0.3.0]
 
 ### Added
