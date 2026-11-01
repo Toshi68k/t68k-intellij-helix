@@ -11,6 +11,8 @@ import jp.titze.intellij.helix.HelixBundle
 import jp.titze.intellij.helix.command.HelixDirectoryManager
 import jp.titze.intellij.helix.shell.HelixShellExecutor
 import jp.titze.intellij.helix.shell.HelixShellResult
+import jp.titze.intellij.helix.state.HelixMode
+import jp.titze.intellij.helix.state.HelixStateManager
 import jp.titze.intellij.helix.ui.HelixPromptType
 
 object HelixShellActions {
@@ -31,6 +33,11 @@ object HelixShellActions {
             HelixPromptType.KEEP_PIPE -> keepPipeSelections(editor, trimmed, baseSnapshot)
             HelixPromptType.PIPE_TO -> pipeToSelections(editor, trimmed, baseSnapshot)
             else -> Unit
+        }
+
+        val state = HelixStateManager.getOrCreate(editor)
+        if (state.mode == HelixMode.SELECT) {
+            state.setMode(HelixMode.NORMAL)
         }
     }
 
@@ -61,6 +68,10 @@ object HelixShellActions {
             editor,
             HelixBundle.message("status.shell.piped", results.size, command),
         )
+        val state = HelixStateManager.getOrCreate(editor)
+        if (state.mode == HelixMode.SELECT) {
+            state.setMode(HelixMode.NORMAL)
+        }
         return true
     }
 
@@ -108,6 +119,10 @@ object HelixShellActions {
 
         val actionName = if (append) "Appended" else "Inserted"
         HelixDirectoryManager.setStatus(editor, "$actionName output of '$command'")
+        val state = HelixStateManager.getOrCreate(editor)
+        if (state.mode == HelixMode.SELECT) {
+            state.setMode(HelixMode.NORMAL)
+        }
         return true
     }
 

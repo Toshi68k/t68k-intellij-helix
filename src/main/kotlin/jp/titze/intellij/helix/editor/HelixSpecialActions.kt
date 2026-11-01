@@ -10,6 +10,7 @@ import jp.titze.intellij.helix.action.HelixActions
 import jp.titze.intellij.helix.jumplist.HelixJumpListService
 import jp.titze.intellij.helix.keymap.HelixKeyHandler
 import jp.titze.intellij.helix.motion.HelixMotions
+import jp.titze.intellij.helix.state.HelixMode
 import jp.titze.intellij.helix.state.HelixStateManager
 import jp.titze.intellij.helix.ui.HelixJumplistPopup
 import jp.titze.intellij.helix.ui.HelixRegistersPopup
@@ -89,6 +90,10 @@ class HelixCommentLineAction : HelixEditorAction() {
     override fun actionPerformed(e: AnActionEvent) {
         val editor = e.getData(CommonDataKeys.EDITOR) ?: return
         HelixActionDelegate.executeAction("CommentByLineComment", editor)
+        val state = HelixStateManager.getOrCreate(editor)
+        if (state.mode == HelixMode.SELECT) {
+            state.setMode(HelixMode.NORMAL)
+        }
     }
 }
 

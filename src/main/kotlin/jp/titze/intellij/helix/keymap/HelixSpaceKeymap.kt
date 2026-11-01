@@ -6,6 +6,8 @@ package jp.titze.intellij.helix.keymap
 import com.intellij.openapi.editor.Editor
 import jp.titze.intellij.helix.action.HelixActionDelegate
 import jp.titze.intellij.helix.action.HelixActions
+import jp.titze.intellij.helix.state.HelixMode
+import jp.titze.intellij.helix.state.HelixStateManager
 import jp.titze.intellij.helix.ui.HelixDirectoryFilePickerPopup
 import jp.titze.intellij.helix.ui.HelixJumplistPopup
 
@@ -71,9 +73,19 @@ internal object HelixSpaceKeymap {
                     HelixActionDelegate.executeAction("Vcs.Show.Local.Changes", editor)
             }
 
-            'c' -> HelixActionDelegate.executeAction("CommentByLineComment", editor)
+            'c' -> {
+                val res = HelixActionDelegate.executeAction("CommentByLineComment", editor)
+                val state = HelixStateManager.getOrCreate(editor)
+                if (state.mode == HelixMode.SELECT) state.setMode(HelixMode.NORMAL)
+                res
+            }
 
-            'C' -> HelixActionDelegate.executeAction("CommentByBlockComment", editor)
+            'C' -> {
+                val res = HelixActionDelegate.executeAction("CommentByBlockComment", editor)
+                val state = HelixStateManager.getOrCreate(editor)
+                if (state.mode == HelixMode.SELECT) state.setMode(HelixMode.NORMAL)
+                res
+            }
 
             'h' -> {
                 HelixActionDelegate.executeAction("HighlightUsagesInFile", editor) ||

@@ -634,4 +634,28 @@ class HelixSearchAndRegexTest : BasePlatformTestCase() {
             HelixActionDelegate.actionExecutor = null
         }
     }
+
+    fun testSelectRegexInSelectModeReturnsToNormalMode() {
+        myFixture.configureByText("test.txt", "one two three")
+        val editor = myFixture.editor
+        editor.caretModel.primaryCaret.setSelection(0, 13)
+        val state = HelixStateManager.getOrCreate(editor)
+        state.setMode(HelixMode.SELECT)
+
+        HelixActions.selectRegex(editor, "\\w+")
+        state.mode shouldBe HelixMode.NORMAL
+        editor.caretModel.caretCount shouldBe 3
+    }
+
+    fun testSplitRegexInSelectModeReturnsToNormalMode() {
+        myFixture.configureByText("test.txt", "one two three")
+        val editor = myFixture.editor
+        editor.caretModel.primaryCaret.setSelection(0, 13)
+        val state = HelixStateManager.getOrCreate(editor)
+        state.setMode(HelixMode.SELECT)
+
+        HelixActions.splitSelection(editor, "\\s+")
+        state.mode shouldBe HelixMode.NORMAL
+        editor.caretModel.caretCount shouldBe 3
+    }
 }

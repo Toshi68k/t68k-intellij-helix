@@ -233,7 +233,15 @@ object HelixActions {
     }
 
     fun enterInsert(editor: Editor) {
-        editor.caretModel.runForEachCaret { it.removeSelection() }
+        editor.caretModel.runForEachCaret { caret ->
+            if (caret.hasSelection()) {
+                val start = caret.selectionStart
+                caret.removeSelection()
+                caret.moveToOffset(start)
+            } else {
+                caret.removeSelection()
+            }
+        }
         HelixStateManager.getOrCreate(editor).setMode(HelixMode.INSERT)
     }
 

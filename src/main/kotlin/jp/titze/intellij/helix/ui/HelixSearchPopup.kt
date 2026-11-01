@@ -14,6 +14,9 @@ import com.intellij.ui.components.JBTextField
 import com.intellij.util.ui.JBUI
 import jp.titze.intellij.helix.HelixBundle
 import jp.titze.intellij.helix.action.HelixActions
+import jp.titze.intellij.helix.action.HelixSearchActions
+import jp.titze.intellij.helix.state.HelixMode
+import jp.titze.intellij.helix.state.HelixStateManager
 import java.awt.BorderLayout
 import java.awt.Dimension
 import java.awt.Font
@@ -280,7 +283,14 @@ object HelixSearchPopup {
                         val pattern = textField.text
                         popup.cancel()
                         if (pattern.isNotEmpty()) {
-                            HelixActions.search(editor, pattern, backward = backward, count = count)
+                            val state = HelixStateManager.getOrCreate(editor)
+                            if (state.mode == HelixMode.SELECT) {
+                                HelixActions.lastSearchPattern = pattern
+                                HelixActions.lastSearchBackward = backward
+                                HelixSearchActions.searchNext(editor, count = count)
+                            } else {
+                                HelixActions.search(editor, pattern, backward = backward, count = count)
+                            }
                         }
                         e.consume()
                     }

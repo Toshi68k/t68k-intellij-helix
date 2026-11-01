@@ -6,6 +6,8 @@ package jp.titze.intellij.helix.motion
 import com.intellij.openapi.editor.Caret
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.ScrollType
+import jp.titze.intellij.helix.state.HelixMode
+import jp.titze.intellij.helix.state.HelixStateManager
 
 object HelixSelectionMotions {
 
@@ -247,6 +249,10 @@ object HelixSelectionMotions {
             }
         }
         editor.scrollingModel.scrollToCaret(ScrollType.MAKE_VISIBLE)
+        val state = HelixStateManager.getOrCreate(editor)
+        if (state.mode == HelixMode.SELECT) {
+            state.setMode(HelixMode.NORMAL)
+        }
     }
 
     /**

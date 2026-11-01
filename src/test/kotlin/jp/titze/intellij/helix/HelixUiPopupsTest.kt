@@ -11,6 +11,7 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.types.shouldBeSameInstanceAs
 import jp.titze.intellij.helix.action.HelixActionDelegate
+import jp.titze.intellij.helix.action.HelixActions
 import jp.titze.intellij.helix.action.HelixCaretUtils
 import jp.titze.intellij.helix.command.HelixCommandPopup
 import jp.titze.intellij.helix.command.HelixCommands
@@ -1598,5 +1599,38 @@ class HelixUiPopupsTest : BasePlatformTestCase() {
         } finally {
             HelixActionDelegate.actionExecutor = null
         }
+    }
+
+    fun testToggleCommentsInSelectModeReturnsToNormalMode() {
+        myFixture.configureByText("test.txt", "val a = 1")
+        val editor = myFixture.editor
+        val state = HelixStateManager.getOrCreate(editor)
+        state.setMode(HelixMode.SELECT)
+
+        var executedAction: String? = null
+        HelixActionDelegate.actionExecutor = { actionId, _ ->
+            executedAction = actionId
+            true
+        }
+        try {
+            HelixKeyHandler.handleKey(' ', editor)
+            HelixKeyHandler.handleKey('c', editor)
+            executedAction shouldBe "CommentByLineComment"
+            state.mode shouldBe HelixMode.NORMAL
+        } finally {
+            HelixActionDelegate.actionExecutor = null
+        }
+    }
+
+    fun testSortLinesInSelectModeReturnsToNormalMode() {
+        myFixture.configureByText("test.txt", "banana\napple\ncherry")
+        val editor = myFixture.editor
+        editor.caretModel.primaryCaret.setSelection(0, editor.document.textLength)
+        val state = HelixStateManager.getOrCreate(editor)
+        state.setMode(HelixMode.SELECT)
+
+        HelixActions.sortLines(editor, reverse = false)
+        editor.document.text shouldBe "apple\nbanana\ncherry"
+        state.mode shouldBe HelixMode.NORMAL
     }
 }

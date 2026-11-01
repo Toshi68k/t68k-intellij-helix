@@ -6,6 +6,8 @@ package jp.titze.intellij.helix.action
 import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.util.TextRange
+import jp.titze.intellij.helix.state.HelixMode
+import jp.titze.intellij.helix.state.HelixStateManager
 
 object HelixSortActions {
 
@@ -40,6 +42,10 @@ object HelixSortActions {
                 }
             },
         )
+        val state = HelixStateManager.getOrCreate(editor)
+        if (state.mode == HelixMode.SELECT) {
+            state.setMode(HelixMode.NORMAL)
+        }
     }
 
     private fun collectLineRanges(editor: Editor): List<Pair<Int, Int>> {

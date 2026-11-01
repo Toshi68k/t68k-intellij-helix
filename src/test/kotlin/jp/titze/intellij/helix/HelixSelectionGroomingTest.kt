@@ -15,6 +15,8 @@ import jp.titze.intellij.helix.keymap.HelixKeyHandler
 import jp.titze.intellij.helix.motion.HelixMotions
 import jp.titze.intellij.helix.settings.HelixSearchUiMode
 import jp.titze.intellij.helix.settings.HelixSettings
+import jp.titze.intellij.helix.state.HelixMode
+import jp.titze.intellij.helix.state.HelixStateManager
 import jp.titze.intellij.helix.ui.HelixPromptBar
 import jp.titze.intellij.helix.ui.HelixPromptType
 import jp.titze.intellij.helix.ui.HelixSelectRegexPopup
@@ -425,5 +427,64 @@ class HelixSelectionGroomingTest : BasePlatformTestCase() {
         HelixPromptBar.lastShownType = null
         HelixCommands.execute("keep-selections", editor)
         HelixPromptBar.lastShownType shouldBe HelixPromptType.KEEP
+    }
+
+    fun testAlignSelectionsInSelectModeReturnsToNormalMode() {
+        myFixture.configureByText("test.txt", "a = 1\nbbb = 2")
+        val editor = myFixture.editor
+        val states = listOf(
+            CaretState(
+                editor.offsetToLogicalPosition(3),
+                editor.offsetToLogicalPosition(2),
+                editor.offsetToLogicalPosition(3),
+            ),
+            CaretState(
+                editor.offsetToLogicalPosition(11),
+                editor.offsetToLogicalPosition(10),
+                editor.offsetToLogicalPosition(11),
+            ),
+        )
+        editor.caretModel.setCaretsAndSelections(states)
+        val state = HelixStateManager.getOrCreate(editor)
+        state.setMode(HelixMode.SELECT)
+
+        HelixActions.alignSelections(editor)
+        state.mode shouldBe HelixMode.NORMAL
+    }
+
+    fun testRotateSelectionsContentsInSelectModeReturnsToNormalMode() {
+        myFixture.configureByText("test.txt", "alpha beta")
+        val editor = myFixture.editor
+        val states = listOf(
+            CaretState(
+                editor.offsetToLogicalPosition(5),
+                editor.offsetToLogicalPosition(0),
+                editor.offsetToLogicalPosition(5),
+            ),
+            CaretState(
+                editor.offsetToLogicalPosition(10),
+                editor.offsetToLogicalPosition(6),
+                editor.offsetToLogicalPosition(10),
+            ),
+        )
+        editor.caretModel.setCaretsAndSelections(states)
+        val state = HelixStateManager.getOrCreate(editor)
+        state.setMode(HelixMode.SELECT)
+
+        HelixActions.rotateSelectionsContents(editor, forward = true)
+        state.mode shouldBe HelixMode.NORMAL
+        editor.document.text shouldBe "beta alpha"
+    }
+
+    fun testSplitSelectionOnNewlinesInSelectModeReturnsToNormalMode() {
+        myFixture.configureByText("test.txt", "line 1\nline 2\nline 3")
+        val editor = myFixture.editor
+        editor.caretModel.primaryCaret.setSelection(0, editor.document.textLength)
+        val state = HelixStateManager.getOrCreate(editor)
+        state.setMode(HelixMode.SELECT)
+
+        HelixMotions.splitSelectionOnNewlines(editor)
+        state.mode shouldBe HelixMode.NORMAL
+        editor.caretModel.caretCount shouldBe 3
     }
 }

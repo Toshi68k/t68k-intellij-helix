@@ -508,10 +508,16 @@ object HelixCommandRegistry {
                 HelixActionDelegate.executeAction("Vcs.Show.Local.Changes", ed)
         }
         register("toggle_comments", "Toggle line comment", "CommentByLineComment") { ed, _ ->
-            HelixActionDelegate.executeAction("CommentByLineComment", ed)
+            val res = HelixActionDelegate.executeAction("CommentByLineComment", ed)
+            val state = HelixStateManager.getOrCreate(ed)
+            if (state.mode == HelixMode.SELECT) state.setMode(HelixMode.NORMAL)
+            res
         }
         register("toggle_block_comments", "Toggle block comment", "CommentByBlockComment") { ed, _ ->
-            HelixActionDelegate.executeAction("CommentByBlockComment", ed)
+            val res = HelixActionDelegate.executeAction("CommentByBlockComment", ed)
+            val state = HelixStateManager.getOrCreate(ed)
+            if (state.mode == HelixMode.SELECT) state.setMode(HelixMode.NORMAL)
+            res
         }
         register("hover", "Hover / Documentation", "QuickJavaDoc") { ed, _ ->
             HelixActionDelegate.executeAction("QuickJavaDoc", ed)

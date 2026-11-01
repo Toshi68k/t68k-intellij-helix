@@ -5,6 +5,8 @@ package jp.titze.intellij.helix.editor
 
 import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.editor.Editor
+import jp.titze.intellij.helix.state.HelixMode
+import jp.titze.intellij.helix.state.HelixStateManager
 
 object HelixInsertTracker {
 
@@ -70,6 +72,10 @@ object HelixInsertTracker {
                     caret.moveToOffset(offset + fullText.length)
                 }
             }
+        }
+        val state = HelixStateManager.getOrCreate(editor)
+        if (state.mode == HelixMode.SELECT) {
+            state.setMode(HelixMode.NORMAL)
         }
         return true
     }
