@@ -83,6 +83,30 @@ class HelixUiPopupsTest : BasePlatformTestCase() {
         HelixCommandPopup.executeCommand("format", editor)
     }
 
+    fun testHelixCommandFilterRelevanceRanking() {
+        // "reg" should rank registers (alias "reg") above fold (alias "collapse-region")
+        val regMatches = HelixCommands.filterCommands("reg")
+        regMatches.isNotEmpty().shouldBeTrue()
+        regMatches.first().name shouldBe "registers"
+        regMatches.first().aliases.contains("reg").shouldBeTrue()
+
+        // ":reg" with colon prefix should also rank registers first
+        val colonRegMatches = HelixCommands.filterCommands(":reg")
+        colonRegMatches.first().name shouldBe "registers"
+
+        // "w" should rank write (alias "w") first
+        val wMatches = HelixCommands.filterCommands("w")
+        wMatches.first().name shouldBe "write"
+
+        // "q" should rank quit (alias "q") first
+        val qMatches = HelixCommands.filterCommands("q")
+        qMatches.first().name shouldBe "quit"
+
+        // Exact name "jumps" should rank jumps first
+        val jumpsMatches = HelixCommands.filterCommands("jumps")
+        jumpsMatches.first().name shouldBe "jumps"
+    }
+
     fun testHelixSettingsSearchUiMode() {
         val settings = HelixSettings.instance
         val original = settings.searchUiMode

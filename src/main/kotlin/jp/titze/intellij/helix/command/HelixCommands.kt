@@ -41,8 +41,72 @@ data class HelixCommandItem(
         return false
     }
 
+    fun matchScore(query: String): Int {
+        if (query.isEmpty()) return 0
+        val q = query.lowercase()
+        return scoreExactOrPrefix(q)
+            ?: scoreWordMatch(q)
+            ?: scoreSubstringMatch(q)
+            ?: scoreDescriptionMatch(q)
+            ?: Int.MAX_VALUE
+    }
+
+    private fun scoreExactOrPrefix(q: String): Int? {
+        val nameLower = name.lowercase()
+        val aliasesLower = aliases.map { it.lowercase() }
+        if (nameLower == q) return SCORE_EXACT_NAME
+        if (aliasesLower.contains(q)) return SCORE_EXACT_ALIAS
+        if (nameLower.startsWith(q)) return SCORE_PREFIX_NAME + name.length
+        val prefixAlias = aliasesLower.firstOrNull { it.startsWith(q) }
+        if (prefixAlias != null) return SCORE_PREFIX_ALIAS + prefixAlias.length
+        return null
+    }
+
+    private fun scoreWordMatch(q: String): Int? {
+        val nameLower = name.lowercase()
+        val aliasesLower = aliases.map { it.lowercase() }
+        val nameWords = nameLower.split('-', '_')
+        if (nameWords.any { it.startsWith(q) }) return SCORE_WORD_NAME + name.length
+        val aliasWordMatch = aliasesLower.firstOrNull { alias ->
+            alias.split('-', '_').any { it.startsWith(q) }
+        }
+        if (aliasWordMatch != null) return SCORE_WORD_ALIAS + aliasWordMatch.length
+        return null
+    }
+
+    private fun scoreSubstringMatch(q: String): Int? {
+        val nameLower = name.lowercase()
+        val aliasesLower = aliases.map { it.lowercase() }
+        val nameIndex = nameLower.indexOf(q)
+        if (nameIndex >= 0) return SCORE_SUBSTRING_NAME + nameIndex + name.length
+        val aliasSubIndex = aliasesLower.map { it.indexOf(q) }.filter { it >= 0 }.minOrNull()
+        if (aliasSubIndex != null) return SCORE_SUBSTRING_ALIAS + aliasSubIndex
+        return null
+    }
+
+    private fun scoreDescriptionMatch(q: String): Int? {
+        val descLower = description.lowercase()
+        val descWords = descLower.split(' ', '(', ')', '/', ',', '.')
+        if (descWords.any { it.startsWith(q) }) return SCORE_DESC_WORD
+        if (descLower.contains(q)) return SCORE_DESC_SUBSTRING
+        return null
+    }
+
     val displayCommand: String
         get() = if (aliases.isNotEmpty()) ":$name (:${aliases.joinToString(", :")})" else ":$name"
+
+    companion object {
+        private const val SCORE_EXACT_NAME = 0
+        private const val SCORE_EXACT_ALIAS = 10
+        private const val SCORE_PREFIX_NAME = 20
+        private const val SCORE_PREFIX_ALIAS = 30
+        private const val SCORE_WORD_NAME = 40
+        private const val SCORE_WORD_ALIAS = 50
+        private const val SCORE_SUBSTRING_NAME = 60
+        private const val SCORE_SUBSTRING_ALIAS = 70
+        private const val SCORE_DESC_WORD = 80
+        private const val SCORE_DESC_SUBSTRING = 90
+    }
 }
 
 object HelixCommands {
@@ -903,6 +967,14 @@ object HelixCommands {
             HelixActionDelegate.executeAction("ReplaceInPath", editor)
         },
     )
+
+    fun filterCommands(query: String): List<HelixCommandItem> {
+        val q = query.trim().removePrefix(":")
+        if (q.isEmpty()) return COMMANDS
+        return COMMANDS
+            .filter { it.matches(q) }
+            .sortedBy { it.matchScore(q) }
+    }
 
     fun execute(cmd: String, editor: Editor) {
         val cleanCmd = cmd.trim().removePrefix(":")
