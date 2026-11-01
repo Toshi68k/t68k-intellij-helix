@@ -11,16 +11,21 @@ import com.intellij.openapi.fileEditor.FileEditorManagerEvent
 import com.intellij.openapi.fileEditor.FileEditorManagerListener
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
+import com.intellij.openapi.wm.CustomStatusBarWidget
 import com.intellij.openapi.wm.StatusBar
 import com.intellij.openapi.wm.StatusBarWidget
 import com.intellij.openapi.wm.StatusBarWidgetFactory
+import com.intellij.openapi.wm.impl.status.TextPanel
 import com.intellij.util.Consumer
+import com.intellij.util.ui.JBUI
 import jp.titze.intellij.helix.HelixBundle
 import jp.titze.intellij.helix.command.HelixCommandPopup
 import jp.titze.intellij.helix.editor.HelixEditorEligibility
 import jp.titze.intellij.helix.state.HelixEditorState
 import jp.titze.intellij.helix.state.HelixStateManager
+import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
+import javax.swing.JComponent
 
 class HelixStatusBarWidgetFactory : StatusBarWidgetFactory {
     override fun getId(): String = HelixStatusBarWidget.WIDGET_ID
@@ -31,13 +36,45 @@ class HelixStatusBarWidgetFactory : StatusBarWidgetFactory {
     override fun canBeEnabledOn(statusBar: StatusBar): Boolean = true
 }
 
-class HelixStatusBarWidget(private val project: Project) :
-    StatusBarWidget,
-    StatusBarWidget.TextPresentation {
+class HelixStatusBarWidget(private val project: Project) : CustomStatusBarWidget {
 
     private var myStatusBar: StatusBar? = null
     private var currentState: HelixEditorState? = null
     private var currentEditor: Editor? = null
+
+    private val panel = object : TextPanel.WithIconAndArrows() {
+        init {
+            border = JBUI.CurrentTheme.StatusBar.Widget.border()
+            addMouseListener(object : MouseAdapter() {
+                override fun mouseClicked(e: MouseEvent) {
+                    handleClick()
+                }
+            })
+        }
+    }
+
+    init {
+        updateComponent()
+    }
+
+    fun getText(): String = panel.text.orEmpty()
+
+    fun getTooltipText(): String? = panel.toolTipText
+
+    fun getClickConsumer(): Consumer<MouseEvent> = Consumer {
+        handleClick()
+    }
+
+    internal fun handleClick() {
+        val editor = currentEditor ?: FileEditorManager.getInstance(project).selectedTextEditor ?: return
+        if (editor.isDisposed) return
+        val state = currentState ?: HelixStateManager.getOrCreate(editor)
+        if (state.selectedRegister != null) {
+            HelixRegistersPopup.show(editor)
+        } else {
+            HelixCommandPopup.show(editor)
+        }
+    }
 
     var macroRecordingProvider: () -> Boolean = {
         try {
@@ -48,22 +85,28 @@ class HelixStatusBarWidget(private val project: Project) :
             false
         }
     }
+        set(value) {
+            field = value
+            updateComponent()
+        }
 
     private val stateListener: (HelixEditorState) -> Unit = {
-        myStatusBar?.updateWidget(ID())
+        updateComponent()
     }
 
     private val caretListener = object : CaretListener {
         override fun caretAdded(event: CaretEvent) {
-            myStatusBar?.updateWidget(ID())
+            updateComponent()
         }
 
         override fun caretRemoved(event: CaretEvent) {
-            myStatusBar?.updateWidget(ID())
+            updateComponent()
         }
     }
 
     override fun ID(): String = WIDGET_ID
+
+    override fun getComponent(): JComponent = panel
 
     override fun install(statusBar: StatusBar) {
         myStatusBar = statusBar
@@ -93,7 +136,7 @@ class HelixStatusBarWidget(private val project: Project) :
             currentState = null
             currentEditor = editor
         }
-        myStatusBar?.updateWidget(ID())
+        updateComponent()
     }
 
     private fun updateCurrentEditor() {
@@ -101,17 +144,13 @@ class HelixStatusBarWidget(private val project: Project) :
         attachEditor(editor)
     }
 
-    override fun dispose() {
-        currentState?.removeListener(stateListener)
-        currentEditor?.caretModel?.removeCaretListener(caretListener)
-        currentState = null
-        currentEditor = null
-        myStatusBar = null
+    private fun updateComponent() {
+        panel.text = computeText()
+        panel.toolTipText = computeTooltipText()
+        myStatusBar?.updateWidget(ID())
     }
 
-    override fun getPresentation(): StatusBarWidget.WidgetPresentation = this
-
-    override fun getText(): String {
+    private fun computeText(): String {
         val editor = currentEditor
         if (editor == null || !HelixEditorEligibility.isActive(editor)) {
             return "OFF"
@@ -129,9 +168,7 @@ class HelixStatusBarWidget(private val project: Project) :
         return "${state.mode.shortCode}$recStr$selStr$regStr$countStr$prefix"
     }
 
-    override fun getAlignment(): Float = 0.5f
-
-    override fun getTooltipText(): String {
+    private fun computeTooltipText(): String {
         val state = currentState ?: return "Helix: Inactive"
         val parts = mutableListOf<String>()
         parts.add("Helix Mode: ${state.mode.displayName}")
@@ -157,15 +194,12 @@ class HelixStatusBarWidget(private val project: Project) :
         return parts.joinToString(" | ")
     }
 
-    override fun getClickConsumer(): Consumer<MouseEvent> = Consumer {
-        val editor = currentEditor ?: FileEditorManager.getInstance(project).selectedTextEditor ?: return@Consumer
-        if (editor.isDisposed) return@Consumer
-        val state = currentState ?: HelixStateManager.getOrCreate(editor)
-        if (state.selectedRegister != null) {
-            HelixRegistersPopup.show(editor)
-        } else {
-            HelixCommandPopup.show(editor)
-        }
+    override fun dispose() {
+        currentState?.removeListener(stateListener)
+        currentEditor?.caretModel?.removeCaretListener(caretListener)
+        currentState = null
+        currentEditor = null
+        myStatusBar = null
     }
 
     companion object {

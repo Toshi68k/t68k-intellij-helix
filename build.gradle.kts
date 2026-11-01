@@ -48,7 +48,6 @@ kotlin {
         jvmTarget.set(JvmTarget.JVM_21)
         apiVersion.set(KotlinVersion.KOTLIN_2_1)
         languageVersion.set(KotlinVersion.KOTLIN_2_1)
-        freeCompilerArgs.add("-Xjvm-default=all")
     }
 }
 
