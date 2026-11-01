@@ -5,7 +5,6 @@ package jp.titze.intellij.helix.command
 
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.editor.Editor
-import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileEditor.OpenFileDescriptor
 import com.intellij.openapi.vfs.LocalFileSystem
 import jp.titze.intellij.helix.action.HelixActionDelegate
@@ -1132,8 +1131,7 @@ object HelixCommands {
         }
         val virtualFile = LocalFileSystem.getInstance().refreshAndFindFileByIoFile(targetFile)
         if (virtualFile != null) {
-            val descriptor = OpenFileDescriptor(project, virtualFile)
-            FileEditorManager.getInstance(project).openTextEditor(descriptor, true)
+            OpenFileDescriptor(project, virtualFile).navigate(true)
         }
     }
 

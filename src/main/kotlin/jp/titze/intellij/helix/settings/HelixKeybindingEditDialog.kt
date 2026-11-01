@@ -3,6 +3,7 @@
 
 package jp.titze.intellij.helix.settings
 
+import com.intellij.openapi.ui.ComboBox
 import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.openapi.ui.ValidationInfo
 import com.intellij.ui.components.JBLabel
@@ -17,7 +18,6 @@ import java.awt.Dimension
 import java.awt.FlowLayout
 import java.awt.GridLayout
 import javax.swing.JButton
-import com.intellij.openapi.ui.ComboBox
 import javax.swing.JComponent
 import javax.swing.JPanel
 

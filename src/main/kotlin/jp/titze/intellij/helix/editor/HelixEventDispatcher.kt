@@ -8,6 +8,7 @@ import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.EditorFactory
+import com.intellij.openapi.util.Disposer
 import jp.titze.intellij.helix.action.HelixActionDelegate
 import jp.titze.intellij.helix.action.HelixActions
 import jp.titze.intellij.helix.jumplist.HelixJumpListService
@@ -698,26 +699,31 @@ class HelixEventDispatcher : IdeEventQueue.EventDispatcher {
     companion object {
         private var installed = false
         private var currentDispatcher: HelixEventDispatcher? = null
+        private var activeDisposable: Disposable? = null
 
         @Synchronized
         fun install(parentDisposable: Disposable? = null) {
             if (installed) return
             installed = true
             val app = ApplicationManager.getApplication()
-            val disposable = parentDisposable ?: app
+            val parent = parentDisposable ?: app
             if (app != null) {
+                val disposable = Disposer.newDisposable()
+                Disposer.register(parent, disposable)
+                activeDisposable = disposable
                 val dispatcher = HelixEventDispatcher()
                 currentDispatcher = dispatcher
-                IdeEventQueue.getInstance().addDispatcher(dispatcher, disposable)
+                IdeEventQueue.getInstance().addPreprocessor(dispatcher, disposable)
             }
         }
 
         @Synchronized
         fun uninstall() {
             if (!installed) return
-            currentDispatcher?.let {
-                IdeEventQueue.getInstance().removeDispatcher(it)
+            activeDisposable?.let {
+                Disposer.dispose(it)
             }
+            activeDisposable = null
             currentDispatcher = null
             installed = false
         }

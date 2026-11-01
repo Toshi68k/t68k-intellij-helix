@@ -3,7 +3,7 @@
 
 package jp.titze.intellij.helix.action
 
-import com.intellij.openapi.application.runReadAction
+import com.intellij.openapi.application.ReadAction
 import com.intellij.openapi.editor.Caret
 import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.Editor
@@ -23,21 +23,21 @@ object HelixStructuralTextObjects {
 
         if (project != null) {
             val psiPair = try {
-                runReadAction {
-                    val psiFile = PsiDocumentManager.getInstance(project).getPsiFile(doc) ?: return@runReadAction null
+                ReadAction.compute<Pair<Int, Int>?, Throwable> {
+                    val psiFile = PsiDocumentManager.getInstance(project).getPsiFile(doc) ?: return@compute null
                     val offset = caret.offset.coerceIn(0, (doc.textLength - 1).coerceAtLeast(0))
                     var elem: PsiElement? = psiFile.findElementAt(offset)
                     while (elem != null && elem !is PsiFile) {
                         if (isTestMethod(elem, psiFile)) {
                             val fullRange = elem.textRange
                             if (!inside) {
-                                return@runReadAction Pair(fullRange.startOffset, fullRange.endOffset)
+                                return@compute Pair(fullRange.startOffset, fullRange.endOffset)
                             }
                             val bodyPair = findEnclosingBracketsInElement(doc, elem, '{', '}')
                             if (bodyPair != null) {
-                                return@runReadAction bodyPair
+                                return@compute bodyPair
                             }
-                            return@runReadAction Pair(fullRange.startOffset, fullRange.endOffset)
+                            return@compute Pair(fullRange.startOffset, fullRange.endOffset)
                         }
                         elem = elem.parent
                     }

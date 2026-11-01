@@ -5,6 +5,7 @@ package jp.titze.intellij.helix.settings
 
 import com.intellij.openapi.ide.CopyPasteManager
 import com.intellij.openapi.project.ProjectManager
+import com.intellij.openapi.ui.ComboBox
 import com.intellij.ui.JBColor
 import com.intellij.ui.SearchTextField
 import com.intellij.ui.components.JBLabel
@@ -29,7 +30,6 @@ import java.awt.event.MouseEvent
 import java.awt.font.TextAttribute
 import javax.swing.Box
 import javax.swing.JButton
-import com.intellij.openapi.ui.ComboBox
 import javax.swing.JComponent
 import javax.swing.JMenuItem
 import javax.swing.JPanel
