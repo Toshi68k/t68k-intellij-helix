@@ -11,6 +11,7 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 import jp.titze.intellij.helix.action.HelixActionDelegate
 import jp.titze.intellij.helix.config.HelixConfigLoader
+import jp.titze.intellij.helix.config.HelixConfigModifier
 import jp.titze.intellij.helix.config.HelixConfigResult
 import jp.titze.intellij.helix.config.HelixConfigWatcher
 import jp.titze.intellij.helix.config.HelixTomlParser
@@ -514,5 +515,138 @@ class HelixKeymapTest : BasePlatformTestCase() {
         val result = HelixConfigLoader.validateConfig(toml)
         result.errors.isNotEmpty().shouldBeTrue()
         result.errors.any { it.contains("Conflict:") && it.contains("shadowed") }.shouldBeTrue()
+    }
+
+    fun testHelixConfigModifierSetNewBinding() {
+        val initialToml = """
+            [keys.normal]
+            "C-s" = ":w"
+        """.trimIndent()
+
+        val updated = HelixConfigModifier.updateBindingInContent(
+            initialToml,
+            HelixMode.NORMAL,
+            "space f",
+            ":action GotoFile",
+        )
+        updated.contains("\"space\".\"f\" = \":action GotoFile\"").shouldBeTrue()
+        val parsed = HelixTomlParser.parse(updated)
+        parsed.bindings.size shouldBe 2
+        parsed.bindings.any { it.sequence == "space f" && it.action == ":action GotoFile" }.shouldBeTrue()
+    }
+
+    fun testHelixConfigModifierUpdateExistingBinding() {
+        val initialToml = """
+            [keys.normal]
+            "C-s" = ":w"
+            "space"."f" = "file_picker"
+        """.trimIndent()
+
+        val updated = HelixConfigModifier.updateBindingInContent(
+            initialToml,
+            HelixMode.NORMAL,
+            "space f",
+            ":action GotoFile",
+        )
+        updated.contains("\"space\".\"f\" = \":action GotoFile\"").shouldBeTrue()
+        val parsed = HelixTomlParser.parse(updated)
+        parsed.bindings.size shouldBe 2
+        parsed.bindings.first { it.sequence == "space f" }.action shouldBe ":action GotoFile"
+    }
+
+    fun testHelixConfigModifierRemoveBinding() {
+        val initialToml = """
+            [keys.normal]
+            "C-s" = ":w"
+            "space"."f" = "file_picker"
+        """.trimIndent()
+
+        val updated = HelixConfigModifier.removeBindingFromContent(
+            initialToml,
+            HelixMode.NORMAL,
+            "space f",
+        )
+        val parsed = HelixTomlParser.parse(updated)
+        parsed.bindings.size shouldBe 1
+        parsed.bindings.none { it.sequence == "space f" }.shouldBeTrue()
+    }
+
+    fun testHelixConfigModifierSetNoOpAndMacroList() {
+        val initialToml = """
+            [keys.insert]
+            "C-h" = "delete_char_backward"
+        """.trimIndent()
+
+        val withNoOp = HelixConfigModifier.updateBindingInContent(
+            initialToml,
+            HelixMode.INSERT,
+            "C-h",
+            "no_op",
+        )
+        val parsedNoOp = HelixTomlParser.parse(withNoOp)
+        parsedNoOp.bindings.first { it.sequence == "C-h" }.action shouldBe "no_op"
+
+        val withMacro = HelixConfigModifier.updateBindingInContent(
+            initialToml,
+            HelixMode.NORMAL,
+            "C-d",
+            listOf("half_page_down", "align_view_center"),
+        )
+        val parsedMacro = HelixTomlParser.parse(withMacro)
+        parsedMacro.bindings.any { it.sequence == "C-d" }.shouldBeTrue()
+    }
+
+    fun testHelixConfigModifierHandlesDotAndHashKeys() {
+        val initialToml = """
+            [keys.normal]
+            "C-s" = ":w"
+            "#" = "toggle_comments"
+            "." = "repeat_last_motion"
+        """.trimIndent()
+
+        val parsedInitial = HelixTomlParser.parse(initialToml)
+        parsedInitial.bindings.size shouldBe 3
+        parsedInitial.bindings.any { it.sequence == "." }.shouldBeTrue()
+        parsedInitial.bindings.any { it.sequence == "#" }.shouldBeTrue()
+
+        // Update dot key
+        val updatedDot = HelixConfigModifier.updateBindingInContent(
+            initialToml,
+            HelixMode.NORMAL,
+            ".",
+            "align_view_center",
+        )
+        val parsedDot = HelixTomlParser.parse(updatedDot)
+        parsedDot.bindings.first { it.sequence == "." }.action shouldBe "align_view_center"
+
+        // Remove hash key
+        val removedHash = HelixConfigModifier.removeBindingFromContent(
+            updatedDot,
+            HelixMode.NORMAL,
+            "#",
+        )
+        val parsedRemoved = HelixTomlParser.parse(removedHash)
+        parsedRemoved.bindings.none { it.sequence == "#" }.shouldBeTrue()
+        parsedRemoved.bindings.any { it.sequence == "." }.shouldBeTrue()
+    }
+
+    fun testHelixConfigModifierHandlesRawMacroArrayString() {
+        val initialToml = """
+            [keys.normal]
+            "C-s" = ":w"
+        """.trimIndent()
+
+        val rawMacroString = "[\"half_page_down\", \"align_view_center\"]"
+        val updated = HelixConfigModifier.updateBindingInContent(
+            initialToml,
+            HelixMode.NORMAL,
+            "C-d",
+            rawMacroString,
+        )
+        val parsed = HelixTomlParser.parse(updated)
+        val binding = parsed.bindings.firstOrNull { it.sequence == "C-d" }
+        binding.shouldNotBeNull()
+        binding.action.shouldBeInstanceOf<List<String>>()
+        (binding.action as List<*>).size shouldBe 2
     }
 }
