@@ -48,7 +48,7 @@ class HelixKeymapBrowserPanel {
     private val modeComboBox = JComboBox(arrayOf(HelixMode.NORMAL, HelixMode.SELECT, HelixMode.INSERT))
     private val prefixComboBox = JComboBox(KeymapPrefixGroup.values())
     private val searchField = SearchTextField()
-    private val recordButton = JButton("⌨")
+    private val recordButton = JButton(HelixBundle.message("settings.keymap.btn.findByKeystroke"))
     private val statusLabel = JBLabel()
 
     val addBindingBtn = JButton(HelixBundle.message("settings.keymap.btn.add"))
@@ -93,25 +93,8 @@ class HelixKeymapBrowserPanel {
         searchField.textEditor.emptyText.text = HelixBundle.message("settings.keymap.search.placeholder")
         recordButton.toolTipText = HelixBundle.message("settings.keymap.record.tooltip")
 
-        val actionButtons = JPanel(FlowLayout(FlowLayout.LEFT, 4, 0))
-        actionButtons.add(recordButton)
-
-        val browseActionsBtn = JButton(HelixBundle.message("settings.keymap.btn.browseActions"))
-        browseActionsBtn.toolTipText = HelixBundle.message("settings.keymap.browseActions.tooltip")
-        browseActionsBtn.addActionListener {
-            val dialog = HelixActionPickerDialog(panel)
-            if (dialog.showAndGet()) {
-                val cmd = dialog.selectedTomlCommand
-                if (cmd != null) {
-                    CopyPasteManager.getInstance().setContents(StringSelection(cmd))
-                    statusLabel.text = HelixBundle.message("settings.keymap.status.copiedAction", cmd)
-                }
-            }
-        }
-        actionButtons.add(browseActionsBtn)
-
         rightControls.add(searchField, BorderLayout.CENTER)
-        rightControls.add(actionButtons, BorderLayout.EAST)
+        rightControls.add(recordButton, BorderLayout.EAST)
 
         bar.add(leftControls, BorderLayout.WEST)
         bar.add(rightControls, BorderLayout.CENTER)
