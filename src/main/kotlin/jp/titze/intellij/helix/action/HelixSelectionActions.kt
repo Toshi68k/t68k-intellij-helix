@@ -8,6 +8,8 @@ import com.intellij.openapi.editor.CaretState
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.ScrollType
 import com.intellij.openapi.util.TextRange
+import jp.titze.intellij.helix.state.HelixMode
+import jp.titze.intellij.helix.state.HelixStateManager
 
 object HelixSelectionActions {
 
@@ -60,6 +62,10 @@ object HelixSelectionActions {
         }
         editor.caretModel.setCaretsAndSelections(caretStates)
         editor.scrollingModel.scrollToCaret(ScrollType.MAKE_VISIBLE)
+        val state = HelixStateManager.getOrCreate(editor)
+        if (state.mode == HelixMode.SELECT) {
+            state.setMode(HelixMode.NORMAL)
+        }
     }
 
     fun alignSelections(editor: Editor) {
@@ -168,6 +174,10 @@ object HelixSelectionActions {
         }
         editor.caretModel.setCaretsAndSelections(finalCaretStates)
         editor.scrollingModel.scrollToCaret(ScrollType.MAKE_VISIBLE)
+        val state = HelixStateManager.getOrCreate(editor)
+        if (state.mode == HelixMode.SELECT) {
+            state.setMode(HelixMode.NORMAL)
+        }
     }
 
     fun ensureSelectionsForward(editor: Editor) {
@@ -302,5 +312,9 @@ object HelixSelectionActions {
         }
         editor.caretModel.setCaretsAndSelections(caretStates)
         editor.scrollingModel.scrollToCaret(ScrollType.MAKE_VISIBLE)
+        val state = HelixStateManager.getOrCreate(editor)
+        if (state.mode == HelixMode.SELECT) {
+            state.setMode(HelixMode.NORMAL)
+        }
     }
 }

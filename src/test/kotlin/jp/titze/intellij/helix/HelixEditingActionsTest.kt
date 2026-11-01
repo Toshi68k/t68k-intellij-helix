@@ -1419,4 +1419,37 @@ class HelixEditingActionsTest : BasePlatformTestCase() {
         editor.document.text shouldBe "foo foo"
         HelixStateManager.getOrCreate(editor).mode shouldBe HelixMode.NORMAL
     }
+
+    fun testEnterInsertWithSelectionMovesCaretToSelectionStart() {
+        myFixture.configureByText("test.txt", "hello world")
+        val editor = myFixture.editor
+        val caret = editor.caretModel.primaryCaret
+        caret.moveToOffset(0)
+        HelixKeyHandler.handleKey('w', editor)
+        caret.selectedText shouldBe "hello "
+        caret.offset shouldBe 6
+
+        HelixActions.enterInsert(editor)
+        HelixStateManager.getOrCreate(editor).mode shouldBe HelixMode.INSERT
+        caret.hasSelection().shouldBeFalse()
+        caret.offset shouldBe 0
+    }
+
+    fun testRepeatLastInsertInSelectModeReturnsToNormalMode() {
+        myFixture.configureByText("test.txt", "foo bar")
+        val editor = myFixture.editor
+        HelixInsertTracker.startInsert()
+        HelixInsertTracker.recordText("abc")
+        HelixInsertTracker.finishInsert()
+
+        val caret = editor.caretModel.primaryCaret
+        caret.moveToOffset(4)
+        HelixKeyHandler.handleKey('v', editor)
+        HelixKeyHandler.handleKey('w', editor)
+        caret.selectedText shouldBe "bar"
+
+        HelixKeyHandler.handleKey('.', editor)
+        editor.document.text shouldBe "foo abc"
+        HelixStateManager.getOrCreate(editor).mode shouldBe HelixMode.NORMAL
+    }
 }

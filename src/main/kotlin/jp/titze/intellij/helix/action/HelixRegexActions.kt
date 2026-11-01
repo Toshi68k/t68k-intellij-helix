@@ -4,6 +4,8 @@
 package jp.titze.intellij.helix.action
 
 import com.intellij.openapi.editor.Editor
+import jp.titze.intellij.helix.state.HelixMode
+import jp.titze.intellij.helix.state.HelixStateManager
 
 object HelixRegexActions {
 
@@ -48,6 +50,10 @@ object HelixRegexActions {
         if (allMatches.isEmpty()) return false
 
         HelixCaretUtils.applyCarets(editor, allMatches.distinct().sortedBy { it.first })
+        val state = HelixStateManager.getOrCreate(editor)
+        if (state.mode == HelixMode.SELECT) {
+            state.setMode(HelixMode.NORMAL)
+        }
         return true
     }
 
@@ -135,6 +141,10 @@ object HelixRegexActions {
 
         if (newSelections.isEmpty()) return false
         HelixCaretUtils.applyCarets(editor, newSelections.distinct().sortedBy { it.first })
+        val state = HelixStateManager.getOrCreate(editor)
+        if (state.mode == HelixMode.SELECT) {
+            state.setMode(HelixMode.NORMAL)
+        }
         return true
     }
 
@@ -396,5 +406,9 @@ object HelixRegexActions {
     fun filterSelections(editor: Editor, pattern: String, keepMatching: Boolean) {
         val snapshot = HelixCaretUtils.captureCarets(editor)
         previewFilterSelectionsRegex(editor, pattern, keepMatching, snapshot)
+        val state = HelixStateManager.getOrCreate(editor)
+        if (state.mode == HelixMode.SELECT) {
+            state.setMode(HelixMode.NORMAL)
+        }
     }
 }
