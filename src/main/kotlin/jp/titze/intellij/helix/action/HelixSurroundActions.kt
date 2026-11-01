@@ -7,6 +7,8 @@ import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.editor.Caret
 import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.Editor
+import jp.titze.intellij.helix.state.HelixMode
+import jp.titze.intellij.helix.state.HelixStateManager
 
 object HelixSurroundActions {
 
@@ -292,6 +294,10 @@ object HelixSurroundActions {
                 }
             }
         }
+        val state = HelixStateManager.getOrCreate(editor)
+        if (state.mode == HelixMode.SELECT) {
+            state.setMode(HelixMode.NORMAL)
+        }
         return true
     }
 
@@ -310,6 +316,10 @@ object HelixSurroundActions {
                 doc.deleteString(closePos, closePos + 1)
                 doc.deleteString(openPos, openPos + 1)
             }
+        }
+        val state = HelixStateManager.getOrCreate(editor)
+        if (state.mode == HelixMode.SELECT) {
+            state.setMode(HelixMode.NORMAL)
         }
         return true
     }
@@ -330,6 +340,10 @@ object HelixSurroundActions {
                 doc.replaceString(closePos, closePos + 1, newClose)
                 doc.replaceString(openPos, openPos + 1, newOpen)
             }
+        }
+        val state = HelixStateManager.getOrCreate(editor)
+        if (state.mode == HelixMode.SELECT) {
+            state.setMode(HelixMode.NORMAL)
         }
         return true
     }

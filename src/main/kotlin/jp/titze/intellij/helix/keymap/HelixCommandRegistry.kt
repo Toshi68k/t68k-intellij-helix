@@ -14,6 +14,8 @@ import jp.titze.intellij.helix.motion.HelixMotions
 import jp.titze.intellij.helix.motion.HelixViewMotions
 import jp.titze.intellij.helix.settings.HelixLineNavigationMode
 import jp.titze.intellij.helix.settings.HelixSettings
+import jp.titze.intellij.helix.state.HelixMode
+import jp.titze.intellij.helix.state.HelixStateManager
 import jp.titze.intellij.helix.ui.HelixDirectoryFilePickerPopup
 import jp.titze.intellij.helix.ui.HelixJumplistPopup
 import jp.titze.intellij.helix.ui.HelixSearchManager
@@ -90,6 +92,8 @@ object HelixCommandRegistry {
     private fun registerBuiltins() {
         registerMotions()
         registerEdits()
+        registerInsertTransitions()
+        registerFormattingAndIndents()
         registerSelectAndHistory()
         registerPickersAndLeader()
         registerViewAndWindow()
@@ -215,6 +219,14 @@ object HelixCommandRegistry {
             HelixActions.deleteSelection(ed, enterInsert = true, count = cnt)
             true
         }
+        register("delete_selection_noyank", "Delete selection without yanking") { ed, cnt ->
+            HelixActions.deleteSelectionNoYank(ed, count = cnt)
+            true
+        }
+        register("change_selection_noyank", "Change selection without yanking") { ed, cnt ->
+            HelixActions.changeSelectionNoYank(ed, count = cnt)
+            true
+        }
         register("yank", "Yank selection") { ed, cnt ->
             HelixActions.yankSelection(ed, count = cnt)
             true
@@ -255,6 +267,9 @@ object HelixCommandRegistry {
             HelixActions.joinLines(ed, cnt)
             true
         }
+    }
+
+    private fun registerInsertTransitions() {
         register("insert_mode", "Enter insert mode") { ed, _ ->
             HelixActions.enterInsert(ed)
             true
@@ -283,6 +298,9 @@ object HelixCommandRegistry {
             HelixInsertTracker.repeatLastInsert(ed, cnt)
             true
         }
+    }
+
+    private fun registerFormattingAndIndents() {
         register("toggle_case", "Toggle case") { ed, cnt ->
             HelixActions.toggleCase(ed, cnt)
             true
@@ -301,25 +319,30 @@ object HelixCommandRegistry {
         }
         register("indent", "Indent line/selection", "EditorIndentLineOrSelection") { ed, cnt ->
             repeat(cnt) { HelixActionDelegate.executeAction("EditorIndentLineOrSelection", ed) }
+            val state = HelixStateManager.getOrCreate(ed)
+            if (state.mode == HelixMode.SELECT) {
+                state.setMode(HelixMode.NORMAL)
+            }
             true
         }
         register("unindent", "Unindent selection", "EditorUnindentSelection") { ed, cnt ->
             repeat(cnt) { HelixActionDelegate.executeAction("EditorUnindentSelection", ed) }
-            true
-        }
-        register("delete_selection_noyank", "Delete selection without yanking") { ed, cnt ->
-            HelixActions.deleteSelectionNoYank(ed, count = cnt)
-            true
-        }
-        register("change_selection_noyank", "Change selection without yanking") { ed, cnt ->
-            HelixActions.changeSelectionNoYank(ed, count = cnt)
+            val state = HelixStateManager.getOrCreate(ed)
+            if (state.mode == HelixMode.SELECT) {
+                state.setMode(HelixMode.NORMAL)
+            }
             true
         }
         register("repeat_last_motion", "Repeat last motion") { ed, cnt ->
             HelixActions.repeatLastMotion(ed, count = cnt)
         }
         register("format_selections", "Format selections", "ReformatCode") { ed, _ ->
-            HelixActionDelegate.executeAction("ReformatCode", ed)
+            val res = HelixActionDelegate.executeAction("ReformatCode", ed)
+            val state = HelixStateManager.getOrCreate(ed)
+            if (state.mode == HelixMode.SELECT) {
+                state.setMode(HelixMode.NORMAL)
+            }
+            res
         }
     }
 

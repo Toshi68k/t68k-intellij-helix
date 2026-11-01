@@ -77,9 +77,10 @@ class HelixEditingActionsTest : BasePlatformTestCase() {
 
         HelixActions.deleteSelection(editor, enterInsert = false)
         editor.document.text shouldBe "world"
-        HelixStateManager.getOrCreate(editor).mode shouldBe HelixMode.SELECT
+        HelixStateManager.getOrCreate(editor).mode shouldBe HelixMode.NORMAL
 
         // Select "world" and 'c' (change) deletes and enters Insert mode
+        HelixActions.toggleSelectMode(editor)
         HelixMotions.moveWordEnd(editor)
         HelixActions.deleteSelection(editor, enterInsert = true)
         editor.document.text shouldBe ""
@@ -365,7 +366,7 @@ class HelixEditingActionsTest : BasePlatformTestCase() {
         HelixKeyHandler.handleKey('J', editor)
 
         editor.document.text shouldBe "hello world\nfoo"
-        HelixStateManager.getOrCreate(editor).mode shouldBe HelixMode.SELECT
+        HelixStateManager.getOrCreate(editor).mode shouldBe HelixMode.NORMAL
         caret.selectedText shouldBe "hello world"
     }
 
@@ -1277,5 +1278,145 @@ class HelixEditingActionsTest : BasePlatformTestCase() {
 
         HelixKeyHandler.handleKey('<', editor)
         editor.document.text shouldBe "line one\nline two\nline three"
+    }
+
+    fun testSelectModeDeleteReturnsToNormalMode() {
+        myFixture.configureByText("test.txt", "hello world")
+        val editor = myFixture.editor
+        editor.caretModel.primaryCaret.moveToOffset(0)
+
+        HelixKeyHandler.handleKey('v', editor)
+        HelixStateManager.getOrCreate(editor).mode shouldBe HelixMode.SELECT
+        HelixKeyHandler.handleKey('w', editor)
+        editor.caretModel.primaryCaret.selectedText shouldBe "hello "
+
+        HelixKeyHandler.handleKey('d', editor)
+        editor.document.text shouldBe "world"
+        HelixStateManager.getOrCreate(editor).mode shouldBe HelixMode.NORMAL
+    }
+
+    fun testSelectModeChangeEntersInsertMode() {
+        myFixture.configureByText("test.txt", "hello world")
+        val editor = myFixture.editor
+        editor.caretModel.primaryCaret.moveToOffset(0)
+
+        HelixKeyHandler.handleKey('v', editor)
+        HelixStateManager.getOrCreate(editor).mode shouldBe HelixMode.SELECT
+        HelixKeyHandler.handleKey('w', editor)
+        editor.caretModel.primaryCaret.selectedText shouldBe "hello "
+
+        HelixKeyHandler.handleKey('c', editor)
+        editor.document.text shouldBe "world"
+        HelixStateManager.getOrCreate(editor).mode shouldBe HelixMode.INSERT
+    }
+
+    fun testSelectModeYankReturnsToNormalMode() {
+        myFixture.configureByText("test.txt", "hello world")
+        val editor = myFixture.editor
+        editor.caretModel.primaryCaret.moveToOffset(0)
+
+        HelixKeyHandler.handleKey('v', editor)
+        HelixStateManager.getOrCreate(editor).mode shouldBe HelixMode.SELECT
+        HelixKeyHandler.handleKey('w', editor)
+        editor.caretModel.primaryCaret.selectedText shouldBe "hello "
+
+        HelixKeyHandler.handleKey('y', editor)
+        editor.document.text shouldBe "hello world"
+        HelixStateManager.getOrCreate(editor).mode shouldBe HelixMode.NORMAL
+        editor.caretModel.primaryCaret.selectedText shouldBe "hello "
+    }
+
+    fun testSelectModeReplaceCharReturnsToNormalMode() {
+        myFixture.configureByText("test.txt", "hello world")
+        val editor = myFixture.editor
+        editor.caretModel.primaryCaret.moveToOffset(0)
+
+        HelixKeyHandler.handleKey('v', editor)
+        HelixStateManager.getOrCreate(editor).mode shouldBe HelixMode.SELECT
+        HelixKeyHandler.handleKey('w', editor)
+        editor.caretModel.primaryCaret.selectedText shouldBe "hello "
+
+        HelixKeyHandler.handleKey('r', editor)
+        HelixKeyHandler.handleKey('x', editor)
+        editor.document.text shouldBe "xxxxxxworld"
+        HelixStateManager.getOrCreate(editor).mode shouldBe HelixMode.NORMAL
+        editor.caretModel.primaryCaret.selectedText shouldBe "xxxxxx"
+    }
+
+    fun testSelectModeToggleWithVPreservesSelection() {
+        myFixture.configureByText("test.txt", "hello world")
+        val editor = myFixture.editor
+        editor.caretModel.primaryCaret.moveToOffset(0)
+
+        HelixKeyHandler.handleKey('v', editor)
+        HelixStateManager.getOrCreate(editor).mode shouldBe HelixMode.SELECT
+        HelixKeyHandler.handleKey('w', editor)
+        editor.caretModel.primaryCaret.selectedText shouldBe "hello "
+
+        // Pressing 'v' again exits select mode to normal mode without clearing selection
+        HelixKeyHandler.handleKey('v', editor)
+        HelixStateManager.getOrCreate(editor).mode shouldBe HelixMode.NORMAL
+        editor.caretModel.primaryCaret.selectedText shouldBe "hello "
+        editor.document.text shouldBe "hello world"
+    }
+
+    fun testSelectModeEscapePreservesSelection() {
+        myFixture.configureByText("test.txt", "hello world")
+        val editor = myFixture.editor
+        editor.caretModel.primaryCaret.moveToOffset(0)
+
+        HelixKeyHandler.handleKey('v', editor)
+        HelixStateManager.getOrCreate(editor).mode shouldBe HelixMode.SELECT
+        HelixKeyHandler.handleKey('w', editor)
+        editor.caretModel.primaryCaret.selectedText shouldBe "hello "
+
+        // 1st Escape: exits SELECT to NORMAL mode, selection preserved
+        HelixEscapeHandler.handleEscape(editor).shouldBeTrue()
+        HelixStateManager.getOrCreate(editor).mode shouldBe HelixMode.NORMAL
+        editor.caretModel.primaryCaret.selectedText shouldBe "hello "
+
+        // 2nd Escape: in NORMAL mode, collapses selection
+        HelixEscapeHandler.handleEscape(editor).shouldBeTrue()
+        editor.caretModel.primaryCaret.hasSelection().shouldBeFalse()
+    }
+
+    fun testSelectModeCaseChangeReturnsToNormalMode() {
+        myFixture.configureByText("test.txt", "hello world")
+        val editor = myFixture.editor
+        editor.caretModel.primaryCaret.moveToOffset(0)
+
+        HelixKeyHandler.handleKey('v', editor)
+        HelixStateManager.getOrCreate(editor).mode shouldBe HelixMode.SELECT
+        HelixKeyHandler.handleKey('w', editor)
+        editor.caretModel.primaryCaret.selectedText shouldBe "hello "
+
+        HelixKeyHandler.handleKey('~', editor)
+        editor.document.text shouldBe "HELLO world"
+        HelixStateManager.getOrCreate(editor).mode shouldBe HelixMode.NORMAL
+        editor.caretModel.primaryCaret.selectedText shouldBe "HELLO "
+    }
+
+    fun testSelectModeReplaceWithYankedReturnsToNormalMode() {
+        myFixture.configureByText("test.txt", "foo bar")
+        val editor = myFixture.editor
+        val caret = editor.caretModel.primaryCaret
+        caret.moveToOffset(0)
+
+        // Yank "foo"
+        caret.setSelection(0, 3)
+        HelixActions.yankSelection(editor)
+        caret.removeSelection()
+
+        // Select "bar" in select mode
+        caret.moveToOffset(4)
+        HelixKeyHandler.handleKey('v', editor)
+        HelixStateManager.getOrCreate(editor).mode shouldBe HelixMode.SELECT
+        HelixKeyHandler.handleKey('w', editor)
+        caret.selectedText shouldBe "bar"
+
+        // Replace with yanked text
+        HelixKeyHandler.handleKey('R', editor)
+        editor.document.text shouldBe "foo foo"
+        HelixStateManager.getOrCreate(editor).mode shouldBe HelixMode.NORMAL
     }
 }

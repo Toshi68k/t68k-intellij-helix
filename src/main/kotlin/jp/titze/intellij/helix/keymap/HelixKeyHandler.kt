@@ -14,6 +14,7 @@ import jp.titze.intellij.helix.motion.HelixMotions
 import jp.titze.intellij.helix.settings.HelixLineNavigationMode
 import jp.titze.intellij.helix.settings.HelixSettings
 import jp.titze.intellij.helix.state.HelixEditorState
+import jp.titze.intellij.helix.state.HelixMode
 import jp.titze.intellij.helix.state.HelixStateManager
 import jp.titze.intellij.helix.ui.HelixSearchManager
 import jp.titze.intellij.helix.ui.HelixWhichKeyPopup
@@ -406,11 +407,20 @@ object HelixKeyHandler {
 
             'K' -> HelixSearchManager.startKeepSelections(editor)
 
-            '=' -> HelixActionDelegate.executeAction("ReformatCode", editor)
+            '=' -> {
+                HelixActionDelegate.executeAction("ReformatCode", editor)
+                if (state.mode == HelixMode.SELECT) state.setMode(HelixMode.NORMAL)
+            }
 
-            '>' -> repeat(count) { HelixActionDelegate.executeAction("EditorIndentLineOrSelection", editor) }
+            '>' -> {
+                repeat(count) { HelixActionDelegate.executeAction("EditorIndentLineOrSelection", editor) }
+                if (state.mode == HelixMode.SELECT) state.setMode(HelixMode.NORMAL)
+            }
 
-            '<' -> repeat(count) { HelixActionDelegate.executeAction("EditorUnindentSelection", editor) }
+            '<' -> {
+                repeat(count) { HelixActionDelegate.executeAction("EditorUnindentSelection", editor) }
+                if (state.mode == HelixMode.SELECT) state.setMode(HelixMode.NORMAL)
+            }
 
             '~' -> HelixActions.toggleCase(editor, count)
 

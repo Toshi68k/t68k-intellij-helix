@@ -52,6 +52,10 @@ object HelixCaseActions {
             }
         }
         editor.scrollingModel.scrollToCaret(ScrollType.MAKE_VISIBLE)
+
+        if (state.mode == HelixMode.SELECT) {
+            state.setMode(HelixMode.NORMAL)
+        }
     }
 
     private fun transformSelection(caret: Caret, doc: Document, transformation: HelixCaseTransformation) {
