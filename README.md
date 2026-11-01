@@ -687,19 +687,19 @@ Structured into 3 cohesive domains with native IntelliJ section dividers:
 ##### Tab 2: Keybindings (Visual Keymap Explorer & Editor)
 An interactive explorer and visual customizer for discovering, searching, inspecting, and editing active Helix keybindings:
 - **Visual Editing Actions**:
-  - **Add Keybinding (`[ + Add Binding... ]`)**: Launch a dialog to bind any keystroke or chord in Normal, Select, or Insert mode to an IntelliJ Action, Helix built-in command, or macro.
+  - **Add Keybinding (`[ Add Binding... ]`)**: Launch a dialog to bind any keystroke or chord in Normal, Select, or Insert mode to an IntelliJ Action, Helix built-in command, or macro.
   - **Edit Keybinding (`[ Edit... ]` / Double-Click)**: Double-click any row or click Edit to modify the assigned shortcut or command in-place.
   - **Reset to Default (`[ Reset to Default ]`)**: Revert any custom override back to the stock Helix keymap, cleanly removing it from your TOML config.
   - **Disable Shortcut (`[ Disable (no_op) ]`)**: Quickly disable any shortcut by assigning `"no_op"`.
-  - **Context Menu**: Right-click any row to Add, Edit, Reset, Disable, or Copy commands and shortcuts.
+  - **Context Menu**: Right-click any row to Add Binding..., Edit..., Reset to Default, Disable (no_op), Copy Helix Command, or Copy Shortcut.
 - **Mode Selector**: Switch between **Normal**, **Select**, and **Insert** modes.
-- **Prefix Filter**: Filter table to specific chord families (`All`, `Space Chords`, `Goto (g)`, `View (z)`, `Match (m)`, `Window (Ctrl-w)`, `Bracket ([ / ])`, or `Single Keys`).
+- **Prefix Filter**: Filter table to specific chord families (`All Chords`, `Space Chords (space)`, `Goto Chords (g)`, `View Chords (z)`, `Match Chords (m)`, `Window Chords (C-w)`, `Bracket Chords ([ / ])`, or `Single Keys & Other`).
 - **Live Search**: Real-time filtering by shortcut sequence, canonical Helix command, or action description.
-- **Find Shortcut by Keystroke (`[⌨]`)**: Click the keyboard recorder button and press any key combination or chord (e.g. `space f`, `g d`, `C-s`) to instantly look up the assigned command.
-- **IntelliJ Action Discovery (`[ 🔍 Browse Actions... ]`)**: Launch a searchable action picker dialog to explore all registered IntelliJ IDE actions, inspect native IDE shortcuts, and copy ready-to-paste `:action <ActionId>` commands.
+- **Find Shortcut by Keystroke (`[ Find by Keystroke... ]`)**: Click the shortcut finder button and press any key combination or chord (e.g. `space f`, `g d`, `C-s`) to instantly look up or filter the assigned command.
+- **IntelliJ Action Discovery (`[ Browse... ]`)**: Inside the Add/Edit Keybinding dialog, click **Browse...** to launch a searchable action picker to explore all registered IntelliJ IDE actions, inspect native IDE shortcuts, and select actions.
 - **Trie Conflict & Shadowing Warnings**: Automatic trie analysis detects shadowed shortcuts (e.g. binding `g` or `space` directly when child chords `gd`, `gh`, `space f` exist). Shadowed bindings are flagged with `⚠`, conflict tooltips, and diagnostics during TOML configuration validation.
 - **Provenance Badges**: Clearly shows whether each binding is stock `[Default]`, custom from `[custom: intellij]`, `[custom: config]`, or disabled `[no_op]`.
-- **Direct Links**: Quick buttons to open the active TOML configuration or refresh active keybindings.
+- **Direct Links (`[ Open in TOML ]`, `[ Refresh ]`)**: Quick buttons to open the active TOML configuration in the editor or reload active keybindings.
 
 ##### Tab 3: Ctrl Keys
 Manage OS-level keystroke ownership for all 26 control keys (`Ctrl+A` through `Ctrl+Z`) in Normal and Insert modes, choosing whether IntelliJ IDEA or Helix processes each shortcut.
