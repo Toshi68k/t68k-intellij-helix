@@ -22,12 +22,13 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
-- **IntelliJ Platform Modernization & Deprecation Fixes (2025.1 / 2025.2+ Compatibility)**:
-  - **Read Actions**: Replaced deprecated top-level `ActionsKt.runReadAction` with `ReadAction.compute` across AST selection, text object parsing, and bracket matching actions.
+- **IntelliJ Platform Modernization & Deprecation Fixes (2025.1 / 2025.2 / 2026.1+ Compatibility)**:
+  - **Read Actions**: Replaced deprecated `ReadAction.compute` and `ReadAction.run` with cross-version `HelixReadAction.compute` and `run` delegating to `ApplicationManager.getApplication().runReadAction`, eliminating 12 deprecation warnings on IntelliJ 2026+.
   - **Editor & File Navigation**: Migrated `FileEditorManager.openFile` and `openTextEditor` usages to modern descriptor navigation via `OpenFileDescriptor(project, file).navigate(true)`.
   - **Event Queue Preprocessing**: Replaced deprecated `IdeEventQueue.addDispatcher` / `removeDispatcher` with `IdeEventQueue.addPreprocessor` with lifecycle managed via `Disposer`.
   - **Dynamic Bundle Classloading**: Updated `HelixBundle` to pass `HelixBundle::class.java` explicitly to `DynamicBundle` for reliable resource bundle lookup under isolated plugin classloaders.
-  - **Status Bar Widget Modernization**: Migrated `HelixStatusBarWidget` from deprecated `StatusBarWidget.TextPresentation` to `CustomStatusBarWidget` using `TextPanel.WithIconAndArrows`, eliminating synthetic bytecode bridges and obsolete `-Xjvm-default=all` compiler flags.
+  - **Status Bar Widget Modernization**: Migrated `HelixStatusBarWidget` from deprecated `StatusBarWidget.TextPresentation` to `CustomStatusBarWidget` using `TextPanel.WithIconAndArrows`, configured stable `JvmDefaultMode.NO_COMPATIBILITY`, and eliminated synthetic bytecode bridges.
+  - **Macro Subsystem Decoupling**: Decoupled `HelixMacroItem` and `HelixMacroManager` from internal `com.intellij.ide.actionMacro.*` classes via reflection and IntelliJ `ActionManager`, eliminating 33 internal API verification errors.
 - **Helix Select / Extend (`SEL`) Mode Lifecycle & Transitions**:
   - **Editing & Modifying Actions Return to Normal Mode**: Applying destructive, modifying, or yanking operations in `SEL` mode (`d`, `Alt-d`, `y`, `Alt-y`, clipboard yanks, `r`, `R`, `p`, `P`, `~`, `` ` ``, `Alt+` ``, `J`, `Alt-J`, `Ctrl-a`, `Ctrl-x`, and surround actions) executes on the highlighted selection and automatically exits `SEL` mode back to `NORMAL` mode.
   - **Direct Insert Mode Transitions**: Change actions (`c`, `Alt-c`) in `SEL` mode delete the selection and transition directly into `INSERT` mode.

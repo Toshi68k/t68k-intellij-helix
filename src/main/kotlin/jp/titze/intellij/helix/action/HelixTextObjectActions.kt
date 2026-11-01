@@ -3,7 +3,6 @@
 
 package jp.titze.intellij.helix.action
 
-import com.intellij.openapi.application.ReadAction
 import com.intellij.openapi.editor.Caret
 import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.Editor
@@ -321,7 +320,7 @@ object HelixTextObjectActions {
         val doc = editor.document
         if (project != null) {
             val psiPair = try {
-                ReadAction.compute<Pair<Int, Int>?, Throwable> {
+                HelixReadAction.compute {
                     val psiFile = PsiDocumentManager.getInstance(project).getPsiFile(doc) ?: return@compute null
                     val element = psiFile.findElementAt(caret.offset.coerceIn(0, (doc.textLength - 1).coerceAtLeast(0)))
                     val comment = PsiTreeUtil.getParentOfType(element, PsiComment::class.java, false)
@@ -380,7 +379,7 @@ object HelixTextObjectActions {
 
         if (project != null) {
             val psiPair = try {
-                ReadAction.compute<Pair<Int, Int>?, Throwable> {
+                HelixReadAction.compute {
                     val psiFile = PsiDocumentManager.getInstance(project).getPsiFile(doc) ?: return@compute null
                     var elem: PsiElement? = psiFile.findElementAt(
                         caret.offset.coerceIn(0, (doc.textLength - 1).coerceAtLeast(0)),
@@ -424,7 +423,7 @@ object HelixTextObjectActions {
 
         if (project != null) {
             val psiPair = try {
-                ReadAction.compute<Pair<Int, Int>?, Throwable> {
+                HelixReadAction.compute {
                     val psiFile = PsiDocumentManager.getInstance(project).getPsiFile(doc) ?: return@compute null
                     var elem: PsiElement? = psiFile.findElementAt(
                         caret.offset.coerceIn(0, (doc.textLength - 1).coerceAtLeast(0)),

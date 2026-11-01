@@ -5,7 +5,6 @@ package jp.titze.intellij.helix.motion
 
 import com.intellij.ide.DataManager
 import com.intellij.openapi.actionSystem.ActionManager
-import com.intellij.openapi.application.ReadAction
 import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.Editor
@@ -17,6 +16,7 @@ import com.intellij.psi.PsiDocumentManager
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
 import jp.titze.intellij.helix.action.HelixActionDelegate
+import jp.titze.intellij.helix.action.HelixReadAction
 import jp.titze.intellij.helix.action.HelixSurroundActions
 import jp.titze.intellij.helix.jumplist.HelixJumpListService
 import jp.titze.intellij.helix.state.HelixMode
@@ -340,7 +340,7 @@ object HelixJumpMotions {
         val project = editor.project ?: return emptyList()
         val doc = editor.document
         return try {
-            ReadAction.compute<List<TextRange>, Throwable> {
+            HelixReadAction.compute {
                 val psiFile =
                     PsiDocumentManager.getInstance(project).getPsiFile(doc) ?: return@compute emptyList()
                 collectMatchingRanges(psiFile, predicate)
@@ -498,7 +498,7 @@ object HelixJumpMotions {
                 if (action != null) {
                     val beforeOffset = caret.offset
                     try {
-                        ReadAction.run<Throwable> {
+                        HelixReadAction.run {
                             action.handler.execute(editor, caret, dataContext)
                         }
                     } catch (_: Throwable) {
