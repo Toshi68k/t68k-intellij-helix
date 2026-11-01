@@ -13,6 +13,7 @@ import jp.titze.intellij.helix.motion.HelixMotions
 import jp.titze.intellij.helix.state.HelixMode
 import jp.titze.intellij.helix.state.HelixStateManager
 import jp.titze.intellij.helix.ui.HelixJumplistPopup
+import jp.titze.intellij.helix.ui.HelixMacrosPopup
 import jp.titze.intellij.helix.ui.HelixRegistersPopup
 import jp.titze.intellij.helix.ui.HelixSearchManager
 
@@ -262,6 +263,13 @@ class HelixRegistersPickerAction : HelixEditorAction() {
     override fun actionPerformed(e: AnActionEvent) {
         val editor = e.getData(CommonDataKeys.EDITOR) ?: return
         HelixRegistersPopup.show(editor)
+    }
+}
+
+class HelixMacrosPickerAction : HelixEditorAction() {
+    override fun actionPerformed(e: AnActionEvent) {
+        val editor = e.getData(CommonDataKeys.EDITOR) ?: return
+        HelixMacrosPopup.show(editor)
     }
 }
 

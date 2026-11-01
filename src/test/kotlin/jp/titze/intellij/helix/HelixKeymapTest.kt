@@ -75,6 +75,31 @@ class HelixKeymapTest : BasePlatformTestCase() {
         fromCharCtrlW.matches(strokeCw).shouldBeTrue()
     }
 
+    fun testShiftKeyStrokeMatching() {
+        val strokeQ = HelixKeyStroke.fromString("Q")
+        val strokeShiftQ = HelixKeyStroke.fromString("S-q")
+        val strokeLowerQ = HelixKeyStroke.fromString("q")
+
+        strokeQ.matches(strokeShiftQ).shouldBeTrue()
+        strokeShiftQ.matches(strokeQ).shouldBeTrue()
+        strokeLowerQ.matches(strokeQ).shouldBeFalse()
+        strokeQ.matches(strokeLowerQ).shouldBeFalse()
+
+        val label = javax.swing.JLabel()
+        val keyEventShiftQ = KeyEvent(
+            label,
+            KeyEvent.KEY_PRESSED,
+            System.currentTimeMillis(),
+            KeyEvent.SHIFT_DOWN_MASK,
+            KeyEvent.VK_Q,
+            'Q',
+        )
+        val strokeFromEvent = HelixKeyStroke.fromKeyEvent(keyEventShiftQ)
+        strokeFromEvent.matches(strokeQ).shouldBeTrue()
+        strokeFromEvent.matches(strokeShiftQ).shouldBeTrue()
+        strokeFromEvent.matches(strokeLowerQ).shouldBeFalse()
+    }
+
     fun testCommandRegistryExecution() {
         myFixture.configureByText("test.txt", "hello world")
         val editor = myFixture.editor

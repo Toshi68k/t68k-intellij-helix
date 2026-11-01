@@ -335,6 +335,12 @@
                 description="Open registers picker popup">
         </action>
 
+        <action id="jp.titze.intellij.helix.macrosPicker"
+                class="jp.titze.intellij.helix.editor.HelixMacrosPickerAction"
+                text="Helix Macros Picker"
+                description="Open macros picker popup">
+        </action>
+
         <action id="jp.titze.intellij.helix.switchCase"
                 class="jp.titze.intellij.helix.editor.HelixSwitchCaseAction"
                 text="Helix Switch Case"

@@ -594,6 +594,7 @@ to execute):
   (`Alt+x`)
 - `:record-macro` / `:macro-record` &rarr; Start or stop recording a keyboard macro (`Q`)
 - `:replay-macro` / `:macro-play` &rarr; Replay the last recorded keyboard macro (`q`)
+- `:macros` / `:macro` &rarr; Open interactive macros picker popup to preview, filter, and run recorded macros
 - `:sort` / `:sort -r` &rarr; Sort selected lines alphabetically or in reverse (whole buffer if no selection)
 - `:pipe [cmd]` &rarr; Pipe each selection into external shell command and replace with stdout (`|`)
 - `:pipe-to [cmd]` &rarr; Pipe each selection into external shell command ignoring stdout (`Alt+|`)
@@ -822,6 +823,7 @@ t68k-intellij-helix/
 │   │   │   ├── editor/       # Interceptors, eligibility, lifecycle & shared action base
 │   │   │   ├── jumplist/     # Jumplist service & navigation
 │   │   │   ├── keymap/       # Sequence dispatching engine, Which-Key & Ctrl shortcut policy
+│   │   │   ├── macro/        # Recorded action macro models & playback manager
 │   │   │   ├── motion/       # Word, line, and buffer motions with active selection semantics
 │   │   │   ├── register/     # Named, clipboard, and special registers
 │   │   │   ├── settings/     # Configuration panel, activation scopes & Ctrl key handling

@@ -21,16 +21,40 @@ data class HelixKeyStroke(
 ) {
 
     fun matches(other: HelixKeyStroke): Boolean {
-        if (!hasSameModifiers(other)) {
+        if (!hasSameBaseModifiers(other)) {
             return false
         }
         if (keyChar != null && other.keyChar != null) {
-            return keyChar == other.keyChar
+            return matchesKeyChar(other)
+        }
+        if (!hasSameModifiers(other)) {
+            return false
         }
         if (keyCode != KeyEvent.VK_UNDEFINED && other.keyCode != KeyEvent.VK_UNDEFINED) {
             return keyCode == other.keyCode
         }
         return false
+    }
+
+    private fun hasSameBaseModifiers(other: HelixKeyStroke): Boolean =
+        isCtrl == other.isCtrl && isAlt == other.isAlt && isMeta == other.isMeta
+
+    private fun matchesKeyChar(other: HelixKeyStroke): Boolean {
+        val c1 = keyChar ?: return false
+        val c2 = other.keyChar ?: return false
+        if (c1 == c2) {
+            if (c1.isUpperCase() || isShift == other.isShift) {
+                return true
+            }
+        }
+        val u1 = if (isShift && c1.isLowerCase()) c1.uppercaseChar() else c1
+        val u2 = if (other.isShift && c2.isLowerCase()) c2.uppercaseChar() else c2
+        return isMatchingShiftedCase(u1, u2, other)
+    }
+
+    private fun isMatchingShiftedCase(u1: Char, u2: Char, other: HelixKeyStroke): Boolean {
+        val hasShift = isShift || other.isShift
+        return u1 == u2 && u1.isUpperCase() && hasShift
     }
 
     private fun hasSameModifiers(other: HelixKeyStroke): Boolean {
@@ -98,6 +122,9 @@ data class HelixKeyStroke(
 
             val keyChar = if (rawChar != KeyEvent.CHAR_UNDEFINED) {
                 normalizeKeyChar(rawChar, isCtrl, keyCode)
+            } else if (keyCode in KeyEvent.VK_A..KeyEvent.VK_Z) {
+                val base = (keyCode - KeyEvent.VK_A + 'a'.code).toChar()
+                if (isShift) base.uppercaseChar() else base
             } else {
                 null
             }

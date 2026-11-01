@@ -387,6 +387,9 @@ object HelixCommands {
         HelixCommandItem("registers", listOf("reg"), "Open registers picker popup") { editor ->
             jp.titze.intellij.helix.ui.HelixRegistersPopup.show(editor)
         },
+        HelixCommandItem("macros", listOf("macro", "macro-picker"), "Open macros picker popup") { editor ->
+            jp.titze.intellij.helix.ui.HelixMacrosPopup.show(editor)
+        },
         HelixCommandItem("switch-case", listOf("switch_case"), "Switch case of selected text (~)") { editor ->
             HelixActions.toggleCase(editor)
         },
@@ -1043,6 +1046,8 @@ object HelixCommands {
             "jumps" -> HelixJumplistPopup.show(editor)
 
             "reg", "registers" -> jp.titze.intellij.helix.ui.HelixRegistersPopup.show(editor)
+
+            "macro", "macros" -> jp.titze.intellij.helix.ui.HelixMacrosPopup.show(editor)
 
             "w", "write" -> HelixActionDelegate.executeAction("SaveAll", editor)
 
