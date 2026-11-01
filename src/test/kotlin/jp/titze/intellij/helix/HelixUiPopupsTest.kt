@@ -6,6 +6,7 @@ package jp.titze.intellij.helix
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.booleans.shouldBeTrue
+import io.kotest.matchers.collections.shouldNotBeEmpty
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
@@ -16,8 +17,11 @@ import jp.titze.intellij.helix.action.HelixCaretUtils
 import jp.titze.intellij.helix.command.HelixCommandPopup
 import jp.titze.intellij.helix.command.HelixCommands
 import jp.titze.intellij.helix.editor.HelixEventDispatcher
+import jp.titze.intellij.helix.editor.HelixInsertTracker
 import jp.titze.intellij.helix.keymap.HelixDebugKeymap
 import jp.titze.intellij.helix.keymap.HelixKeyHandler
+import jp.titze.intellij.helix.keymap.HelixKeymapManager
+import jp.titze.intellij.helix.motion.HelixMotionHistory
 import jp.titze.intellij.helix.register.HelixRegisterManager
 import jp.titze.intellij.helix.settings.HelixLineNavigationMode
 import jp.titze.intellij.helix.settings.HelixScratchSplitMode
@@ -34,12 +38,27 @@ import jp.titze.intellij.helix.ui.HelixStatusBarWidget
 import jp.titze.intellij.helix.ui.HelixStatusBarWidgetFactory
 import jp.titze.intellij.helix.ui.HelixWhichKeyMenus
 import jp.titze.intellij.helix.ui.HelixWhichKeyPopup
-import java.awt.Component
 import java.awt.event.InputEvent
 import java.awt.event.KeyEvent
 import java.awt.event.MouseEvent
 
 class HelixUiPopupsTest : BasePlatformTestCase() {
+
+    override fun setUp() {
+        super.setUp()
+        HelixRegisterManager.clear()
+        HelixMotionHistory.lastMotion = null
+        HelixInsertTracker.reset()
+        HelixKeymapManager.resetToDefaults()
+    }
+
+    override fun tearDown() {
+        HelixRegisterManager.clear()
+        HelixMotionHistory.lastMotion = null
+        HelixInsertTracker.reset()
+        HelixKeymapManager.resetToDefaults()
+        super.tearDown()
+    }
 
     fun testSpaceMenuChords() {
         myFixture.configureByText("test.txt", "sample text for space testing")
@@ -729,6 +748,7 @@ class HelixUiPopupsTest : BasePlatformTestCase() {
         factory.isAvailable(project).shouldBeTrue()
         val widget = factory.createWidget(project)
         widget.ID() shouldBe HelixStatusBarWidget.WIDGET_ID
+        (widget as HelixStatusBarWidget).component.shouldNotBeNull()
         factory.disposeWidget(widget)
     }
 
@@ -852,9 +872,12 @@ class HelixUiPopupsTest : BasePlatformTestCase() {
             val clickConsumer = widget.getClickConsumer()
             clickConsumer.shouldNotBeNull()
 
-            val dummyComponent = object : Component() {}
+            val panel = widget.component
+            val mouseListeners = panel.mouseListeners
+            mouseListeners.shouldNotBeEmpty()
+
             val dummyEvent = MouseEvent(
-                dummyComponent,
+                panel,
                 MouseEvent.MOUSE_CLICKED,
                 System.currentTimeMillis(),
                 0,
@@ -865,6 +888,7 @@ class HelixUiPopupsTest : BasePlatformTestCase() {
             )
             // Clicking opens command popup or registers popup safely without throwing
             clickConsumer.consume(dummyEvent)
+            mouseListeners.forEach { it.mouseClicked(dummyEvent) }
         } finally {
             widget.dispose()
         }
