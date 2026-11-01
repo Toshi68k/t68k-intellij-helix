@@ -55,7 +55,7 @@ object HelixTomlParser {
         return isQuote && notEscaped
     }
 
-    private fun stripComment(line: String): String {
+    internal fun stripComment(line: String): String {
         var inQuote = false
         var quoteChar = ' '
         for (i in line.indices) {
@@ -83,7 +83,7 @@ object HelixTomlParser {
         else -> part
     }
 
-    private fun parseSectionHeader(header: String): Pair<HelixMode?, String> {
+    internal fun parseSectionHeader(header: String): Pair<HelixMode?, String> {
         val parts = splitDottedKeys(header)
         if (parts.isEmpty() || parts[0].lowercase() != "keys" || parts.size < 2) {
             return null to ""
@@ -242,7 +242,7 @@ object HelixTomlParser {
         return result
     }
 
-    private fun splitDottedKeys(raw: String): List<String> {
+    internal fun splitDottedKeys(raw: String): List<String> {
         val result = mutableListOf<String>()
         var inQuote = false
         var quoteChar = ' '

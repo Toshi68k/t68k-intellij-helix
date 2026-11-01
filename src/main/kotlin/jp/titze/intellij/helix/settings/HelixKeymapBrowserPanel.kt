@@ -13,6 +13,7 @@ import com.intellij.util.ui.JBUI
 import com.intellij.util.ui.UIUtil
 import jp.titze.intellij.helix.HelixBundle
 import jp.titze.intellij.helix.config.HelixConfigLoader
+import jp.titze.intellij.helix.config.HelixConfigModifier
 import jp.titze.intellij.helix.keymap.BindingSource
 import jp.titze.intellij.helix.keymap.HelixKeybindingRow
 import jp.titze.intellij.helix.keymap.HelixKeymapExtractor
@@ -23,14 +24,19 @@ import java.awt.Component
 import java.awt.Dimension
 import java.awt.FlowLayout
 import java.awt.datatransfer.StringSelection
+import java.awt.event.MouseAdapter
+import java.awt.event.MouseEvent
 import java.awt.font.TextAttribute
 import javax.swing.Box
 import javax.swing.JButton
 import javax.swing.JComboBox
 import javax.swing.JComponent
+import javax.swing.JMenuItem
 import javax.swing.JPanel
+import javax.swing.JPopupMenu
 import javax.swing.JScrollPane
 import javax.swing.JTable
+import javax.swing.SwingUtilities
 import javax.swing.table.AbstractTableModel
 import javax.swing.table.DefaultTableCellRenderer
 
@@ -44,6 +50,11 @@ class HelixKeymapBrowserPanel {
     private val searchField = SearchTextField()
     private val recordButton = JButton("⌨")
     private val statusLabel = JBLabel()
+
+    val addBindingBtn = JButton(HelixBundle.message("settings.keymap.btn.add"))
+    val editBindingBtn = JButton(HelixBundle.message("settings.keymap.btn.edit"))
+    val resetBindingBtn = JButton(HelixBundle.message("settings.keymap.btn.reset"))
+    val disableBindingBtn = JButton(HelixBundle.message("settings.keymap.btn.disable"))
 
     private val tableModel = HelixKeymapTableModel()
     val table = JBTable(tableModel)
@@ -110,7 +121,7 @@ class HelixKeymapBrowserPanel {
     private fun createBottomActionBar(): JPanel {
         val bar = JPanel(BorderLayout())
 
-        val leftActions = JPanel(FlowLayout(FlowLayout.LEFT, 8, 0))
+        val leftActions = JPanel(FlowLayout(FlowLayout.LEFT, 6, 0))
         val openTomlBtn = JButton(HelixBundle.message("settings.keymap.btn.openToml"))
         openTomlBtn.addActionListener {
             val project = ProjectManager.getInstance().openProjects.firstOrNull { !it.isDisposed }
@@ -122,6 +133,17 @@ class HelixKeymapBrowserPanel {
             reloadModeData()
         }
 
+        addBindingBtn.addActionListener { showAddBindingDialog() }
+        editBindingBtn.addActionListener { showEditBindingDialog() }
+        resetBindingBtn.addActionListener { resetSelectedBinding() }
+        disableBindingBtn.addActionListener { disableSelectedBinding() }
+
+        updateActionButtonsState()
+
+        leftActions.add(addBindingBtn)
+        leftActions.add(editBindingBtn)
+        leftActions.add(resetBindingBtn)
+        leftActions.add(disableBindingBtn)
         leftActions.add(openTomlBtn)
         leftActions.add(refreshBtn)
 
@@ -148,6 +170,242 @@ class HelixKeymapBrowserPanel {
         table.columnModel.getColumn(3).preferredWidth = JBUI.scale(120)
 
         table.columnModel.getColumn(3).cellRenderer = SourceCellRenderer()
+
+        table.selectionModel.addListSelectionListener {
+            updateActionButtonsState()
+        }
+        setupTableInteractions()
+    }
+
+    private fun setupTableInteractions() {
+        table.addMouseListener(object : MouseAdapter() {
+            override fun mouseClicked(e: MouseEvent) {
+                if (e.clickCount == 2 && SwingUtilities.isLeftMouseButton(e)) {
+                    showEditBindingDialog()
+                }
+            }
+
+            override fun mousePressed(e: MouseEvent) {
+                maybeShowContextMenu(e)
+            }
+
+            override fun mouseReleased(e: MouseEvent) {
+                maybeShowContextMenu(e)
+            }
+        })
+    }
+
+    private fun maybeShowContextMenu(e: MouseEvent) {
+        if (!e.isPopupTrigger) return
+        val row = table.rowAtPoint(e.point)
+        if (row >= 0 && !table.isRowSelected(row)) {
+            table.setRowSelectionInterval(row, row)
+        }
+        createContextMenu().show(e.component, e.x, e.y)
+    }
+
+    private fun createContextMenu(): JPopupMenu {
+        val menu = JPopupMenu()
+        val selected = getSelectedRowData()
+
+        val addAction = JMenuItem(HelixBundle.message("settings.keymap.menu.add"))
+        addAction.addActionListener { showAddBindingDialog() }
+        menu.add(addAction)
+
+        val editAction = JMenuItem(HelixBundle.message("settings.keymap.menu.edit"))
+        editAction.isEnabled = selected != null
+        editAction.addActionListener { showEditBindingDialog() }
+        menu.add(editAction)
+
+        val resetAction = JMenuItem(HelixBundle.message("settings.keymap.menu.reset"))
+        resetAction.isEnabled = selected != null && selected.source != BindingSource.DEFAULT
+        resetAction.addActionListener { resetSelectedBinding() }
+        menu.add(resetAction)
+
+        val disableAction = JMenuItem(HelixBundle.message("settings.keymap.menu.disable"))
+        disableAction.isEnabled = selected != null && selected.source != BindingSource.NO_OP
+        disableAction.addActionListener { disableSelectedBinding() }
+        menu.add(disableAction)
+
+        menu.addSeparator()
+
+        val copyCmd = JMenuItem(HelixBundle.message("settings.keymap.menu.copyCommand"))
+        copyCmd.isEnabled = selected != null
+        copyCmd.addActionListener {
+            val cmd = selected?.command
+            if (!cmd.isNullOrEmpty()) {
+                CopyPasteManager.getInstance().setContents(StringSelection(cmd))
+                statusLabel.text = HelixBundle.message("settings.keymap.status.copiedAction", cmd)
+            }
+        }
+        menu.add(copyCmd)
+
+        val copySeq = JMenuItem(HelixBundle.message("settings.keymap.menu.copyShortcut"))
+        copySeq.isEnabled = selected != null
+        copySeq.addActionListener {
+            val seq = selected?.displayShortcut
+            if (!seq.isNullOrEmpty()) {
+                CopyPasteManager.getInstance().setContents(StringSelection(seq))
+                statusLabel.text = HelixBundle.message("settings.keymap.status.copiedAction", seq)
+            }
+        }
+        menu.add(copySeq)
+
+        return menu
+    }
+
+    fun getSelectedRowData(): HelixKeybindingRow? {
+        val selectedViewRow = table.selectedRow
+        if (selectedViewRow < 0) return null
+        val modelRow = table.convertRowIndexToModel(selectedViewRow)
+        return tableModel.getRow(modelRow)
+    }
+
+    fun updateActionButtonsState() {
+        val selected = getSelectedRowData()
+        editBindingBtn.isEnabled = selected != null
+        resetBindingBtn.isEnabled = selected != null && selected.source != BindingSource.DEFAULT
+        disableBindingBtn.isEnabled = selected != null && selected.source != BindingSource.NO_OP
+    }
+
+    fun showAddBindingDialog() {
+        val currentMode = modeComboBox.selectedItem as? HelixMode ?: HelixMode.NORMAL
+        val dialog = HelixKeybindingEditDialog(panel, initialMode = currentMode)
+        if (dialog.showAndGet()) {
+            val targetFile = HelixConfigLoader.getTargetConfigFile()
+            val saved = HelixConfigModifier.setBinding(
+                targetFile,
+                dialog.resultMode,
+                dialog.resultShortcut,
+                dialog.resultAction,
+            )
+            if (saved) {
+                applyModeSelection(dialog.resultMode)
+                selectRowBySequence(dialog.resultShortcut)
+                statusLabel.text = HelixBundle.message(
+                    "dialog.editKeybinding.status.saved",
+                    dialog.resultShortcut,
+                    dialog.resultMode.name.lowercase(),
+                )
+            } else {
+                statusLabel.text = HelixBundle.message(
+                    "dialog.editKeybinding.status.failed",
+                    dialog.resultShortcut,
+                    dialog.resultMode.name.lowercase(),
+                )
+                statusLabel.foreground = JBColor.RED
+            }
+        }
+    }
+
+    fun showEditBindingDialog(row: HelixKeybindingRow? = getSelectedRowData()) {
+        if (row == null) return
+        val currentMode = modeComboBox.selectedItem as? HelixMode ?: HelixMode.NORMAL
+        val oldSeq = row.rawSequence.ifEmpty { row.displayShortcut }
+        val dialog = HelixKeybindingEditDialog(
+            panel,
+            initialMode = currentMode,
+            initialShortcut = oldSeq,
+            initialAction = row.command,
+        )
+        if (dialog.showAndGet()) {
+            val targetFile = HelixConfigLoader.getTargetConfigFile()
+            if (row.source != BindingSource.DEFAULT && oldSeq != dialog.resultShortcut) {
+                HelixConfigModifier.removeBinding(targetFile, currentMode, oldSeq)
+            }
+            val saved = HelixConfigModifier.setBinding(
+                targetFile,
+                dialog.resultMode,
+                dialog.resultShortcut,
+                dialog.resultAction,
+            )
+            if (saved) {
+                applyModeSelection(dialog.resultMode)
+                selectRowBySequence(dialog.resultShortcut)
+                statusLabel.text = HelixBundle.message(
+                    "dialog.editKeybinding.status.saved",
+                    dialog.resultShortcut,
+                    dialog.resultMode.name.lowercase(),
+                )
+            } else {
+                statusLabel.text = HelixBundle.message(
+                    "dialog.editKeybinding.status.failed",
+                    dialog.resultShortcut,
+                    dialog.resultMode.name.lowercase(),
+                )
+                statusLabel.foreground = JBColor.RED
+            }
+        }
+    }
+
+    fun resetSelectedBinding(row: HelixKeybindingRow? = getSelectedRowData()) {
+        if (row == null) return
+        val currentMode = modeComboBox.selectedItem as? HelixMode ?: HelixMode.NORMAL
+        val seq = row.rawSequence.ifEmpty { row.displayShortcut }
+        val targetFile = HelixConfigLoader.getTargetConfigFile()
+        val removed = HelixConfigModifier.removeBinding(targetFile, currentMode, seq)
+        if (removed) {
+            reloadModeData()
+            selectRowBySequence(seq)
+            statusLabel.text = HelixBundle.message(
+                "dialog.editKeybinding.status.reset",
+                seq,
+                currentMode.name.lowercase(),
+            )
+        } else {
+            statusLabel.text = HelixBundle.message(
+                "dialog.editKeybinding.status.failed",
+                seq,
+                currentMode.name.lowercase(),
+            )
+            statusLabel.foreground = JBColor.RED
+        }
+    }
+
+    fun disableSelectedBinding(row: HelixKeybindingRow? = getSelectedRowData()) {
+        if (row == null) return
+        val currentMode = modeComboBox.selectedItem as? HelixMode ?: HelixMode.NORMAL
+        val seq = row.rawSequence.ifEmpty { row.displayShortcut }
+        val targetFile = HelixConfigLoader.getTargetConfigFile()
+        val disabled = HelixConfigModifier.setNoOp(targetFile, currentMode, seq)
+        if (disabled) {
+            reloadModeData()
+            selectRowBySequence(seq)
+            statusLabel.text = HelixBundle.message(
+                "dialog.editKeybinding.status.disabled",
+                seq,
+                currentMode.name.lowercase(),
+            )
+        } else {
+            statusLabel.text = HelixBundle.message(
+                "dialog.editKeybinding.status.failed",
+                seq,
+                currentMode.name.lowercase(),
+            )
+            statusLabel.foreground = JBColor.RED
+        }
+    }
+
+    private fun applyModeSelection(mode: HelixMode) {
+        if (modeComboBox.selectedItem != mode) {
+            modeComboBox.selectedItem = mode
+        } else {
+            reloadModeData()
+        }
+    }
+
+    fun selectRowBySequence(sequence: String) {
+        val count = table.rowCount
+        for (i in 0 until count) {
+            val modelRow = table.convertRowIndexToModel(i)
+            val row = tableModel.getRow(modelRow)
+            if (row != null && (row.rawSequence == sequence || row.displayShortcut == sequence)) {
+                table.setRowSelectionInterval(i, i)
+                table.scrollRectToVisible(table.getCellRect(i, 0, true))
+                updateActionButtonsState()
+                break
+            }
+        }
     }
 
     private fun setupListeners() {

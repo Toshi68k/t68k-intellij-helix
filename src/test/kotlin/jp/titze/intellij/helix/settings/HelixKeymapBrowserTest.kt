@@ -7,10 +7,12 @@ import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import com.intellij.ui.components.JBTabbedPane
 import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.booleans.shouldBeTrue
+import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.types.shouldBeInstanceOf
+import jp.titze.intellij.helix.HelixBundle
 import jp.titze.intellij.helix.editor.HelixInsertTracker
 import jp.titze.intellij.helix.keymap.BindingSource
 import jp.titze.intellij.helix.keymap.HelixActionExtractor
@@ -176,6 +178,74 @@ class HelixKeymapBrowserTest : BasePlatformTestCase() {
         gRow.isShadowed.shouldBeTrue()
         gRow.conflictReason.shouldNotBeNull()
         gRow.conflictReason!!.contains("child chords take precedence").shouldBeTrue()
+    }
+
+    fun testKeymapBrowserActionButtonsStateOnSelection() {
+        val browser = HelixKeymapBrowserPanel()
+        browser.addBindingBtn.isEnabled.shouldBeTrue()
+        browser.editBindingBtn.isEnabled.shouldBeFalse()
+        browser.resetBindingBtn.isEnabled.shouldBeFalse()
+        browser.disableBindingBtn.isEnabled.shouldBeFalse()
+
+        browser.table.setRowSelectionInterval(0, 0)
+        browser.updateActionButtonsState()
+
+        browser.editBindingBtn.isEnabled.shouldBeTrue()
+        browser.disableBindingBtn.isEnabled.shouldBeTrue()
+        // Default binding should not be resettable
+        browser.resetBindingBtn.isEnabled.shouldBeFalse()
+
+        // Bind custom shortcut and select it
+        HelixKeymapManager.bind(HelixMode.NORMAL, "C-s", ":w")
+        browser.reloadModeData()
+        val customIdx = (0 until browser.table.rowCount).first {
+            browser.table.getValueAt(it, 0).toString().contains("C-s")
+        }
+        browser.table.setRowSelectionInterval(customIdx, customIdx)
+        browser.updateActionButtonsState()
+        browser.resetBindingBtn.isEnabled.shouldBeTrue()
+        browser.disableBindingBtn.isEnabled.shouldBeTrue()
+
+        // Bind no_op shortcut
+        HelixKeymapManager.bind(HelixMode.NORMAL, "C-x", "no_op")
+        browser.reloadModeData()
+        val noOpIdx = (0 until browser.table.rowCount).first {
+            browser.table.getValueAt(it, 0).toString().contains("C-x")
+        }
+        browser.table.setRowSelectionInterval(noOpIdx, noOpIdx)
+        browser.updateActionButtonsState()
+        browser.disableBindingBtn.isEnabled.shouldBeFalse()
+        browser.resetBindingBtn.isEnabled.shouldBeTrue()
+    }
+
+    fun testKeybindingEditDialogValidationAndResults() {
+        val browser = HelixKeymapBrowserPanel()
+        val dialog = HelixKeybindingEditDialog(
+            browser.panel,
+            initialMode = HelixMode.NORMAL,
+            initialShortcut = "space + f",
+            initialAction = ":action GotoFile",
+        )
+        dialog.resultMode shouldBe HelixMode.NORMAL
+        // Normalizes ' + ' to space chord
+        dialog.resultShortcut shouldBe "space f"
+        dialog.resultAction shouldBe ":action GotoFile"
+        dialog.doValidate().shouldBeNull()
+
+        // ActionType toString() matches localization bundle
+        HelixKeybindingEditDialog.ActionType.INTELLIJ.toString() shouldBe
+            HelixBundle.message("dialog.editKeybinding.type.intellij")
+        HelixKeybindingEditDialog.ActionType.NO_OP.toString() shouldBe
+            HelixBundle.message("dialog.editKeybinding.type.noop")
+    }
+
+    fun testKeymapBrowserSelectRowBySequence() {
+        val browser = HelixKeymapBrowserPanel()
+        browser.selectRowBySequence("space f")
+        browser.table.selectedRow.shouldBeGreaterThan(-1)
+        val selected = browser.getSelectedRowData()
+        selected.shouldNotBeNull()
+        selected.rawSequence shouldBe "space f"
     }
 
     private fun Int.shouldBeGreaterThan(other: Int) {

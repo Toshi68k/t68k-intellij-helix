@@ -5,6 +5,18 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+
+- **Interactive Visual Keymap Customizer (Add / Edit / Reset / Disable)**:
+  - **Add Keybinding (`[ + Add Binding... ]`)**: Modal dialog (`HelixKeybindingEditDialog`) allowing users to define new bindings by mode (`Normal`, `Select`, `Insert`), shortcut keystroke or chord, and target action.
+  - **Edit Keybinding (`[ Edit... ]`)**: Edit existing shortcuts via toolbar button, table double-click, or right-click context menu.
+  - **Reset to Default (`[ Reset to Default ]`)**: Reverts custom key overrides back to default bindings by cleanly removing them from `intellij.toml` (or custom config path).
+  - **Disable Shortcut (`[ Disable (no_op) ]`)**: Quick action to disable a shortcut by mapping it to `"no_op"`.
+  - **Integrated Shortcut Recording**: Direct `[ ⌨ Record... ]` button inside the edit dialog to capture single keys and chords on the fly.
+  - **IntelliJ Action Discovery**: Integrated `[ 🔍 Browse... ]` button to discover and bind any IntelliJ action (`:action <ActionId>`).
+  - **Table Context Menu**: Right-click menu providing quick actions: Add, Edit, Reset, Disable, Copy Helix Command, and Copy Shortcut.
+  - **Safe TOML Engine (`HelixConfigModifier`)**: Non-destructive TOML writer that preserves user comments, blank lines, and unrelated sections while persisting key changes and triggering live runtime reloads.
+
 ## [0.3.2]
 
 ### Fixed

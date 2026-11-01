@@ -684,8 +684,14 @@ Structured into 3 cohesive domains with native IntelliJ section dividers:
   - **Prompt History Capacity**: Set maximum remembered prompt history entries per category (10–500, default: 100).
   - **Which-Key Chord Menus**: Enable or disable Which-Key chord popups, choose hint display style (Helix command names vs IntelliJ Action IDs), and configure column layout (3 columns compact vs 2 columns classic).
 
-##### Tab 2: Keybindings (Visual Keymap Explorer)
-An interactive explorer for discovering, searching, and inspecting active Helix keybindings:
+##### Tab 2: Keybindings (Visual Keymap Explorer & Editor)
+An interactive explorer and visual customizer for discovering, searching, inspecting, and editing active Helix keybindings:
+- **Visual Editing Actions**:
+  - **Add Keybinding (`[ + Add Binding... ]`)**: Launch a dialog to bind any keystroke or chord in Normal, Select, or Insert mode to an IntelliJ Action, Helix built-in command, or macro.
+  - **Edit Keybinding (`[ Edit... ]` / Double-Click)**: Double-click any row or click Edit to modify the assigned shortcut or command in-place.
+  - **Reset to Default (`[ Reset to Default ]`)**: Revert any custom override back to the stock Helix keymap, cleanly removing it from your TOML config.
+  - **Disable Shortcut (`[ Disable (no_op) ]`)**: Quickly disable any shortcut by assigning `"no_op"`.
+  - **Context Menu**: Right-click any row to Add, Edit, Reset, Disable, or Copy commands and shortcuts.
 - **Mode Selector**: Switch between **Normal**, **Select**, and **Insert** modes.
 - **Prefix Filter**: Filter table to specific chord families (`All`, `Space Chords`, `Goto (g)`, `View (z)`, `Match (m)`, `Window (Ctrl-w)`, `Bracket ([ / ])`, or `Single Keys`).
 - **Live Search**: Real-time filtering by shortcut sequence, canonical Helix command, or action description.
