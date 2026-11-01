@@ -44,8 +44,14 @@ jobs:
       - name: Make gradlew executable
         run: chmod +x gradlew
 
-      - name: Inspect, Test, and Build Plugin
-        run: ./gradlew spotlessCheck detekt test verifyPlugin buildPlugin --build-cache
+      - name: Run Checks and Tests
+        run: ./gradlew spotlessCheck detekt test --build-cache
+
+      - name: Build and Verify Plugin
+        run: ./gradlew buildPlugin --build-cache
+
+      - name: Verify Plugin Structure
+        run: ./gradlew verifyPlugin --no-parallel
 
       - name: Upload Test Reports
         if: failure()
