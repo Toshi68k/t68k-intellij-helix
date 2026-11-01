@@ -8,7 +8,6 @@ import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileEditor.OpenFileDescriptor
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.vcs.changes.ChangeListManager
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.wm.WindowManager
 import jp.titze.intellij.helix.action.HelixActionDelegate
@@ -124,10 +123,15 @@ object HelixFileNavigation {
     }
 
     private fun queryVcsModifiedFile(project: Project, currentFile: VirtualFile?): VirtualFile? = try {
-        val clm = ChangeListManager.getInstance(project)
-        val affected = clm.affectedFiles
+        val clmClass = Class.forName("com.intellij.openapi.vcs.changes.ChangeListManager")
+        val getInstance = clmClass.getMethod("getInstance", Project::class.java)
+        val clm = getInstance.invoke(null, project)
+        val getAffectedFiles = clmClass.getMethod("getAffectedFiles")
+
+        @Suppress("UNCHECKED_CAST")
+        val affected = getAffectedFiles.invoke(clm) as? Collection<VirtualFile> ?: emptyList()
         affected.filter { it.isValid && it != currentFile }.maxByOrNull { it.timeStamp }
-    } catch (_: Exception) {
+    } catch (_: Throwable) {
         null
     }
 

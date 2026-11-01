@@ -309,7 +309,7 @@ object HelixMacrosPopup {
             val selected = list.selectedValue
             popup.cancel()
             if (selected != null) {
-                HelixMacroManager.playMacro(selected.macro, count = 1)
+                HelixMacroManager.playMacro(selected, count = 1, editor = editor)
             }
         }
 

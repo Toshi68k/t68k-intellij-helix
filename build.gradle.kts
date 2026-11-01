@@ -1,12 +1,15 @@
+import com.diffplug.gradle.spotless.SpotlessTask
+import dev.detekt.gradle.Detekt
 import org.jetbrains.changelog.Changelog
 import org.jetbrains.intellij.platform.gradle.TestFrameworkType
+import org.jetbrains.kotlin.gradle.dsl.JvmDefaultMode
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
 
 plugins {
     id("java")
     kotlin("jvm") version "2.4.10"
-    id("org.jetbrains.intellij.platform") version "2.18.1"
+    id("org.jetbrains.intellij.platform") version "2.19.0"
     id("org.jetbrains.changelog") version "2.4.0"
     id("dev.detekt") version "2.0.0-alpha.6"
     id("com.diffplug.spotless") version "8.10.4"
@@ -48,12 +51,15 @@ kotlin {
         jvmTarget.set(JvmTarget.JVM_21)
         apiVersion.set(KotlinVersion.KOTLIN_2_1)
         languageVersion.set(KotlinVersion.KOTLIN_2_1)
+        jvmDefault.set(JvmDefaultMode.NO_COMPATIBILITY)
     }
 }
 
 detekt {
     autoCorrect = true
     buildUponDefaultConfig = true
+    // To prevent race-conditions disallow Detekt parallelism
+    parallel = false
     config.setFrom(files("$projectDir/config/detekt/detekt.yml"))
 }
 
@@ -63,6 +69,11 @@ spotless {
         targetExclude("**/build/**", "**/.gradle/**")
         licenseHeaderFile(rootProject.file("config/spotless/copyright.kt"))
     }
+}
+
+tasks.withType<Detekt>().configureEach {
+    // Make sure that Detekt runs after any Spotless tasks
+    mustRunAfter(tasks.withType<SpotlessTask>())
 }
 
 tasks.named("detektTest") {

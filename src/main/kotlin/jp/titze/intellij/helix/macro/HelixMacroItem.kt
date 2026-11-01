@@ -3,14 +3,12 @@
 
 package jp.titze.intellij.helix.macro
 
-import com.intellij.ide.actionMacro.ActionMacro
-
 data class HelixMacroItem(
     val name: String,
     val isRecent: Boolean,
     val actionCount: Int,
     val previewText: String,
-    val macro: ActionMacro,
+    val rawMacro: Any? = null,
 ) {
     fun matches(query: String): Boolean {
         if (query.isEmpty()) return true
@@ -21,38 +19,74 @@ data class HelixMacroItem(
     }
 
     companion object {
+        const val NO_NAME_MACRO = "<noname>"
         private const val MAX_PREVIEW_ACTIONS = 4
-        private const val NO_NAME_MACRO = "<noname>"
 
-        fun fromActionMacro(macro: ActionMacro, isRecent: Boolean = false): HelixMacroItem {
-            val rawName = macro.name
+        fun fromActionMacro(macro: Any, isRecent: Boolean = false): HelixMacroItem {
+            val rawName = try {
+                macro.javaClass.getMethod("getName").invoke(macro) as? String
+            } catch (_: Throwable) {
+                null
+            }
             val displayName = if (rawName.isNullOrBlank() || rawName == NO_NAME_MACRO) {
                 NO_NAME_MACRO
             } else {
                 rawName
             }
+            val actions = extractActions(macro)
             return HelixMacroItem(
                 name = displayName,
                 isRecent = isRecent || displayName == NO_NAME_MACRO,
-                actionCount = macro.actions.size,
-                previewText = formatPreview(macro),
-                macro = macro,
+                actionCount = actions.size,
+                previewText = formatPreview(actions),
+                rawMacro = macro,
             )
         }
 
-        private fun formatPreview(macro: ActionMacro): String {
-            val actions = macro.actions
+        private fun extractActions(macro: Any): List<*> = try {
+            val getActions = macro.javaClass.getMethod("getActions")
+            val result = getActions.invoke(macro)
+            when (result) {
+                is Array<*> -> result.toList()
+                is List<*> -> result
+                else -> emptyList<Any>()
+            }
+        } catch (_: Throwable) {
+            emptyList<Any>()
+        }
+
+        private fun formatPreview(actions: List<*>): String {
             if (actions.isEmpty()) return "(empty)"
             val previewList = actions.take(MAX_PREVIEW_ACTIONS).map { desc ->
-                when (desc) {
-                    is ActionMacro.TypedDescriptor -> desc.text?.let { "\"$it\"" } ?: desc.toString()
-                    is ActionMacro.ShortcutActionDescription -> desc.text ?: desc.toString()
-                    is ActionMacro.IdActionDescriptor -> desc.actionId
-                    else -> desc.toString()
-                }
+                formatDescriptor(desc)
             }
             val base = previewList.joinToString(", ")
             return if (actions.size > MAX_PREVIEW_ACTIONS) "$base, ..." else base
+        }
+
+        private fun formatDescriptor(desc: Any?): String {
+            if (desc == null) return ""
+            val className = desc.javaClass.simpleName
+            return try {
+                when {
+                    className.contains("TypedDescriptor") -> {
+                        val text = desc.javaClass.getMethod("getText").invoke(desc) as? String
+                        text?.let { "\"$it\"" } ?: desc.toString()
+                    }
+
+                    className.contains("ShortcutActionDescription") -> {
+                        (desc.javaClass.getMethod("getText").invoke(desc) as? String) ?: desc.toString()
+                    }
+
+                    className.contains("IdActionDescriptor") -> {
+                        (desc.javaClass.getMethod("getActionId").invoke(desc) as? String) ?: desc.toString()
+                    }
+
+                    else -> desc.toString()
+                }
+            } catch (_: Throwable) {
+                desc.toString()
+            }
         }
     }
 }
