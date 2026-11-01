@@ -68,6 +68,8 @@ object HelixRegisterActions {
 
         if (enterInsert) {
             state.setMode(HelixMode.INSERT)
+        } else if (state.mode == HelixMode.SELECT) {
+            state.setMode(HelixMode.NORMAL)
         }
     }
 
@@ -112,12 +114,17 @@ object HelixRegisterActions {
             )
             HelixVisualFeedback.flashYank(editor, ranges)
         }
+
+        if (state.mode == HelixMode.SELECT) {
+            state.setMode(HelixMode.NORMAL)
+        }
     }
 
     fun paste(editor: Editor, after: Boolean = true, register: Char? = null) {
         val project = editor.project
         val entry = HelixRegisterManager.get(register, editor) ?: return
         val doc = editor.document
+        val state = HelixStateManager.getOrCreate(editor)
 
         WriteCommandAction.runWriteCommandAction(project) {
             val caretsAscending = editor.caretModel.allCarets.sortedBy {
@@ -157,12 +164,17 @@ object HelixRegisterActions {
                 }
             }
         }
+
+        if (state.mode == HelixMode.SELECT) {
+            state.setMode(HelixMode.NORMAL)
+        }
     }
 
     fun replaceWithRegister(editor: Editor, register: Char? = null) {
         val project = editor.project
         val entry = HelixRegisterManager.get(register, editor) ?: return
         val doc = editor.document
+        val state = HelixStateManager.getOrCreate(editor)
 
         WriteCommandAction.runWriteCommandAction(project) {
             val caretsAscending = editor.caretModel.allCarets.sortedBy {
@@ -190,6 +202,10 @@ object HelixRegisterActions {
                     replaceCaretText(doc, caret, textToPaste)
                 }
             }
+        }
+
+        if (state.mode == HelixMode.SELECT) {
+            state.setMode(HelixMode.NORMAL)
         }
     }
 
@@ -310,6 +326,10 @@ object HelixRegisterActions {
                 register = register,
             )
             HelixVisualFeedback.flashYank(editor, ranges)
+        }
+
+        if (state.mode == HelixMode.SELECT) {
+            state.setMode(HelixMode.NORMAL)
         }
     }
 }

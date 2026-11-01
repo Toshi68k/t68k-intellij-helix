@@ -135,6 +135,10 @@ object HelixActions {
                 }
             }
         }
+
+        if (state.mode == HelixMode.SELECT) {
+            state.setMode(HelixMode.NORMAL)
+        }
     }
 
     fun joinLines(editor: Editor, count: Int = 1, selectSpace: Boolean = false) {
@@ -222,6 +226,10 @@ object HelixActions {
                 }
             }
         }
+
+        if (state.mode == HelixMode.SELECT) {
+            state.setMode(HelixMode.NORMAL)
+        }
     }
 
     fun enterInsert(editor: Editor) {
@@ -287,7 +295,6 @@ object HelixActions {
         val state = HelixStateManager.getOrCreate(editor)
         if (state.mode == HelixMode.SELECT) {
             state.setMode(HelixMode.NORMAL)
-            editor.caretModel.runForEachCaret { it.removeSelection() }
         } else {
             state.setMode(HelixMode.SELECT)
         }

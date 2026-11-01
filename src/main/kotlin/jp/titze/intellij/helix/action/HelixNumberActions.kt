@@ -53,6 +53,10 @@ object HelixNumberActions {
             }
         }
         editor.scrollingModel.scrollToCaret(ScrollType.MAKE_VISIBLE)
+
+        if (state.mode == HelixMode.SELECT) {
+            state.setMode(HelixMode.NORMAL)
+        }
     }
 
     private fun modifySelection(caret: Caret, doc: Document, amount: Int) {
