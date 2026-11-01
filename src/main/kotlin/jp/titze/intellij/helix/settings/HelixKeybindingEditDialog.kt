@@ -17,7 +17,7 @@ import java.awt.Dimension
 import java.awt.FlowLayout
 import java.awt.GridLayout
 import javax.swing.JButton
-import javax.swing.JComboBox
+import com.intellij.openapi.ui.ComboBox
 import javax.swing.JComponent
 import javax.swing.JPanel
 
@@ -41,14 +41,14 @@ class HelixKeybindingEditDialog(
         override fun toString(): String = HelixBundle.message(bundleKey)
     }
 
-    private val modeCombo = JComboBox(arrayOf(HelixMode.NORMAL, HelixMode.SELECT, HelixMode.INSERT))
+    private val modeCombo = ComboBox(arrayOf(HelixMode.NORMAL, HelixMode.SELECT, HelixMode.INSERT))
     private val shortcutField = JBTextField(initialShortcut)
     private val recordButton = JButton(HelixBundle.message("dialog.editKeybinding.record"))
 
-    private val typeCombo = JComboBox(ActionType.values())
+    private val typeCombo = ComboBox(ActionType.entries.toTypedArray())
     private val intellijActionField = JBTextField()
     private val browseActionsButton = JButton(HelixBundle.message("dialog.editKeybinding.browse"))
-    private val helixCommandCombo = JComboBox<String>()
+    private val helixCommandCombo = ComboBox<String>()
     private val rawActionField = JBTextField()
 
     private val actionCardLayout = CardLayout()

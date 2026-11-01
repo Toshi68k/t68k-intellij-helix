@@ -3,6 +3,7 @@
 
 package jp.titze.intellij.helix.settings
 
+import com.intellij.openapi.ui.ComboBox
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.table.JBTable
 import com.intellij.util.ui.JBUI
@@ -15,7 +16,6 @@ import java.awt.BorderLayout
 import java.awt.Component
 import javax.swing.DefaultCellEditor
 import javax.swing.JButton
-import javax.swing.JComboBox
 import javax.swing.JPanel
 import javax.swing.JTable
 import javax.swing.table.AbstractTableModel
@@ -118,7 +118,7 @@ class HelixCtrlKeyPanel {
 
     private fun setupTableRenderersAndEditors() {
         table.rowHeight = JBUI.scale(24)
-        val comboBox = JComboBox(arrayOf(HelixKeyOwner.HELIX.name, HelixKeyOwner.IDE.name))
+        val comboBox = ComboBox(arrayOf(HelixKeyOwner.HELIX.name, HelixKeyOwner.IDE.name))
         table.columnModel.getColumn(1).cellEditor = DefaultCellEditor(comboBox)
         table.columnModel.getColumn(2).cellEditor = DefaultCellEditor(comboBox)
 

@@ -29,7 +29,7 @@ import java.awt.event.MouseEvent
 import java.awt.font.TextAttribute
 import javax.swing.Box
 import javax.swing.JButton
-import javax.swing.JComboBox
+import com.intellij.openapi.ui.ComboBox
 import javax.swing.JComponent
 import javax.swing.JMenuItem
 import javax.swing.JPanel
@@ -45,8 +45,8 @@ import javax.swing.table.DefaultTableCellRenderer
  */
 class HelixKeymapBrowserPanel {
 
-    private val modeComboBox = JComboBox(arrayOf(HelixMode.NORMAL, HelixMode.SELECT, HelixMode.INSERT))
-    private val prefixComboBox = JComboBox(KeymapPrefixGroup.values())
+    private val modeComboBox = ComboBox(arrayOf(HelixMode.NORMAL, HelixMode.SELECT, HelixMode.INSERT))
+    private val prefixComboBox = ComboBox(KeymapPrefixGroup.entries.toTypedArray())
     private val searchField = SearchTextField()
     private val recordButton = JButton(HelixBundle.message("settings.keymap.btn.findByKeystroke"))
     private val statusLabel = JBLabel()
