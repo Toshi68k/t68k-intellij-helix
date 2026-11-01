@@ -486,4 +486,6 @@ object HelixActions {
     fun runShellCommand(editor: Editor, command: String) = HelixShellActions.runShellCommand(editor, command)
 
     fun showRegistersPicker(editor: Editor) = jp.titze.intellij.helix.ui.HelixRegistersPopup.show(editor)
+
+    fun showMacrosPicker(editor: Editor) = jp.titze.intellij.helix.ui.HelixMacrosPopup.show(editor)
 }

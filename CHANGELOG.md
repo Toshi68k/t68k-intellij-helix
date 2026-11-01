@@ -18,13 +18,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   - **IntelliJ Action Discovery**: Integrated `Browse...` button in the edit dialog to discover and bind any IntelliJ action (`:action <ActionId>`).
   - **Table Context Menu**: Right-click menu providing quick actions: Add Binding..., Edit..., Reset to Default, Disable (no_op), Copy Helix Command, and Copy Shortcut.
   - **Safe TOML Engine (`HelixConfigModifier`)**: Non-destructive TOML writer that preserves user comments, blank lines, and unrelated sections while persisting key changes and triggering live runtime reloads.
+- **Interactive Macro Picker Popup (`:macros` / `:macro`)**: Added an interactive search and playback picker for recorded macros with action counts, preview snippets, fuzzy filtering, `Enter` to play, and `Alt+E` to edit.
 
 ### Fixed
 
-- **Macro Recording Trailing `Q` Fix**: Fixed an issue where stopping macro recording with `Q` recorded the trailing `Q` into the macro, causing macro playback (`q`) to unintentionally restart recording.
-- **Command Palette Match Relevance Ranking**: Added relevance scoring to the command palette (`:`) so exact
-  command names and aliases (such as `:reg`, `:w`, `:q`) rank first instead of being shadowed by partial substring
-  matches.
 - **IntelliJ Platform Modernization & Deprecation Fixes (2025.1 / 2025.2+ Compatibility)**:
   - **Read Actions**: Replaced deprecated top-level `ActionsKt.runReadAction` with `ReadAction.compute` across AST selection, text object parsing, and bracket matching actions.
   - **Editor & File Navigation**: Migrated `FileEditorManager.openFile` and `openTextEditor` usages to modern descriptor navigation via `OpenFileDescriptor(project, file).navigate(true)`.
@@ -40,6 +37,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   - **Sub-Selection Splitting Transitions to Normal Mode**: Commands that split or filter a selection into multiple sub-selections (`s` regex select, `S` split regex, `Alt-s` split on newlines, `K` filter selections) automatically return to `NORMAL` mode so each sub-caret can be navigated independently.
   - **Extend-Search Preservation in Select Mode**: `HelixSearchPopup` checks for `SELECT` mode on submission, executing extend search navigation (`searchNext`) across carets rather than collapsing carets to head.
   - **Command Registry Modularization**: Refactored command registration in `HelixCommandRegistry` into modular domain groups (`registerEdits`, `registerInsertTransitions`, `registerFormattingAndIndents`) with full Detekt compliance and expanded unit test coverage in `HelixEditingActionsTest`.
+- **Macro Recording Trailing `Q` Fix**: Fixed an issue where stopping macro recording with `Q` recorded the trailing `Q` into the macro, causing macro playback (`q`) to unintentionally restart recording.
+- **Command Palette Match Relevance Ranking**: Added relevance scoring to the command palette (`:`) so exact command names and aliases (such as `:reg`, `:w`, `:q`) rank first instead of being shadowed by partial substring matches.
 
 ## [0.3.2]
 

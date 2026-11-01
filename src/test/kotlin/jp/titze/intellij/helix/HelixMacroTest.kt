@@ -3,6 +3,7 @@
 
 package jp.titze.intellij.helix
 
+import com.intellij.ide.actionMacro.ActionMacro
 import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.actionSystem.DataContext
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
@@ -12,10 +13,14 @@ import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import jp.titze.intellij.helix.action.HelixActionDelegate
+import jp.titze.intellij.helix.action.HelixActions
 import jp.titze.intellij.helix.command.HelixCommands
 import jp.titze.intellij.helix.editor.HelixEventDispatcher
 import jp.titze.intellij.helix.editor.HelixTypedActionHandler
+import jp.titze.intellij.helix.keymap.HelixCommandRegistry
 import jp.titze.intellij.helix.keymap.HelixKeyHandler
+import jp.titze.intellij.helix.macro.HelixMacroItem
+import jp.titze.intellij.helix.macro.HelixMacroManager
 import jp.titze.intellij.helix.state.HelixMode
 import jp.titze.intellij.helix.state.HelixStateManager
 import java.awt.event.KeyEvent
@@ -170,5 +175,75 @@ class HelixMacroTest : BasePlatformTestCase() {
         handled.shouldBeFalse()
         shiftQEvent.isConsumed.shouldBeFalse()
         executedActions.isEmpty().shouldBeTrue()
+    }
+
+    fun testMacroPickerCommandPaletteItems() {
+        val macrosCmd = HelixCommands.COMMANDS.firstOrNull { it.name == "macros" }
+        macrosCmd.shouldNotBeNull()
+        macrosCmd.aliases shouldBe listOf("macro", "macro-picker")
+    }
+
+    fun testMacroPickerCommandsExecution() {
+        myFixture.configureByText("test.txt", "hello world")
+        val editor = myFixture.editor
+
+        // Executing :macros, :macro, and :macro-picker should complete safely without throwing in headless mode
+        HelixCommands.execute("macros", editor)
+        HelixCommands.execute(":macro", editor)
+        HelixCommands.execute(":macro-picker", editor)
+    }
+
+    fun testMacroPickerActionRegistration() {
+        myFixture.configureByText("test.txt", "hello world")
+        val editor = myFixture.editor
+
+        val actionManager = ActionManager.getInstance()
+        actionManager.getAction("jp.titze.intellij.helix.macrosPicker").shouldNotBeNull()
+
+        val registeredCmd = HelixCommandRegistry.get("macro_picker")
+        registeredCmd.shouldNotBeNull()
+
+        // Calling showMacrosPicker should run safely in headless mode
+        HelixActions.showMacrosPicker(editor)
+    }
+
+    fun testMacroItemFormattingAndMatching() {
+        val macro = ActionMacro("IndentLine")
+        macro.appendAction("EditorIndentLineOrSelection")
+        macro.appendKeyPressed('x', 0, 0)
+        macro.appendShortcut("alt O")
+
+        val item = HelixMacroItem.fromActionMacro(macro)
+        item.name shouldBe "IndentLine"
+        item.isRecent shouldBe false
+        item.actionCount shouldBe 3
+        item.previewText.contains("EditorIndentLineOrSelection").shouldBeTrue()
+        item.previewText.contains("\"x\"").shouldBeTrue()
+        item.previewText.contains("alt O").shouldBeTrue()
+
+        item.matches("").shouldBeTrue()
+        item.matches("indent").shouldBeTrue()
+        item.matches("EditorIndent").shouldBeTrue()
+        item.matches("alt O").shouldBeTrue()
+        item.matches("nonexistent").shouldBeFalse()
+    }
+
+    fun testMacroItemNoNameFormatting() {
+        val emptyMacro = ActionMacro()
+        val item = HelixMacroItem.fromActionMacro(emptyMacro)
+        item.name shouldBe "<noname>"
+        item.isRecent shouldBe true
+        item.actionCount shouldBe 0
+        item.previewText shouldBe "(empty)"
+
+        val nonameMacro = ActionMacro("<noname>")
+        val nonameItem = HelixMacroItem.fromActionMacro(nonameMacro)
+        nonameItem.name shouldBe "<noname>"
+        nonameItem.isRecent shouldBe true
+    }
+
+    fun testMacroManagerGetAllMacros() {
+        val allMacros = HelixMacroManager.getAllMacros()
+        allMacros.shouldNotBeNull()
     }
 }

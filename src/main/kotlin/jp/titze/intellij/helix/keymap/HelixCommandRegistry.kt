@@ -479,6 +479,30 @@ object HelixCommandRegistry {
             HelixJumplistPopup.show(ed)
             true
         }
+        register(
+            "registers_picker",
+            "Open registers picker popup",
+            "jp.titze.intellij.helix.registersPicker",
+        ) { ed, _ ->
+            HelixActions.showRegistersPicker(ed)
+            true
+        }
+        register("macro_picker", "Open macros picker popup", "jp.titze.intellij.helix.macrosPicker") { ed, _ ->
+            HelixActions.showMacrosPicker(ed)
+            true
+        }
+        register(
+            "registers_picker",
+            "Open registers picker popup",
+            "jp.titze.intellij.helix.registersPicker",
+        ) { ed, _ ->
+            HelixActions.showRegistersPicker(ed)
+            true
+        }
+        register("macro_picker", "Open macros picker popup", "jp.titze.intellij.helix.macrosPicker") { ed, _ ->
+            HelixActions.showMacrosPicker(ed)
+            true
+        }
         register("symbol_picker", "Symbol picker", "FileStructurePopup") { ed, _ ->
             HelixSpaceKeymap.lastPickerChar = 's'
             HelixKeyHandler.recordJump(ed)
