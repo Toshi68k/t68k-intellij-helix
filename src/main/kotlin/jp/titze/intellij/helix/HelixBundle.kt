@@ -12,7 +12,7 @@ import java.util.function.Supplier
 @NonNls
 private const val BUNDLE = "messages.HelixBundle"
 
-object HelixBundle : DynamicBundle(BUNDLE) {
+object HelixBundle : DynamicBundle(HelixBundle::class.java, BUNDLE) {
 
     @Nls
     @JvmStatic

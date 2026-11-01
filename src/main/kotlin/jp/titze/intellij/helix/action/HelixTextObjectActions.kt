@@ -3,7 +3,7 @@
 
 package jp.titze.intellij.helix.action
 
-import com.intellij.openapi.application.runReadAction
+import com.intellij.openapi.application.ReadAction
 import com.intellij.openapi.editor.Caret
 import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.Editor
@@ -321,14 +321,14 @@ object HelixTextObjectActions {
         val doc = editor.document
         if (project != null) {
             val psiPair = try {
-                runReadAction {
-                    val psiFile = PsiDocumentManager.getInstance(project).getPsiFile(doc) ?: return@runReadAction null
+                ReadAction.compute<Pair<Int, Int>?, Throwable> {
+                    val psiFile = PsiDocumentManager.getInstance(project).getPsiFile(doc) ?: return@compute null
                     val element = psiFile.findElementAt(caret.offset.coerceIn(0, (doc.textLength - 1).coerceAtLeast(0)))
                     val comment = PsiTreeUtil.getParentOfType(element, PsiComment::class.java, false)
                     if (comment != null) {
                         val range = comment.textRange
                         if (!inside) {
-                            return@runReadAction Pair(range.startOffset, range.endOffset)
+                            return@compute Pair(range.startOffset, range.endOffset)
                         }
                         val text = comment.text
                         val trimmedStart = text.indexOfFirst {
@@ -336,12 +336,12 @@ object HelixTextObjectActions {
                         }
                         val trimmedEnd = text.indexOfLast { it != '/' && it != '*' && !it.isWhitespace() }
                         if (trimmedStart in 0..trimmedEnd) {
-                            return@runReadAction Pair(
+                            return@compute Pair(
                                 range.startOffset + trimmedStart,
                                 range.startOffset + trimmedEnd + 1,
                             )
                         }
-                        return@runReadAction Pair(range.startOffset, range.endOffset)
+                        return@compute Pair(range.startOffset, range.endOffset)
                     }
                     null
                 }
@@ -380,8 +380,8 @@ object HelixTextObjectActions {
 
         if (project != null) {
             val psiPair = try {
-                runReadAction {
-                    val psiFile = PsiDocumentManager.getInstance(project).getPsiFile(doc) ?: return@runReadAction null
+                ReadAction.compute<Pair<Int, Int>?, Throwable> {
+                    val psiFile = PsiDocumentManager.getInstance(project).getPsiFile(doc) ?: return@compute null
                     var elem: PsiElement? = psiFile.findElementAt(
                         caret.offset.coerceIn(0, (doc.textLength - 1).coerceAtLeast(0)),
                     )
@@ -392,14 +392,14 @@ object HelixTextObjectActions {
                         ) {
                             val fullRange = elem.textRange
                             if (!inside) {
-                                return@runReadAction Pair(fullRange.startOffset, fullRange.endOffset)
+                                return@compute Pair(fullRange.startOffset, fullRange.endOffset)
                             }
                             // For inside function, find body enclosed in { ... }
                             val bodyPair = findEnclosingBracketsInElement(doc, elem, '{', '}')
                             if (bodyPair != null) {
-                                return@runReadAction bodyPair
+                                return@compute bodyPair
                             }
-                            return@runReadAction Pair(fullRange.startOffset, fullRange.endOffset)
+                            return@compute Pair(fullRange.startOffset, fullRange.endOffset)
                         }
                         elem = elem.parent
                     }
@@ -424,8 +424,8 @@ object HelixTextObjectActions {
 
         if (project != null) {
             val psiPair = try {
-                runReadAction {
-                    val psiFile = PsiDocumentManager.getInstance(project).getPsiFile(doc) ?: return@runReadAction null
+                ReadAction.compute<Pair<Int, Int>?, Throwable> {
+                    val psiFile = PsiDocumentManager.getInstance(project).getPsiFile(doc) ?: return@compute null
                     var elem: PsiElement? = psiFile.findElementAt(
                         caret.offset.coerceIn(0, (doc.textLength - 1).coerceAtLeast(0)),
                     )
@@ -437,13 +437,13 @@ object HelixTextObjectActions {
                         ) {
                             val fullRange = elem.textRange
                             if (!inside) {
-                                return@runReadAction Pair(fullRange.startOffset, fullRange.endOffset)
+                                return@compute Pair(fullRange.startOffset, fullRange.endOffset)
                             }
                             val bodyPair = findEnclosingBracketsInElement(doc, elem, '{', '}')
                             if (bodyPair != null) {
-                                return@runReadAction bodyPair
+                                return@compute bodyPair
                             }
-                            return@runReadAction Pair(fullRange.startOffset, fullRange.endOffset)
+                            return@compute Pair(fullRange.startOffset, fullRange.endOffset)
                         }
                         elem = elem.parent
                     }

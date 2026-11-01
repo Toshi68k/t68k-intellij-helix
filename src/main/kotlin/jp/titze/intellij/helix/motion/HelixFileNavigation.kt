@@ -134,8 +134,8 @@ object HelixFileNavigation {
     private fun openFile(project: Project, virtualFile: VirtualFile): Boolean {
         if (!virtualFile.isValid) return false
         val descriptor = OpenFileDescriptor(project, virtualFile)
-        val opened = FileEditorManager.getInstance(project).openTextEditor(descriptor, true)
-        return opened != null
+        descriptor.navigate(true)
+        return true
     }
 
     private fun showStatus(project: Project, message: String) {

@@ -6,7 +6,7 @@ package jp.titze.intellij.helix.ui
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.fileEditor.FileDocumentManager
-import com.intellij.openapi.fileEditor.FileEditorManager
+import com.intellij.openapi.fileEditor.OpenFileDescriptor
 import com.intellij.openapi.ui.popup.JBPopup
 import com.intellij.openapi.ui.popup.JBPopupFactory
 import com.intellij.openapi.vfs.LocalFileSystem
@@ -406,7 +406,7 @@ object HelixDirectoryFilePickerPopup {
             opener(editor, file)
         } else {
             val project = editor.project ?: return
-            FileEditorManager.getInstance(project).openFile(file, true)
+            OpenFileDescriptor(project, file).navigate(true)
         }
     }
 

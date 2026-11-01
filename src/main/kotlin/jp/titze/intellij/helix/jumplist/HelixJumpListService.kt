@@ -200,7 +200,8 @@ class HelixJumpListService(private val project: Project) {
         if (!entry.virtualFile.isValid) return false
         val fileEditorManager = FileEditorManager.getInstance(project)
         val descriptor = OpenFileDescriptor(project, entry.virtualFile, entry.caretOffset)
-        val targetEditor = fileEditorManager.openTextEditor(descriptor, true) ?: return false
+        descriptor.navigate(true)
+        val targetEditor = fileEditorManager.selectedTextEditor ?: return false
 
         val caret = targetEditor.caretModel.primaryCaret
         val maxLen = targetEditor.document.textLength

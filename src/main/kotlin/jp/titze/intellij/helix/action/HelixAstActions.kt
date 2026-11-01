@@ -3,7 +3,7 @@
 
 package jp.titze.intellij.helix.action
 
-import com.intellij.openapi.application.runReadAction
+import com.intellij.openapi.application.ReadAction
 import com.intellij.openapi.editor.Caret
 import com.intellij.openapi.editor.CaretState
 import com.intellij.openapi.editor.Editor
@@ -32,8 +32,8 @@ object HelixAstActions {
         val doc = editor.document
         if (doc.textLength == 0) return false
 
-        val newCarets = runReadAction {
-            val psiFile = PsiDocumentManager.getInstance(project).getPsiFile(doc) ?: return@runReadAction null
+        val newCarets = ReadAction.compute<List<HelixCaretSnapshot>?, Throwable> {
+            val psiFile = PsiDocumentManager.getInstance(project).getPsiFile(doc) ?: return@compute null
             editor.caretModel.allCarets.mapNotNull { caret ->
                 val target = findTargetElement(psiFile, doc.textLength, caret) ?: return@mapNotNull null
                 val prev = findPreviousSignificantSibling(target)
@@ -54,8 +54,8 @@ object HelixAstActions {
         val doc = editor.document
         if (doc.textLength == 0) return false
 
-        val newCarets = runReadAction {
-            val psiFile = PsiDocumentManager.getInstance(project).getPsiFile(doc) ?: return@runReadAction null
+        val newCarets = ReadAction.compute<List<HelixCaretSnapshot>?, Throwable> {
+            val psiFile = PsiDocumentManager.getInstance(project).getPsiFile(doc) ?: return@compute null
             editor.caretModel.allCarets.mapNotNull { caret ->
                 val target = findTargetElement(psiFile, doc.textLength, caret) ?: return@mapNotNull null
                 val next = findNextSignificantSibling(target)
@@ -79,8 +79,8 @@ object HelixAstActions {
         val state = HelixStateManager.getOrCreate(editor)
         val isSelect = state.mode == HelixMode.SELECT
 
-        val newCarets = runReadAction {
-            val psiFile = PsiDocumentManager.getInstance(project).getPsiFile(doc) ?: return@runReadAction null
+        val newCarets = ReadAction.compute<List<HelixCaretSnapshot>?, Throwable> {
+            val psiFile = PsiDocumentManager.getInstance(project).getPsiFile(doc) ?: return@compute null
             editor.caretModel.allCarets.mapNotNull { caret ->
                 val curOffset = caret.offset
                 val target = findTargetElement(psiFile, doc.textLength, caret) ?: return@mapNotNull null
@@ -104,8 +104,8 @@ object HelixAstActions {
         val state = HelixStateManager.getOrCreate(editor)
         val isSelect = state.mode == HelixMode.SELECT
 
-        val newCarets = runReadAction {
-            val psiFile = PsiDocumentManager.getInstance(project).getPsiFile(doc) ?: return@runReadAction null
+        val newCarets = ReadAction.compute<List<HelixCaretSnapshot>?, Throwable> {
+            val psiFile = PsiDocumentManager.getInstance(project).getPsiFile(doc) ?: return@compute null
             editor.caretModel.allCarets.mapNotNull { caret ->
                 val curOffset = caret.offset
                 val target = findTargetElement(psiFile, doc.textLength, caret) ?: return@mapNotNull null
@@ -205,8 +205,8 @@ object HelixAstActions {
         val doc = editor.document
         if (doc.textLength == 0) return false
 
-        val newCarets = runReadAction {
-            val psiFile = PsiDocumentManager.getInstance(project).getPsiFile(doc) ?: return@runReadAction null
+        val newCarets = ReadAction.compute<List<HelixCaretSnapshot>?, Throwable> {
+            val psiFile = PsiDocumentManager.getInstance(project).getPsiFile(doc) ?: return@compute null
             val collected = mutableListOf<HelixCaretSnapshot>()
             for (caret in editor.caretModel.allCarets) {
                 collected.addAll(collectSiblingsForCaret(psiFile, doc.textLength, caret))
@@ -233,8 +233,8 @@ object HelixAstActions {
         val doc = editor.document
         if (doc.textLength == 0) return false
 
-        val newCarets = runReadAction {
-            val psiFile = PsiDocumentManager.getInstance(project).getPsiFile(doc) ?: return@runReadAction null
+        val newCarets = ReadAction.compute<List<HelixCaretSnapshot>?, Throwable> {
+            val psiFile = PsiDocumentManager.getInstance(project).getPsiFile(doc) ?: return@compute null
             val collected = mutableListOf<HelixCaretSnapshot>()
             for (caret in editor.caretModel.allCarets) {
                 collected.addAll(collectChildrenForCaret(psiFile, doc.textLength, caret))
