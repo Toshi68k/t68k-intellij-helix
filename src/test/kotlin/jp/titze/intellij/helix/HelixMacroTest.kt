@@ -4,16 +4,21 @@
 package jp.titze.intellij.helix
 
 import com.intellij.openapi.actionSystem.ActionManager
+import com.intellij.openapi.actionSystem.DataContext
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
+import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import jp.titze.intellij.helix.action.HelixActionDelegate
 import jp.titze.intellij.helix.command.HelixCommands
+import jp.titze.intellij.helix.editor.HelixEventDispatcher
+import jp.titze.intellij.helix.editor.HelixTypedActionHandler
 import jp.titze.intellij.helix.keymap.HelixKeyHandler
 import jp.titze.intellij.helix.state.HelixMode
 import jp.titze.intellij.helix.state.HelixStateManager
+import java.awt.event.KeyEvent
 
 class HelixMacroTest : BasePlatformTestCase() {
 
@@ -118,5 +123,52 @@ class HelixMacroTest : BasePlatformTestCase() {
             "PlaybackLastMacro",
             "PlaybackLastMacro",
         )
+    }
+
+    fun testMacroEventDispatcherInterceptionAtKeyPressed() {
+        myFixture.configureByText("test.txt", "hello world")
+        val editor = myFixture.editor
+        val dispatcher = HelixEventDispatcher()
+
+        val shiftQEvent = KeyEvent(
+            editor.contentComponent,
+            KeyEvent.KEY_PRESSED,
+            System.currentTimeMillis(),
+            KeyEvent.SHIFT_DOWN_MASK,
+            KeyEvent.VK_Q,
+            'Q',
+        )
+
+        val handled = dispatcher.dispatch(shiftQEvent)
+        handled.shouldBeTrue()
+        shiftQEvent.isConsumed.shouldBeTrue()
+        executedActions shouldContainExactly listOf("StartStopMacroRecording")
+
+        // Subsequent KEY_TYPED for 'Q' should be consumed and not trigger StartStopMacroRecording again
+        val typedHandler = HelixTypedActionHandler(null)
+        typedHandler.execute(editor, 'Q', DataContext.EMPTY_CONTEXT)
+        executedActions shouldContainExactly listOf("StartStopMacroRecording")
+    }
+
+    fun testMacroEventDispatcherDoesNotInterceptWhenPendingSequence() {
+        myFixture.configureByText("test.txt", "hello world")
+        val editor = myFixture.editor
+        val state = HelixStateManager.getOrCreate(editor)
+        state.setPendingSequence("r")
+
+        val dispatcher = HelixEventDispatcher()
+        val shiftQEvent = KeyEvent(
+            editor.contentComponent,
+            KeyEvent.KEY_PRESSED,
+            System.currentTimeMillis(),
+            KeyEvent.SHIFT_DOWN_MASK,
+            KeyEvent.VK_Q,
+            'Q',
+        )
+
+        val handled = dispatcher.dispatch(shiftQEvent)
+        handled.shouldBeFalse()
+        shiftQEvent.isConsumed.shouldBeFalse()
+        executedActions.isEmpty().shouldBeTrue()
     }
 }

@@ -23,6 +23,9 @@ class HelixTypedActionHandler(private val originalHandler: TypedActionHandler?) 
         val state = HelixStateManager.getOrCreate(editor)
 
         if (!state.mode.isInsertable) {
+            if (HelixEventDispatcher.consumeMacroKeyTyped(charTyped)) {
+                return
+            }
             HelixKeyHandler.handleKey(charTyped, editor)
             return
         }

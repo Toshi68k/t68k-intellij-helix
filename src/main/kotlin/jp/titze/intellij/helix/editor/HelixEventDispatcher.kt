@@ -13,6 +13,9 @@ import jp.titze.intellij.helix.action.HelixActionDelegate
 import jp.titze.intellij.helix.action.HelixActions
 import jp.titze.intellij.helix.jumplist.HelixJumpListService
 import jp.titze.intellij.helix.keymap.HelixKeyHandler
+import jp.titze.intellij.helix.keymap.HelixKeyStroke
+import jp.titze.intellij.helix.keymap.HelixKeymapManager
+import jp.titze.intellij.helix.keymap.HelixKeymapResult
 import jp.titze.intellij.helix.keymap.HelixWindowKeymap
 import jp.titze.intellij.helix.motion.HelixMotions
 import jp.titze.intellij.helix.state.HelixEditorState
@@ -85,11 +88,28 @@ class HelixEventDispatcher : IdeEventQueue.EventDispatcher {
         isCtrl: Boolean,
         isAlt: Boolean,
         isNoModifiers: Boolean,
-    ): Boolean = when {
-        isCtrl -> handleCtrlShortcut(e, editor, state)
-        isNoModifiers -> handleNoModifiersShortcut(e, editor, state)
-        isAlt -> handleAltShortcut(e, editor, state)
-        else -> false
+    ): Boolean {
+        if (handleMacroShortcut(e, editor, state)) return true
+        return when {
+            isCtrl -> handleCtrlShortcut(e, editor, state)
+            isNoModifiers -> handleNoModifiersShortcut(e, editor, state)
+            isAlt -> handleAltShortcut(e, editor, state)
+            else -> false
+        }
+    }
+
+    private fun handleMacroShortcut(e: KeyEvent, editor: Editor, state: HelixEditorState): Boolean {
+        if (state.pendingSequence.isNotEmpty()) return false
+        val stroke = HelixKeyStroke.fromKeyEvent(e)
+        val step = HelixKeymapManager.resolveStep(state.mode, "", stroke)
+        if (step is HelixKeymapResult.Leaf && step.command == "record_macro") {
+            state.takeCount()
+            lastConsumedMacroChar = stroke.keyChar ?: 'Q'
+            val success = HelixActionDelegate.executeAction("StartStopMacroRecording", editor, e)
+            state.notifyListeners()
+            return success
+        }
+        return false
     }
 
     private fun handleWhichKeyPopupEvent(e: KeyEvent): Boolean {
@@ -700,6 +720,15 @@ class HelixEventDispatcher : IdeEventQueue.EventDispatcher {
         private var installed = false
         private var currentDispatcher: HelixEventDispatcher? = null
         private var activeDisposable: Disposable? = null
+
+        @Volatile
+        private var lastConsumedMacroChar: Char? = null
+
+        fun consumeMacroKeyTyped(charTyped: Char): Boolean {
+            val consumed = lastConsumedMacroChar != null && lastConsumedMacroChar == charTyped
+            lastConsumedMacroChar = null
+            return consumed
+        }
 
         @Synchronized
         fun install(parentDisposable: Disposable? = null) {

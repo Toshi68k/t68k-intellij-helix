@@ -21,6 +21,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- **Macro Recording Trailing `Q` Fix**: Fixed an issue where stopping macro recording with `Q` recorded the trailing `Q` into the macro, causing macro playback (`q`) to unintentionally restart recording.
 - **IntelliJ Platform Modernization & Deprecation Fixes (2025.1 / 2025.2+ Compatibility)**:
   - **Read Actions**: Replaced deprecated top-level `ActionsKt.runReadAction` with `ReadAction.compute` across AST selection, text object parsing, and bracket matching actions.
   - **Editor & File Navigation**: Migrated `FileEditorManager.openFile` and `openTextEditor` usages to modern descriptor navigation via `OpenFileDescriptor(project, file).navigate(true)`.
