@@ -17,6 +17,14 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   - **Table Context Menu**: Right-click menu providing quick actions: Add, Edit, Reset, Disable, Copy Helix Command, and Copy Shortcut.
   - **Safe TOML Engine (`HelixConfigModifier`)**: Non-destructive TOML writer that preserves user comments, blank lines, and unrelated sections while persisting key changes and triggering live runtime reloads.
 
+### Fixed
+
+- **Helix Select / Extend (`SEL`) Mode Lifecycle & Transitions**:
+  - **Editing & Modifying Actions Return to Normal Mode**: Applying destructive, modifying, or yanking operations in `SEL` mode (`d`, `Alt-d`, `y`, `Alt-y`, clipboard yanks, `r`, `R`, `p`, `P`, `~`, `` ` ``, `Alt+` ``, `J`, `Alt-J`, `Ctrl-a`, `Ctrl-x`, and surround actions) executes on the highlighted selection and automatically exits `SEL` mode back to `NORMAL` mode.
+  - **Direct Insert Mode Transitions**: Change actions (`c`, `Alt-c`) in `SEL` mode delete the selection and transition directly into `INSERT` mode.
+  - **Selection Preservation on Exit (`v` / `Esc`)**: Toggling out of `SEL` mode back to `NORMAL` mode via `v` or exiting via `Esc` preserves the highlighted selection intact without modifying text or clearing the selection.
+  - **Command Registry Modularization**: Refactored command registration in `HelixCommandRegistry` into modular domain groups (`registerEdits`, `registerInsertTransitions`, `registerFormattingAndIndents`) with full Detekt compliance and expanded unit test coverage in `HelixEditingActionsTest`.
+
 ## [0.3.2]
 
 ### Fixed
