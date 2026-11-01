@@ -263,10 +263,8 @@ object HelixCommandPopup {
         fun updateFilter() {
             val query = textField.text.trim().removePrefix(":")
             listModel.clear()
-            for (cmd in COMMANDS) {
-                if (cmd.matches(query)) {
-                    listModel.addElement(cmd)
-                }
+            for (cmd in HelixCommands.filterCommands(query)) {
+                listModel.addElement(cmd)
             }
             if (!listModel.isEmpty) {
                 list.selectedIndex = 0

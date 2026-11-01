@@ -21,6 +21,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- **Command Palette Match Relevance Ranking**: Added relevance scoring to the command palette (`:`) so exact
+  command names and aliases (such as `:reg`, `:w`, `:q`) rank first instead of being shadowed by partial substring
+  matches.
 - **IntelliJ Platform Modernization & Deprecation Fixes (2025.1 / 2025.2+ Compatibility)**:
   - **Read Actions**: Replaced deprecated top-level `ActionsKt.runReadAction` with `ReadAction.compute` across AST selection, text object parsing, and bracket matching actions.
   - **Editor & File Navigation**: Migrated `FileEditorManager.openFile` and `openTextEditor` usages to modern descriptor navigation via `OpenFileDescriptor(project, file).navigate(true)`.
