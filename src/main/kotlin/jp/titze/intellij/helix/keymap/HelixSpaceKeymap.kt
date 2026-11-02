@@ -101,6 +101,13 @@ internal object HelixSpaceKeymap {
 
             'r' -> HelixActionDelegate.executeAction("RenameElement", editor)
 
+            'm' -> {
+                val state = HelixStateManager.getOrCreate(editor)
+                state.setPendingSequence(" m")
+                jp.titze.intellij.helix.ui.HelixWhichKeyPopup.show(editor, " m")
+                true
+            }
+
             'w' -> {
                 HelixKeyHandler.startWindowChord(editor)
                 true

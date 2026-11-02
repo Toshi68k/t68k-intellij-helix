@@ -10,7 +10,7 @@ A modal editing plugin for JetBrains IDEs implementing the [Helix](https://helix
 paradigm**, deeply integrated with IntelliJ's native IDE intelligence, AST capabilities, and refactoring engines.
 
 The goal of this plugin is to provide a complete and polished Helix-like experience directly within JetBrains IDEs,
-combining the authentic Helix selection-first workflow with native IntelliJ IDE capabilities.
+combining the authentic Helix selection-first workflow with native IntelliJ IDEA capabilities.
 
 - **Plugin ID**: `jp.titze.helix`
 - **Vendor**: [Thorsten Titze](https://github.com/Toshi68k)
@@ -170,7 +170,7 @@ Helix supports prefixing motions, selections, and editing commands with numbers 
 | `2Ctrl+d` / `2Ctrl+u` | `half_page_down` / `half_page_up`             | Scroll half page down / up 2 times                             |
 | `3.`                  | `repeat_last_insert`                          | Repeat last inserted text 3 times                              |
 | `3u` / `3U`           | `undo` / `redo`                               | Undo / redo 3 changes                                          |
-| `3~` / `3\``          | `switch_case` / `switch_to_lowercase`         | Transform case for 3 characters                                |
+| `3~` / `3\`           | `switch_case` / `switch_to_lowercase`         | Transform case for 3 characters                                |
 
 ### Jumplist Navigation
 
@@ -338,7 +338,7 @@ and [Helix Textobjects](https://docs.helix-editor.com/textobjects.html):
 - **Arbitrary Characters**: Any arbitrary delimiter such as `*` (e.g. `*bold*`), `_`, `~`, `/`, etc.
 - **Multi-Caret**: Works seamlessly across all active carets simultaneously.
 
-### Deep IntelliJ IDE Integrations
+### Deep IntelliJ IDEA Integrations
 
 #### Navigation (`g` menu)
 
@@ -443,6 +443,7 @@ pressed. Code folding is available via `:fold`, `:unfold`, `:fold-all`, and `:un
 | `space + D`               | `workspace_diagnostics_picker`             | `ActivateProblemsViewToolWindow`   | Workspace diagnostics (IntelliJ Problems panel)        |
 | `space + a`               | `code_action`                              | `ShowIntentionActions`             | Code actions & quick-fixes (Alt+Enter)                 |
 | `space + r`               | `rename_symbol`                            | `RenameElement`                    | Refactor rename symbol                                 |
+| `space + m`               | `refactor_menu`                            | —                                  | Open interactive Refactoring submenu                   |
 | `space + c`               | `toggle_comments`                          | `CommentByLineComment`             | Toggle line comments on selection or line              |
 | `space + C`               | `toggle_block_comments`                    | `CommentByBlockComment`            | Toggle block comments on selection                     |
 | `space + h`               | `select_references_to_symbol_under_cursor` | `FindUsages`                       | Find symbol references / usages across project         |
@@ -475,6 +476,24 @@ pressed. Code folding is available via `:fold`, `:unfold`, `:fold-all`, and `:un
 | `space + G k` | `dap_evaluate`          | `EvaluateExpression`      | Evaluate expression popup           |
 | `space + G e` | `dap_edit_condition`    | `EditBreakpoint`          | Edit breakpoint condition and log   |
 | `space + G B` | `dap_view_breakpoints`  | `ViewBreakpoints`         | View all breakpoints manager        |
+
+#### Refactoring & Code Actions (`space + m`)
+
+| Key           | Helix Command       | IntelliJ Action                     | Description                                            |
+|---------------|---------------------|-------------------------------------|--------------------------------------------------------|
+| `space + m v` | `extract_variable`  | `IntroduceVariable`                 | Extract selection or expression into variable          |
+| `space + m m` | `extract_method`    | `ExtractMethod`                     | Extract selection or statements into method / function |
+| `space + m c` | `extract_constant`  | `IntroduceConstant`                 | Extract selection into constant field                  |
+| `space + m f` | `extract_field`     | `IntroduceField`                    | Extract expression into class property / field         |
+| `space + m p` | `extract_parameter` | `IntroduceParameter`                | Turn expression into function parameter                |
+| `space + m i` | `inline`            | `Inline`                            | Inline variable, method, or constant at caret          |
+| `space + m s` | `change_signature`  | `ChangeSignature`                   | Refactor function / method parameters & signature      |
+| `space + m r` | `rename_symbol`     | `RenameElement`                     | Refactor rename symbol                                 |
+| `space + m M` | `move`              | `Move`                              | Move symbol, class, or file to package / directory     |
+| `space + m w` | `surround_with`     | `SurroundWith`                      | Wrap selection in template (`try/catch`, `if`, etc.)   |
+| `space + m o` | `override_methods`  | `OverrideMethods`                   | Generate / override superclass methods                 |
+| `space + m I` | `implement_methods` | `ImplementMethods`                  | Implement interface methods                            |
+| `space + m ?` | `refactor_this`     | `Refactorings.QuickListPopupAction` | Open IntelliJ "Refactor This..." quick picker          |
 
 #### Unimpaired Navigation (`[` / `]`)
 
@@ -529,6 +548,18 @@ to execute):
 - `:goto-file-hsplit` / `:hsplit-new` &rarr; Open declaration or file at cursor in a horizontal split
 - `:goto-file-vsplit` / `:vsplit-new` &rarr; Open declaration or file at cursor in a vertical split
 - `:format` &rarr; Reformat code (`ReformatCode`)
+- `:extract-variable` / `:var` &rarr; Extract selection into variable (`IntroduceVariable`, `space + m v`)
+- `:extract-method` / `:method` &rarr; Extract selection into method / function (`ExtractMethod`, `space + m m`)
+- `:extract-constant` / `:const` &rarr; Extract selection into constant field (`IntroduceConstant`, `space + m c`)
+- `:extract-field` / `:field` &rarr; Extract expression into class field (`IntroduceField`, `space + m f`)
+- `:extract-parameter` / `:param` &rarr; Turn expression into parameter (`IntroduceParameter`, `space + m p`)
+- `:inline` &rarr; Inline variable, method, or constant (`Inline`, `space + m i`)
+- `:change-signature` / `:cs` &rarr; Refactor method signature & parameters (`ChangeSignature`, `space + m s`)
+- `:move` &rarr; Move symbol or file (`Move`, `space + m M`)
+- `:override` &rarr; Override superclass methods (`OverrideMethods`, `space + m o`)
+- `:implement` &rarr; Implement interface methods (`ImplementMethods`, `space + m I`)
+- `:surround-with` / `:surround` &rarr; Surround selection with template (`SurroundWith`, `space + m w`)
+- `:refactor-this` / `:refactor` &rarr; Open Refactor This popup menu (`Refactorings.QuickListPopupAction`, `space + m ?`)
 - `:fold` &rarr; Fold block under cursor (`CollapseRegion`)
 - `:unfold` &rarr; Unfold block under cursor (`ExpandRegion`)
 - `:fold-all` / `:fold_all` &rarr; Fold all methods and classes in file (`CollapseAllRegions`)
@@ -697,7 +728,7 @@ An interactive explorer and visual customizer for discovering, searching, inspec
 - **Prefix Filter**: Filter table to specific chord families (`All Chords`, `Space Chords (space)`, `Goto Chords (g)`, `View Chords (z)`, `Match Chords (m)`, `Window Chords (C-w)`, `Bracket Chords ([ / ])`, or `Single Keys & Other`).
 - **Live Search**: Real-time filtering by shortcut sequence, canonical Helix command, or action description.
 - **Find Shortcut by Keystroke (`[ Find by Keystroke... ]`)**: Click the shortcut finder button and press any key combination or chord (e.g. `space f`, `g d`, `C-s`) to instantly look up or filter the assigned command.
-- **IntelliJ Action Discovery (`[ Browse... ]`)**: Inside the Add/Edit Keybinding dialog, click **Browse...** to launch a searchable action picker to explore all registered IntelliJ IDE actions, inspect native IDE shortcuts, and select actions.
+- **IntelliJ Action Discovery (`[ Browse... ]`)**: Inside the Add/Edit Keybinding dialog, click **Browse...** to launch a searchable action picker to explore all registered IntelliJ IDEA actions, inspect native IDE shortcuts, and select actions.
 - **Trie Conflict & Shadowing Warnings**: Automatic trie analysis detects shadowed shortcuts (e.g. binding `g` or `space` directly when child chords `gd`, `gh`, `space f` exist). Shadowed bindings are flagged with `⚠`, conflict tooltips, and diagnostics during TOML configuration validation.
 - **Provenance Badges**: Clearly shows whether each binding is stock `[Default]`, custom from `[custom: intellij]`, `[custom: config]`, or disabled `[no_op]`.
 - **Direct Links (`[ Open in TOML ]`, `[ Refresh ]`)**: Quick buttons to open the active TOML configuration in the editor or reload active keybindings.
@@ -856,7 +887,7 @@ t68k-intellij-helix/
 ## Development & Contributing
 
 This simple extension was written out of personal need for a non-frills, feature complete and somewhat cool
-looking Helix binding Intellij IDEA extension.
+looking Helix binding IntelliJ IDEA extension.
 
 Pull requests, bug reports, and suggestions are always welcome!
 

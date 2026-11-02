@@ -177,6 +177,12 @@ object HelixKeyHandler {
 
             " " -> {
                 when (ch) {
+                    'm' -> {
+                        state.setPendingSequence(" m")
+                        HelixWhichKeyPopup.show(editor, " m")
+                        true
+                    }
+
                     'G' -> {
                         state.setPendingSequence(" G")
                         HelixWhichKeyPopup.show(editor, " G")
@@ -193,6 +199,11 @@ object HelixKeyHandler {
                         HelixSpaceKeymap.handle(ch, editor)
                     }
                 }
+            }
+
+            " m" -> {
+                state.clearPendingSequence()
+                HelixRefactorKeymap.handle(ch, editor)
             }
 
             " G" -> {

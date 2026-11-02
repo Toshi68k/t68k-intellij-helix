@@ -152,6 +152,19 @@ object HelixDefaultKeymap {
         bind(trie, "space h", "select_references", "Find references / usages")
         bind(trie, "space w", "window_mode", "Window mode")
         bind(trie, "space ?", "command_palette", "Command palette")
+        bind(trie, "space m v", "extract_variable", "Extract variable")
+        bind(trie, "space m m", "extract_method", "Extract method")
+        bind(trie, "space m c", "extract_constant", "Extract constant")
+        bind(trie, "space m f", "extract_field", "Extract field")
+        bind(trie, "space m p", "extract_parameter", "Extract parameter")
+        bind(trie, "space m i", "inline", "Inline symbol")
+        bind(trie, "space m s", "change_signature", "Change signature")
+        bind(trie, "space m r", "rename_symbol", "Rename symbol")
+        bind(trie, "space m M", "move", "Move symbol / file")
+        bind(trie, "space m w", "surround_with", "Surround with template")
+        bind(trie, "space m o", "override_methods", "Override methods")
+        bind(trie, "space m I", "implement_methods", "Implement methods")
+        bind(trie, "space m ?", "refactor_this", "Refactor this menu")
     }
 
     private fun populateGotoChords(trie: HelixKeymapTrie) {

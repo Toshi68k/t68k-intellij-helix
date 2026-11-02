@@ -44,6 +44,7 @@ object HelixWhichKeyMenus {
         WhichKeyItem("j", "Jumplist picker", "jumplist_picker"),
         WhichKeyItem("a", "Code action", "code_action", "ShowIntentionActions"),
         WhichKeyItem("r", "Rename symbol", "rename_symbol", "RenameElement"),
+        WhichKeyItem("m", "Refactor menu", "refactor_menu"),
         WhichKeyItem("c", "Toggle line comment", "toggle_comments", "CommentByLineComment"),
         WhichKeyItem("C", "Toggle block comment", "toggle_block_comments", "CommentByBlockComment"),
         WhichKeyItem("h", "Select references", "select_references", "FindUsages"),
@@ -227,6 +228,22 @@ object HelixWhichKeyMenus {
         WhichKeyItem("B", "View breakpoints", "dap_view_breakpoints", "ViewBreakpoints"),
     )
 
+    val refactorItems = listOf(
+        WhichKeyItem("v", "Extract variable", "extract_variable", "IntroduceVariable"),
+        WhichKeyItem("m", "Extract method", "extract_method", "ExtractMethod"),
+        WhichKeyItem("c", "Extract constant", "extract_constant", "IntroduceConstant"),
+        WhichKeyItem("f", "Extract field", "extract_field", "IntroduceField"),
+        WhichKeyItem("p", "Extract parameter", "extract_parameter", "IntroduceParameter"),
+        WhichKeyItem("i", "Inline symbol", "inline", "Inline"),
+        WhichKeyItem("s", "Change signature", "change_signature", "ChangeSignature"),
+        WhichKeyItem("r", "Rename symbol", "rename_symbol", "RenameElement"),
+        WhichKeyItem("M", "Move symbol / file", "move", "Move"),
+        WhichKeyItem("w", "Surround with template", "surround_with", "SurroundWith"),
+        WhichKeyItem("o", "Override methods", "override_methods", "OverrideMethods"),
+        WhichKeyItem("I", "Implement methods", "implement_methods", "ImplementMethods"),
+        WhichKeyItem("?", "Refactor this menu", "refactor_this", "Refactorings.QuickListPopupAction"),
+    )
+
     fun getMenu(prefix: String): Pair<String, List<WhichKeyItem>>? = getMenu(prefix, HelixMode.NORMAL)
 
     fun getMenu(prefix: String, mode: HelixMode): Pair<String, List<WhichKeyItem>>? {
@@ -250,6 +267,7 @@ object HelixWhichKeyMenus {
     private fun getBaseMenu(prefix: String): Pair<String, List<WhichKeyItem>>? = when (prefix) {
         " " -> HelixBundle.message("whichKey.menu.space") to spaceItems
         " G", "space G", "G", "dap" -> HelixBundle.message("whichKey.menu.debug") to debugItems
+        " m", "space m", "refactor" -> HelixBundle.message("whichKey.menu.refactor") to refactorItems
         "g" -> HelixBundle.message("whichKey.menu.goto") to gotoItems
         "m" -> HelixBundle.message("whichKey.menu.match") to matchItems
         "ma" -> HelixBundle.message("whichKey.menu.selectAround") to textObjectItems
@@ -280,10 +298,10 @@ object HelixWhichKeyMenus {
             val existingIndex = result.indexOfFirst { it.key == keyStr }
             if (existingIndex >= 0) {
                 val baseItem = result[existingIndex]
-                if (action != baseItem.helixCommand) {
+                if (child.action != null && action != baseItem.helixCommand) {
                     result[existingIndex] = WhichKeyItem(keyStr, label, action, intelliJ)
                 }
-            } else {
+            } else if (label.isNotEmpty() || action.isNotEmpty()) {
                 result.add(WhichKeyItem(keyStr, label, action, intelliJ))
             }
         }

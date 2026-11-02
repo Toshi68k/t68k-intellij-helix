@@ -879,6 +879,66 @@ object HelixCommands {
             HelixActionDelegate.executeAction("Vcs.Show.Log", editor)
         },
         HelixCommandItem(
+            "extract-variable",
+            listOf("var", "extract_variable"),
+            "Extract selection into variable (space + m v)",
+        ) { editor -> HelixActionDelegate.executeAction("IntroduceVariable", editor) },
+        HelixCommandItem(
+            "extract-method",
+            listOf("method", "extract_method"),
+            "Extract selection into method / function (space + m m)",
+        ) { editor -> HelixActionDelegate.executeAction("ExtractMethod", editor) },
+        HelixCommandItem(
+            "extract-constant",
+            listOf("const", "extract_constant"),
+            "Extract selection into constant field (space + m c)",
+        ) { editor -> HelixActionDelegate.executeAction("IntroduceConstant", editor) },
+        HelixCommandItem(
+            "extract-field",
+            listOf("field", "extract_field"),
+            "Extract expression into class field (space + m f)",
+        ) { editor -> HelixActionDelegate.executeAction("IntroduceField", editor) },
+        HelixCommandItem(
+            "extract-parameter",
+            listOf("param", "extract_parameter"),
+            "Turn expression into parameter (space + m p)",
+        ) { editor -> HelixActionDelegate.executeAction("IntroduceParameter", editor) },
+        HelixCommandItem(
+            "inline",
+            listOf("inline-variable", "inline_variable"),
+            "Inline variable, method, or constant (space + m i)",
+        ) { editor -> HelixActionDelegate.executeAction("Inline", editor) },
+        HelixCommandItem(
+            "change-signature",
+            listOf("cs", "change_signature"),
+            "Refactor signature and parameters (space + m s)",
+        ) { editor -> HelixActionDelegate.executeAction("ChangeSignature", editor) },
+        HelixCommandItem(
+            "move",
+            listOf("move-element", "move_element"),
+            "Move symbol or file (space + m M)",
+        ) { editor -> HelixActionDelegate.executeAction("Move", editor) },
+        HelixCommandItem(
+            "override",
+            listOf("override-methods", "override_methods"),
+            "Override superclass methods (space + m o)",
+        ) { editor -> HelixActionDelegate.executeAction("OverrideMethods", editor) },
+        HelixCommandItem(
+            "implement",
+            listOf("implement-methods", "implement_methods"),
+            "Implement interface methods (space + m I)",
+        ) { editor -> HelixActionDelegate.executeAction("ImplementMethods", editor) },
+        HelixCommandItem(
+            "surround-with",
+            listOf("surround", "surround_with"),
+            "Surround selection with template (space + m w)",
+        ) { editor -> HelixActionDelegate.executeAction("SurroundWith", editor) },
+        HelixCommandItem(
+            "refactor-this",
+            listOf("refactor"),
+            "Open Refactor This popup menu (space + m ?)",
+        ) { editor -> HelixActionDelegate.executeAction("Refactorings.QuickListPopupAction", editor) },
+        HelixCommandItem(
             "goto-implementation",
             listOf("goto_implementation", "implementation"),
             "Jump to implementation (gi)",
