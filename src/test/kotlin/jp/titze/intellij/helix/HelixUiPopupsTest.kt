@@ -1626,8 +1626,40 @@ class HelixUiPopupsTest : BasePlatformTestCase() {
             executedActions shouldBe listOf("IntroduceVariable")
 
             executedActions.clear()
+            HelixCommands.execute("var", editor)
+            executedActions shouldBe listOf("IntroduceVariable")
+
+            executedActions.clear()
             HelixCommands.execute("extract-method", editor)
             executedActions shouldBe listOf("ExtractMethod")
+
+            executedActions.clear()
+            HelixCommands.execute("method", editor)
+            executedActions shouldBe listOf("ExtractMethod")
+
+            executedActions.clear()
+            HelixCommands.execute("extract-constant", editor)
+            executedActions shouldBe listOf("IntroduceConstant")
+
+            executedActions.clear()
+            HelixCommands.execute("const", editor)
+            executedActions shouldBe listOf("IntroduceConstant")
+
+            executedActions.clear()
+            HelixCommands.execute("extract-field", editor)
+            executedActions shouldBe listOf("IntroduceField")
+
+            executedActions.clear()
+            HelixCommands.execute("field", editor)
+            executedActions shouldBe listOf("IntroduceField")
+
+            executedActions.clear()
+            HelixCommands.execute("extract-parameter", editor)
+            executedActions shouldBe listOf("IntroduceParameter")
+
+            executedActions.clear()
+            HelixCommands.execute("param", editor)
+            executedActions shouldBe listOf("IntroduceParameter")
 
             executedActions.clear()
             HelixCommands.execute("inline", editor)
@@ -1636,6 +1668,38 @@ class HelixUiPopupsTest : BasePlatformTestCase() {
             executedActions.clear()
             HelixCommands.execute("change-signature", editor)
             executedActions shouldBe listOf("ChangeSignature")
+
+            executedActions.clear()
+            HelixCommands.execute("cs", editor)
+            executedActions shouldBe listOf("ChangeSignature")
+
+            executedActions.clear()
+            HelixCommands.execute("move", editor)
+            executedActions shouldBe listOf("Move")
+
+            executedActions.clear()
+            HelixCommands.execute("override", editor)
+            executedActions shouldBe listOf("OverrideMethods")
+
+            executedActions.clear()
+            HelixCommands.execute("implement", editor)
+            executedActions shouldBe listOf("ImplementMethods")
+
+            executedActions.clear()
+            HelixCommands.execute("surround-with", editor)
+            executedActions shouldBe listOf("SurroundWith")
+
+            executedActions.clear()
+            HelixCommands.execute("surround", editor)
+            executedActions shouldBe listOf("SurroundWith")
+
+            executedActions.clear()
+            HelixCommands.execute("refactor-this", editor)
+            executedActions shouldBe listOf("Refactorings.QuickListPopupAction")
+
+            executedActions.clear()
+            HelixCommands.execute("refactor", editor)
+            executedActions shouldBe listOf("Refactorings.QuickListPopupAction")
 
             executedActions.clear()
             HelixCommands.execute("generate", editor)
@@ -1680,5 +1744,130 @@ class HelixUiPopupsTest : BasePlatformTestCase() {
         HelixActions.sortLines(editor, reverse = false)
         editor.document.text shouldBe "apple\nbanana\ncherry"
         state.mode shouldBe HelixMode.NORMAL
+    }
+
+    fun testSpaceRefactorMenuChordsAndExecution() {
+        myFixture.configureByText("test.txt", "val x = 42\nfun sample() = x")
+        val editor = myFixture.editor
+        val state = HelixStateManager.getOrCreate(editor)
+
+        val executedActions = mutableListOf<String>()
+        HelixActionDelegate.actionExecutor = { actionId, _ ->
+            executedActions.add(actionId)
+            true
+        }
+
+        try {
+            // Verify Which-Key space menu contains m with Refactor menu label
+            val spaceMenu = HelixWhichKeyMenus.getMenu(" ")
+            spaceMenu.shouldNotBeNull()
+            val spaceItemM = spaceMenu.second.find { it.key == "m" }
+            spaceItemM.shouldNotBeNull()
+            spaceItemM.label shouldBe "Refactor menu"
+            spaceItemM.helixCommand shouldBe "refactor_menu"
+
+            // Verify Which-Key refactor menu metadata
+            val menu = HelixWhichKeyMenus.getMenu(" m")
+            menu.shouldNotBeNull()
+            menu.first shouldBe "REFACTOR MENU"
+            menu.second.shouldNotBeEmpty()
+            menu.second.any { it.key == "v" && it.helixCommand == "extract_variable" }.shouldBeTrue()
+            menu.second.any { it.key == "m" && it.helixCommand == "extract_method" }.shouldBeTrue()
+            menu.second.any { it.key == "i" && it.helixCommand == "inline" }.shouldBeTrue()
+
+            // Space followed by m transitions to pending refactor chord
+            HelixKeyHandler.handleKey(' ', editor)
+            state.pendingSequence shouldBe " "
+
+            HelixKeyHandler.handleKey('m', editor)
+            state.pendingSequence shouldBe " m"
+
+            // Test extract variable
+            HelixKeyHandler.handleKey('v', editor)
+            state.pendingSequence.isEmpty().shouldBeTrue()
+            executedActions.last() shouldBe "IntroduceVariable"
+
+            // Test extract method
+            HelixKeyHandler.handleKey(' ', editor)
+            HelixKeyHandler.handleKey('m', editor)
+            HelixKeyHandler.handleKey('m', editor)
+            executedActions.last() shouldBe "ExtractMethod"
+
+            // Test extract constant
+            HelixKeyHandler.handleKey(' ', editor)
+            HelixKeyHandler.handleKey('m', editor)
+            HelixKeyHandler.handleKey('c', editor)
+            executedActions.last() shouldBe "IntroduceConstant"
+
+            // Test extract field
+            HelixKeyHandler.handleKey(' ', editor)
+            HelixKeyHandler.handleKey('m', editor)
+            HelixKeyHandler.handleKey('f', editor)
+            executedActions.last() shouldBe "IntroduceField"
+
+            // Test extract parameter
+            HelixKeyHandler.handleKey(' ', editor)
+            HelixKeyHandler.handleKey('m', editor)
+            HelixKeyHandler.handleKey('p', editor)
+            executedActions.last() shouldBe "IntroduceParameter"
+
+            // Test inline
+            HelixKeyHandler.handleKey(' ', editor)
+            HelixKeyHandler.handleKey('m', editor)
+            HelixKeyHandler.handleKey('i', editor)
+            executedActions.last() shouldBe "Inline"
+
+            // Test change signature
+            HelixKeyHandler.handleKey(' ', editor)
+            HelixKeyHandler.handleKey('m', editor)
+            HelixKeyHandler.handleKey('s', editor)
+            executedActions.last() shouldBe "ChangeSignature"
+
+            // Test rename symbol
+            HelixKeyHandler.handleKey(' ', editor)
+            HelixKeyHandler.handleKey('m', editor)
+            HelixKeyHandler.handleKey('r', editor)
+            executedActions.last() shouldBe "RenameElement"
+
+            // Test move
+            HelixKeyHandler.handleKey(' ', editor)
+            HelixKeyHandler.handleKey('m', editor)
+            HelixKeyHandler.handleKey('M', editor)
+            executedActions.last() shouldBe "Move"
+
+            // Test surround with
+            HelixKeyHandler.handleKey(' ', editor)
+            HelixKeyHandler.handleKey('m', editor)
+            HelixKeyHandler.handleKey('w', editor)
+            executedActions.last() shouldBe "SurroundWith"
+
+            // Test override methods
+            HelixKeyHandler.handleKey(' ', editor)
+            HelixKeyHandler.handleKey('m', editor)
+            HelixKeyHandler.handleKey('o', editor)
+            executedActions.last() shouldBe "OverrideMethods"
+
+            // Test implement methods
+            HelixKeyHandler.handleKey(' ', editor)
+            HelixKeyHandler.handleKey('m', editor)
+            HelixKeyHandler.handleKey('I', editor)
+            executedActions.last() shouldBe "ImplementMethods"
+
+            // Test refactor this popup
+            HelixKeyHandler.handleKey(' ', editor)
+            HelixKeyHandler.handleKey('m', editor)
+            HelixKeyHandler.handleKey('?', editor)
+            executedActions.last() shouldBe "Refactorings.QuickListPopupAction"
+
+            // Test space m in SELECT mode resets to NORMAL
+            state.setMode(HelixMode.SELECT)
+            HelixKeyHandler.handleKey(' ', editor)
+            HelixKeyHandler.handleKey('m', editor)
+            HelixKeyHandler.handleKey('v', editor)
+            executedActions.last() shouldBe "IntroduceVariable"
+            state.mode shouldBe HelixMode.NORMAL
+        } finally {
+            HelixActionDelegate.actionExecutor = null
+        }
     }
 }

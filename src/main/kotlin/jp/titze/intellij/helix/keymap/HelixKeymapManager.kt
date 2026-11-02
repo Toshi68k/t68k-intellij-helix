@@ -77,12 +77,16 @@ object HelixKeymapManager {
 
         " G" -> listOf(HelixKeyStroke.fromString("space"), HelixKeyStroke('G'))
 
+        " m" -> listOf(HelixKeyStroke.fromString("space"), HelixKeyStroke('m'))
+
         "C-w" -> listOf(HelixKeyStroke.fromString("C-w"))
 
         "C-w n" -> listOf(HelixKeyStroke.fromString("C-w"), HelixKeyStroke('n'))
 
         else -> {
-            if (pendingSeq.length == 1) {
+            if (pendingSeq.startsWith(" ") && pendingSeq.length > 1) {
+                listOf(HelixKeyStroke.fromString("space")) + parseSequence(pendingSeq.drop(1))
+            } else if (pendingSeq.length == 1) {
                 listOf(HelixKeyStroke.fromChar(pendingSeq[0]))
             } else {
                 parseSequence(pendingSeq)

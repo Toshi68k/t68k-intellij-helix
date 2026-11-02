@@ -5,6 +5,27 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+
+- **First-Class Refactoring Commands & Refactor Submenu (`space + m`)**:
+  - **Refactor Submenu (`space + m`)**: Dedicated Which-Key submenu exposing core IntelliJ AST refactorings with single-key chords:
+    - `space m v` &rarr; Extract variable (`IntroduceVariable`)
+    - `space m m` &rarr; Extract method (`ExtractMethod`)
+    - `space m c` &rarr; Extract constant (`IntroduceConstant`)
+    - `space m f` &rarr; Extract field (`IntroduceField`)
+    - `space m p` &rarr; Extract parameter (`IntroduceParameter`)
+    - `space m i` &rarr; Inline symbol (`Inline`)
+    - `space m s` &rarr; Change signature (`ChangeSignature`)
+    - `space m r` &rarr; Rename symbol (`RenameElement`)
+    - `space m M` &rarr; Move symbol / file (`Move`)
+    - `space m w` &rarr; Surround with template (`SurroundWith`)
+    - `space m o` &rarr; Override methods (`OverrideMethods`)
+    - `space m I` &rarr; Implement methods (`ImplementMethods`)
+    - `space m ?` / `space m space` &rarr; Refactor This quick picker (`Refactorings.QuickListPopupAction`)
+  - **First-Class Helix Palette Commands (`:`)**: Added canonical commands with fuzzy aliases: `:extract-variable` (`:var`), `:extract-method` (`:method`), `:extract-constant` (`:const`), `:extract-field` (`:field`), `:extract-parameter` (`:param`), `:inline`, `:change-signature` (`:cs`), `:move`, `:override`, `:implement`, `:surround-with` (`:surround`), `:refactor-this` (`:refactor`).
+  - **Mode Lifecycle Consistency**: Refactoring commands executed while in `SELECT` mode operate on the active selection and cleanly transition back to `NORMAL` mode.
+  - **Trie & Keybindings Browser Parity**: Registered all `space m` sub-chords in `HelixDefaultKeymap` so they are fully discoverable and searchable in the Keybindings Explorer under the `SPACE` category.
+
 ## [0.4.0]
 
 ### Added

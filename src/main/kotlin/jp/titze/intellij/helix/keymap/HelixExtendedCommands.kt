@@ -27,6 +27,7 @@ internal object HelixExtendedCommands {
         registerNumbers()
         registerNavigationAndWindow()
         registerDapCommands()
+        HelixRefactorCommands.registerAll()
     }
 
     private fun registerUnimpaired() {
