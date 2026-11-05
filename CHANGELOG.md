@@ -41,6 +41,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- **Symmetric Delimiter Text Object Selection Between Delimiter Pairs (`mi"`, `mi'`, etc.)**:
+  - Fixed an issue in `HelixSurroundActions.findSymmetricPairInRange` where cursors positioned between consecutive symmetric delimiter pairs (e.g. in `"aaa" = "bbb"` between the closing quote of `"aaa"` and opening quote of `"bbb"`) failed to recognize the span as an enclosing delimiter range.
+  - Added a secondary interval scan matching real Helix behavior, correctly selecting the text between surrounding delimiters (such as ` = ` when jumping forward and selecting via `@f"lmi"`).
 - **Option Command Consistency (`:set-option` & `:toggle-option`)**:
   - Unified legacy ad-hoc settings commands (`search-ui`, `line-nav`, `scratch-mode`) into canonical Helix `:set-option <key> <val>` and `:toggle-option <key>` syntax (e.g. `:set-option search-ui popup`, `:toggle-option line-nav`, `:set scratch-mode buffer`) while preserving backwards compatibility for legacy `=` assignments.
 - **Which-Key Menu Branch Labeling**:
