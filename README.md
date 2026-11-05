@@ -590,11 +590,22 @@ to execute):
 - `:find` &rarr; Find in project files (`FindInPath`)
 - `:commit-undo-checkpoint` / `:checkpoint` &rarr; Commit undo checkpoint to break typing history
 - `:toggle-helix` &rarr; Toggle Helix modal editing globally on or off
+- `:set-option <key> <value>` / `:set <key> <value>` (or `:set <key>=<value>`) &rarr; Set runtime or editor option
+  (`soft-wrap.enable`, `inlay-hints.enable`, `whitespace.render`, `line-number`, `sticky-context`, `breadcrumbs.enable`,
+  `search-ui`, `line-nav`, `scratch-mode`)
+- `:toggle-option <key>` / `:toggle <key>` &rarr; Toggle runtime or editor option on/off
+- `:toggle-soft-wrap` / `:soft-wrap` / `:wrap` &rarr; Toggle visual soft-wrapping in active editor
+- `:toggle-inlay-hints` / `:inlay-hints` / `:hints` &rarr; Toggle inlay parameter and type hints
+- `:toggle-sticky-context` / `:sticky-context` / `:sticky-lines` &rarr; Toggle sticky context header lines
+- `:toggle-line-numbers` / `:line-numbers` / `:numbers` &rarr; Toggle gutter line numbers
+- `:toggle-render-whitespace` / `:whitespace` / `:whitespaces` &rarr; Toggle whitespace character rendering
+- `:toggle-breadcrumbs` / `:breadcrumbs` &rarr; Toggle editor breadcrumbs navigation
 - `:toggle-search-ui` / `:search-ui` &rarr; Toggle between Stock Helix inline bar and Popup dialog
-- `:set search-ui=inline` / `:set search-ui=stock` &rarr; Set search UI to Stock Helix inline bar
-- `:set search-ui=popup` &rarr; Set search UI to Popup dialog
-- `:toggle-scratch-mode` / `:scratch-mode` &rarr; Toggle scratch split mode (Interactive picker <-> Instant buffer)
-- `:set scratch-mode=interactive` / `:set scratch-mode=buffer` &rarr; Set scratch split mode
+  (also `:set-option search-ui inline|popup` or `:set search-ui inline|popup`)
+- `:toggle-scratch-mode` / `:scratch-mode` &rarr; Toggle scratch split mode
+  (also `:set-option scratch-mode interactive|buffer`)
+- `:toggle-line-nav` / `:line-nav` &rarr; Toggle line navigation mode (Stock visual vs Vim physical)
+  (also `:set-option line-nav helix|vim`)
 - `:jumps` &rarr; Open interactive jumplist picker
 - `:reg` / `:registers` &rarr; Open interactive registers picker popup
 - `:increment` / `:inc` &rarr; Increment integer under cursor or within selection (`Ctrl+a`)
@@ -693,7 +704,7 @@ Helix Keymap supports two switchable search and regex prompt styles:
    separate floating modal window.
 
 - In IntelliJ Settings: **Preferences / Settings &rarr; Tools &rarr; Helix Keymap**
-- In the `:` Command Picker: `:toggle-search-ui`, `:set search-ui=inline`, or `:set search-ui=popup`
+- In the `:` Command Picker: `:set-option search-ui inline|popup`, `:toggle-search-ui`, or `:toggle search-ui`
 
 #### Settings & Visual Keymap Explorer
 

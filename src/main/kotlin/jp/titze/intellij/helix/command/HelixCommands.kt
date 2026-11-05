@@ -10,18 +10,14 @@ import com.intellij.openapi.vfs.LocalFileSystem
 import jp.titze.intellij.helix.action.HelixActionDelegate
 import jp.titze.intellij.helix.action.HelixActions
 import jp.titze.intellij.helix.action.HelixShellActions
-import jp.titze.intellij.helix.config.HelixConfigLoader
+import jp.titze.intellij.helix.action.HelixVisualToggleActions
 import jp.titze.intellij.helix.jumplist.HelixJumpListService
-import jp.titze.intellij.helix.keymap.HelixKeyHandler
-import jp.titze.intellij.helix.motion.HelixFileNavigation
 import jp.titze.intellij.helix.motion.HelixMotions
 import jp.titze.intellij.helix.register.HelixRegisterManager
 import jp.titze.intellij.helix.settings.HelixLineNavigationMode
 import jp.titze.intellij.helix.settings.HelixScratchSplitMode
 import jp.titze.intellij.helix.settings.HelixSearchUiMode
 import jp.titze.intellij.helix.settings.HelixSettings
-import jp.titze.intellij.helix.state.HelixStateManager
-import jp.titze.intellij.helix.ui.HelixDirectoryFilePickerPopup
 import jp.titze.intellij.helix.ui.HelixJumplistPopup
 import jp.titze.intellij.helix.ui.HelixSearchManager
 import java.io.File
@@ -111,925 +107,7 @@ data class HelixCommandItem(
 
 object HelixCommands {
 
-    val COMMANDS = listOf(
-        HelixCommandItem(
-            "config-reload",
-            listOf("reload-config"),
-            "Reload Helix keymap configuration from intellij.toml or config.toml",
-        ) { _ ->
-            val result = HelixConfigLoader.loadConfig()
-            jp.titze.intellij.helix.config.HelixConfigWatcher.notifyReloadResult(result)
-        },
-        HelixCommandItem(
-            "config-open",
-            emptyList(),
-            "Open or create Helix intellij.toml in editor",
-        ) { editor ->
-            HelixConfigLoader.openOrCreateConfigFile(editor.project)
-        },
-        HelixCommandItem("toggle-helix", emptyList(), "Toggle Helix modal editing mode globally") { _ ->
-            val settings = jp.titze.intellij.helix.settings.HelixSettings.instance
-            settings.enabled = !settings.enabled
-            jp.titze.intellij.helix.editor.HelixEditorEligibility.refreshAllEditors()
-        },
-        HelixCommandItem("write", listOf("w"), "Save all modified files") { editor ->
-            HelixActionDelegate.executeAction("SaveAll", editor)
-        },
-        HelixCommandItem("quit", listOf("q"), "Close active editor tab") { editor ->
-            HelixActionDelegate.executeAction("CloseContent", editor)
-        },
-        HelixCommandItem("write-quit", listOf("wq", "x", "exit", "xit"), "Save all and close tab") { editor ->
-            HelixActionDelegate.executeAction("SaveAll", editor)
-            HelixActionDelegate.executeAction("CloseContent", editor)
-        },
-        HelixCommandItem("update", listOf("u"), "Save all modified files") { editor ->
-            HelixActionDelegate.executeAction("SaveAll", editor)
-        },
-        HelixCommandItem(
-            "yank-join",
-            listOf("yank_join"),
-            "Join and yank selections to clipboard",
-        ) { editor ->
-            HelixActions.yankJoined(editor)
-        },
-        HelixCommandItem("write-all", listOf("wa"), "Save all modified files") { editor ->
-            HelixActionDelegate.executeAction("SaveAll", editor)
-        },
-        HelixCommandItem("quit-all", listOf("qa"), "Close all editor tabs") { editor ->
-            HelixActionDelegate.executeAction("CloseAllEditors", editor)
-        },
-        HelixCommandItem("cquit", listOf("cq"), "Close active editor tab") { editor ->
-            HelixActionDelegate.executeAction("CloseContent", editor)
-        },
-        HelixCommandItem("vsplit", listOf("vsp"), "Split editor vertically") { editor ->
-            HelixActionDelegate.executeAction("SplitVertically", editor)
-        },
-        HelixCommandItem("hsplit", listOf("sp"), "Split editor horizontally") { editor ->
-            HelixActionDelegate.executeAction("SplitHorizontally", editor)
-        },
-        HelixCommandItem("unsplit", listOf("only"), "Close all other splits") { editor ->
-            HelixActionDelegate.executeAction("UnsplitAll", editor)
-        },
-        HelixCommandItem("close-split", listOf("close", "clo"), "Close active split") { editor ->
-            HelixActionDelegate.executeAction("Unsplit", editor) ||
-                HelixActionDelegate.executeAction("CloseContent", editor)
-        },
-        HelixCommandItem(
-            "swap-split",
-            listOf("change-split-orientation", "transpose-view", "transpose_view"),
-            "Swap current split view direction (ChangeSplitOrientation)",
-        ) { editor ->
-            HelixActionDelegate.executeAction("ChangeSplitOrientation", editor)
-        },
-        HelixCommandItem(
-            "goto-file-hsplit",
-            listOf("goto_file_hsplit", "hsplit-new"),
-            "Open declaration or file at cursor in a horizontal split",
-        ) { editor ->
-            HelixFileNavigation.gotoFileInSplit(editor, vertical = false)
-        },
-        HelixCommandItem(
-            "goto-file-vsplit",
-            listOf("goto_file_vsplit", "vsplit-new"),
-            "Open declaration or file at cursor in a vertical split",
-        ) { editor ->
-            HelixFileNavigation.gotoFileInSplit(editor, vertical = true)
-        },
-        HelixCommandItem("format", emptyList(), "Format buffer using IDE code formatter") { editor ->
-            HelixActionDelegate.executeAction("ReformatCode", editor)
-        },
-        HelixCommandItem("fold", listOf("collapse-region"), "Fold block under cursor (CollapseRegion)") { editor ->
-            HelixActionDelegate.executeAction("CollapseRegion", editor)
-        },
-        HelixCommandItem("unfold", listOf("expand-region"), "Unfold block under cursor (ExpandRegion)") { editor ->
-            HelixActionDelegate.executeAction("ExpandRegion", editor)
-        },
-        HelixCommandItem(
-            "fold-all",
-            listOf("fold_all", "collapse-all-regions"),
-            "Fold all methods and classes in file (CollapseAllRegions)",
-        ) { editor ->
-            HelixActionDelegate.executeAction("CollapseAllRegions", editor)
-        },
-        HelixCommandItem(
-            "unfold-all",
-            listOf("unfold_all", "expand-all-regions"),
-            "Expand all folds in file (ExpandAllRegions)",
-        ) { editor ->
-            HelixActionDelegate.executeAction("ExpandAllRegions", editor)
-        },
-        HelixCommandItem(
-            "optimize-imports",
-            listOf("optimize_imports", "oi"),
-            "Optimize and clean imports in current file",
-        ) { editor -> HelixActionDelegate.executeAction("OptimizeImports", editor) },
-        HelixCommandItem(
-            "goto-test",
-            listOf("goto_test", "test"),
-            "Navigate to or create test for current class (GotoTest)",
-        ) { editor -> HelixActionDelegate.executeAction("GotoTest", editor) },
-        HelixCommandItem(
-            "goto-declaration",
-            listOf("goto_declaration", "declaration"),
-            "Jump to declaration (GotoDeclarationOnly)",
-        ) { editor ->
-            HelixActionDelegate.executeAction("GotoDeclarationOnly", editor) ||
-                HelixActionDelegate.executeAction("GotoDeclaration", editor)
-        },
-        HelixCommandItem(
-            "goto-definition",
-            listOf("goto_definition", "definition"),
-            "Jump to definition or declaration (GotoDeclaration)",
-        ) { editor ->
-            HelixActionDelegate.executeAction("GotoDeclaration", editor)
-        },
-        HelixCommandItem(
-            "goto-prev-spelling-error",
-            listOf("goto_prev_spelling_error", "prev-spelling-error"),
-            "Jump to previous spelling error ([s)",
-        ) { editor ->
-            val count = HelixStateManager.getOrCreate(editor).takeCount() ?: 1
-            HelixKeyHandler.recordJump(editor)
-            repeat(count) { HelixActionDelegate.executeAction("GotoPreviousSpellingError", editor) }
-        },
-        HelixCommandItem(
-            "goto-next-spelling-error",
-            listOf("goto_next_spelling_error", "next-spelling-error"),
-            "Jump to next spelling error (]s)",
-        ) { editor ->
-            val count = HelixStateManager.getOrCreate(editor).takeCount() ?: 1
-            HelixKeyHandler.recordJump(editor)
-            repeat(count) { HelixActionDelegate.executeAction("GotoNextSpellingError", editor) }
-        },
-        HelixCommandItem(
-            "goto-prev-entry",
-            listOf("goto_prev_entry", "prev-entry"),
-            "Jump to previous entry ([e)",
-        ) { editor ->
-            val count = HelixStateManager.getOrCreate(editor).takeCount() ?: 1
-            HelixKeyHandler.recordJump(editor)
-            HelixMotions.moveEntry(editor, forward = false, count = count)
-        },
-        HelixCommandItem(
-            "goto-next-entry",
-            listOf("goto_next_entry", "next-entry"),
-            "Jump to next entry (]e)",
-        ) { editor ->
-            val count = HelixStateManager.getOrCreate(editor).takeCount() ?: 1
-            HelixKeyHandler.recordJump(editor)
-            HelixMotions.moveEntry(editor, forward = true, count = count)
-        },
-        HelixCommandItem(
-            "move-line-up",
-            listOf("move_line_up"),
-            "Move active line or selection up (MoveLineUp)",
-        ) { editor ->
-            val count = HelixStateManager.getOrCreate(editor).takeCount() ?: 1
-            repeat(count) { HelixActionDelegate.executeAction("MoveLineUp", editor) }
-        },
-        HelixCommandItem(
-            "move-line-down",
-            listOf("move_line_down"),
-            "Move active line or selection down (MoveLineDown)",
-        ) { editor ->
-            val count = HelixStateManager.getOrCreate(editor).takeCount() ?: 1
-            repeat(count) { HelixActionDelegate.executeAction("MoveLineDown", editor) }
-        },
-        HelixCommandItem("earlier", listOf("undo-earlier"), "Undo earlier changes (Alt+u)") { editor ->
-            val count = HelixStateManager.getOrCreate(editor).takeCount() ?: 1
-            repeat(count) { HelixActionDelegate.executeAction("\$Undo", editor) }
-        },
-        HelixCommandItem("later", listOf("redo-later"), "Redo later changes (Alt+U)") { editor ->
-            val count = HelixStateManager.getOrCreate(editor).takeCount() ?: 1
-            repeat(count) { HelixActionDelegate.executeAction("\$Redo", editor) }
-        },
-        HelixCommandItem(
-            "commit-undo-checkpoint",
-            listOf("checkpoint", "commit_undo_checkpoint"),
-            "Commit an undo checkpoint",
-        ) { editor ->
-            HelixActions.commitUndoCheckpoint(editor)
-        },
-        HelixCommandItem("reload", emptyList(), "Synchronize / reload buffer from disk") { editor ->
-            HelixActionDelegate.executeAction("Synchronize", editor)
-        },
-        HelixCommandItem("config-reload", emptyList(), "Reload Helix configuration") { _ ->
-        },
-        HelixCommandItem("toggle-search-ui", emptyList(), "Toggle search UI (Stock Helix / Popup)") { _ ->
-            HelixSettings.instance.searchUiMode =
-                if (HelixSettings.instance.searchUiMode == HelixSearchUiMode.STOCK_HELIX) {
-                    HelixSearchUiMode.POPUP
-                } else {
-                    HelixSearchUiMode.STOCK_HELIX
-                }
-        },
-        HelixCommandItem("set-search-ui-stock", emptyList(), "Set search UI to Stock Helix inline bar") { _ ->
-            HelixSettings.instance.searchUiMode = HelixSearchUiMode.STOCK_HELIX
-        },
-        HelixCommandItem("set-search-ui-popup", emptyList(), "Set search UI to Popup dialog") { _ ->
-            HelixSettings.instance.searchUiMode = HelixSearchUiMode.POPUP
-        },
-        HelixCommandItem(
-            "toggle-line-navigation",
-            listOf("toggle-line-nav", "line-navigation-mode", "toggle-line-navigation-mode"),
-            "Toggle line navigation mode (Stock Helix visual j/k <-> Vim physical j/k)",
-        ) { _ ->
-            HelixSettings.instance.lineNavigationMode =
-                if (HelixSettings.instance.lineNavigationMode == HelixLineNavigationMode.HELIX_STANDARD) {
-                    HelixLineNavigationMode.VIM_STANDARD
-                } else {
-                    HelixLineNavigationMode.HELIX_STANDARD
-                }
-        },
-        HelixCommandItem(
-            "set-line-nav-helix",
-            listOf("set-line-nav-stock"),
-            "Set line navigation to Stock Helix (j/k: visual line, gj/gk: physical line)",
-        ) { _ ->
-            HelixSettings.instance.lineNavigationMode = HelixLineNavigationMode.HELIX_STANDARD
-        },
-        HelixCommandItem(
-            "set-line-nav-vim",
-            listOf("set-line-nav-physical"),
-            "Set line navigation to Vim Standard (j/k: physical line, gj/gk: visual line)",
-        ) { _ ->
-            HelixSettings.instance.lineNavigationMode = HelixLineNavigationMode.VIM_STANDARD
-        },
-        HelixCommandItem(
-            "toggle-scratch-mode",
-            listOf("toggle-scratch", "scratch-mode"),
-            "Toggle scratch split mode (Interactive picker <-> Instant empty buffer)",
-        ) { _ ->
-            HelixSettings.instance.scratchSplitMode =
-                if (HelixSettings.instance.scratchSplitMode == HelixScratchSplitMode.INTERACTIVE) {
-                    HelixScratchSplitMode.EMPTY_BUFFER
-                } else {
-                    HelixScratchSplitMode.INTERACTIVE
-                }
-        },
-        HelixCommandItem(
-            "set-scratch-mode-interactive",
-            listOf("set-scratch-mode-file"),
-            "Set scratch split mode to interactive language picker (NewScratchFile)",
-        ) { _ ->
-            HelixSettings.instance.scratchSplitMode = HelixScratchSplitMode.INTERACTIVE
-        },
-        HelixCommandItem(
-            "set-scratch-mode-buffer",
-            listOf("set-scratch-mode-plain", "set-scratch-mode-helix"),
-            "Set scratch split mode to instant empty buffer (NewScratchBuffer)",
-        ) { _ ->
-            HelixSettings.instance.scratchSplitMode = HelixScratchSplitMode.EMPTY_BUFFER
-        },
-        HelixCommandItem("jumps", emptyList(), "Open jumplist picker") { editor ->
-            HelixJumplistPopup.show(editor)
-        },
-        HelixCommandItem("registers", listOf("reg"), "Open registers picker popup") { editor ->
-            jp.titze.intellij.helix.ui.HelixRegistersPopup.show(editor)
-        },
-        HelixCommandItem("macros", listOf("macro", "macro-picker"), "Open macros picker popup") { editor ->
-            jp.titze.intellij.helix.ui.HelixMacrosPopup.show(editor)
-        },
-        HelixCommandItem("switch-case", listOf("switch_case"), "Switch case of selected text (~)") { editor ->
-            HelixActions.toggleCase(editor)
-        },
-        HelixCommandItem("switch-to-lowercase", listOf("switch_to_lowercase"), "Set selected text to lower case (`)") {
-            HelixActions.toLowerCase(it)
-        },
-        HelixCommandItem(
-            "switch-to-uppercase",
-            listOf("switch_to_uppercase"),
-            "Set selected text to upper case (Alt+`)",
-        ) { editor ->
-            HelixActions.toUpperCase(editor)
-        },
-        HelixCommandItem(
-            "increment",
-            listOf("inc"),
-            "Increment integer under cursor or selection (Ctrl+a)",
-        ) { editor ->
-            val state = HelixStateManager.getOrCreate(editor)
-            val count = state.takeCount() ?: 1
-            HelixActions.increment(editor, count)
-        },
-        HelixCommandItem(
-            "decrement",
-            listOf("dec"),
-            "Decrement integer under cursor or selection (Ctrl+x)",
-        ) { editor ->
-            val state = HelixStateManager.getOrCreate(editor)
-            val count = state.takeCount() ?: 1
-            HelixActions.decrement(editor, count)
-        },
-        HelixCommandItem(
-            "trim-selections",
-            listOf("trim_selections"),
-            "Trim whitespace from selections (_)",
-        ) { editor -> HelixActions.trimSelections(editor) },
-        HelixCommandItem(
-            "align-selections",
-            listOf("align_selections"),
-            "Align selections by padding with whitespace (&)",
-        ) { editor -> HelixActions.alignSelections(editor) },
-        HelixCommandItem(
-            "keep-selections",
-            listOf("keep_selections"),
-            "Filter selections by regex, keeping matching (K / Alt+k)",
-        ) { editor -> jp.titze.intellij.helix.ui.HelixSearchManager.startKeepSelections(editor) },
-        HelixCommandItem(
-            "hover",
-            listOf("doc"),
-            "Show hover / documentation popup (space + k)",
-        ) { editor -> HelixActionDelegate.executeAction("QuickJavaDoc", editor) },
-        HelixCommandItem(
-            "remove-selections",
-            listOf("remove_selections"),
-            "Filter selections by regex, removing matching (Alt+K)",
-        ) { editor -> jp.titze.intellij.helix.ui.HelixSearchManager.startRemoveSelections(editor) },
-        HelixCommandItem(
-            "ensure-selections-forward",
-            listOf("ensure_selections_forward"),
-            "Flip backward selections forward (Alt+:)",
-        ) { editor -> HelixActions.ensureSelectionsForward(editor) },
-        HelixCommandItem(
-            "merge-selections",
-            listOf("merge_selections", "merge_consecutive_selections"),
-            "Merge contiguous or overlapping selections (Alt+_)",
-        ) { editor -> HelixActions.mergeSelections(editor) },
-        HelixCommandItem(
-            "merge-all-selections",
-            listOf("merge_all_selections"),
-            "Merge all selections into single span (Alt+-)",
-        ) { editor -> HelixActions.mergeAllSelections(editor) },
-        HelixCommandItem(
-            "join-selections-space",
-            listOf("join_selections_space"),
-            "Join lines and select inserted space (Alt+J)",
-        ) { editor -> HelixActions.joinLines(editor, selectSpace = true) },
-        HelixCommandItem(
-            "delete-noyank",
-            listOf("delete_noyank"),
-            "Delete selection without yanking (Alt+d)",
-        ) { editor -> HelixActions.deleteSelectionNoYank(editor) },
-        HelixCommandItem(
-            "change-noyank",
-            listOf("change_noyank"),
-            "Change selection without yanking (Alt+c)",
-        ) { editor -> HelixActions.changeSelectionNoYank(editor) },
-        HelixCommandItem(
-            "yank-to-clipboard",
-            listOf("yank_to_clipboard", "clipboard-yank"),
-            "Yank active selections to system clipboard (space + y)",
-        ) { editor -> HelixActions.yankSelection(editor, register = '+') },
-        HelixCommandItem(
-            "yank-main-selection-to-clipboard",
-            listOf("yank_main_selection_to_clipboard", "clipboard-yank-primary"),
-            "Yank main selection to system clipboard (space + Y)",
-        ) { editor -> HelixActions.yankMainSelection(editor, register = '+') },
-        HelixCommandItem(
-            "repeat-last-motion",
-            listOf("repeat_last_motion"),
-            "Repeat last motion (Alt+.)",
-        ) { editor -> HelixActions.repeatLastMotion(editor) },
-        HelixCommandItem(
-            "rotate-selection-contents-forward",
-            listOf("rotate_selections_contents_forward"),
-            "Cycle text contents forward without moving carets (Alt+))",
-        ) { editor -> HelixActions.rotateSelectionsContents(editor, forward = true) },
-        HelixCommandItem(
-            "rotate-selection-contents-backward",
-            listOf("rotate_selections_contents_backward"),
-            "Cycle text contents backward without moving carets (Alt+()",
-        ) { editor -> HelixActions.rotateSelectionsContents(editor, forward = false) },
-        HelixCommandItem(
-            "reverse-selection-contents",
-            listOf("reverse_selection_contents", "reverse-selections-contents", "reverse_selections_contents"),
-            "Reverse text contents between active selections",
-        ) { editor -> HelixActions.reverseSelectionsContents(editor) },
-        HelixCommandItem(
-            "yank-diagnostic",
-            listOf("yank_diagnostic", "yank-diag", "yank_diag"),
-            "Yank diagnostic under cursor to clipboard and active register",
-        ) { editor -> HelixActions.yankDiagnostic(editor) },
-        HelixCommandItem(
-            "reset-diff-change",
-            listOf("reset_diff_change", "diffget", "diffg"),
-            "Revert VCS git hunk under cursor (Vcs.RollbackChangedLines)",
-        ) { editor -> HelixActionDelegate.executeAction("Vcs.RollbackChangedLines", editor) },
-        HelixCommandItem(
-            "reflow",
-            listOf("reflow-paragraph", "fill-paragraph"),
-            "Hard-wrap selected lines or comments to editor column margin (FillParagraph)",
-        ) { editor -> HelixActionDelegate.executeAction("FillParagraph", editor) },
-        HelixCommandItem(
-            "clear-register",
-            listOf("clear_register"),
-            "Clear contents of a specific register or all registers",
-        ) { _ -> HelixRegisterManager.clear() },
-        HelixCommandItem(
-            "file-explorer-buffer",
-            listOf(
-                "file_explorer_buffer",
-                "file-explorer-in-current-buffer-directory",
-                "file_explorer_in_current_buffer_directory",
-            ),
-            "Open project explorer focused on current buffer directory (space + E)",
-        ) { editor -> HelixActionDelegate.executeAction("SelectInProjectView", editor) },
-        HelixCommandItem(
-            "extend-to-line-bounds",
-            listOf("extend_to_line_bounds", "extend_line_below"),
-            "Extend selection to whole line bounds (X)",
-        ) { editor -> HelixMotions.extendToLineBounds(editor) },
-        HelixCommandItem(
-            "shrink-to-line-bounds",
-            listOf("shrink_to_line_bounds"),
-            "Shrink selection to line bounds excluding line breaks (Alt+x)",
-        ) { editor -> HelixMotions.shrinkToLineBounds(editor) },
-        HelixCommandItem(
-            "record-macro",
-            listOf("macro-record"),
-            "Start or stop recording a keyboard macro (Q)",
-        ) { editor ->
-            HelixActionDelegate.executeAction("StartStopMacroRecording", editor)
-            HelixStateManager.getOrCreate(editor).notifyListeners()
-        },
-        HelixCommandItem(
-            "replay-macro",
-            listOf("macro-play", "playback-macro"),
-            "Replay the last recorded keyboard macro (q)",
-        ) { editor ->
-            HelixActionDelegate.executeAction("PlaybackLastMacro", editor)
-        },
-        HelixCommandItem("sort", emptyList(), "Sort selected lines alphabetically") { editor ->
-            HelixActions.sortLines(editor, reverse = false)
-        },
-        HelixCommandItem("sort-reverse", listOf("sort -r"), "Sort selected lines in reverse") { editor ->
-            HelixActions.sortLines(editor, reverse = true)
-        },
-        HelixCommandItem(
-            "terminal",
-            listOf("sh"),
-            "Open / toggle built-in terminal (ActivateTerminalToolWindow)",
-        ) { editor ->
-            HelixActionDelegate.executeAction("ActivateTerminalToolWindow", editor)
-        },
-        HelixCommandItem("pwd", emptyList(), "Display current working directory") { editor ->
-            HelixDirectoryManager.printWorkingDirectory(editor)
-        },
-        HelixCommandItem("cd", emptyList(), "Change working directory") { editor ->
-            HelixDirectoryManager.changeDirectory("", editor)
-        },
-        HelixCommandItem(
-            "goto-line-start",
-            listOf("goto_line_start", "line-start"),
-            "Move cursor to line start (Ctrl+a, gh)",
-        ) { editor -> HelixActionDelegate.executeAction("EditorLineStart", editor) },
-        HelixCommandItem(
-            "goto-line-end",
-            listOf("goto_line_end", "line-end"),
-            "Move cursor to line end (Ctrl+e, gl)",
-        ) { editor -> HelixActionDelegate.executeAction("EditorLineEnd", editor) },
-        HelixCommandItem(
-            "delete-char-backward",
-            listOf("delete_char_backward"),
-            "Delete character backward (Ctrl+h, Backspace)",
-        ) { editor -> HelixActionDelegate.executeAction("EditorBackSpace", editor) },
-        HelixCommandItem(
-            "delete-char-forward",
-            listOf("delete_char_forward"),
-            "Delete character forward (Ctrl+d, Delete)",
-        ) { editor -> HelixActionDelegate.executeAction("EditorDelete", editor) },
-        HelixCommandItem(
-            "delete-word-backward",
-            listOf("delete_word_backward"),
-            "Delete previous word (Ctrl+w, Alt+Backspace)",
-        ) { editor -> HelixActions.deleteWordBackward(editor) },
-        HelixCommandItem(
-            "delete-word-forward",
-            listOf("delete_word_forward"),
-            "Delete next word (Alt+d, Alt+Delete)",
-        ) { editor -> HelixActions.deleteWordForward(editor) },
-        HelixCommandItem(
-            "kill-to-line-start",
-            listOf("kill_to_line_start"),
-            "Delete from cursor to line start (Ctrl+u)",
-        ) { editor -> HelixActions.killToLineStart(editor) },
-        HelixCommandItem(
-            "kill-to-line-end",
-            listOf("kill_to_line_end"),
-            "Delete from cursor to line end (Ctrl+k)",
-        ) { editor -> HelixActions.killToLineEnd(editor) },
-        HelixCommandItem(
-            "completion",
-            listOf("complete"),
-            "Trigger code completion menu (Ctrl+x)",
-        ) { editor -> HelixActionDelegate.executeAction("CodeCompletion", editor) },
-        HelixCommandItem(
-            "signature-help",
-            listOf("signature_help", "param-info", "parameter-info"),
-            "Show signature help / parameter info (Ctrl+p)",
-        ) { editor -> HelixActionDelegate.executeAction("ParameterInfo", editor) },
-        HelixCommandItem(
-            "select_prev_sibling",
-            listOf("select-prev-sibling"),
-            "Select previous sibling AST element (Alt+p, Alt+Left)",
-        ) { editor -> HelixActions.selectPrevSibling(editor) },
-        HelixCommandItem(
-            "select_next_sibling",
-            listOf("select-next-sibling"),
-            "Select next sibling AST element (Alt+n, Alt+Right)",
-        ) { editor -> HelixActions.selectNextSibling(editor) },
-        HelixCommandItem(
-            "move_parent_node_start",
-            listOf("move-parent-node-start"),
-            "Move or extend to start of parent AST node (Alt+b)",
-        ) { editor -> HelixActions.moveParentNodeStart(editor) },
-        HelixCommandItem(
-            "move_parent_node_end",
-            listOf("move-parent-node-end"),
-            "Move or extend to end of parent AST node (Alt+e)",
-        ) { editor -> HelixActions.moveParentNodeEnd(editor) },
-        HelixCommandItem(
-            "select_all_siblings",
-            listOf("select-all-siblings"),
-            "Select all sibling AST elements (Alt+a)",
-        ) { editor -> HelixActions.selectAllSiblings(editor) },
-        HelixCommandItem(
-            "select_all_children",
-            listOf("select-all-children"),
-            "Select all direct children nodes (Alt+I)",
-        ) { editor -> HelixActions.selectAllChildren(editor) },
-        HelixCommandItem(
-            "open",
-            listOf("edit", "e", "file-picker", "file_picker"),
-            "Open file picker or open file by path",
-        ) { editor ->
-            HelixActionDelegate.executeAction("GotoFile", editor) ||
-                HelixActionDelegate.executeAction("SearchEverywhere", editor)
-        },
-        HelixCommandItem(
-            "file-picker-in-current-directory",
-            listOf("file_picker_in_current_directory"),
-            "Open file picker in current directory",
-        ) { editor ->
-            HelixKeyHandler.recordJump(editor)
-            HelixDirectoryFilePickerPopup.show(editor)
-        },
-        HelixCommandItem("buffer", listOf("b"), "Open buffer switcher (RecentFiles)") { editor ->
-            HelixActionDelegate.executeAction("RecentFiles", editor)
-        },
-        HelixCommandItem("find", emptyList(), "Find in project files (FindInPath)") { editor ->
-            HelixActionDelegate.executeAction("FindInPath", editor)
-        },
-        HelixCommandItem("buffer-close", listOf("bc", "bclose"), "Close active editor tab") { editor ->
-            HelixActionDelegate.executeAction("CloseContent", editor)
-        },
-        HelixCommandItem(
-            "buffer-close-others",
-            listOf("bco", "bcloseother"),
-            "Close all other editor tabs",
-        ) { editor ->
-            HelixActionDelegate.executeAction("CloseAllEditorsButActive", editor)
-        },
-        HelixCommandItem("buffer-close-all", listOf("bca", "bcloseall"), "Close all editor tabs") { editor ->
-            HelixActionDelegate.executeAction("CloseAllEditors", editor)
-        },
-        HelixCommandItem("buffer-next", listOf("bn"), "Switch to next editor tab") { editor ->
-            HelixActionDelegate.executeAction("NextTab", editor)
-        },
-        HelixCommandItem("buffer-previous", listOf("bp"), "Switch to previous editor tab") { editor ->
-            HelixActionDelegate.executeAction("PreviousTab", editor)
-        },
-        HelixCommandItem("new", listOf("n"), "Create new scratch file / buffer") { editor ->
-            HelixActionDelegate.executeAction("NewScratchFile", editor)
-        },
-        HelixCommandItem(
-            "pipe",
-            listOf("shell-pipe", "shell_pipe"),
-            "Pipe selections into shell command and replace",
-        ) { editor -> HelixSearchManager.startShellPipe(editor) },
-        HelixCommandItem(
-            "pipe-to",
-            listOf("shell-pipe-to", "shell_pipe_to"),
-            "Pipe selections into shell command ignoring output",
-        ) { editor -> HelixSearchManager.startShellPipeTo(editor) },
-        HelixCommandItem(
-            "insert-output",
-            listOf("insert_output", "shell_insert_output"),
-            "Insert shell output before selections",
-        ) { editor -> HelixSearchManager.startShellInsert(editor) },
-        HelixCommandItem(
-            "append-output",
-            listOf("append_output", "shell_append_output"),
-            "Append shell output after selections",
-        ) { editor -> HelixSearchManager.startShellAppend(editor) },
-        HelixCommandItem(
-            "keep-pipe",
-            listOf("keep_pipe", "shell_keep_pipe"),
-            "Filter selections through shell command exit code",
-        ) { editor -> HelixSearchManager.startShellKeepPipe(editor) },
-        HelixCommandItem(
-            "run-shell-command",
-            listOf("run_shell_command"),
-            "Run a shell command asynchronously",
-        ) { editor -> HelixActionDelegate.executeAction("ActivateTerminalToolWindow", editor) },
-        HelixCommandItem(
-            "dap-toggle-breakpoint",
-            listOf("dap_toggle_breakpoint", "breakpoint", "toggle-breakpoint"),
-            "Toggle line breakpoint (space + G b)",
-        ) { editor -> HelixActionDelegate.executeAction("ToggleLineBreakpoint", editor) },
-        HelixCommandItem(
-            "dap-continue",
-            listOf("dap_continue", "continue", "resume"),
-            "Continue / resume program execution (space + G c)",
-        ) { editor -> HelixActionDelegate.executeAction("Resume", editor) },
-        HelixCommandItem(
-            "dap-step-in",
-            listOf("dap_step_in", "step-in"),
-            "Step into function / method (space + G s)",
-        ) { editor -> HelixActionDelegate.executeAction("StepInto", editor) },
-        HelixCommandItem(
-            "dap-next",
-            listOf("dap_next", "step-over", "next"),
-            "Step over next statement (space + G n)",
-        ) { editor -> HelixActionDelegate.executeAction("StepOver", editor) },
-        HelixCommandItem(
-            "dap-step-out",
-            listOf("dap_step_out", "step-out"),
-            "Step out of current stack frame (space + G o)",
-        ) { editor -> HelixActionDelegate.executeAction("StepOut", editor) },
-        HelixCommandItem(
-            "dap-terminate",
-            listOf("dap_terminate"),
-            "Terminate debug session (space + G t)",
-        ) { editor -> HelixActionDelegate.executeAction("Stop", editor) },
-        HelixCommandItem(
-            "dap-restart",
-            listOf("dap_restart", "restart"),
-            "Restart debugging session (space + G r)",
-        ) { editor -> HelixActionDelegate.executeAction("Rerun", editor) },
-        HelixCommandItem(
-            "dap-pause",
-            listOf("dap_pause", "pause"),
-            "Pause program execution (space + G p)",
-        ) { editor -> HelixActionDelegate.executeAction("Pause", editor) },
-        HelixCommandItem(
-            "dap-launch",
-            listOf("dap_launch", "debug"),
-            "Launch active debug target (space + G l)",
-        ) { editor -> HelixActionDelegate.executeAction("Debug", editor) },
-        HelixCommandItem(
-            "dap-variables",
-            listOf("dap_variables", "variables", "dap-ui"),
-            "Show debug panel and variables (space + G v)",
-        ) { editor -> HelixActionDelegate.executeAction("ActivateDebugToolWindow", editor) },
-        HelixCommandItem(
-            "dap-evaluate",
-            listOf("dap_evaluate", "evaluate", "eval"),
-            "Evaluate expression popup (space + G k)",
-        ) { editor -> HelixActionDelegate.executeAction("EvaluateExpression", editor) },
-        HelixCommandItem(
-            "dap-edit-condition",
-            listOf("dap_edit_condition", "edit-breakpoint"),
-            "Edit breakpoint condition and log (space + G e)",
-        ) { editor -> HelixActionDelegate.executeAction("EditBreakpoint", editor) },
-        HelixCommandItem(
-            "dap-view-breakpoints",
-            listOf("dap_view_breakpoints", "breakpoints", "list-breakpoints"),
-            "View all breakpoints (space + G B)",
-        ) { editor -> HelixActionDelegate.executeAction("ViewBreakpoints", editor) },
-        HelixCommandItem(
-            "run",
-            listOf("run-context", "run_context"),
-            "Run context configuration or file (RunClass)",
-        ) { editor ->
-            HelixActionDelegate.executeAction("RunClass", editor) ||
-                HelixActionDelegate.executeAction("Run", editor)
-        },
-        HelixCommandItem(
-            "run-target",
-            listOf("run_target"),
-            "Run active configuration (Run)",
-        ) { editor ->
-            HelixActionDelegate.executeAction("Run", editor)
-        },
-        HelixCommandItem(
-            "rerun",
-            listOf("rerun-test", "rerun_test"),
-            "Rerun last execution (Rerun)",
-        ) { editor ->
-            HelixActionDelegate.executeAction("Rerun", editor)
-        },
-        HelixCommandItem(
-            "build",
-            listOf("make", "compile"),
-            "Build project / compile dirty files (CompileDirty)",
-        ) { editor ->
-            HelixActionDelegate.executeAction("CompileDirty", editor) ||
-                HelixActionDelegate.executeAction("Make", editor)
-        },
-        HelixCommandItem(
-            "stop",
-            listOf("terminate", "kill"),
-            "Stop running or debugging process (Stop)",
-        ) { editor ->
-            HelixActionDelegate.executeAction("Stop", editor)
-        },
-        HelixCommandItem(
-            "blame",
-            listOf("annotate", "git-blame", "git_blame"),
-            "Toggle Git blame annotations (Annotate)",
-        ) { editor ->
-            HelixActionDelegate.executeAction("Annotate", editor)
-        },
-        HelixCommandItem(
-            "diff",
-            listOf("show-diff", "show_diff", "git-diff"),
-            "Compare file with repository version (Compare.SameVersion)",
-        ) { editor ->
-            HelixActionDelegate.executeAction("Compare.SameVersion", editor) ||
-                HelixActionDelegate.executeAction("Diff.ShowDiff", editor)
-        },
-        HelixCommandItem(
-            "commit",
-            listOf("git-commit", "git_commit"),
-            "Open Git commit dialog or tool window (CheckinProject)",
-        ) { editor ->
-            HelixActionDelegate.executeAction("CheckinProject", editor)
-        },
-        HelixCommandItem(
-            "push",
-            listOf("git-push", "git_push"),
-            "Push commits to remote repository (Vcs.Push)",
-        ) { editor ->
-            HelixActionDelegate.executeAction("Vcs.Push", editor)
-        },
-        HelixCommandItem(
-            "pull",
-            listOf("git-pull", "git_pull", "update-project"),
-            "Update project / pull from remote (Vcs.UpdateProject)",
-        ) { editor ->
-            HelixActionDelegate.executeAction("Vcs.UpdateProject", editor)
-        },
-        HelixCommandItem(
-            "vcs-log",
-            listOf("git-log", "git_log"),
-            "Show VCS / Git log (Vcs.Show.Log)",
-        ) { editor ->
-            HelixActionDelegate.executeAction("Vcs.Show.Log", editor)
-        },
-        HelixCommandItem(
-            "extract-variable",
-            listOf("var", "extract_variable"),
-            "Extract selection into variable (space + m v)",
-        ) { editor -> HelixActionDelegate.executeAction("IntroduceVariable", editor) },
-        HelixCommandItem(
-            "extract-method",
-            listOf("method", "extract_method"),
-            "Extract selection into method / function (space + m m)",
-        ) { editor -> HelixActionDelegate.executeAction("ExtractMethod", editor) },
-        HelixCommandItem(
-            "extract-constant",
-            listOf("const", "extract_constant"),
-            "Extract selection into constant field (space + m c)",
-        ) { editor -> HelixActionDelegate.executeAction("IntroduceConstant", editor) },
-        HelixCommandItem(
-            "extract-field",
-            listOf("field", "extract_field"),
-            "Extract expression into class field (space + m f)",
-        ) { editor -> HelixActionDelegate.executeAction("IntroduceField", editor) },
-        HelixCommandItem(
-            "extract-parameter",
-            listOf("param", "extract_parameter"),
-            "Turn expression into parameter (space + m p)",
-        ) { editor -> HelixActionDelegate.executeAction("IntroduceParameter", editor) },
-        HelixCommandItem(
-            "inline",
-            listOf("inline-variable", "inline_variable"),
-            "Inline variable, method, or constant (space + m i)",
-        ) { editor -> HelixActionDelegate.executeAction("Inline", editor) },
-        HelixCommandItem(
-            "change-signature",
-            listOf("cs", "change_signature"),
-            "Refactor signature and parameters (space + m s)",
-        ) { editor -> HelixActionDelegate.executeAction("ChangeSignature", editor) },
-        HelixCommandItem(
-            "move",
-            listOf("move-element", "move_element"),
-            "Move symbol or file (space + m M)",
-        ) { editor -> HelixActionDelegate.executeAction("Move", editor) },
-        HelixCommandItem(
-            "override",
-            listOf("override-methods", "override_methods"),
-            "Override superclass methods (space + m o)",
-        ) { editor -> HelixActionDelegate.executeAction("OverrideMethods", editor) },
-        HelixCommandItem(
-            "implement",
-            listOf("implement-methods", "implement_methods"),
-            "Implement interface methods (space + m I)",
-        ) { editor -> HelixActionDelegate.executeAction("ImplementMethods", editor) },
-        HelixCommandItem(
-            "surround-with",
-            listOf("surround", "surround_with"),
-            "Surround selection with template (space + m w)",
-        ) { editor -> HelixActionDelegate.executeAction("SurroundWith", editor) },
-        HelixCommandItem(
-            "refactor-this",
-            listOf("refactor"),
-            "Open Refactor This popup menu (space + m ?)",
-        ) { editor -> HelixActionDelegate.executeAction("Refactorings.QuickListPopupAction", editor) },
-        HelixCommandItem(
-            "goto-implementation",
-            listOf("goto_implementation", "implementation"),
-            "Jump to implementation (gi)",
-        ) { editor ->
-            HelixActionDelegate.executeAction("GotoImplementation", editor)
-        },
-        HelixCommandItem(
-            "goto-type-definition",
-            listOf("goto_type_definition", "type-definition", "type_definition"),
-            "Jump to type definition (gy)",
-        ) { editor ->
-            HelixActionDelegate.executeAction("GotoTypeDeclaration", editor)
-        },
-        HelixCommandItem(
-            "goto-reference",
-            listOf("goto_reference", "reference", "references"),
-            "Find symbol references / usages (gr)",
-        ) { editor ->
-            HelixActionDelegate.executeAction("FindUsages", editor)
-        },
-        HelixCommandItem(
-            "goto-super",
-            listOf("goto_super", "super"),
-            "Navigate to super method or class (GotoSuperMethod)",
-        ) { editor ->
-            HelixActionDelegate.executeAction("GotoSuperMethod", editor)
-        },
-        HelixCommandItem(
-            "call-hierarchy",
-            listOf("call_hierarchy"),
-            "Open Call Hierarchy tool window (CallHierarchy)",
-        ) { editor ->
-            HelixActionDelegate.executeAction("CallHierarchy", editor)
-        },
-        HelixCommandItem(
-            "type-hierarchy",
-            listOf("type_hierarchy", "hierarchy"),
-            "Open Type Hierarchy tool window (TypeHierarchy)",
-        ) { editor ->
-            HelixActionDelegate.executeAction("TypeHierarchy", editor)
-        },
-        HelixCommandItem(
-            "file-structure",
-            listOf("file_structure", "structure"),
-            "Open file structure outline (FileStructurePopup)",
-        ) { editor ->
-            HelixActionDelegate.executeAction("FileStructurePopup", editor)
-        },
-        HelixCommandItem(
-            "extract-variable",
-            listOf("extract_variable", "extract-var", "extract_var"),
-            "Refactor extract variable (IntroduceVariable)",
-        ) { editor ->
-            HelixActionDelegate.executeAction("IntroduceVariable", editor)
-        },
-        HelixCommandItem(
-            "extract-method",
-            listOf("extract_method"),
-            "Refactor extract method (ExtractMethod)",
-        ) { editor ->
-            HelixActionDelegate.executeAction("ExtractMethod", editor)
-        },
-        HelixCommandItem(
-            "inline",
-            listOf("inline-variable", "inline_variable"),
-            "Refactor inline variable or method (Inline)",
-        ) { editor ->
-            HelixActionDelegate.executeAction("Inline", editor)
-        },
-        HelixCommandItem(
-            "change-signature",
-            listOf("change_signature"),
-            "Refactor change method signature (ChangeSignature)",
-        ) { editor ->
-            HelixActionDelegate.executeAction("ChangeSignature", editor)
-        },
-        HelixCommandItem(
-            "generate",
-            listOf("gen"),
-            "Generate code constructors, getters, setters (Generate)",
-        ) { editor ->
-            HelixActionDelegate.executeAction("Generate", editor)
-        },
-        HelixCommandItem(
-            "replace-in-path",
-            listOf("replace_in_path", "replace-in-files"),
-            "Find and replace in project files (ReplaceInPath)",
-        ) { editor ->
-            HelixActionDelegate.executeAction("ReplaceInPath", editor)
-        },
-    )
+    val COMMANDS = HelixBuiltinCommands.LIST
 
     fun filterCommands(query: String): List<HelixCommandItem> {
         val q = query.trim().removePrefix(":")
@@ -1295,7 +373,124 @@ object HelixCommands {
             HelixRegisterManager.clear(regChar)
             return true
         }
+        if (baseCmd in listOf("set-option", "set") && arg.isNotEmpty()) {
+            executeSetOption(arg, editor)
+            return true
+        }
+        if (baseCmd in listOf("toggle-option", "toggle") && arg.isNotEmpty()) {
+            executeToggleOption(arg, editor)
+            return true
+        }
         return executeShellCommand(baseCmd, arg, editor)
+    }
+
+    private fun executeSetOption(arg: String, editor: Editor): Boolean {
+        val (key, value) = parseOptionKeyValue(arg) ?: return false
+        if (HelixVisualToggleActions.handleSetOption(key, value, editor)) {
+            return true
+        }
+        return executeSettingOption(key, value)
+    }
+
+    private fun executeToggleOption(arg: String, editor: Editor): Boolean {
+        val key = arg.trim()
+        if (HelixVisualToggleActions.handleToggleOption(key, editor)) {
+            return true
+        }
+        return executeSettingToggle(key)
+    }
+
+    private fun parseOptionKeyValue(rawArg: String): Pair<String, String>? {
+        val trimmed = rawArg.trim()
+        if (trimmed.isEmpty()) return null
+        return if (trimmed.contains('=')) {
+            val parts = trimmed.split('=', limit = 2)
+            parts[0].trim() to parts[1].trim()
+        } else {
+            val parts = trimmed.split(Regex("\\s+"), limit = 2)
+            if (parts.size == 2) parts[0].trim() to parts[1].trim() else null
+        }
+    }
+
+    private fun executeSettingOption(key: String, value: String): Boolean {
+        val normKey = key.lowercase().replace('_', '-')
+        val normVal = value.lowercase()
+        return when (normKey) {
+            "search-ui", "search-ui.mode", "search.ui" -> {
+                if (normVal in listOf("inline", "stock")) {
+                    HelixSettings.instance.searchUiMode = HelixSearchUiMode.STOCK_HELIX
+                    true
+                } else if (normVal == "popup") {
+                    HelixSettings.instance.searchUiMode = HelixSearchUiMode.POPUP
+                    true
+                } else {
+                    false
+                }
+            }
+
+            "line-nav", "line-navigation", "line-navigation.mode" -> {
+                if (normVal in listOf("helix", "stock")) {
+                    HelixSettings.instance.lineNavigationMode = HelixLineNavigationMode.HELIX_STANDARD
+                    true
+                } else if (normVal in listOf("vim", "physical")) {
+                    HelixSettings.instance.lineNavigationMode = HelixLineNavigationMode.VIM_STANDARD
+                    true
+                } else {
+                    false
+                }
+            }
+
+            "scratch-mode", "scratch.mode" -> {
+                if (normVal in listOf("interactive", "file")) {
+                    HelixSettings.instance.scratchSplitMode = HelixScratchSplitMode.INTERACTIVE
+                    true
+                } else if (normVal in listOf("buffer", "plain", "helix", "empty")) {
+                    HelixSettings.instance.scratchSplitMode = HelixScratchSplitMode.EMPTY_BUFFER
+                    true
+                } else {
+                    false
+                }
+            }
+
+            else -> false
+        }
+    }
+
+    private fun executeSettingToggle(key: String): Boolean {
+        val normKey = key.lowercase().replace('_', '-')
+        return when (normKey) {
+            "search-ui", "search-ui.mode", "search.ui" -> {
+                val current = HelixSettings.instance.searchUiMode
+                HelixSettings.instance.searchUiMode = if (current == HelixSearchUiMode.STOCK_HELIX) {
+                    HelixSearchUiMode.POPUP
+                } else {
+                    HelixSearchUiMode.STOCK_HELIX
+                }
+                true
+            }
+
+            "line-nav", "line-navigation", "line-navigation.mode" -> {
+                val current = HelixSettings.instance.lineNavigationMode
+                HelixSettings.instance.lineNavigationMode = if (current == HelixLineNavigationMode.HELIX_STANDARD) {
+                    HelixLineNavigationMode.VIM_STANDARD
+                } else {
+                    HelixLineNavigationMode.HELIX_STANDARD
+                }
+                true
+            }
+
+            "scratch-mode", "scratch.mode" -> {
+                val current = HelixSettings.instance.scratchSplitMode
+                HelixSettings.instance.scratchSplitMode = if (current == HelixScratchSplitMode.INTERACTIVE) {
+                    HelixScratchSplitMode.EMPTY_BUFFER
+                } else {
+                    HelixScratchSplitMode.INTERACTIVE
+                }
+                true
+            }
+
+            else -> false
+        }
     }
 
     private fun executeShellCommand(baseCmd: String, arg: String, editor: Editor): Boolean = when (baseCmd) {

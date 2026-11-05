@@ -1870,4 +1870,205 @@ class HelixUiPopupsTest : BasePlatformTestCase() {
             HelixActionDelegate.actionExecutor = null
         }
     }
+
+    fun testVisualTogglePaletteCommands() {
+        myFixture.configureByText("test.txt", "sample visual toggle text")
+        val editor = myFixture.editor
+        val executedActions = mutableListOf<String>()
+        HelixActionDelegate.actionExecutor = { actionId, _ ->
+            executedActions.add(actionId)
+            true
+        }
+
+        try {
+            HelixCommands.execute("toggle-soft-wrap", editor)
+            executedActions.last() shouldBe "EditorToggleUseSoftWraps"
+
+            HelixCommands.execute("soft-wrap", editor)
+            executedActions.last() shouldBe "EditorToggleUseSoftWraps"
+
+            HelixCommands.execute("wrap", editor)
+            executedActions.last() shouldBe "EditorToggleUseSoftWraps"
+
+            HelixCommands.execute("toggle-inlay-hints", editor)
+            executedActions.last() shouldBe "ToggleInlayHintsGloballyAction"
+
+            HelixCommands.execute("inlay-hints", editor)
+            executedActions.last() shouldBe "ToggleInlayHintsGloballyAction"
+
+            HelixCommands.execute("hints", editor)
+            executedActions.last() shouldBe "ToggleInlayHintsGloballyAction"
+
+            HelixCommands.execute("toggle-sticky-context", editor)
+            executedActions.last() shouldBe "EditorGutterToggleGlobalStickyLines"
+
+            HelixCommands.execute("sticky-context", editor)
+            executedActions.last() shouldBe "EditorGutterToggleGlobalStickyLines"
+
+            HelixCommands.execute("sticky-lines", editor)
+            executedActions.last() shouldBe "EditorGutterToggleGlobalStickyLines"
+
+            HelixCommands.execute("toggle-line-numbers", editor)
+            executedActions.last() shouldBe "EditorToggleShowLineNumbers"
+
+            HelixCommands.execute("line-numbers", editor)
+            executedActions.last() shouldBe "EditorToggleShowLineNumbers"
+
+            HelixCommands.execute("numbers", editor)
+            executedActions.last() shouldBe "EditorToggleShowLineNumbers"
+
+            HelixCommands.execute("toggle-render-whitespace", editor)
+            executedActions.last() shouldBe "EditorToggleShowWhitespaces"
+
+            HelixCommands.execute("whitespace", editor)
+            executedActions.last() shouldBe "EditorToggleShowWhitespaces"
+
+            HelixCommands.execute("whitespaces", editor)
+            executedActions.last() shouldBe "EditorToggleShowWhitespaces"
+
+            HelixCommands.execute("toggle-breadcrumbs", editor)
+            executedActions.last() shouldBe "EditorToggleShowBreadcrumbs"
+
+            HelixCommands.execute("breadcrumbs", editor)
+            executedActions.last() shouldBe "EditorToggleShowBreadcrumbs"
+        } finally {
+            HelixActionDelegate.actionExecutor = null
+        }
+    }
+
+    fun testSetOptionAndToggleOptionCommands() {
+        myFixture.configureByText("test.txt", "option testing buffer")
+        val editor = myFixture.editor
+
+        // Soft wrap: set and toggle
+        HelixCommands.execute("set-option soft-wrap.enable true", editor)
+        editor.settings.isUseSoftWraps.shouldBeTrue()
+
+        HelixCommands.execute("set soft-wrap.enable false", editor)
+        editor.settings.isUseSoftWraps.shouldBeFalse()
+
+        HelixCommands.execute("set soft-wrap=on", editor)
+        editor.settings.isUseSoftWraps.shouldBeTrue()
+
+        HelixCommands.execute("set soft-wrap=off", editor)
+        editor.settings.isUseSoftWraps.shouldBeFalse()
+
+        HelixCommands.execute("toggle-option soft-wrap.enable", editor)
+        editor.settings.isUseSoftWraps.shouldBeTrue()
+
+        HelixCommands.execute("toggle soft-wrap", editor)
+        editor.settings.isUseSoftWraps.shouldBeFalse()
+
+        // Whitespace: set and toggle
+        HelixCommands.execute("set-option whitespace.render all", editor)
+        editor.settings.isWhitespacesShown.shouldBeTrue()
+
+        HelixCommands.execute("set whitespace.render none", editor)
+        editor.settings.isWhitespacesShown.shouldBeFalse()
+
+        HelixCommands.execute("toggle-option whitespace.render", editor)
+        editor.settings.isWhitespacesShown.shouldBeTrue()
+
+        HelixCommands.execute("toggle whitespace", editor)
+        editor.settings.isWhitespacesShown.shouldBeFalse()
+
+        // Line numbers: set and toggle
+        HelixCommands.execute("set-option line-number absolute", editor)
+        editor.settings.isLineNumbersShown.shouldBeTrue()
+
+        HelixCommands.execute("set line-numbers=none", editor)
+        editor.settings.isLineNumbersShown.shouldBeFalse()
+
+        HelixCommands.execute("toggle-option line-numbers", editor)
+        editor.settings.isLineNumbersShown.shouldBeTrue()
+
+        HelixCommands.execute("toggle line-number", editor)
+        editor.settings.isLineNumbersShown.shouldBeFalse()
+
+        // Breadcrumbs: set and toggle
+        val ext = com.intellij.openapi.editor.ex.EditorSettingsExternalizable.getInstance()
+        HelixCommands.execute("set-option breadcrumbs.enable true", editor)
+        ext.isBreadcrumbsShown.shouldBeTrue()
+
+        HelixCommands.execute("set breadcrumbs.enable false", editor)
+        ext.isBreadcrumbsShown.shouldBeFalse()
+
+        HelixCommands.execute("toggle-option breadcrumbs.enable", editor)
+        ext.isBreadcrumbsShown.shouldBeTrue()
+
+        HelixCommands.execute("toggle breadcrumbs", editor)
+        ext.isBreadcrumbsShown.shouldBeFalse()
+
+        // search-ui: set and toggle via canonical commands
+        val settings = HelixSettings.instance
+        HelixCommands.execute("set-option search-ui popup", editor)
+        settings.searchUiMode shouldBe HelixSearchUiMode.POPUP
+
+        HelixCommands.execute("set search-ui inline", editor)
+        settings.searchUiMode shouldBe HelixSearchUiMode.STOCK_HELIX
+
+        HelixCommands.execute("toggle-option search-ui", editor)
+        settings.searchUiMode shouldBe HelixSearchUiMode.POPUP
+
+        HelixCommands.execute("toggle search-ui", editor)
+        settings.searchUiMode shouldBe HelixSearchUiMode.STOCK_HELIX
+
+        // line-nav: set and toggle via canonical commands
+        HelixCommands.execute("set-option line-nav vim", editor)
+        settings.lineNavigationMode shouldBe HelixLineNavigationMode.VIM_STANDARD
+
+        HelixCommands.execute("set line-nav helix", editor)
+        settings.lineNavigationMode shouldBe HelixLineNavigationMode.HELIX_STANDARD
+
+        HelixCommands.execute("toggle-option line-nav", editor)
+        settings.lineNavigationMode shouldBe HelixLineNavigationMode.VIM_STANDARD
+
+        HelixCommands.execute("toggle line-nav", editor)
+        settings.lineNavigationMode shouldBe HelixLineNavigationMode.HELIX_STANDARD
+
+        // scratch-mode: set and toggle via canonical commands
+        HelixCommands.execute("set-option scratch-mode buffer", editor)
+        settings.scratchSplitMode shouldBe HelixScratchSplitMode.EMPTY_BUFFER
+
+        HelixCommands.execute("set scratch-mode interactive", editor)
+        settings.scratchSplitMode shouldBe HelixScratchSplitMode.INTERACTIVE
+
+        HelixCommands.execute("toggle-option scratch-mode", editor)
+        settings.scratchSplitMode shouldBe HelixScratchSplitMode.EMPTY_BUFFER
+
+        HelixCommands.execute("toggle scratch-mode", editor)
+        settings.scratchSplitMode shouldBe HelixScratchSplitMode.INTERACTIVE
+    }
+
+    fun testHelixCommandRegistryVisualToggles() {
+        myFixture.configureByText("test.txt", "registry test buffer")
+        val editor = myFixture.editor
+        val executedActions = mutableListOf<String>()
+        HelixActionDelegate.actionExecutor = { actionId, _ ->
+            executedActions.add(actionId)
+            true
+        }
+
+        try {
+            jp.titze.intellij.helix.keymap.HelixCommandRegistry.execute("toggle_soft_wrap", editor)
+            executedActions.last() shouldBe "EditorToggleUseSoftWraps"
+
+            jp.titze.intellij.helix.keymap.HelixCommandRegistry.execute("toggle_inlay_hints", editor)
+            executedActions.last() shouldBe "ToggleInlayHintsGloballyAction"
+
+            jp.titze.intellij.helix.keymap.HelixCommandRegistry.execute("toggle_sticky_context", editor)
+            executedActions.last() shouldBe "EditorGutterToggleGlobalStickyLines"
+
+            jp.titze.intellij.helix.keymap.HelixCommandRegistry.execute("toggle_line_numbers", editor)
+            executedActions.last() shouldBe "EditorToggleShowLineNumbers"
+
+            jp.titze.intellij.helix.keymap.HelixCommandRegistry.execute("toggle_whitespace", editor)
+            executedActions.last() shouldBe "EditorToggleShowWhitespaces"
+
+            jp.titze.intellij.helix.keymap.HelixCommandRegistry.execute("toggle_breadcrumbs", editor)
+            executedActions.last() shouldBe "EditorToggleShowBreadcrumbs"
+        } finally {
+            HelixActionDelegate.actionExecutor = null
+        }
+    }
 }
