@@ -8,6 +8,7 @@ import jp.titze.intellij.helix.action.HelixActionDelegate
 import jp.titze.intellij.helix.action.HelixActions
 import jp.titze.intellij.helix.action.HelixSelectionActions
 import jp.titze.intellij.helix.action.HelixSplitActions
+import jp.titze.intellij.helix.action.HelixVisualToggleActions
 import jp.titze.intellij.helix.motion.HelixFileNavigation
 import jp.titze.intellij.helix.motion.HelixJumpToWord
 import jp.titze.intellij.helix.motion.HelixMotionHistory
@@ -28,6 +29,7 @@ internal object HelixExtendedCommands {
         registerNavigationAndWindow()
         registerDapCommands()
         HelixRefactorCommands.registerAll()
+        registerVisualToggleCommands()
     }
 
     private fun registerUnimpaired() {
@@ -472,6 +474,27 @@ internal object HelixExtendedCommands {
         }
         HelixCommandRegistry.register("dap_view_breakpoints", "View breakpoints", "ViewBreakpoints") { ed, _ ->
             HelixActionDelegate.executeAction("ViewBreakpoints", ed)
+        }
+    }
+
+    private fun registerVisualToggleCommands() {
+        HelixCommandRegistry.register("toggle_soft_wrap", "Toggle soft wrap") { ed, _ ->
+            HelixVisualToggleActions.toggleSoftWrap(ed)
+        }
+        HelixCommandRegistry.register("toggle_inlay_hints", "Toggle inlay hints") { ed, _ ->
+            HelixVisualToggleActions.toggleInlayHints(ed)
+        }
+        HelixCommandRegistry.register("toggle_sticky_context", "Toggle sticky context") { ed, _ ->
+            HelixVisualToggleActions.toggleStickyContext(ed)
+        }
+        HelixCommandRegistry.register("toggle_line_numbers", "Toggle line numbers") { ed, _ ->
+            HelixVisualToggleActions.toggleLineNumbers(ed)
+        }
+        HelixCommandRegistry.register("toggle_whitespace", "Toggle whitespace rendering") { ed, _ ->
+            HelixVisualToggleActions.toggleWhitespace(ed)
+        }
+        HelixCommandRegistry.register("toggle_breadcrumbs", "Toggle breadcrumbs") { ed, _ ->
+            HelixVisualToggleActions.toggleBreadcrumbs(ed)
         }
     }
 }

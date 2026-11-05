@@ -7,6 +7,19 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- **Visual & IDE Toggle Commands (`:set-option`, `:toggle-option`, and `:toggle-*`)**:
+  - **Canonical Helix Option Commands**: Added `:set-option <key> <val>` (alias `:set`) and `:toggle-option <key>` (alias `:toggle`), matching modern Helix configuration commands. Supports both space-delimited (`:set soft-wrap.enable true`) and key-value formats (`:set soft-wrap=on`).
+  - **Supported Option Keys & Enums**: Full support for canonical dotted keys and flat aliases:
+    - `soft-wrap.enable` / `soft-wrap` &rarr; Toggle visual soft-wrapping in active editor
+    - `inlay-hints.enable` / `inlay-hints` &rarr; Toggle parameter and type hints globally
+    - `whitespace.render` / `whitespace` (`all`, `none`, `true`, `false`) &rarr; Toggle whitespace character rendering
+    - `line-number` / `line-numbers` (`absolute`, `none`, `true`, `false`) &rarr; Toggle gutter line numbers
+    - `sticky-context` / `sticky-lines` &rarr; Toggle sticky context header lines
+    - `breadcrumbs.enable` / `breadcrumbs` &rarr; Toggle editor breadcrumbs navigation
+  - **First-Class Palette Shorthands**: Added quick toggle commands with fuzzy aliases: `:toggle-soft-wrap` (`:soft-wrap`, `:wrap`), `:toggle-inlay-hints` (`:inlay-hints`, `:hints`), `:toggle-sticky-context` (`:sticky-context`, `:sticky-lines`), `:toggle-line-numbers` (`:line-numbers`, `:numbers`), `:toggle-render-whitespace` (`:whitespace`, `:whitespaces`), and `:toggle-breadcrumbs` (`:breadcrumbs`).
+  - **Config Registry Identifiers**: Registered canonical identifiers (`toggle_soft_wrap`, `toggle_inlay_hints`, `toggle_sticky_context`, `toggle_line_numbers`, `toggle_whitespace`, `toggle_breadcrumbs`) in `HelixCommandRegistry` so users can bind them to arbitrary keys in `config.toml`.
+  - **Modular Architecture Refactoring**: Extracted built-in command palette definitions into `HelixBuiltinCommands.kt` while maintaining `HelixCommands.COMMANDS` facade compatibility and keeping both classes comfortably under Detekt's file complexity limits.
+
 - **First-Class Refactoring Commands & Refactor Submenu (`space + m`)**:
   - **Refactor Submenu (`space + m`)**: Dedicated Which-Key submenu exposing core IntelliJ AST refactorings with single-key chords:
     - `space m v` &rarr; Extract variable (`IntroduceVariable`)
@@ -25,6 +38,13 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   - **First-Class Helix Palette Commands (`:`)**: Added canonical commands with fuzzy aliases: `:extract-variable` (`:var`), `:extract-method` (`:method`), `:extract-constant` (`:const`), `:extract-field` (`:field`), `:extract-parameter` (`:param`), `:inline`, `:change-signature` (`:cs`), `:move`, `:override`, `:implement`, `:surround-with` (`:surround`), `:refactor-this` (`:refactor`).
   - **Mode Lifecycle Consistency**: Refactoring commands executed while in `SELECT` mode operate on the active selection and cleanly transition back to `NORMAL` mode.
   - **Trie & Keybindings Browser Parity**: Registered all `space m` sub-chords in `HelixDefaultKeymap` so they are fully discoverable and searchable in the Keybindings Explorer under the `SPACE` category.
+
+### Fixed
+
+- **Option Command Consistency (`:set-option` & `:toggle-option`)**:
+  - Unified legacy ad-hoc settings commands (`search-ui`, `line-nav`, `scratch-mode`) into canonical Helix `:set-option <key> <val>` and `:toggle-option <key>` syntax (e.g. `:set-option search-ui popup`, `:toggle-option line-nav`, `:set scratch-mode buffer`) while preserving backwards compatibility for legacy `=` assignments.
+- **Which-Key Menu Branch Labeling**:
+  - Fixed an issue in `HelixWhichKeyMenus.mergeMenuItems` where non-leaf branch nodes with null actions could overwrite existing visual Which-Key labels with empty strings (resolving the empty `m` badge in the `SPACE MENU`).
 
 ## [0.4.0]
 
