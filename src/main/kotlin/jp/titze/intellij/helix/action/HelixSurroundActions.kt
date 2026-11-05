@@ -245,6 +245,22 @@ object HelixSurroundActions {
             p += 2
         }
 
+        if (bestPair == null) {
+            var q = 1
+            while (q + 1 < unescaped.size) {
+                val o = unescaped[q]
+                val c = unescaped[q + 1]
+                if (o <= selStart && c >= selEnd - 1) {
+                    val span = c - o
+                    if (span < minSpan) {
+                        minSpan = span
+                        bestPair = Pair(o, c)
+                    }
+                }
+                q += 2
+            }
+        }
+
         if (bestPair != null) return bestPair
 
         for (idx in unescaped) {
