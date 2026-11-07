@@ -19,8 +19,10 @@ import jp.titze.intellij.helix.editor.HelixEventDispatcher
 import jp.titze.intellij.helix.editor.HelixTypedActionHandler
 import jp.titze.intellij.helix.keymap.HelixCommandRegistry
 import jp.titze.intellij.helix.keymap.HelixKeyHandler
+import jp.titze.intellij.helix.macro.HelixMacroExecutor
 import jp.titze.intellij.helix.macro.HelixMacroItem
 import jp.titze.intellij.helix.macro.HelixMacroManager
+import jp.titze.intellij.helix.macro.HelixMacroToken
 import jp.titze.intellij.helix.state.HelixMode
 import jp.titze.intellij.helix.state.HelixStateManager
 import java.awt.event.KeyEvent
@@ -245,5 +247,39 @@ class HelixMacroTest : BasePlatformTestCase() {
     fun testMacroManagerGetAllMacros() {
         val allMacros = HelixMacroManager.getAllMacros()
         allMacros.shouldNotBeNull()
+    }
+
+    fun testMacroExecutorTokenParsing() {
+        val tokens = HelixMacroExecutor.parseMacro("@f\"lmi\"<ret><esc><lt>")
+        tokens.size shouldBe 9
+        (tokens[0] as HelixMacroToken.TypedChar).char shouldBe 'f'
+        (tokens[1] as HelixMacroToken.TypedChar).char shouldBe '"'
+        (tokens[2] as HelixMacroToken.TypedChar).char shouldBe 'l'
+        (tokens[3] as HelixMacroToken.TypedChar).char shouldBe 'm'
+        (tokens[4] as HelixMacroToken.TypedChar).char shouldBe 'i'
+        (tokens[5] as HelixMacroToken.TypedChar).char shouldBe '"'
+        (tokens[6] as HelixMacroToken.SpecialStroke).stroke.keyCode shouldBe KeyEvent.VK_ENTER
+        (tokens[7] as HelixMacroToken.SpecialStroke).stroke.keyCode shouldBe KeyEvent.VK_ESCAPE
+        (tokens[8] as HelixMacroToken.TypedChar).char shouldBe '<'
+    }
+
+    fun testMacroExecutorInlineExecution() {
+        myFixture.configureByText("test.txt", "val msg = \"hello world\"")
+        val editor = myFixture.editor
+        editor.caretModel.moveToOffset(0)
+
+        val success = HelixMacroExecutor.execute("@f\"lmi\"", editor)
+        success.shouldBeTrue()
+        editor.selectionModel.selectedText shouldBe "hello world"
+    }
+
+    fun testMacroExecutorViaCommandRegistry() {
+        myFixture.configureByText("test.txt", "val msg = \"helix rocks\"")
+        val editor = myFixture.editor
+        editor.caretModel.moveToOffset(0)
+
+        val success = HelixCommandRegistry.execute("@f\"lmi\"", editor)
+        success.shouldBeTrue()
+        editor.selectionModel.selectedText shouldBe "helix rocks"
     }
 }
