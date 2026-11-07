@@ -7,6 +7,13 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- **Helix Inline Keyboard Macro Playback (`@` syntax) & Deep Sub-Keymaps**:
+  - **Inline Macro Evaluator (`HelixMacroExecutor`)**: Full support for Helix's canonical `@...` macro playback syntax in keymaps (e.g. `"\"" = "@f\"lmi\""` or `C-x = "@miw<A-o>"`). Replays keystroke sequences directly through the editor pipeline.
+  - **Keystroke Tokenization & Special Keys**: Supports chained normal-mode characters, text objects, and angle-bracket special keys (`<ret>`, `<esc>`, `<space>`, `<tab>`, `<backspace>`, `<lt>`, `<gt>`, `<left>`, `<right>`, `<up>`, `<down>`, and modifier chords like `<C-s>`, `<A-o>`).
+  - **Command Registry & Validation Integration**: Direct delegation in `HelixCommandRegistry.execute` for `@` prefixes, and updated `HelixConfigLoader.isValidActionName` so macro bindings pass config validation without errors.
+  - **Which-Key Suppression & Recursion Guards**: Suppresses visual Which-Key popups during macro replay to avoid UI flicker, with built-in recursion depth limits.
+  - **Arbitrary-Depth Sub-Keymap Routing**: Refined match submenu prefix matching in `HelixKeyHandler` so that deep custom sub-chords under `m` (e.g. `[keys.normal.m.n]` and `[keys.normal.m.p]` for jumping to and selecting next/previous enclosing delimiters) resolve cleanly through the keymap Trie.
+
 - **Visual & IDE Toggle Commands (`:set-option`, `:toggle-option`, and `:toggle-*`)**:
   - **Canonical Helix Option Commands**: Added `:set-option <key> <val>` (alias `:set`) and `:toggle-option <key>` (alias `:toggle`), matching modern Helix configuration commands. Supports both space-delimited (`:set soft-wrap.enable true`) and key-value formats (`:set soft-wrap=on`).
   - **Supported Option Keys & Enums**: Full support for canonical dotted keys and flat aliases:

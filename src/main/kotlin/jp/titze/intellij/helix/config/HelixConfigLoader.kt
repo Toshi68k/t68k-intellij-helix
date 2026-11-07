@@ -89,6 +89,7 @@ object HelixConfigLoader {
     fun isValidActionName(actionName: String): Boolean {
         val trimmed = actionName.trim()
         if (trimmed == "no_op" || trimmed.isEmpty()) return true
+        if (trimmed.startsWith("@")) return true
         if (trimmed.startsWith(":action ") || trimmed.startsWith(":")) return true
         if (HelixCommandRegistry.get(trimmed) != null) return true
         val app = com.intellij.openapi.application.ApplicationManager.getApplication() ?: return true

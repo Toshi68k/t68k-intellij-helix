@@ -790,10 +790,27 @@ D = "goto_type_definition"
 
 [keys.select]
 "%" = "match_brackets"
+
+# Inline keystroke macro syntax (@...)
+"C-x" = "@miw"
+
+# Deep multi-level sub-keymaps (e.g. select next/previous enclosing delimiter)
+[keys.normal.m.n]
+"\"" = "@f\"lmi\""
+"(" = "@f(lmi("
+
+[keys.normal.m.p]
+"\"" = "@F\"hmi\""
+"(" = "@F(lmi("
 ```
 
 - **Canonical Commands**: Supports canonical Helix command names (e.g. `move_line_down`, `half_page_down`,
   `file_picker`, `wclose`, `goto_prev_diag`, `surround_add`, `delete_char_backward`, etc.).
+- **Inline Keystroke Macros (`@...`)**: Replay arbitrary sequences of normal-mode keystrokes and text objects using
+  standard Helix macro playback syntax (e.g. `"\"" = "@f\"lmi\""` or `C-x = "@miw<A-o>"`). Supports angle-bracket
+  special keys such as `<ret>`, `<esc>`, `<space>`, `<tab>`, `<backspace>`, `<lt>`, `<gt>`, arrow keys, and modifier chords.
+- **Deep Sub-Keymaps**: Define multi-level sub-keymaps such as `[keys.normal.m.n]` or `[keys.normal.m.p]` to
+  seamlessly extend chord trees (e.g. jumping to and selecting the inner contents of surrounding delimiters).
 - **Macro Lists**: Bind arrays of commands that execute in order (e.g., `["half_page_down", "align_view_center"]`).
 - **Direct IntelliJ Actions**: Execute native JetBrains actions using the `:action <ActionId>` syntax.
 - **Unbinding / No-op**: Map keys to `"no_op"` to disable unwanted default keybindings.

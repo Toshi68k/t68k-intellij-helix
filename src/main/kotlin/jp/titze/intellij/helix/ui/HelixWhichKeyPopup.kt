@@ -14,6 +14,7 @@ import com.intellij.ui.components.JBLabel
 import com.intellij.util.ui.JBUI
 import jp.titze.intellij.helix.HelixBundle
 import jp.titze.intellij.helix.keymap.HelixKeyHandler
+import jp.titze.intellij.helix.macro.HelixMacroExecutor
 import jp.titze.intellij.helix.settings.HelixSettings
 import jp.titze.intellij.helix.settings.WhichKeyHintMode
 import jp.titze.intellij.helix.state.HelixStateManager
@@ -81,7 +82,7 @@ object HelixWhichKeyPopup {
         }
 
         val settings = HelixSettings.instance
-        if (!settings.enableWhichKeyPopups) {
+        if (!settings.enableWhichKeyPopups || HelixMacroExecutor.isExecutingMacro) {
             return
         }
 

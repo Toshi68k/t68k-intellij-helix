@@ -674,4 +674,86 @@ class HelixKeymapTest : BasePlatformTestCase() {
         binding.action.shouldBeInstanceOf<List<String>>()
         (binding.action as List<*>).size shouldBe 2
     }
+
+    fun testDeepSubKeymapWithMacroBindings() {
+        val toml = """
+            [keys.normal.m.n]
+            "\"" = "@f\"lmi\""
+            "'" = "@f'lmi'"
+            "(" = "@f(lmi("
+            "[" = "@f[lmi["
+            "{" = "@f{lmi{"
+            ")" = "@f)hmi)"
+            "]" = "@f]hmi]"
+            "}" = "@f}hmi}"
+
+            [keys.normal.m.p]
+            "\"" = "@F\"hmi\""
+            "'" = "@F'hmi'"
+            "(" = "@F(lmi("
+            "[" = "@F[lmi["
+            "{" = "@F{lmi{"
+            ")" = "@F)hmi)"
+            "]" = "@F]hmi]"
+            "}" = "@F}hmi}"
+        """.trimIndent()
+
+        val validated = HelixConfigLoader.validateConfig(toml)
+        validated.errors.isEmpty().shouldBeTrue()
+
+        val parsed = HelixTomlParser.parse(toml)
+        parsed.bindings.size shouldBe 16
+
+        for (b in parsed.bindings) {
+            HelixKeymapManager.bind(b.mode, b.sequence, b.action as String)
+        }
+
+        // Test next quote: mn"
+        myFixture.configureByText("test.txt", "val data = \"sample text\"")
+        val editor = myFixture.editor
+        editor.caretModel.moveToOffset(0)
+
+        HelixKeyHandler.handleKey('m', editor)
+        HelixKeyHandler.handleKey('n', editor)
+        HelixKeyHandler.handleKey('"', editor)
+
+        editor.selectionModel.selectedText shouldBe "sample text"
+
+        // Test previous quote: mp"
+        editor.caretModel.moveToOffset(editor.document.textLength)
+        HelixKeyHandler.handleKey('m', editor)
+        HelixKeyHandler.handleKey('p', editor)
+        HelixKeyHandler.handleKey('"', editor)
+
+        editor.selectionModel.selectedText shouldBe "sample text"
+
+        // Test next bracket: mn(
+        myFixture.configureByText("test2.txt", "val num = (10 + 20)")
+        val editor2 = myFixture.editor
+        editor2.caretModel.moveToOffset(0)
+
+        HelixKeyHandler.handleKey('m', editor2)
+        HelixKeyHandler.handleKey('n', editor2)
+        HelixKeyHandler.handleKey('(', editor2)
+
+        editor2.selectionModel.selectedText shouldBe "10 + 20"
+
+        // Test next quote with line break: mn"
+        myFixture.configureByText("test3.txt", "\"aaa\" = \"bbb\"\n\"ccc\" = \"ddd\"")
+        val editor3 = myFixture.editor
+        editor3.caretModel.moveToOffset(10) // inside "bbb"
+
+        HelixKeyHandler.handleKey('m', editor3)
+        HelixKeyHandler.handleKey('n', editor3)
+        HelixKeyHandler.handleKey('"', editor3)
+
+        editor3.selectionModel.selectedText shouldBe "ccc"
+
+        editor3.caretModel.moveToOffset(2) // inside "aaa"
+        HelixKeyHandler.handleKey('m', editor3)
+        HelixKeyHandler.handleKey('n', editor3)
+        HelixKeyHandler.handleKey('"', editor3)
+
+        editor3.selectionModel.selectedText shouldBe " = "
+    }
 }

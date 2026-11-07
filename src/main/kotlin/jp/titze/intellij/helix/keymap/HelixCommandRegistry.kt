@@ -9,6 +9,7 @@ import jp.titze.intellij.helix.action.HelixActions
 import jp.titze.intellij.helix.command.HelixCommands
 import jp.titze.intellij.helix.editor.HelixInsertTracker
 import jp.titze.intellij.helix.jumplist.HelixJumpListService
+import jp.titze.intellij.helix.macro.HelixMacroExecutor
 import jp.titze.intellij.helix.motion.HelixFileNavigation
 import jp.titze.intellij.helix.motion.HelixMotions
 import jp.titze.intellij.helix.motion.HelixViewMotions
@@ -55,6 +56,10 @@ object HelixCommandRegistry {
     fun execute(commandId: String, editor: Editor, count: Int = 1): Boolean {
         val trimmed = commandId.trim()
         if (trimmed == "no_op") return true
+
+        if (trimmed.startsWith("@")) {
+            return HelixMacroExecutor.execute(trimmed, editor, count)
+        }
 
         if (trimmed.startsWith(":action ")) {
             val actionId = trimmed.removePrefix(":action ").trim()

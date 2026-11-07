@@ -44,11 +44,14 @@ jobs:
       - name: Make gradlew executable
         run: chmod +x gradlew
 
-      - name: Run Checks and Tests
-        run: ./gradlew spotlessCheck detekt test --build-cache
+      - name: Run Linter Checks
+        run: ./gradlew spotlessCheck detekt
+
+      - name: Run Tests
+        run: ./gradlew test --build-cache --no-parallel
 
       - name: Build and Verify Plugin
-        run: ./gradlew buildPlugin --build-cache
+        run: ./gradlew buildPlugin --build-cache --no-parallel
 
       - name: Verify Plugin Structure
         run: ./gradlew verifyPlugin --no-parallel
