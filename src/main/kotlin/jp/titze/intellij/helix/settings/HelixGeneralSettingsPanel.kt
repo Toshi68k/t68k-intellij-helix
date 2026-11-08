@@ -46,6 +46,8 @@ class HelixGeneralSettingsPanel {
     private var syncThemeRadio: JBRadioButton? = null
     private var darkThemeRadio: JBRadioButton? = null
     private var lightThemeRadio: JBRadioButton? = null
+    private var colorModesCheckBox: JBCheckBox? = null
+    private var cursorTintCheckBox: JBCheckBox? = null
 
     private var resetToNormalCheckBox: JBCheckBox? = null
     private var syncClipboardCheckBox: JBCheckBox? = null
@@ -326,13 +328,29 @@ class HelixGeneralSettingsPanel {
         optionsPanel.add(dark)
         optionsPanel.add(light)
 
+        val colorModesCb = JBCheckBox(HelixBundle.message("settings.theme.colorModes"))
+        colorModesCheckBox = colorModesCb
+
+        val cursorTintCb = JBCheckBox(HelixBundle.message("settings.theme.cursorTint"))
+        cursorTintCheckBox = cursorTintCb
+
+        val togglesPanel = JPanel(GridLayout(2, 1, 0, 4))
+        togglesPanel.border = JBUI.Borders.empty(6, 12, 0, 0)
+        togglesPanel.add(colorModesCb)
+        togglesPanel.add(cursorTintCb)
+
+        val themeBox = JPanel()
+        themeBox.layout = BoxLayout(themeBox, BoxLayout.Y_AXIS)
+        themeBox.add(optionsPanel)
+        themeBox.add(togglesPanel)
+
         val helpLabel = JBLabel(HelixBundle.message("settings.theme.help"))
         helpLabel.font = JBUI.Fonts.smallFont()
         helpLabel.foreground = UIUtil.getContextHelpForeground()
         helpLabel.border = JBUI.Borders.emptyLeft(12)
 
         val box = JPanel(BorderLayout(0, 8))
-        box.add(optionsPanel, BorderLayout.NORTH)
+        box.add(themeBox, BorderLayout.NORTH)
         box.add(helpLabel, BorderLayout.CENTER)
         section.add(box, BorderLayout.CENTER)
         return section
@@ -467,6 +485,8 @@ class HelixGeneralSettingsPanel {
             getSelectedWhichKeyColumnLayout() != settings.whichKeyColumnLayout,
             jumpListSpinner?.number != settings.jumpListMaxEntries,
             getSelectedColorTheme() != settings.colorTheme,
+            colorModesCheckBox?.isSelected != settings.colorModes,
+            cursorTintCheckBox?.isSelected != settings.cursorTint,
             resetToNormalCheckBox?.isSelected != settings.resetToNormalOnTabSwitch,
             syncClipboardCheckBox?.isSelected != settings.syncClipboardWithDefaultRegister,
             getSelectedScratchSplitMode() != settings.scratchSplitMode,
@@ -487,6 +507,8 @@ class HelixGeneralSettingsPanel {
         settings.whichKeyColumnLayout = getSelectedWhichKeyColumnLayout()
         jumpListSpinner?.let { settings.jumpListMaxEntries = it.number }
         settings.colorTheme = getSelectedColorTheme()
+        colorModesCheckBox?.let { settings.colorModes = it.isSelected }
+        cursorTintCheckBox?.let { settings.cursorTint = it.isSelected }
         resetToNormalCheckBox?.let { settings.resetToNormalOnTabSwitch = it.isSelected }
         syncClipboardCheckBox?.let { settings.syncClipboardWithDefaultRegister = it.isSelected }
         settings.scratchSplitMode = getSelectedScratchSplitMode()
@@ -517,6 +539,8 @@ class HelixGeneralSettingsPanel {
         syncThemeRadio?.isSelected = (settings.colorTheme == HelixColorTheme.SYNC)
         darkThemeRadio?.isSelected = (settings.colorTheme == HelixColorTheme.DARK)
         lightThemeRadio?.isSelected = (settings.colorTheme == HelixColorTheme.LIGHT)
+        colorModesCheckBox?.isSelected = settings.colorModes
+        cursorTintCheckBox?.isSelected = settings.cursorTint
 
         resetToNormalCheckBox?.isSelected = settings.resetToNormalOnTabSwitch
         syncClipboardCheckBox?.isSelected = settings.syncClipboardWithDefaultRegister
@@ -539,6 +563,8 @@ class HelixGeneralSettingsPanel {
         syncThemeRadio = null
         darkThemeRadio = null
         lightThemeRadio = null
+        colorModesCheckBox = null
+        cursorTintCheckBox = null
         resetToNormalCheckBox = null
         syncClipboardCheckBox = null
         scratchInteractiveRadio = null

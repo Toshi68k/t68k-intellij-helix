@@ -10,21 +10,31 @@ import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileEditor.FileEditorManagerEvent
 import com.intellij.openapi.fileEditor.FileEditorManagerListener
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.project.ProjectManager
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.wm.CustomStatusBarWidget
 import com.intellij.openapi.wm.StatusBar
 import com.intellij.openapi.wm.StatusBarWidget
 import com.intellij.openapi.wm.StatusBarWidgetFactory
+import com.intellij.openapi.wm.WindowManager
 import com.intellij.openapi.wm.impl.status.TextPanel
 import com.intellij.util.Consumer
 import com.intellij.util.ui.JBUI
 import jp.titze.intellij.helix.HelixBundle
 import jp.titze.intellij.helix.command.HelixCommandPopup
 import jp.titze.intellij.helix.editor.HelixEditorEligibility
+import jp.titze.intellij.helix.settings.HelixSettings
 import jp.titze.intellij.helix.state.HelixEditorState
+import jp.titze.intellij.helix.state.HelixMode
 import jp.titze.intellij.helix.state.HelixStateManager
+import java.awt.Component
+import java.awt.Font
+import java.awt.Graphics
+import java.awt.Graphics2D
+import java.awt.RenderingHints
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
+import javax.swing.Icon
 import javax.swing.JComponent
 
 class HelixStatusBarWidgetFactory : StatusBarWidgetFactory {
@@ -144,10 +154,68 @@ class HelixStatusBarWidget(private val project: Project) : CustomStatusBarWidget
         attachEditor(editor)
     }
 
-    private fun updateComponent() {
+    fun updateComponent() {
+        if (HelixSettings.instance.colorModes) {
+            val state = currentState
+            val editor = currentEditor
+            if (editor != null && HelixEditorEligibility.isActive(editor) && state != null) {
+                panel.icon = ModePillIcon(state.mode)
+            } else {
+                panel.icon = null
+            }
+        } else {
+            panel.icon = null
+        }
         panel.text = computeText()
         panel.toolTipText = computeTooltipText()
         myStatusBar?.updateWidget(ID())
+    }
+
+    private class ModePillIcon(val mode: HelixMode) : Icon {
+        override fun getIconWidth(): Int = JBUI.scale(36)
+        override fun getIconHeight(): Int = JBUI.scale(16)
+
+        override fun paintIcon(c: Component?, g: Graphics?, x: Int, y: Int) {
+            if (g == null) return
+            val g2 = g.create() as? Graphics2D ?: return
+            try {
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
+                g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON)
+
+                val bg = when (mode) {
+                    HelixMode.NORMAL -> HelixTheme.MODE_NOR_BG
+                    HelixMode.INSERT -> HelixTheme.MODE_INS_BG
+                    HelixMode.SELECT -> HelixTheme.MODE_SEL_BG
+                }
+                val fg = when (mode) {
+                    HelixMode.NORMAL -> HelixTheme.MODE_NOR_FG
+                    HelixMode.INSERT -> HelixTheme.MODE_INS_FG
+                    HelixMode.SELECT -> HelixTheme.MODE_SEL_FG
+                }
+
+                val w = iconWidth
+                val h = iconHeight
+                val arc = JBUI.scale(6)
+
+                g2.color = bg
+                g2.fillRoundRect(x, y, w, h, arc, arc)
+
+                val font = JBUI.Fonts.label().deriveFont(Font.BOLD, JBUI.scaleFontSize(10f).toFloat())
+                g2.font = font
+                g2.color = fg
+                val fm = g2.fontMetrics
+                val text = mode.shortCode
+                val strW = fm.stringWidth(text)
+                val textX = x + (w - strW) / 2
+                val textY = y + (h - fm.height) / 2 + fm.ascent
+                g2.drawString(text, textX, textY)
+            } finally {
+                g2.dispose()
+            }
+        }
+
+        override fun equals(other: Any?): Boolean = other is ModePillIcon && other.mode == mode
+        override fun hashCode(): Int = mode.hashCode()
     }
 
     private fun computeText(): String {
@@ -165,7 +233,10 @@ class HelixStatusBarWidget(private val project: Project) : CustomStatusBarWidget
         val countStr = if (count != null) " $count" else ""
         val seq = state.pendingSequence
         val prefix = if (seq.isNotEmpty()) " $seq-" else ""
-        return "${state.mode.shortCode}$recStr$selStr$regStr$countStr$prefix"
+
+        val modeStr = if (HelixSettings.instance.colorModes) "" else state.mode.shortCode
+        val rest = "$recStr$selStr$regStr$countStr$prefix"
+        return if (modeStr.isEmpty()) rest.trimStart() else "$modeStr$rest"
     }
 
     private fun computeTooltipText(): String {
@@ -204,5 +275,15 @@ class HelixStatusBarWidget(private val project: Project) : CustomStatusBarWidget
 
     companion object {
         const val WIDGET_ID = "jp.titze.intellij.helix.status"
+
+        fun updateAllWidgets() {
+            ProjectManager.getInstance().openProjects.forEach { project ->
+                if (!project.isDisposed) {
+                    val statusBar = WindowManager.getInstance().getStatusBar(project)
+                    val widget = statusBar?.getWidget(WIDGET_ID) as? HelixStatusBarWidget
+                    widget?.updateComponent()
+                }
+            }
+        }
     }
 }

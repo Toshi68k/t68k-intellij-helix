@@ -7,6 +7,19 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- **Mode-Colored Status Bar Pill (`color-modes = true`)**:
+  - Added Helix-style color-coded status bar pills with custom background and foreground colors per mode (`NOR` in Indigo/Cyan, `INS` in Emerald Green, `SEL` in Purple/Magenta).
+  - Added runtime commands `:set-option color-modes true|false` (`:set color-modes true|false`) and `:toggle-color-modes` (`:color-modes`).
+  - Added "Enable mode-colored status bar pill" configuration setting in **Preferences &rarr; Tools &rarr; Helix Keymap &rarr; General**.
+  - Added `HelixStatusBarWidget.updateAllWidgets()` to broadcast status bar widget invalidation across all open projects immediately on settings changes.
+
+- **Independent Editor Cursor Tinting (`cursor-tint = true`)**:
+  - Decoupled cursor tinting into an independent setting, allowing users to keep mode-colored status pills without overriding editor caret color schemes.
+  - Added dynamic cursor tint matching the active mode in the editor when `cursor-tint = true`.
+  - Added runtime commands `:set-option cursor-tint true|false` (`:set cursor-tint true|false`) and `:toggle-cursor-tint` (`:cursor-tint`).
+  - Added "Tint editor cursor to match mode color" configuration setting in **Preferences &rarr; Tools &rarr; Helix Keymap &rarr; General**.
+  - Registered `toggle_color_modes` and `toggle_cursor_tint` in `HelixCommandRegistry` for user keybinding configurations.
+
 - **Numeric Sorting**:
   - Added numeric line sorting (`:sort -n`, `:sort -rn`, `:sort-numeric`, `:sort-numeric-reverse`) that compares mathematical values (handling decimals and negative numbers) rather than raw ASCII/lexicographic order.
   - Registered `sort_numeric` and `sort_numeric_reverse` in `HelixCommandRegistry` for user keybinding configurations.
@@ -26,6 +39,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- **Status Bar Mode Pill Clean Text Rendering**:
+  - Eliminated duplicate mode indicator text (`[NOR] NOR` &rarr; `[NOR]`) by suppressing the redundant mode string when `color-modes = true`, keeping supplementary indicators (`2 sel`, `[REC]`, `reg: a`) beside the colored pill.
+- **Immediate Settings State & Caret Color Synchronization**:
+  - Fixed live reactivity when toggling the "Enable mode-colored status pill and cursor tint" checkbox in Settings by broadcasting `notifyListeners()` on active editor states, triggering immediate editor component repaints, and properly handling default scheme caret color inheritance restoration.
 - **Configuration Documentation Alignment**:
   - Updated example TOML keymap snippet in `README.md` and `HelixKeymapTest` from `"X" = "extend_line_up"` to `"X" = "extend_line"` to align with registered commands.
 

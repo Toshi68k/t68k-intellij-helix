@@ -9,6 +9,7 @@ import com.intellij.openapi.editor.EditorKind
 import com.intellij.openapi.editor.ex.EditorSettingsExternalizable
 import jp.titze.intellij.helix.settings.HelixSettings
 import jp.titze.intellij.helix.state.HelixStateManager
+import jp.titze.intellij.helix.ui.HelixStatusBarWidget
 import java.awt.Component
 
 /**
@@ -51,10 +52,12 @@ object HelixEditorEligibility {
             if (isActive(editor)) {
                 val state = HelixStateManager.getOrCreate(editor)
                 HelixStateManager.updateCursor(editor, state.mode)
+                state.notifyListeners()
             } else {
                 deactivate(editor)
             }
         }
+        HelixStatusBarWidget.updateAllWidgets()
     }
 
     fun deactivate(editor: Editor) {
