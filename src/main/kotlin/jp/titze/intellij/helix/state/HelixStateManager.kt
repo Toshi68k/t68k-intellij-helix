@@ -6,6 +6,7 @@ package jp.titze.intellij.helix.state
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.colors.EditorColors
 import com.intellij.openapi.util.Key
+import jp.titze.intellij.helix.editor.HelixLineNumberManager
 import jp.titze.intellij.helix.settings.HelixSettings
 import jp.titze.intellij.helix.ui.HelixTheme
 import java.awt.Color
@@ -41,6 +42,7 @@ object HelixStateManager {
         }
 
         updateCursorColor(editor, mode)
+        HelixLineNumberManager.applyLineNumbers(editor, mode)
         if (!editor.isDisposed) {
             editor.contentComponent.repaint()
         }

@@ -22,6 +22,7 @@ class HelixSettingsTest : BasePlatformTestCase() {
         val settings = HelixSettings.instance
         settings.searchUiMode = HelixSearchUiMode.STOCK_HELIX
         settings.lineNavigationMode = HelixLineNavigationMode.HELIX_STANDARD
+        settings.lineNumberMode = jp.titze.intellij.helix.settings.HelixLineNumberMode.IDE_DEFAULT
         settings.jumpListMaxEntries = HelixSettings.DEFAULT_JUMP_LIST_MAX_ENTRIES
         settings.promptHistoryMaxEntries = HelixSettings.DEFAULT_PROMPT_HISTORY_MAX_ENTRIES
         settings.colorTheme = HelixColorTheme.SYNC
@@ -42,7 +43,26 @@ class HelixSettingsTest : BasePlatformTestCase() {
         settings.colorTheme shouldBe HelixColorTheme.SYNC
         settings.colorModes.shouldBeTrue()
         settings.cursorTint.shouldBeTrue()
+        settings.lineNumberMode shouldBe jp.titze.intellij.helix.settings.HelixLineNumberMode.IDE_DEFAULT
         settings.resetToNormalOnTabSwitch.shouldBeTrue()
+    }
+
+    fun testLineNumberModePersistence() {
+        val settings = HelixSettings.instance
+        settings.lineNumberMode = jp.titze.intellij.helix.settings.HelixLineNumberMode.SMART
+        settings.lineNumberMode shouldBe jp.titze.intellij.helix.settings.HelixLineNumberMode.SMART
+
+        settings.lineNumberMode = jp.titze.intellij.helix.settings.HelixLineNumberMode.RELATIVE
+        settings.lineNumberMode shouldBe jp.titze.intellij.helix.settings.HelixLineNumberMode.RELATIVE
+
+        settings.lineNumberMode = jp.titze.intellij.helix.settings.HelixLineNumberMode.HYBRID
+        settings.lineNumberMode shouldBe jp.titze.intellij.helix.settings.HelixLineNumberMode.HYBRID
+
+        settings.lineNumberMode = jp.titze.intellij.helix.settings.HelixLineNumberMode.ABSOLUTE
+        settings.lineNumberMode shouldBe jp.titze.intellij.helix.settings.HelixLineNumberMode.ABSOLUTE
+
+        settings.lineNumberMode = jp.titze.intellij.helix.settings.HelixLineNumberMode.OFF
+        settings.lineNumberMode shouldBe jp.titze.intellij.helix.settings.HelixLineNumberMode.OFF
     }
 
     fun testJumpListMaxEntriesClamping() {

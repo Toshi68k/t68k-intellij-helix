@@ -1066,6 +1066,13 @@ internal object HelixBuiltinCommands {
             HelixVisualToggleActions.toggleLineNumbers(editor)
         },
         HelixCommandItem(
+            "toggle-relative-line-numbers",
+            listOf("relative-line-numbers", "relative-numbers", "rnu"),
+            "Toggle relative / smart line numbers",
+        ) { _ ->
+            HelixVisualToggleActions.toggleRelativeLineNumbers()
+        },
+        HelixCommandItem(
             "toggle-render-whitespace",
             listOf("whitespace", "whitespaces", "render-whitespace"),
             "Toggle whitespace characters rendering",

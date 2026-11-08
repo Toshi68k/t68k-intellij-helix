@@ -7,6 +7,12 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- **Relative Line Numbers & Smart Insert Toggle (`line-number`)**:
+  - Added full Helix-style line number modes: `IDE_DEFAULT`, `ABSOLUTE`, `RELATIVE`, `HYBRID`, and `SMART` (relative line numbers in Normal/Select mode with automatic absolute fallback in Insert mode).
+  - Added runtime commands `:set-option line-number relative|smart|hybrid|absolute|off` and `:toggle-relative-line-numbers` (`:relative-numbers`, `:rnu`).
+  - Added Gutter Line Numbers dropdown configuration in **Preferences &rarr; Tools &rarr; Helix Keymap &rarr; General**.
+  - Registered `toggle_relative_line_numbers` in `HelixCommandRegistry` for user keybinding configurations.
+
 - **Mode-Colored Status Bar Pill (`color-modes = true`)**:
   - Added Helix-style color-coded status bar pills with custom background and foreground colors per mode (`NOR` in Indigo/Cyan, `INS` in Emerald Green, `SEL` in Purple/Magenta).
   - Added runtime commands `:set-option color-modes true|false` (`:set color-modes true|false`) and `:toggle-color-modes` (`:color-modes`).
