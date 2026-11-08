@@ -427,6 +427,21 @@ internal object HelixBuiltinCommands {
             "Reverse text contents between active selections",
         ) { editor -> HelixActions.reverseSelectionsContents(editor) },
         HelixCommandItem(
+            "select-next-occurrence",
+            listOf("add_selection_next", "select-next", "select_next_occurrence"),
+            "Add cursor at next occurrence of selection / word",
+        ) { editor -> HelixActions.addSelectionNext(editor) },
+        HelixCommandItem(
+            "select-prev-occurrence",
+            listOf("add_selection_prev", "select-prev", "select_prev_occurrence"),
+            "Add cursor at previous occurrence of selection / word",
+        ) { editor -> HelixActions.addSelectionPrev(editor) },
+        HelixCommandItem(
+            "select-all-occurrences",
+            listOf("select_all_occurrences", "select-all-matches", "select_all_matches"),
+            "Select all occurrences of selection / word across buffer",
+        ) { editor -> HelixActions.selectAllOccurrences(editor) },
+        HelixCommandItem(
             "yank-diagnostic",
             listOf("yank_diagnostic", "yank-diag", "yank_diag"),
             "Yank diagnostic under cursor to clipboard and active register",

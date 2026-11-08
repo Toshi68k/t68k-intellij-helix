@@ -8,6 +8,8 @@ import com.intellij.openapi.editor.CaretState
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.ScrollType
 import com.intellij.openapi.util.TextRange
+import jp.titze.intellij.helix.register.HelixRegisterEntry
+import jp.titze.intellij.helix.register.HelixRegisterManager
 import jp.titze.intellij.helix.state.HelixMode
 import jp.titze.intellij.helix.state.HelixStateManager
 
@@ -317,4 +319,150 @@ object HelixSelectionActions {
             state.setMode(HelixMode.NORMAL)
         }
     }
+
+    fun addSelectionNext(editor: Editor): Boolean {
+        val doc = editor.document
+        val text = doc.charsSequence
+        if (text.isEmpty()) return false
+
+        val primary = editor.caretModel.primaryCaret
+        if (!primary.hasSelection()) {
+            val wordRange = findWordAtOffset(text, primary.offset) ?: return false
+            primary.setSelection(wordRange.first, wordRange.second)
+            primary.moveToOffset(wordRange.second)
+            val selectedText = text.subSequence(wordRange.first, wordRange.second).toString()
+            HelixRegisterManager.set('/', HelixRegisterEntry(selectedText))
+            editor.scrollingModel.scrollToCaret(ScrollType.MAKE_VISIBLE)
+            return true
+        }
+
+        val selectedText = primary.selectedText ?: return false
+        val regex = createOccurrenceRegex(selectedText)
+        val allMatches = regex.findAll(text).map { Pair(it.range.first, it.range.last + 1) }.toList()
+        if (allMatches.isEmpty()) return false
+
+        val existingSelections = editor.caretModel.allCarets.map {
+            Pair(it.selectionStart, it.selectionEnd)
+        }.toSet()
+
+        val unselectedMatches = allMatches.filter { it !in existingSelections }
+        if (unselectedMatches.isEmpty()) return false
+
+        val searchFrom = primary.selectionEnd
+        val nextMatch = unselectedMatches.firstOrNull { it.first >= searchFrom } ?: unselectedMatches.first()
+
+        val newCaret = editor.caretModel.addCaret(editor.offsetToVisualPosition(nextMatch.second))
+        if (newCaret != null) {
+            newCaret.moveToOffset(nextMatch.second)
+            newCaret.setSelection(nextMatch.first, nextMatch.second)
+        } else {
+            val currentSnapshots = HelixCaretUtils.captureCarets(editor).toMutableList()
+            currentSnapshots.add(HelixCaretSnapshot(nextMatch.second, nextMatch.first, nextMatch.second))
+            HelixCaretUtils.restoreCarets(editor, currentSnapshots)
+        }
+
+        HelixRegisterManager.set('/', HelixRegisterEntry(selectedText))
+        editor.scrollingModel.scrollTo(editor.offsetToLogicalPosition(nextMatch.second), ScrollType.MAKE_VISIBLE)
+        return true
+    }
+
+    fun addSelectionPrev(editor: Editor): Boolean {
+        val doc = editor.document
+        val text = doc.charsSequence
+        if (text.isEmpty()) return false
+
+        val primary = editor.caretModel.primaryCaret
+        if (!primary.hasSelection()) {
+            val wordRange = findWordAtOffset(text, primary.offset) ?: return false
+            primary.setSelection(wordRange.first, wordRange.second)
+            primary.moveToOffset(wordRange.second)
+            val selectedText = text.subSequence(wordRange.first, wordRange.second).toString()
+            HelixRegisterManager.set('/', HelixRegisterEntry(selectedText))
+            editor.scrollingModel.scrollToCaret(ScrollType.MAKE_VISIBLE)
+            return true
+        }
+
+        val selectedText = primary.selectedText ?: return false
+        val regex = createOccurrenceRegex(selectedText)
+        val allMatches = regex.findAll(text).map { Pair(it.range.first, it.range.last + 1) }.toList()
+        if (allMatches.isEmpty()) return false
+
+        val existingSelections = editor.caretModel.allCarets.map {
+            Pair(it.selectionStart, it.selectionEnd)
+        }.toSet()
+
+        val unselectedMatches = allMatches.filter { it !in existingSelections }
+        if (unselectedMatches.isEmpty()) return false
+
+        val searchBefore = primary.selectionStart
+        val prevMatch = unselectedMatches.lastOrNull { it.second <= searchBefore } ?: unselectedMatches.last()
+
+        val newCaret = editor.caretModel.addCaret(editor.offsetToVisualPosition(prevMatch.second))
+        if (newCaret != null) {
+            newCaret.moveToOffset(prevMatch.second)
+            newCaret.setSelection(prevMatch.first, prevMatch.second)
+        } else {
+            val currentSnapshots = HelixCaretUtils.captureCarets(editor).toMutableList()
+            currentSnapshots.add(HelixCaretSnapshot(prevMatch.second, prevMatch.first, prevMatch.second))
+            HelixCaretUtils.restoreCarets(editor, currentSnapshots)
+        }
+
+        HelixRegisterManager.set('/', HelixRegisterEntry(selectedText))
+        editor.scrollingModel.scrollTo(editor.offsetToLogicalPosition(prevMatch.second), ScrollType.MAKE_VISIBLE)
+        return true
+    }
+
+    fun selectAllOccurrences(editor: Editor): Boolean {
+        val doc = editor.document
+        val text = doc.charsSequence
+        if (text.isEmpty()) return false
+
+        val primary = editor.caretModel.primaryCaret
+        val selectedText = if (primary.hasSelection()) {
+            primary.selectedText ?: ""
+        } else {
+            val wordRange = findWordAtOffset(text, primary.offset) ?: return false
+            text.subSequence(wordRange.first, wordRange.second).toString()
+        }
+        if (selectedText.isEmpty()) return false
+
+        val regex = createOccurrenceRegex(selectedText)
+        val allMatches = regex.findAll(text).map { Pair(it.range.first, it.range.last + 1) }.toList()
+        if (allMatches.isEmpty()) return false
+
+        HelixCaretUtils.applyCarets(editor, allMatches)
+        HelixRegisterManager.set('/', HelixRegisterEntry(selectedText))
+        editor.scrollingModel.scrollToCaret(ScrollType.MAKE_VISIBLE)
+        return true
+    }
+
+    private fun createOccurrenceRegex(selectedText: String): Regex {
+        val pattern = if (isWord(selectedText)) {
+            """\b${Regex.escape(selectedText)}\b"""
+        } else {
+            Regex.escape(selectedText)
+        }
+        return try {
+            Regex(pattern)
+        } catch (_: Exception) {
+            Regex(Regex.escape(selectedText))
+        }
+    }
+
+    private fun findWordAtOffset(text: CharSequence, offset: Int): Pair<Int, Int>? {
+        if (text.isEmpty()) return null
+        var safeOffset = offset.coerceIn(0, text.length - 1)
+        if (!isWordChar(text[safeOffset]) && safeOffset > 0 && isWordChar(text[safeOffset - 1])) {
+            safeOffset--
+        }
+        if (!isWordChar(text[safeOffset])) return null
+        var start = safeOffset
+        while (start > 0 && isWordChar(text[start - 1])) start--
+        var end = safeOffset
+        while (end < text.length && isWordChar(text[end])) end++
+        return if (end > start) Pair(start, end) else null
+    }
+
+    private fun isWordChar(c: Char): Boolean = c.isLetterOrDigit() || c == '_'
+    private fun isWord(s: String): Boolean = s.isNotEmpty() && s.all { isWordChar(it) }
 }

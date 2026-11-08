@@ -7,6 +7,12 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- **Multi-Caret Command Additions (`add_selection_next` / `add_selection_prev` / `select_all_occurrences`)**:
+  - Added `add_selection_next` (`:select-next-occurrence`, `:select-next`) to select the word under cursor or append the next occurrence of the selection as a new caret (the classic `Ctrl-D` / `SelectNextOccurrence` multi-cursor workflow).
+  - Added `add_selection_prev` (`:select-prev-occurrence`, `:select-prev`) to append the previous occurrence of the selection as a new caret.
+  - Added `select_all_occurrences` (`:select-all-occurrences`, `:select-all-matches`) to select all occurrences of the word/selection across the entire buffer simultaneously.
+  - Registered commands in `HelixCommandRegistry` so users can bind them to arbitrary shortcuts (e.g. `"C-d" = "add_selection_next"`) in `intellij.toml` or `config.toml`.
+
 - **Essential Developer Workflow & Git Commands**:
   - Added `:reopen-closed-tab` (`:reopen`, `ReopenClosedTab`) to reopen the most recently closed editor tab.
   - Added `:copy-path` (`CopyAbsolutePath`), `:copy-relative-path` (`CopyContentRootPath`), and `:copy-reference` (`CopyReferencePopup`) to quickly copy file paths and qualified symbol references.

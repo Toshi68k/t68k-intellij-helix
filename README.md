@@ -627,6 +627,9 @@ to execute):
 - `:rotate-selection-contents-forward` &rarr; Cycle text contents forward without moving carets (`Alt+)`)
 - `:rotate-selection-contents-backward` &rarr; Cycle text contents backward without moving carets (`Alt+(`)
 - `:reverse-selection-contents` &rarr; Invert text contents among active carets / selections
+- `:select-next-occurrence` / `:select-next` &rarr; Add cursor at next occurrence of selection / word (`add_selection_next`)
+- `:select-prev-occurrence` / `:select-prev` &rarr; Add cursor at previous occurrence of selection / word (`add_selection_prev`)
+- `:select-all-occurrences` / `:select-all-matches` &rarr; Select all occurrences of selection / word across buffer (`select_all_occurrences`)
 - `:yank-diagnostic` / `:yank-diag` &rarr; Copy error/warning under cursor to clipboard and active register
 - `:reset-diff-change` / `:diffget` / `:diffg` &rarr; Revert VCS hunk under cursor (`Vcs.RollbackChangedLines`)
 - `:reflow` / `:reflow-paragraph` &rarr; Hard-wrap selected lines or comments to editor column margin (`FillParagraph`)
