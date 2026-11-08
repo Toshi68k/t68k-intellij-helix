@@ -97,6 +97,14 @@ internal object HelixBuiltinCommands {
                 HelixActionDelegate.executeAction("CloseContent", editor)
         },
         HelixCommandItem(
+            "maximize-view",
+            listOf("maximize-editor", "maximize", "wmaximize", "toggle-maximize"),
+            "Maximize active editor split or toggle full window (MaximizeEditorInSplit)",
+        ) { editor ->
+            HelixActionDelegate.executeAction("MaximizeEditorInSplit", editor) ||
+                HelixActionDelegate.executeAction("HideAllWindows", editor)
+        },
+        HelixCommandItem(
             "swap-split",
             listOf("change-split-orientation", "transpose-view", "transpose_view"),
             "Swap current split view direction (ChangeSplitOrientation)",
@@ -669,6 +677,20 @@ internal object HelixBuiltinCommands {
         HelixCommandItem("buffer-close-all", listOf("bca", "bcloseall"), "Close all editor tabs") { editor ->
             HelixActionDelegate.executeAction("CloseAllEditors", editor)
         },
+        HelixCommandItem(
+            "close-to-right",
+            listOf("close-right", "buffer-close-right", "bcr"),
+            "Close editor tabs to the right of active tab (CloseAllToTheRight)",
+        ) { editor ->
+            HelixActionDelegate.executeAction("CloseAllToTheRight", editor)
+        },
+        HelixCommandItem(
+            "close-unmodified",
+            listOf("buffer-close-unmodified", "bcu"),
+            "Close all unmodified editor tabs (CloseAllUnmodifiedEditors)",
+        ) { editor ->
+            HelixActionDelegate.executeAction("CloseAllUnmodifiedEditors", editor)
+        },
         HelixCommandItem("buffer-next", listOf("bn"), "Switch to next editor tab") { editor ->
             HelixActionDelegate.executeAction("NextTab", editor)
         },
@@ -948,6 +970,20 @@ internal object HelixBuiltinCommands {
             "Find symbol references / usages (gr)",
         ) { editor ->
             HelixActionDelegate.executeAction("FindUsages", editor)
+        },
+        HelixCommandItem(
+            "show-usages",
+            listOf("usages-popup", "show_usages"),
+            "Show symbol usages in floating popup (ShowUsages)",
+        ) { editor ->
+            HelixActionDelegate.executeAction("ShowUsages", editor)
+        },
+        HelixCommandItem(
+            "recent-locations",
+            listOf("locations", "recent_locations", "recents"),
+            "Show recent visited and edited locations popup (RecentLocations)",
+        ) { editor ->
+            HelixActionDelegate.executeAction("RecentLocations", editor)
         },
         HelixCommandItem(
             "goto-super",

@@ -25,6 +25,7 @@ object HelixWhichKeyMenus {
 
     val spaceItems = listOf(
         WhichKeyItem("b", "Buffer / Tab picker", "buffer_picker", "RecentFiles"),
+        WhichKeyItem("B", "Recent locations picker", "recent_locations", "RecentLocations"),
         WhichKeyItem("f", "File picker", "file_picker", "GotoFile"),
         WhichKeyItem("F", "Current dir file picker", "file_picker_in_current_directory"),
         WhichKeyItem("e", "File explorer", "file_explorer", "ActivateProjectToolWindow"),
@@ -180,6 +181,7 @@ object HelixWhichKeyMenus {
         WhichKeyItem("q", "Close active split", "wclose", "Unsplit"),
         WhichKeyItem("c", "Close active split", "wclose", "Unsplit"),
         WhichKeyItem("o", "Close other splits", "wonly", "UnsplitAll"),
+        WhichKeyItem("m", "Maximize active split", "wmaximize", "MaximizeEditorInSplit"),
     )
 
     val registerItems = listOf(

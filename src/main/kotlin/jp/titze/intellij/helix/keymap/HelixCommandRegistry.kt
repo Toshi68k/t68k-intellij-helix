@@ -612,6 +612,10 @@ object HelixCommandRegistry {
         register("wonly", "Close other splits", "UnsplitAll") { ed, _ ->
             HelixActionDelegate.executeAction("UnsplitAll", ed)
         }
+        register("wmaximize", "Maximize active split", "MaximizeEditorInSplit") { ed, _ ->
+            HelixActionDelegate.executeAction("MaximizeEditorInSplit", ed) ||
+                HelixActionDelegate.executeAction("HideAllWindows", ed)
+        }
         register("jump_view_left", "Focus left split", "PrevSplitter") { ed, _ ->
             HelixActionDelegate.executeAction("PrevSplitter", ed)
         }

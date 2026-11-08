@@ -40,6 +40,11 @@ internal object HelixSpaceKeymap {
                 HelixActionDelegate.executeAction("RecentFiles", editor)
             }
 
+            'B' -> {
+                HelixKeyHandler.recordJump(editor)
+                HelixActionDelegate.executeAction("RecentLocations", editor)
+            }
+
             '/' -> {
                 HelixKeyHandler.recordJump(editor)
                 HelixActionDelegate.executeAction("FindInPath", editor)
