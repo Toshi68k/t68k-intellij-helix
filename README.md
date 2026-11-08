@@ -607,6 +607,7 @@ to execute):
 - `:toggle-inlay-hints` / `:inlay-hints` / `:hints` &rarr; Toggle inlay parameter and type hints
 - `:toggle-sticky-context` / `:sticky-context` / `:sticky-lines` &rarr; Toggle sticky context header lines
 - `:toggle-line-numbers` / `:line-numbers` / `:numbers` &rarr; Toggle gutter line numbers
+- `:toggle-relative-line-numbers` / `:relative-numbers` / `:rnu` &rarr; Toggle relative / smart line numbers
 - `:toggle-render-whitespace` / `:whitespace` / `:whitespaces` &rarr; Toggle whitespace character rendering
 - `:toggle-breadcrumbs` / `:breadcrumbs` &rarr; Toggle editor breadcrumbs navigation
 - `:toggle-search-ui` / `:search-ui` &rarr; Toggle between Stock Helix inline bar and Popup dialog
@@ -738,6 +739,7 @@ Structured into 3 cohesive domains with native IntelliJ section dividers:
   - **Color Theme & Mode Colors**: Choose between Sync with IDE, Dark, or Light themes for all Helix overlays. Independently toggle mode-colored status pills (`color-modes = true`) and mode cursor tinting (`cursor-tint = true`).
 - **Editing & Navigation Behavior**:
   - **Line Navigation (Vertical Movement)** *(default: Stock Helix)*: Toggle between **Stock Helix** (`j`/`k` move visual screen lines, `gj`/`gk` jump physical document lines) and **Vim Standard** (`j`/`k` move physical lines, `gj`/`gk` move visual lines). Also toggled via `:toggle-line-nav`.
+  - **Gutter Line Numbers (`line-number`)**: Choose between **Use IDE Default**, **Absolute**, **Relative** (distance from cursor line), **Hybrid** (absolute on current line, relative on others), and **Smart** (relative in Normal/Select mode, automatic absolute fallback in Insert mode). Also toggled via `:toggle-relative-line-numbers` or `:set line-number relative|smart|hybrid|absolute|off`.
   - **Scratch Window Splits** *(default: Interactive)*: Configure whether `<C-w>ns` / `<C-w>nv` prompts for file language (`NewScratchFile`) or opens an instant plain-text buffer (`NewScratchBuffer`).
   - **System Clipboard**: Toggle synchronization of system clipboard with the default `"` register.
   - **Reset to Normal Mode on Tab Switch** *(default: enabled)*: Ensures each tab starts in Normal mode with a block cursor.

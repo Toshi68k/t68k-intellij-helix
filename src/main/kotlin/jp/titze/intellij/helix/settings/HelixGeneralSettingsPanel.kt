@@ -4,7 +4,9 @@
 package jp.titze.intellij.helix.settings
 
 import com.intellij.openapi.project.ProjectManager
+import com.intellij.openapi.ui.ComboBox
 import com.intellij.ui.JBIntSpinner
+import com.intellij.ui.SimpleListCellRenderer
 import com.intellij.ui.TitledSeparator
 import com.intellij.ui.components.JBCheckBox
 import com.intellij.ui.components.JBLabel
@@ -34,6 +36,7 @@ class HelixGeneralSettingsPanel {
 
     private var stockLineNavRadio: JBRadioButton? = null
     private var vimLineNavRadio: JBRadioButton? = null
+    private var lineNumberModeComboBox: ComboBox<HelixLineNumberMode>? = null
 
     private var enableWhichKeyCheckBox: JBCheckBox? = null
     private var whichKeyHelixCommandRadio: JBRadioButton? = null
@@ -100,6 +103,8 @@ class HelixGeneralSettingsPanel {
         inner.layout = BoxLayout(inner, BoxLayout.Y_AXIS)
         inner.border = JBUI.Borders.emptyLeft(8)
         inner.add(createLineNavigationSection())
+        inner.add(Box.createVerticalStrut(JBUI.scale(16)))
+        inner.add(createLineNumbersSection())
         inner.add(Box.createVerticalStrut(JBUI.scale(16)))
         inner.add(createScratchSplitSection())
         inner.add(Box.createVerticalStrut(JBUI.scale(16)))
@@ -207,6 +212,32 @@ class HelixGeneralSettingsPanel {
 
         val box = JPanel(BorderLayout(0, 8))
         box.add(optionsPanel, BorderLayout.NORTH)
+        box.add(helpLabel, BorderLayout.CENTER)
+        section.add(box, BorderLayout.CENTER)
+        return section
+    }
+
+    private fun createLineNumbersSection(): JPanel {
+        val section = JPanel(BorderLayout(0, 8))
+        val titleLabel = JBLabel(HelixBundle.message("settings.lineNumbers.title"))
+        titleLabel.font = JBUI.Fonts.label().asBold()
+        section.add(titleLabel, BorderLayout.NORTH)
+
+        val combo = ComboBox(HelixLineNumberMode.entries.toTypedArray())
+        combo.renderer = SimpleListCellRenderer.create("") { it.displayName }
+        lineNumberModeComboBox = combo
+
+        val comboPanel = JPanel(BorderLayout())
+        comboPanel.border = JBUI.Borders.emptyLeft(12)
+        comboPanel.add(combo, BorderLayout.WEST)
+
+        val helpLabel = JBLabel(HelixBundle.message("settings.lineNumbers.help"))
+        helpLabel.font = JBUI.Fonts.smallFont()
+        helpLabel.foreground = UIUtil.getContextHelpForeground()
+        helpLabel.border = JBUI.Borders.emptyLeft(12)
+
+        val box = JPanel(BorderLayout(0, 8))
+        box.add(comboPanel, BorderLayout.NORTH)
         box.add(helpLabel, BorderLayout.CENTER)
         section.add(box, BorderLayout.CENTER)
         return section
@@ -479,6 +510,7 @@ class HelixGeneralSettingsPanel {
             activationPanel.isModified(settings),
             getSelectedSearchUiMode() != settings.searchUiMode,
             getSelectedLineNavigationMode() != settings.lineNavigationMode,
+            (lineNumberModeComboBox?.selectedItem as? HelixLineNumberMode) != settings.lineNumberMode,
             promptHistorySpinner?.number != settings.promptHistoryMaxEntries,
             enableWhichKeyCheckBox?.isSelected != settings.enableWhichKeyPopups,
             getSelectedWhichKeyHintMode() != settings.whichKeyHintMode,
@@ -498,6 +530,7 @@ class HelixGeneralSettingsPanel {
         activationPanel.apply(settings)
         settings.searchUiMode = getSelectedSearchUiMode()
         settings.lineNavigationMode = getSelectedLineNavigationMode()
+        (lineNumberModeComboBox?.selectedItem as? HelixLineNumberMode)?.let { settings.lineNumberMode = it }
         promptHistorySpinner?.let {
             settings.promptHistoryMaxEntries = it.number
             HelixPromptHistory.trimToCapacity()
@@ -526,6 +559,7 @@ class HelixGeneralSettingsPanel {
         popupRadio?.isSelected = (settings.searchUiMode == HelixSearchUiMode.POPUP)
         stockLineNavRadio?.isSelected = (settings.lineNavigationMode == HelixLineNavigationMode.HELIX_STANDARD)
         vimLineNavRadio?.isSelected = (settings.lineNavigationMode == HelixLineNavigationMode.VIM_STANDARD)
+        lineNumberModeComboBox?.selectedItem = settings.lineNumberMode
         promptHistorySpinner?.value = settings.promptHistoryMaxEntries
 
         enableWhichKeyCheckBox?.isSelected = settings.enableWhichKeyPopups
@@ -553,6 +587,7 @@ class HelixGeneralSettingsPanel {
         popupRadio = null
         stockLineNavRadio = null
         vimLineNavRadio = null
+        lineNumberModeComboBox = null
         promptHistorySpinner = null
         enableWhichKeyCheckBox = null
         whichKeyHelixCommandRadio = null

@@ -6,6 +6,8 @@ package jp.titze.intellij.helix.action
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.ex.EditorSettingsExternalizable
 import jp.titze.intellij.helix.editor.HelixEditorEligibility
+import jp.titze.intellij.helix.editor.HelixLineNumberManager
+import jp.titze.intellij.helix.settings.HelixLineNumberMode
 import jp.titze.intellij.helix.settings.HelixSettings
 
 /**
@@ -41,6 +43,11 @@ object HelixVisualToggleActions {
                 editor.settings.isLineNumbersShown = target
             }
         }
+        return true
+    }
+
+    fun toggleRelativeLineNumbers(): Boolean {
+        HelixLineNumberManager.toggleRelative()
         return true
     }
 
@@ -90,8 +97,16 @@ object HelixVisualToggleActions {
             }
 
             "line-number", "line-numbers", "numbers" -> {
-                if (booleanVal == null) return false
-                toggleLineNumbers(editor, booleanVal)
+                val mode = parseLineNumberMode(value)
+                if (mode != null) {
+                    HelixSettings.instance.lineNumberMode = mode
+                    HelixEditorEligibility.refreshAllEditors()
+                    true
+                } else if (booleanVal != null) {
+                    toggleLineNumbers(editor, booleanVal)
+                } else {
+                    false
+                }
             }
 
             "sticky-context", "sticky-context.enable", "sticky-lines" -> {
@@ -133,6 +148,9 @@ object HelixVisualToggleActions {
 
             "line-number", "line-numbers", "numbers" -> toggleLineNumbers(editor)
 
+            "relative-line-number", "relative-line-numbers", "relative-numbers", "rnu" ->
+                toggleRelativeLineNumbers()
+
             "sticky-context", "sticky-context.enable", "sticky-lines" -> toggleStickyContext(editor)
 
             "breadcrumbs", "breadcrumbs.enable" -> toggleBreadcrumbs(editor)
@@ -151,6 +169,16 @@ object HelixVisualToggleActions {
 
             else -> false
         }
+    }
+
+    private fun parseLineNumberMode(value: String): HelixLineNumberMode? = when (value.trim().lowercase()) {
+        "relative" -> HelixLineNumberMode.RELATIVE
+        "smart", "smart-relative" -> HelixLineNumberMode.SMART
+        "hybrid" -> HelixLineNumberMode.HYBRID
+        "absolute" -> HelixLineNumberMode.ABSOLUTE
+        "default", "ide", "ide-default" -> HelixLineNumberMode.IDE_DEFAULT
+        "off", "none" -> HelixLineNumberMode.OFF
+        else -> null
     }
 
     private fun parseBooleanValue(rawVal: String): Boolean? = when (rawVal.trim().lowercase()) {

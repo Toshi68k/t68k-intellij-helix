@@ -40,9 +40,19 @@ enum class HelixScratchSplitMode(val displayName: String) {
     EMPTY_BUFFER("Instant: Open empty plain-text buffer without prompt (NewScratchBuffer)"),
 }
 
+enum class HelixLineNumberMode(val displayName: String) {
+    IDE_DEFAULT("Use IDE Default"),
+    ABSOLUTE("Absolute: Standard line numbers (1, 2, 3...)"),
+    RELATIVE("Relative: Distance from cursor line (0, 1, 2...)"),
+    HYBRID("Hybrid: Current line is absolute, others relative"),
+    SMART("Smart: Relative in Normal/Select, Absolute in Insert"),
+    OFF("Hidden: Do not show line numbers"),
+}
+
 class HelixSettingsState {
     var searchUiMode: String = HelixSearchUiMode.STOCK_HELIX.name
     var lineNavigationMode: String = HelixLineNavigationMode.HELIX_STANDARD.name
+    var lineNumberMode: String = HelixLineNumberMode.IDE_DEFAULT.name
     var scratchSplitMode: String = HelixScratchSplitMode.INTERACTIVE.name
     var jumpListMaxEntries: Int = HelixSettings.DEFAULT_JUMP_LIST_MAX_ENTRIES
     var promptHistoryMaxEntries: Int = HelixSettings.DEFAULT_PROMPT_HISTORY_MAX_ENTRIES
@@ -102,6 +112,16 @@ class HelixSettings : PersistentStateComponent<HelixSettingsState> {
         }
         set(value) {
             myState.scratchSplitMode = value.name
+        }
+
+    var lineNumberMode: HelixLineNumberMode
+        get() = try {
+            HelixLineNumberMode.valueOf(myState.lineNumberMode)
+        } catch (_: Exception) {
+            HelixLineNumberMode.IDE_DEFAULT
+        }
+        set(value) {
+            myState.lineNumberMode = value.name
         }
 
     var jumpListMaxEntries: Int

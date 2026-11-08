@@ -516,6 +516,9 @@ internal object HelixExtendedCommands {
         HelixCommandRegistry.register("toggle_line_numbers", "Toggle line numbers") { ed, _ ->
             HelixVisualToggleActions.toggleLineNumbers(ed)
         }
+        HelixCommandRegistry.register("toggle_relative_line_numbers", "Toggle relative line numbers") { _, _ ->
+            HelixVisualToggleActions.toggleRelativeLineNumbers()
+        }
         HelixCommandRegistry.register("toggle_whitespace", "Toggle whitespace rendering") { ed, _ ->
             HelixVisualToggleActions.toggleWhitespace(ed)
         }

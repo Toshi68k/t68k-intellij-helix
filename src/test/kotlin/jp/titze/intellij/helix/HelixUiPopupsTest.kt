@@ -28,6 +28,7 @@ import jp.titze.intellij.helix.keymap.HelixWindowKeymap
 import jp.titze.intellij.helix.motion.HelixMotionHistory
 import jp.titze.intellij.helix.register.HelixRegisterManager
 import jp.titze.intellij.helix.settings.HelixLineNavigationMode
+import jp.titze.intellij.helix.settings.HelixLineNumberMode
 import jp.titze.intellij.helix.settings.HelixScratchSplitMode
 import jp.titze.intellij.helix.settings.HelixSearchUiMode
 import jp.titze.intellij.helix.settings.HelixSettings
@@ -1013,6 +1014,61 @@ class HelixUiPopupsTest : BasePlatformTestCase() {
             HelixSettings.instance.colorModes = origColorModes
             HelixEditorEligibility.refreshAllEditors()
             widget.dispose()
+        }
+    }
+
+    fun testRelativeLineNumbersAndSmartInsertToggle() {
+        myFixture.configureByText("test.txt", "line 1\nline 2\nline 3\nline 4\n")
+        val editor = myFixture.editor
+        val state = HelixStateManager.getOrCreate(editor)
+        val origLineNumberMode = HelixSettings.instance.lineNumberMode
+        try {
+            // 1. SMART mode in Normal mode -> RELATIVE
+            HelixSettings.instance.lineNumberMode = HelixLineNumberMode.SMART
+            state.setMode(HelixMode.NORMAL)
+            HelixStateManager.updateCursor(editor, HelixMode.NORMAL)
+            editor.settings.isLineNumbersShown.shouldBeTrue()
+            editor.settings.lineNumerationType shouldBe
+                com.intellij.openapi.editor.EditorSettings.LineNumerationType.RELATIVE
+
+            // 2. Transition to INSERT mode -> falls back to ABSOLUTE
+            state.setMode(HelixMode.INSERT)
+            HelixStateManager.updateCursor(editor, HelixMode.INSERT)
+            editor.settings.isLineNumbersShown.shouldBeTrue()
+            editor.settings.lineNumerationType shouldBe
+                com.intellij.openapi.editor.EditorSettings.LineNumerationType.ABSOLUTE
+
+            // 3. Return to NORMAL mode -> back to RELATIVE
+            state.setMode(HelixMode.NORMAL)
+            HelixStateManager.updateCursor(editor, HelixMode.NORMAL)
+            editor.settings.isLineNumbersShown.shouldBeTrue()
+            editor.settings.lineNumerationType shouldBe
+                com.intellij.openapi.editor.EditorSettings.LineNumerationType.RELATIVE
+
+            // 4. Set option via HelixVisualToggleActions
+            HelixVisualToggleActions.handleSetOption("line-number", "hybrid", editor)
+            HelixSettings.instance.lineNumberMode shouldBe HelixLineNumberMode.HYBRID
+            editor.settings.lineNumerationType shouldBe
+                com.intellij.openapi.editor.EditorSettings.LineNumerationType.HYBRID
+
+            HelixVisualToggleActions.handleSetOption("line-number", "absolute", editor)
+            HelixSettings.instance.lineNumberMode shouldBe HelixLineNumberMode.ABSOLUTE
+            editor.settings.lineNumerationType shouldBe
+                com.intellij.openapi.editor.EditorSettings.LineNumerationType.ABSOLUTE
+
+            HelixVisualToggleActions.handleSetOption("line-number", "off", editor)
+            HelixSettings.instance.lineNumberMode shouldBe HelixLineNumberMode.OFF
+            editor.settings.isLineNumbersShown.shouldBeFalse()
+
+            // 5. Toggle relative command
+            HelixVisualToggleActions.handleToggleOption("relative-numbers", editor)
+            HelixSettings.instance.lineNumberMode shouldBe HelixLineNumberMode.SMART
+
+            HelixVisualToggleActions.handleToggleOption("rnu", editor)
+            HelixSettings.instance.lineNumberMode shouldBe HelixLineNumberMode.ABSOLUTE
+        } finally {
+            HelixSettings.instance.lineNumberMode = origLineNumberMode
+            HelixEditorEligibility.refreshAllEditors()
         }
     }
 
