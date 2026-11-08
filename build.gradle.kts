@@ -9,7 +9,7 @@ import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
 plugins {
     id("java")
     kotlin("jvm") version "2.4.10"
-    id("org.jetbrains.intellij.platform") version "2.19.0"
+    id("org.jetbrains.intellij.platform") version "2.20.0"
     id("org.jetbrains.changelog") version "2.4.0"
     id("dev.detekt") version "2.0.0-alpha.6"
     id("com.diffplug.spotless") version "8.10.4"
