@@ -518,10 +518,28 @@ internal object HelixBuiltinCommands {
             HelixActionDelegate.executeAction("PlaybackLastMacro", editor)
         },
         HelixCommandItem("sort", emptyList(), "Sort selected lines alphabetically") { editor ->
-            HelixActions.sortLines(editor, reverse = false)
+            HelixActions.sortLines(editor, reverse = false, numeric = false)
         },
-        HelixCommandItem("sort-reverse", listOf("sort -r"), "Sort selected lines in reverse") { editor ->
-            HelixActions.sortLines(editor, reverse = true)
+        HelixCommandItem(
+            "sort-reverse",
+            listOf("sort -r", "sort_reverse"),
+            "Sort selected lines in reverse",
+        ) { editor ->
+            HelixActions.sortLines(editor, reverse = true, numeric = false)
+        },
+        HelixCommandItem(
+            "sort-numeric",
+            listOf("sort -n", "sort_numeric"),
+            "Sort selected lines numerically (by first number in line)",
+        ) { editor ->
+            HelixActions.sortLines(editor, reverse = false, numeric = true)
+        },
+        HelixCommandItem(
+            "sort-numeric-reverse",
+            listOf("sort -rn", "sort -nr", "sort_numeric_reverse"),
+            "Sort selected lines numerically in reverse",
+        ) { editor ->
+            HelixActions.sortLines(editor, reverse = true, numeric = true)
         },
         HelixCommandItem(
             "terminal",

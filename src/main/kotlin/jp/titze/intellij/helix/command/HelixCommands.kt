@@ -129,8 +129,10 @@ object HelixCommands {
         }
 
         if (baseCmd == "sort") {
-            val isReverse = arg == "-r" || arg == "--reverse" || arg == "reverse"
-            HelixActions.sortLines(editor, isReverse)
+            val tokens = arg.split(Regex("\\s+")).filter { it.isNotEmpty() }
+            val isReverse = tokens.any { it in listOf("-r", "--reverse", "reverse", "-rn", "-nr") }
+            val isNumeric = tokens.any { it in listOf("-n", "--numeric", "numeric", "-rn", "-nr") }
+            HelixActions.sortLines(editor, reverse = isReverse, numeric = isNumeric)
             return
         }
         if (baseCmd == "terminal") {

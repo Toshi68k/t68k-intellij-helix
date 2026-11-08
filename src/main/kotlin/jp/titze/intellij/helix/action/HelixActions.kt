@@ -455,7 +455,9 @@ object HelixActions {
     fun filterSelections(editor: Editor, pattern: String, keepMatching: Boolean) =
         HelixRegexActions.filterSelections(editor, pattern, keepMatching)
 
-    fun sortLines(editor: Editor, reverse: Boolean = false) = HelixSortActions.sortLines(editor, reverse)
+    @JvmOverloads
+    fun sortLines(editor: Editor, reverse: Boolean = false, numeric: Boolean = false) =
+        HelixSortActions.sortLines(editor, reverse, numeric)
 
     fun deleteWordBackward(editor: Editor) = HelixInsertActions.deleteWordBackward(editor)
 
