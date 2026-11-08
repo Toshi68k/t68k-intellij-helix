@@ -234,7 +234,7 @@ class HelixKeymapTest : BasePlatformTestCase() {
 
             [keys.normal]
             "C-s" = ":w"
-            "X" = "extend_line_up"
+            "X" = "extend_line"
             "C-d" = ["half_page_down", "align_view_center"]
 
             [keys.normal.space]

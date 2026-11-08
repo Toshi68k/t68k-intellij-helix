@@ -42,6 +42,13 @@ internal object HelixBuiltinCommands {
         ) { editor ->
             HelixConfigLoader.openOrCreateConfigFile(editor.project)
         },
+        HelixCommandItem(
+            "log-open",
+            listOf("log_open", "show-log", "show_log", "open-log"),
+            "Open IDE log file in editor (ShowLog)",
+        ) { editor ->
+            HelixActionDelegate.executeAction("ShowLog", editor)
+        },
         HelixCommandItem("toggle-helix", emptyList(), "Toggle Helix modal editing mode globally") { _ ->
             val settings = HelixSettings.instance
             settings.enabled = !settings.enabled
@@ -440,6 +447,28 @@ internal object HelixBuiltinCommands {
             "Clear contents of a specific register or all registers",
         ) { _ -> HelixRegisterManager.clear() },
         HelixCommandItem(
+            "copy-path",
+            listOf("copy_path", "copy-absolute-path", "copy_absolute_path"),
+            "Copy absolute file path to clipboard (CopyAbsolutePath)",
+        ) { editor ->
+            HelixActionDelegate.executeAction("CopyAbsolutePath", editor)
+        },
+        HelixCommandItem(
+            "copy-relative-path",
+            listOf("copy_relative_path"),
+            "Copy content root relative file path to clipboard (CopyContentRootPath)",
+        ) { editor ->
+            HelixActionDelegate.executeAction("CopyContentRootPath", editor)
+        },
+        HelixCommandItem(
+            "copy-reference",
+            listOf("copy_reference", "copy-symbol"),
+            "Copy symbol reference to clipboard (CopyReferencePopup)",
+        ) { editor ->
+            HelixActionDelegate.executeAction("CopyReferencePopup", editor) ||
+                HelixActionDelegate.executeAction("CopyReference", editor)
+        },
+        HelixCommandItem(
             "file-explorer-buffer",
             listOf(
                 "file_explorer_buffer",
@@ -617,6 +646,13 @@ internal object HelixBuiltinCommands {
             HelixActionDelegate.executeAction("NewScratchFile", editor)
         },
         HelixCommandItem(
+            "reopen-closed-tab",
+            listOf("reopen", "reopen_closed_tab", "reopen-tab", "undo-close-tab"),
+            "Reopen last closed editor tab (ReopenClosedTab)",
+        ) { editor ->
+            HelixActionDelegate.executeAction("ReopenClosedTab", editor)
+        },
+        HelixCommandItem(
             "pipe",
             listOf("shell-pipe", "shell_pipe"),
             "Pipe selections into shell command and replace",
@@ -790,6 +826,14 @@ internal object HelixBuiltinCommands {
             "Show VCS / Git log (Vcs.Show.Log)",
         ) { editor ->
             HelixActionDelegate.executeAction("Vcs.Show.Log", editor)
+        },
+        HelixCommandItem(
+            "branches",
+            listOf("git-branches", "git_branches", "git-branch", "git_branch"),
+            "Open Git branches popup (Git.Branches)",
+        ) { editor ->
+            HelixActionDelegate.executeAction("Git.Branches", editor) ||
+                HelixActionDelegate.executeAction("Vcs.Branches", editor)
         },
         HelixCommandItem(
             "extract-variable",

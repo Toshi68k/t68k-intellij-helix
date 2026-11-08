@@ -2071,4 +2071,77 @@ class HelixUiPopupsTest : BasePlatformTestCase() {
             HelixActionDelegate.actionExecutor = null
         }
     }
+
+    fun testWorkflowPaletteCommands() {
+        myFixture.configureByText("test.txt", "workflow test buffer")
+        val editor = myFixture.editor
+        val executedActions = mutableListOf<String>()
+        HelixActionDelegate.actionExecutor = { actionId, _ ->
+            executedActions.add(actionId)
+            true
+        }
+
+        try {
+            HelixCommands.execute("reopen-closed-tab", editor)
+            executedActions.last() shouldBe "ReopenClosedTab"
+
+            HelixCommands.execute("reopen", editor)
+            executedActions.last() shouldBe "ReopenClosedTab"
+
+            HelixCommands.execute("copy-path", editor)
+            executedActions.last() shouldBe "CopyAbsolutePath"
+
+            HelixCommands.execute("copy-relative-path", editor)
+            executedActions.last() shouldBe "CopyContentRootPath"
+
+            HelixCommands.execute("copy-reference", editor)
+            executedActions.last() shouldBe "CopyReferencePopup"
+
+            HelixCommands.execute("branches", editor)
+            executedActions.last() shouldBe "Git.Branches"
+
+            HelixCommands.execute("git-branches", editor)
+            executedActions.last() shouldBe "Git.Branches"
+
+            HelixCommands.execute("log-open", editor)
+            executedActions.last() shouldBe "ShowLog"
+
+            HelixCommands.execute("show-log", editor)
+            executedActions.last() shouldBe "ShowLog"
+        } finally {
+            HelixActionDelegate.actionExecutor = null
+        }
+    }
+
+    fun testWorkflowCommandRegistryExecution() {
+        myFixture.configureByText("test.txt", "registry workflow buffer")
+        val editor = myFixture.editor
+        val executedActions = mutableListOf<String>()
+        HelixActionDelegate.actionExecutor = { actionId, _ ->
+            executedActions.add(actionId)
+            true
+        }
+
+        try {
+            jp.titze.intellij.helix.keymap.HelixCommandRegistry.execute("reopen_closed_tab", editor)
+            executedActions.last() shouldBe "ReopenClosedTab"
+
+            jp.titze.intellij.helix.keymap.HelixCommandRegistry.execute("copy_path", editor)
+            executedActions.last() shouldBe "CopyAbsolutePath"
+
+            jp.titze.intellij.helix.keymap.HelixCommandRegistry.execute("copy_relative_path", editor)
+            executedActions.last() shouldBe "CopyContentRootPath"
+
+            jp.titze.intellij.helix.keymap.HelixCommandRegistry.execute("copy_reference", editor)
+            executedActions.last() shouldBe "CopyReferencePopup"
+
+            jp.titze.intellij.helix.keymap.HelixCommandRegistry.execute("branches", editor)
+            executedActions.last() shouldBe "Git.Branches"
+
+            jp.titze.intellij.helix.keymap.HelixCommandRegistry.execute("log_open", editor)
+            executedActions.last() shouldBe "ShowLog"
+        } finally {
+            HelixActionDelegate.actionExecutor = null
+        }
+    }
 }
