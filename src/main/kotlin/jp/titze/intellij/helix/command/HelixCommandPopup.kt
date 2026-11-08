@@ -277,11 +277,13 @@ object HelixCommandPopup {
             override fun changedUpdate(e: DocumentEvent?) = updateFilter()
         })
 
+        fun shouldExecuteDirectly(query: String): Boolean = query.contains(' ') || query.startsWith('!')
+
         fun runChosenCommand() {
             val query = textField.text.trim().removePrefix(":")
             popup.cancel()
             val selected = list.selectedValue
-            if (selected != null && (query.isEmpty() || selected.matches(query))) {
+            if (!shouldExecuteDirectly(query) && selected != null && selected.matches(query)) {
                 selected.action(editor)
             } else if (query.isNotEmpty()) {
                 executeCommand(query, editor)

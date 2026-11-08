@@ -7,6 +7,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- **Numeric Sorting**:
+  - Added numeric line sorting (`:sort -n`, `:sort -rn`, `:sort-numeric`, `:sort-numeric-reverse`) that compares mathematical values (handling decimals and negative numbers) rather than raw ASCII/lexicographic order.
+  - Registered `sort_numeric` and `sort_numeric_reverse` in `HelixCommandRegistry` for user keybinding configurations.
+
 - **Multi-Caret Command Additions (`add_selection_next` / `add_selection_prev` / `select_all_occurrences`)**:
   - Added `add_selection_next` (`:select-next-occurrence`, `:select-next`) to select the word under cursor or append the next occurrence of the selection as a new caret (the classic `Ctrl-D` / `SelectNextOccurrence` multi-cursor workflow).
   - Added `add_selection_prev` (`:select-prev-occurrence`, `:select-prev`) to append the previous occurrence of the selection as a new caret.

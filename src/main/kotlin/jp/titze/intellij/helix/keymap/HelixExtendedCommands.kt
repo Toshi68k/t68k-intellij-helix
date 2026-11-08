@@ -237,6 +237,22 @@ internal object HelixExtendedCommands {
             HelixSelectionActions.mergeAllSelections(ed)
             true
         }
+        HelixCommandRegistry.register("sort", "Sort selected lines alphabetically") { ed, _ ->
+            HelixActions.sortLines(ed, reverse = false, numeric = false)
+            true
+        }
+        HelixCommandRegistry.register("sort_reverse", "Sort selected lines in reverse") { ed, _ ->
+            HelixActions.sortLines(ed, reverse = true, numeric = false)
+            true
+        }
+        HelixCommandRegistry.register("sort_numeric", "Sort selected lines numerically") { ed, _ ->
+            HelixActions.sortLines(ed, reverse = false, numeric = true)
+            true
+        }
+        HelixCommandRegistry.register("sort_numeric_reverse", "Sort selected lines numerically in reverse") { ed, _ ->
+            HelixActions.sortLines(ed, reverse = true, numeric = true)
+            true
+        }
         HelixCommandRegistry.register("copy_selection_on_prev_line", "Copy selection on previous line") { ed, cnt ->
             HelixMotions.copySelectionOnPrevLine(ed, cnt)
             true

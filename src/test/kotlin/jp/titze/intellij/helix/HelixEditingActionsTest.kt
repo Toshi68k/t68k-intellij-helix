@@ -9,6 +9,7 @@ import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
 import jp.titze.intellij.helix.action.HelixActions
+import jp.titze.intellij.helix.command.HelixCommands
 import jp.titze.intellij.helix.editor.HelixEscapeHandler
 import jp.titze.intellij.helix.editor.HelixInsertTracker
 import jp.titze.intellij.helix.keymap.HelixKeyHandler
@@ -1451,5 +1452,29 @@ class HelixEditingActionsTest : BasePlatformTestCase() {
         HelixKeyHandler.handleKey('.', editor)
         editor.document.text shouldBe "foo abc"
         HelixStateManager.getOrCreate(editor).mode shouldBe HelixMode.NORMAL
+    }
+
+    fun testSortLinesNumeric() {
+        myFixture.configureByText("test.txt", "item 10\nitem 2\nitem 1\nitem 20")
+        val editor = myFixture.editor
+        HelixActions.sortLines(editor, reverse = false, numeric = true)
+        editor.document.text shouldBe "item 1\nitem 2\nitem 10\nitem 20"
+    }
+
+    fun testSortLinesNumericReverse() {
+        myFixture.configureByText("test.txt", "item 10\nitem 2\nitem 1\nitem 20")
+        val editor = myFixture.editor
+        HelixActions.sortLines(editor, reverse = true, numeric = true)
+        editor.document.text shouldBe "item 20\nitem 10\nitem 2\nitem 1"
+    }
+
+    fun testSortCommandPaletteNumericFlags() {
+        myFixture.configureByText("test.txt", "line 100\nline 20\nline 3")
+        val editor = myFixture.editor
+        HelixCommands.execute("sort -n", editor)
+        editor.document.text shouldBe "line 3\nline 20\nline 100"
+
+        HelixCommands.execute("sort -rn", editor)
+        editor.document.text shouldBe "line 100\nline 20\nline 3"
     }
 }

@@ -11,7 +11,10 @@ import jp.titze.intellij.helix.state.HelixStateManager
 
 object HelixSortActions {
 
-    fun sortLines(editor: Editor, reverse: Boolean = false) {
+    private val NUMBER_REGEX = """-?\d+(?:\.\d+)?""".toRegex()
+
+    @JvmOverloads
+    fun sortLines(editor: Editor, reverse: Boolean = false, numeric: Boolean = false) {
         val project = editor.project ?: return
         val doc = editor.document
         if (doc.lineCount <= 1 || doc.textLength == 0) return
@@ -28,7 +31,7 @@ object HelixSortActions {
                     val sortedRanges = mergeAndSortDescending(selectedRanges)
                     for ((startLine, endLine) in sortedRanges) {
                         if (startLine >= endLine) continue
-                        sortLineRange(doc, startLine, endLine, reverse)
+                        sortLineRange(doc, startLine, endLine, reverse, numeric)
                     }
                 } else {
                     // No multi-line selection: sort entire buffer
@@ -37,7 +40,7 @@ object HelixSortActions {
                         doc.getLineStartOffset(lastLine) == doc.getLineEndOffset(lastLine)
                     val effectiveEndLine = if (isLastLineEmpty) lastLine - 1 else lastLine
                     if (effectiveEndLine > 0) {
-                        sortLineRange(doc, 0, effectiveEndLine, reverse)
+                        sortLineRange(doc, 0, effectiveEndLine, reverse, numeric)
                     }
                 }
             },
@@ -89,16 +92,37 @@ object HelixSortActions {
         return merged.sortedByDescending { it.first }
     }
 
+    private fun extractFirstNumber(s: String): Double? {
+        val match = NUMBER_REGEX.find(s) ?: return null
+        return match.value.toDoubleOrNull()
+    }
+
     private fun sortLineRange(
         doc: com.intellij.openapi.editor.Document,
         startLine: Int,
         endLine: Int,
         reverse: Boolean,
+        numeric: Boolean,
     ) {
         val lines = (startLine..endLine).map { lineIdx ->
             doc.getText(TextRange(doc.getLineStartOffset(lineIdx), doc.getLineEndOffset(lineIdx)))
         }
-        val sorted = if (reverse) lines.sortedDescending() else lines.sorted()
+        val comparator = if (numeric) {
+            Comparator<String> { a, b ->
+                val numA = extractFirstNumber(a)
+                val numB = extractFirstNumber(b)
+                when {
+                    numA != null && numB != null -> numA.compareTo(numB)
+                    numA != null -> -1
+                    numB != null -> 1
+                    else -> a.compareTo(b)
+                }
+            }
+        } else {
+            Comparator { a, b -> a.compareTo(b) }
+        }
+        val finalComparator = if (reverse) comparator.reversed() else comparator
+        val sorted = lines.sortedWith(finalComparator)
         val rangeStart = doc.getLineStartOffset(startLine)
         val rangeEnd = doc.getLineEndOffset(endLine)
         doc.replaceString(rangeStart, rangeEnd, sorted.joinToString("\n"))

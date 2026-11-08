@@ -644,7 +644,7 @@ to execute):
 - `:record-macro` / `:macro-record` &rarr; Start or stop recording a keyboard macro (`Q`)
 - `:replay-macro` / `:macro-play` &rarr; Replay the last recorded keyboard macro (`q`)
 - `:macros` / `:macro` &rarr; Open interactive macros picker popup to preview, filter, and run recorded macros
-- `:sort` / `:sort -r` &rarr; Sort selected lines alphabetically or in reverse (whole buffer if no selection)
+- `:sort` / `:sort -r` / `:sort -n` / `:sort -rn` &rarr; Sort selected lines alphabetically or numerically (by first number in line), ascending or in reverse (whole buffer if no selection)
 - `:pipe [cmd]` &rarr; Pipe each selection into external shell command and replace with stdout (`|`)
 - `:pipe-to [cmd]` &rarr; Pipe each selection into external shell command ignoring stdout (`Alt+|`)
 - `:insert-output [cmd]` &rarr; Execute shell command and insert stdout before selections (`!`)
