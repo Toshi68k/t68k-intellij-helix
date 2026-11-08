@@ -287,6 +287,15 @@ internal object HelixExtendedCommands {
             HelixActions.rotateSelectionsContents(ed, forward = false)
             true
         }
+        HelixCommandRegistry.register("add_selection_next", "Add selection at next occurrence") { ed, _ ->
+            HelixActions.addSelectionNext(ed)
+        }
+        HelixCommandRegistry.register("add_selection_prev", "Add selection at previous occurrence") { ed, _ ->
+            HelixActions.addSelectionPrev(ed)
+        }
+        HelixCommandRegistry.register("select_all_occurrences", "Select all occurrences of selection") { ed, _ ->
+            HelixActions.selectAllOccurrences(ed)
+        }
     }
 
     private fun registerInsertModeCommands() {

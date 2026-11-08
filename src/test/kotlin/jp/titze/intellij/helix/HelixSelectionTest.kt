@@ -1178,4 +1178,113 @@ class HelixSelectionTest : BasePlatformTestCase() {
         caretModel.caretCount shouldBe 1
         caretModel.primaryCaret.offset shouldBe 0
     }
+
+    fun testAddSelectionNextFromWord() {
+        val text = "val foo = 1\nval foo = 2\nval foo = 3\n"
+        myFixture.configureByText("test.txt", text)
+        val editor = myFixture.editor
+        val caretModel = editor.caretModel
+
+        caretModel.primaryCaret.moveToOffset(4) // On first "foo"
+
+        // 1st press: selects "foo" at caret
+        HelixActions.addSelectionNext(editor).shouldBeTrue()
+        caretModel.caretCount shouldBe 1
+        caretModel.primaryCaret.selectedText shouldBe "foo"
+
+        // 2nd press: adds 2nd caret at line 2 "foo"
+        HelixActions.addSelectionNext(editor).shouldBeTrue()
+        caretModel.caretCount shouldBe 2
+        caretModel.allCarets.map { it.selectedText } shouldBe listOf("foo", "foo")
+
+        // 3rd press: adds 3rd caret at line 3 "foo"
+        HelixActions.addSelectionNext(editor).shouldBeTrue()
+        caretModel.caretCount shouldBe 3
+        caretModel.allCarets.map { it.selectedText } shouldBe listOf("foo", "foo", "foo")
+
+        // 4th press: all occurrences already selected, returns false
+        HelixActions.addSelectionNext(editor).shouldBeFalse()
+        caretModel.caretCount shouldBe 3
+    }
+
+    fun testAddSelectionNextWordBoundaryDistinction() {
+        val text = "item = 1\nitemCount = 2\nitem = 3\n"
+        myFixture.configureByText("test.txt", text)
+        val editor = myFixture.editor
+        val caretModel = editor.caretModel
+
+        caretModel.primaryCaret.moveToOffset(0) // On "item"
+
+        HelixActions.addSelectionNext(editor).shouldBeTrue()
+        caretModel.caretCount shouldBe 1
+        caretModel.primaryCaret.selectedText shouldBe "item"
+
+        // Next selection should match "item" on line 3, skipping "itemCount" on line 2
+        HelixActions.addSelectionNext(editor).shouldBeTrue()
+        caretModel.caretCount shouldBe 2
+        caretModel.allCarets[0].selectionStart shouldBe 0
+        caretModel.allCarets[1].selectionStart shouldBe text.lastIndexOf("item")
+    }
+
+    fun testAddSelectionPrev() {
+        val text = "val bar = 1\nval bar = 2\nval bar = 3\n"
+        myFixture.configureByText("test.txt", text)
+        val editor = myFixture.editor
+        val caretModel = editor.caretModel
+
+        val lastBarOffset = text.lastIndexOf("bar")
+        caretModel.primaryCaret.moveToOffset(lastBarOffset)
+
+        // 1st press: selects "bar" on line 3
+        HelixActions.addSelectionPrev(editor).shouldBeTrue()
+        caretModel.caretCount shouldBe 1
+        caretModel.primaryCaret.selectedText shouldBe "bar"
+
+        // 2nd press: adds caret at line 2 "bar"
+        HelixActions.addSelectionPrev(editor).shouldBeTrue()
+        caretModel.caretCount shouldBe 2
+        caretModel.allCarets.map { it.selectedText } shouldBe listOf("bar", "bar")
+
+        // 3rd press: adds caret at line 1 "bar"
+        HelixActions.addSelectionPrev(editor).shouldBeTrue()
+        caretModel.caretCount shouldBe 3
+        caretModel.allCarets.map { it.selectedText } shouldBe listOf("bar", "bar", "bar")
+    }
+
+    fun testSelectAllOccurrences() {
+        val text = "alpha beta alpha gamma alpha\n"
+        myFixture.configureByText("test.txt", text)
+        val editor = myFixture.editor
+        val caretModel = editor.caretModel
+
+        caretModel.primaryCaret.moveToOffset(0) // On first "alpha"
+
+        HelixActions.selectAllOccurrences(editor).shouldBeTrue()
+        caretModel.caretCount shouldBe 3
+        caretModel.allCarets.forEach {
+            it.selectedText shouldBe "alpha"
+        }
+    }
+
+    fun testMultiCaretPaletteAndRegistryDispatch() {
+        val text = "target target target\n"
+        myFixture.configureByText("test.txt", text)
+        val editor = myFixture.editor
+        val caretModel = editor.caretModel
+
+        caretModel.primaryCaret.moveToOffset(0)
+
+        // Test command registry execution
+        jp.titze.intellij.helix.keymap.HelixCommandRegistry.execute("add_selection_next", editor).shouldBeTrue()
+        caretModel.caretCount shouldBe 1
+        caretModel.primaryCaret.selectedText shouldBe "target"
+
+        // Test palette execution via :select-next
+        jp.titze.intellij.helix.command.HelixCommands.execute("select-next", editor)
+        caretModel.caretCount shouldBe 2
+
+        // Test palette execution via :select-all-occurrences
+        jp.titze.intellij.helix.command.HelixCommands.execute("select-all-occurrences", editor)
+        caretModel.caretCount shouldBe 3
+    }
 }

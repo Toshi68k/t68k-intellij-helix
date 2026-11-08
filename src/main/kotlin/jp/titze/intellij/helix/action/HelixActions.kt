@@ -423,6 +423,12 @@ object HelixActions {
 
     fun ensureSelectionsForward(editor: Editor) = HelixSelectionActions.ensureSelectionsForward(editor)
 
+    fun addSelectionNext(editor: Editor): Boolean = HelixSelectionActions.addSelectionNext(editor)
+
+    fun addSelectionPrev(editor: Editor): Boolean = HelixSelectionActions.addSelectionPrev(editor)
+
+    fun selectAllOccurrences(editor: Editor): Boolean = HelixSelectionActions.selectAllOccurrences(editor)
+
     fun mergeSelections(editor: Editor) = HelixSelectionActions.mergeSelections(editor)
 
     fun mergeAllSelections(editor: Editor) = HelixSelectionActions.mergeAllSelections(editor)
