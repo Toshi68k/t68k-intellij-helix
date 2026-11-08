@@ -5,6 +5,8 @@ package jp.titze.intellij.helix.action
 
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.ex.EditorSettingsExternalizable
+import jp.titze.intellij.helix.editor.HelixEditorEligibility
+import jp.titze.intellij.helix.settings.HelixSettings
 
 /**
  * Handles visual and chrome toggle operations for editor soft wrap, inlay hints,
@@ -102,6 +104,20 @@ object HelixVisualToggleActions {
                 toggleBreadcrumbs(editor, booleanVal)
             }
 
+            "color-modes", "color-modes.enable" -> {
+                if (booleanVal == null) return false
+                HelixSettings.instance.colorModes = booleanVal
+                HelixEditorEligibility.refreshAllEditors()
+                true
+            }
+
+            "cursor-tint", "cursor-tint.enable", "cursor.tint" -> {
+                if (booleanVal == null) return false
+                HelixSettings.instance.cursorTint = booleanVal
+                HelixEditorEligibility.refreshAllEditors()
+                true
+            }
+
             else -> false
         }
     }
@@ -110,11 +126,29 @@ object HelixVisualToggleActions {
         val normalizedKey = key.trim().lowercase().replace('_', '-')
         return when (normalizedKey) {
             "soft-wrap", "soft-wrap.enable", "wrap" -> toggleSoftWrap(editor)
+
             "inlay-hints", "inlay-hints.enable", "hints" -> toggleInlayHints(editor)
+
             "whitespace", "whitespace.render", "whitespaces" -> toggleWhitespace(editor)
+
             "line-number", "line-numbers", "numbers" -> toggleLineNumbers(editor)
+
             "sticky-context", "sticky-context.enable", "sticky-lines" -> toggleStickyContext(editor)
+
             "breadcrumbs", "breadcrumbs.enable" -> toggleBreadcrumbs(editor)
+
+            "color-modes", "color-modes.enable" -> {
+                HelixSettings.instance.colorModes = !HelixSettings.instance.colorModes
+                HelixEditorEligibility.refreshAllEditors()
+                true
+            }
+
+            "cursor-tint", "cursor-tint.enable", "cursor.tint" -> {
+                HelixSettings.instance.cursorTint = !HelixSettings.instance.cursorTint
+                HelixEditorEligibility.refreshAllEditors()
+                true
+            }
+
             else -> false
         }
     }

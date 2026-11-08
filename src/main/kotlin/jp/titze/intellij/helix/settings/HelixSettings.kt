@@ -47,6 +47,8 @@ class HelixSettingsState {
     var jumpListMaxEntries: Int = HelixSettings.DEFAULT_JUMP_LIST_MAX_ENTRIES
     var promptHistoryMaxEntries: Int = HelixSettings.DEFAULT_PROMPT_HISTORY_MAX_ENTRIES
     var colorTheme: String = HelixColorTheme.SYNC.name
+    var colorModes: Boolean = true
+    var cursorTint: Boolean = true
     var resetToNormalOnTabSwitch: Boolean = true
     var syncClipboardWithDefaultRegister: Boolean = true
     var enableWhichKeyPopups: Boolean = true
@@ -144,6 +146,18 @@ class HelixSettings : PersistentStateComponent<HelixSettingsState> {
         }
         set(value) {
             myState.colorTheme = value.name
+        }
+
+    var colorModes: Boolean
+        get() = myState.colorModes
+        set(value) {
+            myState.colorModes = value
+        }
+
+    var cursorTint: Boolean
+        get() = myState.cursorTint
+        set(value) {
+            myState.cursorTint = value
         }
 
     var resetToNormalOnTabSwitch: Boolean

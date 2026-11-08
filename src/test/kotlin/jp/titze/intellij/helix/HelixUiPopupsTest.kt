@@ -9,13 +9,16 @@ import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.collections.shouldNotBeEmpty
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.types.shouldBeSameInstanceAs
 import jp.titze.intellij.helix.action.HelixActionDelegate
 import jp.titze.intellij.helix.action.HelixActions
 import jp.titze.intellij.helix.action.HelixCaretUtils
+import jp.titze.intellij.helix.action.HelixVisualToggleActions
 import jp.titze.intellij.helix.command.HelixCommandPopup
 import jp.titze.intellij.helix.command.HelixCommands
+import jp.titze.intellij.helix.editor.HelixEditorEligibility
 import jp.titze.intellij.helix.editor.HelixEventDispatcher
 import jp.titze.intellij.helix.editor.HelixInsertTracker
 import jp.titze.intellij.helix.keymap.HelixDebugKeymap
@@ -781,11 +784,22 @@ class HelixUiPopupsTest : BasePlatformTestCase() {
         myFixture.configureByText("test.txt", "line1\nline2")
         val editor = myFixture.editor
         val widget = HelixStatusBarWidget(project)
+        val origColorModes = HelixSettings.instance.colorModes
         try {
+            HelixSettings.instance.colorModes = true
             widget.attachEditor(editor)
-            widget.getText() shouldBe "NOR"
+            widget.getText() shouldBe ""
             widget.getTooltipText() shouldBe "Helix Mode: Normal"
+            (widget.component as? com.intellij.openapi.wm.impl.status.TextPanel.WithIconAndArrows)?.hasIcon()
+                ?.shouldBeTrue()
+
+            HelixSettings.instance.colorModes = false
+            widget.updateComponent()
+            widget.getText() shouldBe "NOR"
+            (widget.component as? com.intellij.openapi.wm.impl.status.TextPanel.WithIconAndArrows)?.hasIcon()
+                ?.shouldBeFalse()
         } finally {
+            HelixSettings.instance.colorModes = origColorModes
             widget.dispose()
         }
     }
@@ -797,21 +811,21 @@ class HelixUiPopupsTest : BasePlatformTestCase() {
         val widget = HelixStatusBarWidget(project)
         try {
             widget.attachEditor(editor)
-            widget.getText() shouldBe "NOR"
+            widget.getText() shouldBe ""
 
             caretModel.addCaret(editor.offsetToLogicalPosition(6), false)
             caretModel.caretCount shouldBe 2
-            widget.getText() shouldBe "NOR 2 sel"
+            widget.getText() shouldBe "2 sel"
             widget.getTooltipText() shouldContain "2 selections"
 
             caretModel.addCaret(editor.offsetToLogicalPosition(12), false)
             caretModel.caretCount shouldBe 3
-            widget.getText() shouldBe "NOR 3 sel"
+            widget.getText() shouldBe "3 sel"
             widget.getTooltipText() shouldContain "3 selections"
 
             HelixKeyHandler.handleKey(',', editor)
             caretModel.caretCount shouldBe 1
-            widget.getText() shouldBe "NOR"
+            widget.getText() shouldBe ""
         } finally {
             widget.dispose()
         }
@@ -824,17 +838,17 @@ class HelixUiPopupsTest : BasePlatformTestCase() {
         val widget = HelixStatusBarWidget(project)
         try {
             widget.attachEditor(editor)
-            widget.getText() shouldBe "NOR"
+            widget.getText() shouldBe ""
 
             state.setSelectedRegister('a')
-            widget.getText() shouldBe "NOR reg: a"
+            widget.getText() shouldBe "reg: a"
             widget.getTooltipText() shouldContain "Register: \"a"
 
             state.setSelectedRegister('_')
-            widget.getText() shouldBe "NOR reg: _"
+            widget.getText() shouldBe "reg: _"
 
             state.clearSelectedRegister()
-            widget.getText() shouldBe "NOR"
+            widget.getText() shouldBe ""
         } finally {
             widget.dispose()
         }
@@ -855,17 +869,17 @@ class HelixUiPopupsTest : BasePlatformTestCase() {
             state.appendCountDigit('2')
             state.appendKey('g')
 
-            widget.getText() shouldBe "NOR 3 sel reg: a 2 g-"
+            widget.getText() shouldBe "3 sel reg: a 2 g-"
             widget.getTooltipText() shouldContain "3 selections"
             widget.getTooltipText() shouldContain "Register: \"a"
             widget.getTooltipText() shouldContain "Count: 2"
             widget.getTooltipText() shouldContain "Pending: g-"
 
             state.setMode(HelixMode.SELECT)
-            widget.getText() shouldBe "SEL 3 sel"
+            widget.getText() shouldBe "3 sel"
 
             state.setMode(HelixMode.INSERT)
-            widget.getText() shouldBe "INS 3 sel"
+            widget.getText() shouldBe "3 sel"
         } finally {
             widget.dispose()
         }
@@ -878,11 +892,11 @@ class HelixUiPopupsTest : BasePlatformTestCase() {
         try {
             widget.attachEditor(editor)
             widget.macroRecordingProvider = { true }
-            widget.getText() shouldBe "NOR [REC]"
+            widget.getText() shouldBe "[REC]"
             widget.getTooltipText() shouldContain "Recording Macro"
 
             widget.macroRecordingProvider = { false }
-            widget.getText() shouldBe "NOR"
+            widget.getText() shouldBe ""
         } finally {
             widget.dispose()
         }
@@ -915,6 +929,89 @@ class HelixUiPopupsTest : BasePlatformTestCase() {
             clickConsumer.consume(dummyEvent)
             mouseListeners.forEach { it.mouseClicked(dummyEvent) }
         } finally {
+            widget.dispose()
+        }
+    }
+
+    fun testStatusBarWidgetModePillAndCursorTint() {
+        myFixture.configureByText("test.txt", "mode pill test")
+        val editor = myFixture.editor
+        val state = HelixStateManager.getOrCreate(editor)
+        val widget = HelixStatusBarWidget(project)
+        val origColorModes = HelixSettings.instance.colorModes
+        try {
+            HelixSettings.instance.colorModes = true
+            widget.attachEditor(editor)
+            widget.getText() shouldBe ""
+            (widget.component as? com.intellij.openapi.wm.impl.status.TextPanel.WithIconAndArrows)?.hasIcon()
+                ?.shouldBeTrue()
+
+            state.setMode(HelixMode.INSERT)
+            widget.getText() shouldBe ""
+            (widget.component as? com.intellij.openapi.wm.impl.status.TextPanel.WithIconAndArrows)?.hasIcon()
+                ?.shouldBeTrue()
+
+            state.setMode(HelixMode.SELECT)
+            widget.getText() shouldBe ""
+            (widget.component as? com.intellij.openapi.wm.impl.status.TextPanel.WithIconAndArrows)?.hasIcon()
+                ?.shouldBeTrue()
+
+            // Disable colorModes via refreshAllEditors -> icon is null, mode text restored
+            HelixSettings.instance.colorModes = false
+            HelixEditorEligibility.refreshAllEditors()
+            state.setMode(HelixMode.NORMAL)
+            widget.getText() shouldBe "NOR"
+            (widget.component as? com.intellij.openapi.wm.impl.status.TextPanel.WithIconAndArrows)?.hasIcon()
+                ?.shouldBeFalse()
+        } finally {
+            HelixSettings.instance.colorModes = origColorModes
+            HelixEditorEligibility.refreshAllEditors()
+            widget.dispose()
+        }
+    }
+
+    fun testCursorTintIndependentToggle() {
+        myFixture.configureByText("test.txt", "cursor tint test")
+        val editor = myFixture.editor
+        val origCursorTint = HelixSettings.instance.cursorTint
+        val origColorModes = HelixSettings.instance.colorModes
+        val widget = HelixStatusBarWidget(project)
+        try {
+            widget.attachEditor(editor)
+
+            // Both enabled
+            HelixSettings.instance.colorModes = true
+            HelixSettings.instance.cursorTint = true
+            HelixEditorEligibility.refreshAllEditors()
+            val panel = widget.component as? com.intellij.openapi.wm.impl.status.TextPanel.WithIconAndArrows
+            panel?.hasIcon()?.shouldBeTrue()
+            val caretColor = editor.colorsScheme.getColor(com.intellij.openapi.editor.colors.EditorColors.CARET_COLOR)
+            caretColor shouldBe jp.titze.intellij.helix.ui.HelixTheme.MODE_NOR_CARET
+
+            // Disable cursorTint, keep colorModes enabled
+            HelixSettings.instance.cursorTint = false
+            HelixEditorEligibility.refreshAllEditors()
+            panel?.hasIcon()?.shouldBeTrue()
+            val revertedColor = editor.colorsScheme.getColor(
+                com.intellij.openapi.editor.colors.EditorColors.CARET_COLOR,
+            )
+            revertedColor shouldNotBe jp.titze.intellij.helix.ui.HelixTheme.MODE_NOR_CARET
+
+            // Toggle via HelixVisualToggleActions
+            HelixVisualToggleActions.handleToggleOption("cursor-tint", editor)
+            HelixSettings.instance.cursorTint.shouldBeTrue()
+            editor.colorsScheme.getColor(com.intellij.openapi.editor.colors.EditorColors.CARET_COLOR) shouldBe
+                jp.titze.intellij.helix.ui.HelixTheme.MODE_NOR_CARET
+
+            // Set option via HelixVisualToggleActions
+            HelixVisualToggleActions.handleSetOption("cursor-tint", "off", editor)
+            HelixSettings.instance.cursorTint.shouldBeFalse()
+            editor.colorsScheme.getColor(com.intellij.openapi.editor.colors.EditorColors.CARET_COLOR) shouldNotBe
+                jp.titze.intellij.helix.ui.HelixTheme.MODE_NOR_CARET
+        } finally {
+            HelixSettings.instance.cursorTint = origCursorTint
+            HelixSettings.instance.colorModes = origColorModes
+            HelixEditorEligibility.refreshAllEditors()
             widget.dispose()
         }
     }

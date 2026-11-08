@@ -1079,5 +1079,19 @@ internal object HelixBuiltinCommands {
         ) { editor ->
             HelixVisualToggleActions.toggleBreadcrumbs(editor)
         },
+        HelixCommandItem(
+            "toggle-color-modes",
+            listOf("color-modes"),
+            "Toggle mode-colored status bar pill",
+        ) { editor ->
+            HelixVisualToggleActions.handleToggleOption("color-modes", editor)
+        },
+        HelixCommandItem(
+            "toggle-cursor-tint",
+            listOf("cursor-tint"),
+            "Toggle editor cursor tint matching mode color",
+        ) { editor ->
+            HelixVisualToggleActions.handleToggleOption("cursor-tint", editor)
+        },
     )
 }
