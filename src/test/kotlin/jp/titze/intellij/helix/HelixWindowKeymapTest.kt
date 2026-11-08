@@ -39,7 +39,7 @@ class HelixWindowKeymapTest : BasePlatformTestCase() {
 
         val keys = menu.second.map { it.key }
         keys shouldBe listOf(
-            "v", "s", "nv", "ns", "f", "F", "t", "h", "j", "k", "l", "w", "W", "H", "J", "K", "L", "q", "c", "o",
+            "v", "s", "nv", "ns", "f", "F", "t", "h", "j", "k", "l", "w", "W", "H", "J", "K", "L", "q", "c", "o", "m",
         )
 
         val nvItem = menu.second.first { it.key == "nv" }

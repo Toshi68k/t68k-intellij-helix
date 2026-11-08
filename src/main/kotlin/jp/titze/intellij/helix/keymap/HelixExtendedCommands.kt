@@ -559,5 +559,37 @@ internal object HelixExtendedCommands {
         HelixCommandRegistry.register("log_open", "Open IDE log file", "ShowLog") { ed, _ ->
             HelixActionDelegate.executeAction("ShowLog", ed)
         }
+        HelixCommandRegistry.register(
+            "recent_locations",
+            "Open recent locations popup",
+            "RecentLocations",
+        ) { ed, _ ->
+            HelixActionDelegate.executeAction("RecentLocations", ed)
+        }
+        HelixCommandRegistry.register("show_usages", "Show usages in popup", "ShowUsages") { ed, _ ->
+            HelixActionDelegate.executeAction("ShowUsages", ed)
+        }
+        HelixCommandRegistry.register(
+            "maximize_view",
+            "Maximize active split view",
+            "MaximizeEditorInSplit",
+        ) { ed, _ ->
+            HelixActionDelegate.executeAction("MaximizeEditorInSplit", ed) ||
+                HelixActionDelegate.executeAction("HideAllWindows", ed)
+        }
+        HelixCommandRegistry.register(
+            "close_to_right",
+            "Close editor tabs to the right",
+            "CloseAllToTheRight",
+        ) { ed, _ ->
+            HelixActionDelegate.executeAction("CloseAllToTheRight", ed)
+        }
+        HelixCommandRegistry.register(
+            "close_unmodified",
+            "Close unmodified editor tabs",
+            "CloseAllUnmodifiedEditors",
+        ) { ed, _ ->
+            HelixActionDelegate.executeAction("CloseAllUnmodifiedEditors", ed)
+        }
     }
 }

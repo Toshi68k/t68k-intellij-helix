@@ -404,6 +404,7 @@ interactive, non-intrusive **Which-Key popup** appears in authentic Helix cyan:
 | `Ctrl+w H` / `J` / `K` / `L`            | `swap_view_*`      | `ChangeSplitOrientation` | Swap split orientation                         |
 | `Ctrl+w q` / `Ctrl+w c` / `space + w q` | `wclose`           | `Unsplit`                | Close active split                             |
 | `Ctrl+w o` / `space + w o`              | `wonly`            | `UnsplitAll`             | Close all other splits                         |
+| `Ctrl+w m` / `space + w m`              | `wmaximize`        | `MaximizeEditorInSplit`  | Maximize active split / toggle full window     |
 
 *(In Helix, `space + w` is an exact alias for `Ctrl+w`, allowing split and window navigation without holding Ctrl.
 Holding Ctrl during chords, e.g. `Ctrl+w Ctrl+v`, `Ctrl+w Ctrl+w`, etc. is also fully supported. For saving, use `:w` /
@@ -434,6 +435,7 @@ pressed. Code folding is available via `:fold`, `:unfold`, `:fold-all`, and `:un
 | `space + f`               | `file_picker`                              | `GotoFile`                         | Dedicated fuzzy file picker                            |
 | `space + F`               | `file_picker_in_current_directory`         | —                                  | Open fuzzy file picker in current buffer's directory   |
 | `space + b`               | `buffer_picker`                            | `RecentFiles`                      | Open buffer / tab switcher                             |
+| `space + B`               | `recent_locations`                         | `RecentLocations`                  | Open recent visited and edited locations picker        |
 | `space + /`               | `global_search`                            | `FindInPath`                       | Live project-wide text search (live grep) with preview |
 | `space + j`               | `jumplist_picker`                          | —                                  | Open interactive jumplist picker popup                 |
 | `space + e`               | `file_explorer`                            | `ActivateProjectToolWindow`        | Open / toggle project file explorer tool window        |
@@ -586,6 +588,8 @@ to execute):
 - `:buffer-close` / `:bc` / `:bclose` &rarr; Close active tab (`CloseContent`)
 - `:buffer-close-others` / `:bco` / `:bcloseother` &rarr; Close all other tabs (`CloseAllEditorsButActive`)
 - `:buffer-close-all` / `:bca` / `:bcloseall` &rarr; Close all editor tabs (`CloseAllEditors`)
+- `:close-to-right` / `:buffer-close-right` / `:bcr` &rarr; Close tabs to the right of active tab (`CloseAllToTheRight`)
+- `:close-unmodified` / `:buffer-close-unmodified` / `:bcu` &rarr; Close all unmodified tabs (`CloseAllUnmodifiedEditors`)
 - `:buffer-next` / `:bn [count]` &rarr; Switch to next buffer / tab (`NextTab`)
 - `:buffer-previous` / `:bp [count]` &rarr; Switch to previous buffer / tab (`PreviousTab`)
 - `:new` / `:n` &rarr; Create new scratch buffer / file (`NewScratchFile`)
@@ -641,6 +645,9 @@ to execute):
 - `:copy-path` / `:copy-absolute-path` &rarr; Copy absolute file path to clipboard (`CopyAbsolutePath`)
 - `:copy-relative-path` &rarr; Copy content root relative file path to clipboard (`CopyContentRootPath`)
 - `:copy-reference` &rarr; Copy symbol reference / qualified name to clipboard (`CopyReferencePopup`)
+- `:recent-locations` / `:locations` &rarr; Open recent visited and edited locations popup (`RecentLocations`, `space + B`)
+- `:show-usages` / `:usages-popup` &rarr; Show symbol usages in floating popup (`ShowUsages`)
+- `:maximize-view` / `:maximize-editor` &rarr; Maximize active split view or toggle full window (`MaximizeEditorInSplit`, `Ctrl+w m`)
 - `:file-explorer-buffer` &rarr; Reveal active buffer file in project explorer tree (`SelectInProjectView`)
 - `:extend-to-line-bounds` / `:extend_to_line_bounds` &rarr; Extend selection to whole line bounds (`X`)
 - `:shrink-to-line-bounds` / `:shrink_to_line_bounds` &rarr; Shrink selection to line bounds excluding line breaks

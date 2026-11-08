@@ -24,6 +24,7 @@ import jp.titze.intellij.helix.editor.HelixInsertTracker
 import jp.titze.intellij.helix.keymap.HelixDebugKeymap
 import jp.titze.intellij.helix.keymap.HelixKeyHandler
 import jp.titze.intellij.helix.keymap.HelixKeymapManager
+import jp.titze.intellij.helix.keymap.HelixWindowKeymap
 import jp.titze.intellij.helix.motion.HelixMotionHistory
 import jp.titze.intellij.helix.register.HelixRegisterManager
 import jp.titze.intellij.helix.settings.HelixLineNavigationMode
@@ -2237,6 +2238,97 @@ class HelixUiPopupsTest : BasePlatformTestCase() {
 
             jp.titze.intellij.helix.keymap.HelixCommandRegistry.execute("log_open", editor)
             executedActions.last() shouldBe "ShowLog"
+        } finally {
+            HelixActionDelegate.actionExecutor = null
+        }
+    }
+
+    fun testIdeIntelligencePaletteCommands() {
+        myFixture.configureByText("test.txt", "ide intelligence test buffer")
+        val editor = myFixture.editor
+        val executedActions = mutableListOf<String>()
+        HelixActionDelegate.actionExecutor = { actionId, _ ->
+            executedActions.add(actionId)
+            true
+        }
+
+        try {
+            HelixCommands.execute("recent-locations", editor)
+            executedActions.last() shouldBe "RecentLocations"
+
+            HelixCommands.execute("locations", editor)
+            executedActions.last() shouldBe "RecentLocations"
+
+            HelixCommands.execute("show-usages", editor)
+            executedActions.last() shouldBe "ShowUsages"
+
+            HelixCommands.execute("usages-popup", editor)
+            executedActions.last() shouldBe "ShowUsages"
+
+            HelixCommands.execute("maximize-view", editor)
+            executedActions.last() shouldBe "MaximizeEditorInSplit"
+
+            HelixCommands.execute("maximize", editor)
+            executedActions.last() shouldBe "MaximizeEditorInSplit"
+
+            HelixCommands.execute("close-to-right", editor)
+            executedActions.last() shouldBe "CloseAllToTheRight"
+
+            HelixCommands.execute("close-unmodified", editor)
+            executedActions.last() shouldBe "CloseAllUnmodifiedEditors"
+        } finally {
+            HelixActionDelegate.actionExecutor = null
+        }
+    }
+
+    fun testIdeIntelligenceRegistryCommands() {
+        myFixture.configureByText("test.txt", "registry ide intelligence buffer")
+        val editor = myFixture.editor
+        val executedActions = mutableListOf<String>()
+        HelixActionDelegate.actionExecutor = { actionId, _ ->
+            executedActions.add(actionId)
+            true
+        }
+
+        try {
+            jp.titze.intellij.helix.keymap.HelixCommandRegistry.execute("recent_locations", editor)
+            executedActions.last() shouldBe "RecentLocations"
+
+            jp.titze.intellij.helix.keymap.HelixCommandRegistry.execute("show_usages", editor)
+            executedActions.last() shouldBe "ShowUsages"
+
+            jp.titze.intellij.helix.keymap.HelixCommandRegistry.execute("maximize_view", editor)
+            executedActions.last() shouldBe "MaximizeEditorInSplit"
+
+            jp.titze.intellij.helix.keymap.HelixCommandRegistry.execute("wmaximize", editor)
+            executedActions.last() shouldBe "MaximizeEditorInSplit"
+
+            jp.titze.intellij.helix.keymap.HelixCommandRegistry.execute("close_to_right", editor)
+            executedActions.last() shouldBe "CloseAllToTheRight"
+
+            jp.titze.intellij.helix.keymap.HelixCommandRegistry.execute("close_unmodified", editor)
+            executedActions.last() shouldBe "CloseAllUnmodifiedEditors"
+        } finally {
+            HelixActionDelegate.actionExecutor = null
+        }
+    }
+
+    fun testWindowMaximizeAndRecentLocationsChords() {
+        myFixture.configureByText("test.txt", "chords test buffer")
+        val editor = myFixture.editor
+        val executedActions = mutableListOf<String>()
+        HelixActionDelegate.actionExecutor = { actionId, _ ->
+            executedActions.add(actionId)
+            true
+        }
+
+        try {
+            HelixKeyHandler.handleKey(' ', editor)
+            HelixKeyHandler.handleKey('B', editor)
+            executedActions.last() shouldBe "RecentLocations"
+
+            HelixWindowKeymap.handle('m', editor)
+            executedActions.last() shouldBe "MaximizeEditorInSplit"
         } finally {
             HelixActionDelegate.actionExecutor = null
         }

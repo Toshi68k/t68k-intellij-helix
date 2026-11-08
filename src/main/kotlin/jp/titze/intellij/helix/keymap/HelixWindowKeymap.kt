@@ -42,6 +42,11 @@ internal object HelixWindowKeymap {
 
         'o', 'O' -> HelixActionDelegate.executeAction("UnsplitAll", editor)
 
+        'm', 'M' -> {
+            HelixActionDelegate.executeAction("MaximizeEditorInSplit", editor) ||
+                HelixActionDelegate.executeAction("HideAllWindows", editor)
+        }
+
         'n' -> {
             jp.titze.intellij.helix.state.HelixStateManager.getOrCreate(editor).setPendingSequence("C-w n")
             true

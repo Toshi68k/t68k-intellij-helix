@@ -214,6 +214,11 @@ object HelixCommands {
 
             "unsplit", "only" -> HelixActionDelegate.executeAction("UnsplitAll", editor)
 
+            "wmaximize", "maximize" -> {
+                HelixActionDelegate.executeAction("MaximizeEditorInSplit", editor) ||
+                    HelixActionDelegate.executeAction("HideAllWindows", editor)
+            }
+
             "close-split", "close", "clo" -> {
                 HelixActionDelegate.executeAction("Unsplit", editor) ||
                     HelixActionDelegate.executeAction("CloseContent", editor)
