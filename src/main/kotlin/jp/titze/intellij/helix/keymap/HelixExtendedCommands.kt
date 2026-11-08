@@ -522,6 +522,12 @@ internal object HelixExtendedCommands {
         HelixCommandRegistry.register("toggle_breadcrumbs", "Toggle breadcrumbs") { ed, _ ->
             HelixVisualToggleActions.toggleBreadcrumbs(ed)
         }
+        HelixCommandRegistry.register("toggle_color_modes", "Toggle mode-colored status pill") { ed, _ ->
+            HelixVisualToggleActions.handleToggleOption("color-modes", ed)
+        }
+        HelixCommandRegistry.register("toggle_cursor_tint", "Toggle editor cursor tint") { ed, _ ->
+            HelixVisualToggleActions.handleToggleOption("cursor-tint", ed)
+        }
     }
 
     private fun registerWorkflowCommands() {

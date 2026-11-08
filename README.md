@@ -33,9 +33,11 @@ combining the authentic Helix selection-first workflow with native IntelliJ IDEA
     - **Normal** (`NOR`): Block cursor, selection motions, action triggers.
     - **Insert** (`INS`): Standard bar cursor, raw typing delegated to IntelliJ.
     - **Select** (`SEL`): Block cursor, motions extend selections from anchor.
-    - **Status Bar Widget**: Displays active mode, macro recording indicator (`[REC]`), multi-caret count (`3 sel`),
-      active register (`reg: a`), and pending key chords (e.g., `NOR 3 sel reg: a 2 g-`). Clicking the widget opens the
-      interactive Command Palette or Registers picker.
+    - **Status Bar Widget**: Displays active mode in a color-coded pill (`NOR` in Indigo/Cyan, `INS` in Emerald
+      Green, `SEL` in Purple/Magenta when `color-modes = true`), macro recording indicator (`[REC]`),
+      multi-caret count (`3 sel`), active register (`reg: a`), and pending key chords (e.g., `NOR 3 sel reg: a 2 g-`).
+      Clicking the widget opens the interactive Command Palette or Registers picker.
+    - **Cursor Tinting**: Dynamically tints the editor cursor to match the active mode color (`cursor-tint = true`).
     - **Flash-on-Yank**: Instant, subtle Helix-themed visual feedback highlight across single and multiple carets when
       yanking selections.
 - **Command Palette (`:`)**: Lightweight command prompt supporting standard Helix buffer commands (`:w`, `:q`,
@@ -593,8 +595,10 @@ to execute):
 - `:toggle-helix` &rarr; Toggle Helix modal editing globally on or off
 - `:set-option <key> <value>` / `:set <key> <value>` (or `:set <key>=<value>`) &rarr; Set runtime or editor option
   (`soft-wrap.enable`, `inlay-hints.enable`, `whitespace.render`, `line-number`, `sticky-context`, `breadcrumbs.enable`,
-  `search-ui`, `line-nav`, `scratch-mode`)
+  `search-ui`, `line-nav`, `scratch-mode`, `color-modes`, `cursor-tint`)
 - `:toggle-option <key>` / `:toggle <key>` &rarr; Toggle runtime or editor option on/off
+- `:toggle-color-modes` / `:color-modes` &rarr; Toggle mode-colored status pill (`color-modes = true|false`)
+- `:toggle-cursor-tint` / `:cursor-tint` &rarr; Toggle editor cursor tint matching mode color (`cursor-tint = true|false`)
 - `:toggle-soft-wrap` / `:soft-wrap` / `:wrap` &rarr; Toggle visual soft-wrapping in active editor
 - `:toggle-inlay-hints` / `:inlay-hints` / `:hints` &rarr; Toggle inlay parameter and type hints
 - `:toggle-sticky-context` / `:sticky-context` / `:sticky-lines` &rarr; Toggle sticky context header lines
@@ -724,7 +728,7 @@ Structured into 3 cohesive domains with native IntelliJ section dividers:
 - **Activation & Editor Scope**:
   - **Master Enable**: Toggle Helix modal editing across the IDE.
   - **Editor Environments**: Configure active scopes for Main text editors, Diff viewers, Consoles, and Commit messages.
-  - **Color Theme**: Choose between Sync with IDE, Dark, or Light themes for all Helix overlays.
+  - **Color Theme & Mode Colors**: Choose between Sync with IDE, Dark, or Light themes for all Helix overlays. Independently toggle mode-colored status pills (`color-modes = true`) and mode cursor tinting (`cursor-tint = true`).
 - **Editing & Navigation Behavior**:
   - **Line Navigation (Vertical Movement)** *(default: Stock Helix)*: Toggle between **Stock Helix** (`j`/`k` move visual screen lines, `gj`/`gk` jump physical document lines) and **Vim Standard** (`j`/`k` move physical lines, `gj`/`gk` move visual lines). Also toggled via `:toggle-line-nav`.
   - **Scratch Window Splits** *(default: Interactive)*: Configure whether `<C-w>ns` / `<C-w>nv` prompts for file language (`NewScratchFile`) or opens an instant plain-text buffer (`NewScratchBuffer`).

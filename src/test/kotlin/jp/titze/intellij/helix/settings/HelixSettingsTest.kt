@@ -25,6 +25,8 @@ class HelixSettingsTest : BasePlatformTestCase() {
         settings.jumpListMaxEntries = HelixSettings.DEFAULT_JUMP_LIST_MAX_ENTRIES
         settings.promptHistoryMaxEntries = HelixSettings.DEFAULT_PROMPT_HISTORY_MAX_ENTRIES
         settings.colorTheme = HelixColorTheme.SYNC
+        settings.colorModes = true
+        settings.cursorTint = true
         settings.resetToNormalOnTabSwitch = true
         settings.ctrlKeyOverrides = emptyMap()
         jp.titze.intellij.helix.ui.HelixPromptHistory.clear()
@@ -38,6 +40,8 @@ class HelixSettingsTest : BasePlatformTestCase() {
         settings.jumpListMaxEntries shouldBe 100
         settings.promptHistoryMaxEntries shouldBe 100
         settings.colorTheme shouldBe HelixColorTheme.SYNC
+        settings.colorModes.shouldBeTrue()
+        settings.cursorTint.shouldBeTrue()
         settings.resetToNormalOnTabSwitch.shouldBeTrue()
     }
 
