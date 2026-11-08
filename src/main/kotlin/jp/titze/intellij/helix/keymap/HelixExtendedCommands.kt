@@ -30,6 +30,7 @@ internal object HelixExtendedCommands {
         registerDapCommands()
         HelixRefactorCommands.registerAll()
         registerVisualToggleCommands()
+        registerWorkflowCommands()
     }
 
     private fun registerUnimpaired() {
@@ -495,6 +496,37 @@ internal object HelixExtendedCommands {
         }
         HelixCommandRegistry.register("toggle_breadcrumbs", "Toggle breadcrumbs") { ed, _ ->
             HelixVisualToggleActions.toggleBreadcrumbs(ed)
+        }
+    }
+
+    private fun registerWorkflowCommands() {
+        HelixCommandRegistry.register(
+            "reopen_closed_tab",
+            "Reopen last closed editor tab",
+            "ReopenClosedTab",
+        ) { ed, _ ->
+            HelixActionDelegate.executeAction("ReopenClosedTab", ed)
+        }
+        HelixCommandRegistry.register("copy_path", "Copy absolute file path", "CopyAbsolutePath") { ed, _ ->
+            HelixActionDelegate.executeAction("CopyAbsolutePath", ed)
+        }
+        HelixCommandRegistry.register(
+            "copy_relative_path",
+            "Copy relative file path",
+            "CopyContentRootPath",
+        ) { ed, _ ->
+            HelixActionDelegate.executeAction("CopyContentRootPath", ed)
+        }
+        HelixCommandRegistry.register("copy_reference", "Copy symbol reference", "CopyReferencePopup") { ed, _ ->
+            HelixActionDelegate.executeAction("CopyReferencePopup", ed) ||
+                HelixActionDelegate.executeAction("CopyReference", ed)
+        }
+        HelixCommandRegistry.register("branches", "Open Git branches popup", "Git.Branches") { ed, _ ->
+            HelixActionDelegate.executeAction("Git.Branches", ed) ||
+                HelixActionDelegate.executeAction("Vcs.Branches", ed)
+        }
+        HelixCommandRegistry.register("log_open", "Open IDE log file", "ShowLog") { ed, _ ->
+            HelixActionDelegate.executeAction("ShowLog", ed)
         }
     }
 }

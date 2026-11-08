@@ -5,6 +5,20 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+
+- **Essential Developer Workflow & Git Commands**:
+  - Added `:reopen-closed-tab` (`:reopen`, `ReopenClosedTab`) to reopen the most recently closed editor tab.
+  - Added `:copy-path` (`CopyAbsolutePath`), `:copy-relative-path` (`CopyContentRootPath`), and `:copy-reference` (`CopyReferencePopup`) to quickly copy file paths and qualified symbol references.
+  - Added `:branches` (`:git-branches`, `Git.Branches`) to open IntelliJ's Git branches switcher.
+  - Added `:log-open` (`:show-log`, `ShowLog`) to open the IDE log file in the editor (matching Helix's `:log-open`).
+  - Registered all new actions (`reopen_closed_tab`, `copy_path`, `copy_relative_path`, `copy_reference`, `branches`, `log_open`) in `HelixCommandRegistry`.
+
+### Fixed
+
+- **Configuration Documentation Alignment**:
+  - Updated example TOML keymap snippet in `README.md` and `HelixKeymapTest` from `"X" = "extend_line_up"` to `"X" = "extend_line"` to align with registered commands.
+
 ## [0.5.0]
 
 ### Added

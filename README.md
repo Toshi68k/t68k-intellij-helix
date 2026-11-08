@@ -587,6 +587,7 @@ to execute):
 - `:buffer-next` / `:bn [count]` &rarr; Switch to next buffer / tab (`NextTab`)
 - `:buffer-previous` / `:bp [count]` &rarr; Switch to previous buffer / tab (`PreviousTab`)
 - `:new` / `:n` &rarr; Create new scratch buffer / file (`NewScratchFile`)
+- `:reopen-closed-tab` / `:reopen` &rarr; Reopen last closed editor tab (`ReopenClosedTab`)
 - `:find` &rarr; Find in project files (`FindInPath`)
 - `:commit-undo-checkpoint` / `:checkpoint` &rarr; Commit undo checkpoint to break typing history
 - `:toggle-helix` &rarr; Toggle Helix modal editing globally on or off
@@ -630,6 +631,9 @@ to execute):
 - `:reset-diff-change` / `:diffget` / `:diffg` &rarr; Revert VCS hunk under cursor (`Vcs.RollbackChangedLines`)
 - `:reflow` / `:reflow-paragraph` &rarr; Hard-wrap selected lines or comments to editor column margin (`FillParagraph`)
 - `:clear-register [reg]` &rarr; Clear specific named register or all registers (`HelixRegisterManager.clear`)
+- `:copy-path` / `:copy-absolute-path` &rarr; Copy absolute file path to clipboard (`CopyAbsolutePath`)
+- `:copy-relative-path` &rarr; Copy content root relative file path to clipboard (`CopyContentRootPath`)
+- `:copy-reference` &rarr; Copy symbol reference / qualified name to clipboard (`CopyReferencePopup`)
 - `:file-explorer-buffer` &rarr; Reveal active buffer file in project explorer tree (`SelectInProjectView`)
 - `:extend-to-line-bounds` / `:extend_to_line_bounds` &rarr; Extend selection to whole line bounds (`X`)
 - `:shrink-to-line-bounds` / `:shrink_to_line_bounds` &rarr; Shrink selection to line bounds excluding line breaks
@@ -672,6 +676,7 @@ to execute):
 - `:push` / `:git-push` &rarr; Push commits to remote repository (`Vcs.Push`)
 - `:pull` / `:git-pull` / `:update-project` &rarr; Update project / pull from remote (`Vcs.UpdateProject`)
 - `:vcs-log` / `:git-log` &rarr; Show VCS / Git log (`Vcs.Show.Log`)
+- `:branches` / `:git-branches` &rarr; Open Git branches popup (`Git.Branches`)
 - `:goto-implementation` / `:implementation` &rarr; Jump to implementation (`GotoImplementation`, `gi`)
 - `:goto-type-definition` / `:type-definition` &rarr; Jump to type definition (`GotoTypeDeclaration`, `gy`)
 - `:goto-reference` / `:references` &rarr; Find symbol references / usages (`FindUsages`, `gr`)
@@ -687,6 +692,7 @@ to execute):
 - `:replace-in-path` / `:replace-in-files` &rarr; Find and replace in project files (`ReplaceInPath`)
 - `:config-reload` / `:reload-config` &rarr; Reload keymap bindings from `intellij.toml` or `config.toml`
 - `:config-open` &rarr; Open active `intellij.toml` (or custom config) in editor (creates starter template if missing)
+- `:log-open` / `:show-log` &rarr; Open IDE log file in editor (`ShowLog`)
 
 #### Search & Selection UI Modes
 
@@ -773,7 +779,7 @@ VFS file watcher (you can also force a reload at any time via `:config-reload`):
 
 [keys.normal]
 "C-s" = ":w"
-"X" = "extend_line_up"
+"X" = "extend_line"
 "C-d" = ["half_page_down", "align_view_center"]
 "backspace" = "no_op"
 
