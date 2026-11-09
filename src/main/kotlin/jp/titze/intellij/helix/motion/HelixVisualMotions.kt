@@ -5,7 +5,6 @@ package jp.titze.intellij.helix.motion
 
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.ScrollType
-import com.intellij.openapi.editor.VisualPosition
 import jp.titze.intellij.helix.state.HelixMode
 import jp.titze.intellij.helix.state.HelixStateManager
 
@@ -28,13 +27,12 @@ object HelixVisualMotions {
         val maxVisualLine = editor.offsetToVisualPosition(doc.textLength).line
 
         HelixMotionUtils.runForEachCaret(editor) { caret ->
-            val anchor = if (isSelect && caret.hasSelection()) caret.leadSelectionOffset else caret.offset
             val vp = caret.visualPosition
             val targetLine = (vp.line + delta).coerceIn(0, maxVisualLine)
-            val targetVp = VisualPosition(targetLine, vp.column)
-            val targetLogical = editor.visualToLogicalPosition(targetVp)
-            val targetOffset = editor.logicalPositionToOffset(targetLogical).coerceIn(0, doc.textLength)
-            HelixMotionUtils.applyMotion(caret, anchor, targetOffset, isSelect)
+            val effectiveDelta = targetLine - vp.line
+            if (effectiveDelta != 0) {
+                caret.moveCaretRelatively(0, effectiveDelta, isSelect, caret == editor.caretModel.primaryCaret)
+            }
         }
         editor.scrollingModel.scrollToCaret(ScrollType.MAKE_VISIBLE)
     }

@@ -6,6 +6,7 @@ package jp.titze.intellij.helix.motion
 import com.intellij.openapi.editor.Caret
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.ScrollType
+import com.intellij.openapi.util.Key
 import jp.titze.intellij.helix.state.HelixMode
 import jp.titze.intellij.helix.state.HelixStateManager
 
@@ -132,6 +133,9 @@ object HelixMotions {
         editor.scrollingModel.scrollToCaret(ScrollType.MAKE_VISIBLE)
     }
 
+    private data class StickyColumn(val col: Int, val expectedOffset: Int)
+    private val stickyColKey = Key.create<StickyColumn>("HELIX_STICKY_PHYSICAL_COL")
+
     /**
      * k: Move up
      */
@@ -142,12 +146,19 @@ object HelixMotions {
         runForEachCaret(editor) { caret ->
             val anchor = if (isSelect && caret.hasSelection()) caret.leadSelectionOffset else caret.offset
             val line = doc.getLineNumber(caret.offset)
-            val col = caret.offset - doc.getLineStartOffset(line)
+            val currentCol = caret.offset - doc.getLineStartOffset(line)
+            val sticky = caret.getUserData(stickyColKey)
+            val targetCol = if (sticky != null && sticky.expectedOffset == caret.offset) {
+                sticky.col
+            } else {
+                currentCol
+            }
             val targetLine = (line - count).coerceAtLeast(0)
             val targetStart = doc.getLineStartOffset(targetLine)
             val targetEnd = doc.getLineEndOffset(targetLine)
-            val target = (targetStart + col).coerceAtMost(targetEnd)
+            val target = (targetStart + targetCol).coerceAtMost(targetEnd)
             applyMotion(caret, anchor, target, isSelect)
+            caret.putUserData(stickyColKey, StickyColumn(targetCol, target))
         }
         editor.scrollingModel.scrollToCaret(ScrollType.MAKE_VISIBLE)
     }
@@ -163,12 +174,19 @@ object HelixMotions {
         runForEachCaret(editor) { caret ->
             val anchor = if (isSelect && caret.hasSelection()) caret.leadSelectionOffset else caret.offset
             val line = doc.getLineNumber(caret.offset)
-            val col = caret.offset - doc.getLineStartOffset(line)
+            val currentCol = caret.offset - doc.getLineStartOffset(line)
+            val sticky = caret.getUserData(stickyColKey)
+            val targetCol = if (sticky != null && sticky.expectedOffset == caret.offset) {
+                sticky.col
+            } else {
+                currentCol
+            }
             val targetLine = (line + count).coerceAtMost((lineCount - 1).coerceAtLeast(0))
             val targetStart = doc.getLineStartOffset(targetLine)
             val targetEnd = doc.getLineEndOffset(targetLine)
-            val target = (targetStart + col).coerceAtMost(targetEnd)
+            val target = (targetStart + targetCol).coerceAtMost(targetEnd)
             applyMotion(caret, anchor, target, isSelect)
+            caret.putUserData(stickyColKey, StickyColumn(targetCol, target))
         }
         editor.scrollingModel.scrollToCaret(ScrollType.MAKE_VISIBLE)
     }

@@ -1044,6 +1044,145 @@ class HelixMotionsTest : BasePlatformTestCase() {
         caret.logicalPosition.line shouldBe 0
     }
 
+    fun testLineNavigationPreservesHorizontalColumnAcrossShorterLinesInHelixStandard() {
+        HelixSettings.instance.lineNavigationMode = HelixLineNavigationMode.HELIX_STANDARD
+        val text = "// Some long bit of text on this line\n// Some short\n// Some longer bit of text again"
+        myFixture.configureByText("test.txt", text)
+        val editor = myFixture.editor
+        val caret = editor.caretModel.primaryCaret
+
+        caret.moveToLogicalPosition(com.intellij.openapi.editor.LogicalPosition(0, 20))
+        caret.logicalPosition.line shouldBe 0
+        caret.logicalPosition.column shouldBe 20
+
+        // Move down to short line: clamped to line end (col 13)
+        HelixKeyHandler.handleKey('j', editor)
+        caret.logicalPosition.line shouldBe 1
+        caret.logicalPosition.column shouldBe 13
+
+        // Move down to longer line: restored to column 20
+        HelixKeyHandler.handleKey('j', editor)
+        caret.logicalPosition.line shouldBe 2
+        caret.logicalPosition.column shouldBe 20
+
+        // Move up to short line: clamped to line end (col 13)
+        HelixKeyHandler.handleKey('k', editor)
+        caret.logicalPosition.line shouldBe 1
+        caret.logicalPosition.column shouldBe 13
+
+        // Move up to original line: restored to column 20
+        HelixKeyHandler.handleKey('k', editor)
+        caret.logicalPosition.line shouldBe 0
+        caret.logicalPosition.column shouldBe 20
+    }
+
+    fun testLineNavigationPreservesHorizontalColumnAcrossShorterLinesInVimStandard() {
+        HelixSettings.instance.lineNavigationMode = HelixLineNavigationMode.VIM_STANDARD
+        val text = "// Some long bit of text on this line\n// Some short\n// Some longer bit of text again"
+        myFixture.configureByText("test.txt", text)
+        val editor = myFixture.editor
+        val caret = editor.caretModel.primaryCaret
+
+        caret.moveToLogicalPosition(com.intellij.openapi.editor.LogicalPosition(0, 20))
+        caret.logicalPosition.line shouldBe 0
+        caret.logicalPosition.column shouldBe 20
+
+        // Move down to short line: clamped to line end (col 13)
+        HelixKeyHandler.handleKey('j', editor)
+        caret.logicalPosition.line shouldBe 1
+        caret.logicalPosition.column shouldBe 13
+
+        // Move down to longer line: restored to column 20
+        HelixKeyHandler.handleKey('j', editor)
+        caret.logicalPosition.line shouldBe 2
+        caret.logicalPosition.column shouldBe 20
+
+        // Move up to short line: clamped to line end (col 13)
+        HelixKeyHandler.handleKey('k', editor)
+        caret.logicalPosition.line shouldBe 1
+        caret.logicalPosition.column shouldBe 13
+
+        // Move up to original line: restored to column 20
+        HelixKeyHandler.handleKey('k', editor)
+        caret.logicalPosition.line shouldBe 0
+        caret.logicalPosition.column shouldBe 20
+    }
+
+    fun testLineNavigationSelectModePreservesHorizontalColumn() {
+        HelixSettings.instance.lineNavigationMode = HelixLineNavigationMode.HELIX_STANDARD
+        val text = "// Some long bit of text on this line\n// Some short\n// Some longer bit of text again"
+        myFixture.configureByText("test.txt", text)
+        val editor = myFixture.editor
+        val caret = editor.caretModel.primaryCaret
+
+        caret.moveToLogicalPosition(com.intellij.openapi.editor.LogicalPosition(0, 20))
+        val state = jp.titze.intellij.helix.state.HelixStateManager.getOrCreate(editor)
+        state.setMode(jp.titze.intellij.helix.state.HelixMode.SELECT)
+
+        // Select down to short line
+        HelixKeyHandler.handleKey('j', editor)
+        caret.logicalPosition.line shouldBe 1
+        caret.logicalPosition.column shouldBe 13
+        caret.hasSelection() shouldBe true
+
+        // Select down to longer line: head extends to column 20
+        HelixKeyHandler.handleKey('j', editor)
+        caret.logicalPosition.line shouldBe 2
+        caret.logicalPosition.column shouldBe 20
+        caret.leadSelectionOffset shouldBe 20
+    }
+
+    fun testHorizontalMotionResetsStickyColumn() {
+        HelixSettings.instance.lineNavigationMode = HelixLineNavigationMode.HELIX_STANDARD
+        val text = "// Some long bit of text on this line\n// Some short\n// Some longer bit of text again"
+        myFixture.configureByText("test.txt", text)
+        val editor = myFixture.editor
+        val caret = editor.caretModel.primaryCaret
+
+        caret.moveToLogicalPosition(com.intellij.openapi.editor.LogicalPosition(0, 20))
+
+        // Move down to short line (col 13)
+        HelixKeyHandler.handleKey('j', editor)
+        caret.logicalPosition.line shouldBe 1
+        caret.logicalPosition.column shouldBe 13
+
+        // Move left: horizontal motion resets target column
+        HelixKeyHandler.handleKey('h', editor)
+        caret.logicalPosition.column shouldBe 12
+
+        // Move down: should target column 12 on next line, not original 20
+        HelixKeyHandler.handleKey('j', editor)
+        caret.logicalPosition.line shouldBe 2
+        caret.logicalPosition.column shouldBe 12
+    }
+
+    fun testMultiCaretIndependentStickyColumns() {
+        HelixSettings.instance.lineNavigationMode = HelixLineNavigationMode.HELIX_STANDARD
+        val text = "// Some long bit of text on this line\n// Some short\n// Some longer bit of text again"
+        myFixture.configureByText("test.txt", text)
+        val editor = myFixture.editor
+
+        val caretModel = editor.caretModel
+        val primary = caretModel.primaryCaret
+        primary.moveToLogicalPosition(com.intellij.openapi.editor.LogicalPosition(0, 20))
+        val second = caretModel.addCaret(com.intellij.openapi.editor.VisualPosition(0, 5))
+        assertNotNull(second)
+
+        // Move down to short line: primary clamps to 13, second moves to 5
+        HelixKeyHandler.handleKey('j', editor)
+        primary.logicalPosition.line shouldBe 1
+        primary.logicalPosition.column shouldBe 13
+        second!!.logicalPosition.line shouldBe 1
+        second.logicalPosition.column shouldBe 5
+
+        // Move down to longer line: primary restores to 20, second stays at 5
+        HelixKeyHandler.handleKey('j', editor)
+        primary.logicalPosition.line shouldBe 2
+        primary.logicalPosition.column shouldBe 20
+        second.logicalPosition.line shouldBe 2
+        second.logicalPosition.column shouldBe 5
+    }
+
     fun testHelixEventDispatcherArrowKeys() {
         myFixture.configureByText("test.txt", "line 1\nline 2\nline 3")
         val editor = myFixture.editor
