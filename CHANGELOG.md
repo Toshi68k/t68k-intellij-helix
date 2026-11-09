@@ -5,6 +5,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.6.0]
+
 ### Added
 
 - **Relative Line Numbers & Smart Insert Toggle (`line-number`)**:
@@ -63,10 +65,6 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   - Fixed loss of starting horizontal column when navigating up and down through lines shorter than the cursor position.
   - Delegated visual line navigation to IntelliJ's `Caret.moveCaretRelatively`, to maintain position across lines of uneven lengths, soft wraps, tabs, and fonts.
   - Added per-caret sticky column tracking for physical line navigation (`HelixMotions.moveDown` / `moveUp`), ensuring target columns are restored when passing across shorter physical lines and properly invalidated upon horizontal movements.
-- **Status Bar Mode Pill Clean Text Rendering**:
-  - Eliminated duplicate mode indicator text (`[NOR] NOR` &rarr; `[NOR]`) by suppressing the redundant mode string when `color-modes = true`, keeping supplementary indicators (`2 sel`, `[REC]`, `reg: a`) beside the colored pill.
-- **Immediate Settings State & Caret Color Synchronization**:
-  - Fixed live reactivity when toggling the "Enable mode-colored status pill and cursor tint" checkbox in Settings by broadcasting `notifyListeners()` on active editor states, triggering immediate editor component repaints, and properly handling default scheme caret color inheritance restoration.
 - **Configuration Documentation Alignment**:
   - Updated example TOML keymap snippet in `README.md` and `HelixKeymapTest` from `"X" = "extend_line_up"` to `"X" = "extend_line"` to align with registered commands.
 
