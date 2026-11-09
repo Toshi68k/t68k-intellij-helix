@@ -6,6 +6,7 @@ package jp.titze.intellij.helix.command
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.ui.popup.JBPopupFactory
+import com.intellij.ui.CollectionListModel
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBList
 import com.intellij.ui.components.JBScrollPane
@@ -26,7 +27,6 @@ import java.awt.event.KeyEvent
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
 import javax.swing.BorderFactory
-import javax.swing.DefaultListModel
 import javax.swing.JList
 import javax.swing.JPanel
 import javax.swing.ListCellRenderer
@@ -82,16 +82,20 @@ object HelixCommandPopup {
         }
     }
 
-    private class KeycapBadge(text: String) : JPanel(BorderLayout()) {
+    private class KeycapBadge(initialText: String = "") : JPanel(BorderLayout()) {
+        private val label = JBLabel(initialText).apply {
+            font = Font(Font.MONOSPACED, Font.BOLD, JBUI.scaleFontSize(11f))
+            foreground = KEYCAP_FG
+            border = JBUI.Borders.empty(2, 6)
+        }
+
         init {
             isOpaque = false
-            add(
-                JBLabel(text).apply {
-                    font = Font(Font.MONOSPACED, Font.BOLD, JBUI.scaleFontSize(11f))
-                    foreground = KEYCAP_FG
-                    border = JBUI.Borders.empty(2, 6)
-                },
-            )
+            add(label, BorderLayout.CENTER)
+        }
+
+        fun setText(text: String) {
+            label.text = text
         }
 
         override fun paintComponent(g: Graphics) {
@@ -160,14 +164,14 @@ object HelixCommandPopup {
 
         mainPanel.add(northPanel, BorderLayout.NORTH)
 
-        val listModel = DefaultListModel<HelixCommandItem>()
-        COMMANDS.forEach { listModel.addElement(it) }
+        val listModel = CollectionListModel(COMMANDS)
 
         val list = JBList(listModel)
         list.selectionMode = ListSelectionModel.SINGLE_SELECTION
         list.selectedIndex = 0
         list.isOpaque = false
         list.cursor = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
+        list.prototypeCellValue = COMMANDS.firstOrNull()
         list.cellRenderer = object : ListCellRenderer<HelixCommandItem> {
             private val cellPanel = object : JPanel(BorderLayout(JBUI.scale(10), 0)) {
                 var isSelectedRow = false
@@ -189,7 +193,7 @@ object HelixCommandPopup {
                 }
             }
 
-            private val badgeHolder = JPanel(BorderLayout()).apply { isOpaque = false }
+            private val badge = KeycapBadge()
             private val textPanel = JPanel(BorderLayout(JBUI.scale(6), 0)).apply { isOpaque = false }
             private val descLabel = JBLabel().apply {
                 font = JBUI.Fonts.label().deriveFont(Font.PLAIN, JBUI.scaleFontSize(12.5f).toFloat())
@@ -201,7 +205,7 @@ object HelixCommandPopup {
             }
 
             init {
-                cellPanel.add(badgeHolder, BorderLayout.WEST)
+                cellPanel.add(badge, BorderLayout.WEST)
                 textPanel.add(descLabel, BorderLayout.WEST)
                 textPanel.add(aliasLabel, BorderLayout.EAST)
                 cellPanel.add(textPanel, BorderLayout.CENTER)
@@ -215,9 +219,8 @@ object HelixCommandPopup {
                 cellHasFocus: Boolean,
             ): Component {
                 cellPanel.isSelectedRow = isSelected
-                badgeHolder.removeAll()
                 val cmdName = value?.name ?: ""
-                badgeHolder.add(KeycapBadge(":$cmdName"), BorderLayout.CENTER)
+                badge.setText(":$cmdName")
 
                 descLabel.text = value?.description ?: ""
                 aliasLabel.text = if (value != null && value.aliases.isNotEmpty()) {
@@ -260,12 +263,13 @@ object HelixCommandPopup {
             .setShowShadow(true)
             .createPopup()
 
+        var lastQuery: String? = null
+
         fun updateFilter() {
             val query = textField.text.trim().removePrefix(":")
-            listModel.clear()
-            for (cmd in HelixCommands.filterCommands(query)) {
-                listModel.addElement(cmd)
-            }
+            if (query == lastQuery) return
+            lastQuery = query
+            listModel.replaceAll(HelixCommands.filterCommands(query))
             if (!listModel.isEmpty) {
                 list.selectedIndex = 0
             }

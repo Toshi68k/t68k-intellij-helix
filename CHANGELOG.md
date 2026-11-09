@@ -51,6 +51,12 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   - Added `:log-open` (`:show-log`, `ShowLog`) to open the IDE log file in the editor (matching Helix's `:log-open`).
   - Registered all new actions (`reopen_closed_tab`, `copy_path`, `copy_relative_path`, `copy_reference`, `branches`, `log_open`) in `HelixCommandRegistry`.
 
+### Changed
+
+- **Command Palette Search & UI Performance**:
+  - Significantly reduced search latency and eliminated typing stutter in the `:` command palette.
+  - Optimized command matching, scoring, and Swing list rendering to provide instant, fluid filtering across all commands.
+
 ### Fixed
 
 - **Status Bar Mode Pill Clean Text Rendering**:
