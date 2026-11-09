@@ -28,11 +28,23 @@
 <ul>
   <li>
     <b>Interactive Which-Key Popups:</b> 
-    Pressing <kbd>Space</kbd>, <code>g</code>, <code>m</code>, <code>[</code>, <code>]</code>, <code>z</code>, <code>Z</code>, <code>Ctrl+w</code>, or <code>"</code> reveals an instant visual chord menu in authentic <code>snake_case</code>. Press <kbd>Tab</kbd> to inspect underlying IntelliJ Action IDs in real time, or bypass the popup entirely with rapid muscle memory.
+    Pressing <kbd>Space</kbd> (with dedicated refactor submenu <code>space m</code>), <code>g</code>, <code>m</code>, <code>[</code>, <code>]</code>, <code>z</code>, <code>Z</code>, <code>Ctrl+w</code>, or <code>"</code> reveals an instant visual chord menu in authentic <code>snake_case</code>. Press <kbd>Tab</kbd> to inspect underlying IntelliJ Action IDs in real time, or bypass the popup entirely with rapid muscle memory.
+  </li>
+  <li>
+    <b>Configurable Keymaps &amp; Live Reload (<code>config.toml</code> / <code>intellij.toml</code>):</b> 
+    Authentic Helix key rebinding via <code>~/.config/helix/intellij.toml</code> (or fallback <code>config.toml</code>) with a zero-dependency pure Kotlin TOML parser. Supports multi-command macros, direct IntelliJ actions (<code>:action &lt;ActionId&gt;</code>), key unbinding (<code>"no_op"</code>), and automatic VFS live reloading on save without restarting the IDE.
+  </li>
+  <li>
+    <b>Visual Keymap Customizer &amp; Conflict Detection:</b> 
+    Interactive Keybindings Explorer in Settings with chord filters, real-time search, shortcut recording (<i>Find by Shortcut...</i>), provenance badges, and trie prefix conflict/shadowing diagnostics. Add, edit, reset, or disable shortcuts via a modal dialog with safe, non-destructive TOML persistence.
   </li>
   <li>
     <b>Native Multi-Caret &amp; Piece-Wise Registers:</b> 
-    Add cursors vertically (<code>Alt+C</code> / <code>C</code>), split on regex patterns or newlines (<code>s</code>, <code>S</code>, <code>Alt+s</code>), filter selections (<code>K</code>, <code>Alt+K</code>), and align into columns (<code>&amp;</code>). Supports named (<code>"a</code>–<code>"z</code>), clipboard (<code>"+</code>), black hole (<code>"_</code>), and selection-index (<code>"#</code>) registers with authentic 1:1 piece-wise multi-caret pasting.
+    Add cursors vertically (<code>Alt+C</code> / <code>C</code>), split on regex patterns or newlines (<code>s</code>, <code>S</code>, <code>Alt+s</code>), filter selections (<code>K</code>, <code>Alt+K</code>), select occurrences (<code>add_selection_next</code> / <code>select_all_occurrences</code>), and align into columns (<code>&amp;</code>). Supports named (<code>"a</code>–<code>"z</code>), clipboard (<code>"+</code>), black hole (<code>"_</code>), selection-index (<code>"#</code>), and last insert (<code>".</code>) registers with authentic 1:1 piece-wise multi-caret pasting.
+  </li>
+  <li>
+    <b>Helix Inline Macros (<code>@</code> Syntax) &amp; Macro Picker:</b> 
+    Full support for Helix's canonical <code>@...</code> inline macro playback syntax in key bindings (e.g. <code>"\"" = "@f\"lmi\""</code>), keystroke tokenization with special keys (<code>&lt;ret&gt;</code>, <code>&lt;esc&gt;</code>, <code>&lt;A-o&gt;</code>), and an interactive macro picker popup (<code>:macros</code>) with previews and fuzzy search.
   </li>
   <li>
     <b>Surround &amp; PSI Textobjects (<code>m</code> menu):</b> 
@@ -40,36 +52,43 @@
   </li>
   <li>
     <b>AST-Aware &amp; Unimpaired Navigation:</b> 
-    Expand/shrink selection by syntax tree scope (<code>Alt+o</code> / <code>Alt+i</code>), navigate AST sibling elements (<code>Alt+p</code> / <code>Alt+n</code>), or jump between functions, diagnostics, comments, and VCS changes via <code>[</code> and <code>]</code> chords.
+    Expand/shrink selection by syntax tree scope (<code>Alt+o</code> / <code>Alt+i</code>), navigate AST sibling elements (<code>Alt+p</code> / <code>Alt+n</code>), move to parent boundaries (<code>Alt+b</code> / <code>Alt+e</code>), or jump between functions, diagnostics, comments, VCS changes, paragraphs, and XML elements via <code>[</code> and <code>]</code> chords.
+  </li>
+  <li>
+    <b>Helix Gutter Line Numbers &amp; Visual Modes:</b> 
+    Full Helix line number support: <code>Absolute</code>, <code>Relative</code>, <code>Hybrid</code>, and <code>Smart</code> (relative in Normal/Select mode with automatic absolute fallback in Insert mode). Mode-colored status bar pills (Indigo Normal, Emerald Insert, Magenta Select), dynamic editor cursor tinting (<code>cursor-tint = true</code>), and flash-on-yank feedback.
   </li>
   <li>
     <b>Helix Command Palette &amp; Shell Filters (<code>:</code>):</b> 
-    Signature Helix prompt with live fuzzy completion for buffer actions (<code>:w</code>, <code>:q</code>, <code>:vsp</code>, <code>:format</code>, <code>:sort</code>, <code>:jumps</code>, and DAP debugging) plus external shell piping (<code>|</code>, <code>!</code>, <code>$</code>).
-  </li>
-  <li>
-    <b>Status Bar Widget &amp; Visual Feedback:</b> 
-    Live indicator displaying active mode (<code>NOR</code>, <code>INS</code>, <code>SEL</code>), caret counts, active register, and macro state, complete with flash-on-yank feedback.
+    Fast fuzzy completion for buffer actions, shell piping (<code>|</code>, <code>!</code>, <code>$</code>), numeric sorting (<code>:sort -n</code>), window &amp; scratch splits (<code>Ctrl+w n s</code> / <code>n v</code>), view maximization (<code>:maximize-view</code>), tab management (<code>:close-to-right</code>, <code>:close-unmodified</code>, <code>:reopen-closed-tab</code>), Git commands (<code>:branches</code>, <code>:blame</code>, <code>:diff</code>, <code>:commit</code>), DAP debugging, and runtime option controls (<code>:set-option</code>, <code>:toggle-option</code> for soft-wrap, inlay hints, whitespace, etc.).
   </li>
 </ul>
 
 <h3>Space Leader Highlights</h3>
 <ul>
   <li><b><kbd>Space</kbd> + <code>f</code> / <code>b</code></b> → File picker (<code>GotoFile</code>) / Buffer switcher (<code>RecentFiles</code>)</li>
+  <li><b><kbd>Space</kbd> + <code>B</code></b> → Recent Locations with visual code snippet previews (<code>RecentLocations</code>)</li>
+  <li><b><kbd>Space</kbd> + <code>m</code></b> → Refactor submenu (extract variable/method/constant, inline, rename, change signature)</li>
   <li><b><kbd>Space</kbd> + <code>/</code></b> → Project-wide text search (<code>FindInPath</code>)</li>
   <li><b><kbd>Space</kbd> + <code>s</code> / <code>S</code></b> → Document structure &amp; workspace symbol search</li>
   <li><b><kbd>Space</kbd> + <code>a</code> / <code>r</code></b> → Code actions (<kbd>Alt+Enter</kbd>) &amp; symbol rename</li>
   <li><b><kbd>Space</kbd> + <code>d</code> / <code>D</code></b> → Diagnostic inspection &amp; Problems tool window</li>
-  <li><b><kbd>Space</kbd> + <code>w</code></b> → Window and split layout management</li>
+  <li><b><kbd>Space</kbd> + <code>j</code></b> → Interactive Jumplist picker popup</li>
+  <li><b><kbd>Space</kbd> + <code>w</code></b> → Window &amp; split layout management (including scratch splits and maximize view)</li>
   <li><b><kbd>Space</kbd> + <code>G</code></b> → Interactive DAP debugging menu (breakpoints, stepping, eval)</li>
   <li><b><kbd>Space</kbd> + <code>k</code> / <code>?</code></b> → Documentation hover &amp; command search</li>
 </ul>
 
-<h3>Configuration &amp; Ctrl Handling</h3>
+<h3>Configuration &amp; Tabbed Settings</h3>
 <p>
-  Customize activation scope (diff viewers, console, commit messages), platform-aware Ctrl key routing (Helix vs. IDE ownership per mode), Which-Key hint styles, vertical navigation (Stock Helix visual vs. physical lines), and color themes under:
-  <br/>
-  <b>Settings → Tools → Helix Keymap</b>
+  Configure all plugin behavior under <b>Settings → Tools → Helix Keymap</b> across 4 organized tabs:
 </p>
+<ul>
+  <li><b>General:</b> Activation scope (diff viewers, console, commit messages), line number modes (Relative/Hybrid/Smart), visual feedback (color modes, cursor tinting, flash-on-yank), and navigation styles.</li>
+  <li><b>Keybindings:</b> Visual keymap browser, keystroke recorder, conflict warnings, and custom binding dialogs.</li>
+  <li><b>Ctrl Keys:</b> Platform-aware Ctrl key routing (Helix vs. IDE ownership per mode).</li>
+  <li><b>Config File (TOML):</b> Dedicated <code>intellij.toml</code> path management, CLI conflict guards, and live reload diagnostics.</li>
+</ul>
 
 <h3>Documentation &amp; Support</h3>
 <p>
