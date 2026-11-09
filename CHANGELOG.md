@@ -59,6 +59,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- **Sticky Horizontal Position on Vertical Line Navigation (`j`/`k`, arrows, `gj`/`gk`)**:
+  - Fixed loss of starting horizontal column when navigating up and down through lines shorter than the cursor position.
+  - Delegated visual line navigation to IntelliJ's `Caret.moveCaretRelatively`, to maintain position across lines of uneven lengths, soft wraps, tabs, and fonts.
+  - Added per-caret sticky column tracking for physical line navigation (`HelixMotions.moveDown` / `moveUp`), ensuring target columns are restored when passing across shorter physical lines and properly invalidated upon horizontal movements.
 - **Status Bar Mode Pill Clean Text Rendering**:
   - Eliminated duplicate mode indicator text (`[NOR] NOR` &rarr; `[NOR]`) by suppressing the redundant mode string when `color-modes = true`, keeping supplementary indicators (`2 sel`, `[REC]`, `reg: a`) beside the colored pill.
 - **Immediate Settings State & Caret Color Synchronization**:
