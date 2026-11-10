@@ -98,6 +98,7 @@
     ]]></description>
 
     <depends>com.intellij.modules.platform</depends>
+    <!--suppress PluginXmlValidity -->
     <incompatible-with>IdeaVIM</incompatible-with>
 
     <resource-bundle>messages.HelixBundle</resource-bundle>
@@ -106,22 +107,17 @@
         <editorFactoryListener implementation="jp.titze.intellij.helix.editor.HelixEditorListener"/>
         <statusBarWidgetFactory implementation="jp.titze.intellij.helix.ui.HelixStatusBarWidgetFactory"
                                 id="jp.titze.intellij.helix.status"/>
-        <applicationService serviceImplementation="jp.titze.intellij.helix.settings.HelixSettings"/>
-        <applicationService serviceImplementation="jp.titze.intellij.helix.editor.HelixPluginLifecycle"/>
         <applicationConfigurable parentId="tools"
                                  instance="jp.titze.intellij.helix.settings.HelixConfigurable"
                                  id="jp.titze.intellij.helix.settings"
-                                 displayName="Helix Keymap"
                                  key="settings.displayName"/>
         <applicationConfigurable parentId="jp.titze.intellij.helix.settings"
                                  instance="jp.titze.intellij.helix.settings.HelixKeybindingsConfigurable"
                                  id="jp.titze.intellij.helix.settings.keybindings"
-                                 displayName="Keybindings"
                                  key="settings.keybindings.displayName"/>
         <applicationConfigurable parentId="jp.titze.intellij.helix.settings"
                                  instance="jp.titze.intellij.helix.settings.HelixConfigFileConfigurable"
                                  id="jp.titze.intellij.helix.settings.config"
-                                 displayName="Configuration (TOML)"
                                  key="settings.config.displayName"/>
     </extensions>
 
