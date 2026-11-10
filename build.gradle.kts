@@ -50,7 +50,7 @@ kotlin {
     compilerOptions {
         jvmTarget.set(JvmTarget.JVM_21)
         apiVersion.set(KotlinVersion.KOTLIN_2_1)
-        languageVersion.set(KotlinVersion.KOTLIN_2_1)
+        languageVersion.set(KotlinVersion.KOTLIN_2_2)
         jvmDefault.set(JvmDefaultMode.NO_COMPATIBILITY)
     }
 }

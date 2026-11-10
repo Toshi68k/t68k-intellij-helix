@@ -16,6 +16,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
     - **`Keybindings` (Child Tree Leaf)**: Dedicated full-screen sub-page in the Settings tree hosting the Visual Keymap Browser and OS-level Ctrl Key routing tabs.
     - **`Configuration (TOML)` (Child Tree Leaf)**: Dedicated sub-page in the Settings tree for `intellij.toml` path management, live reload diagnostics, and CLI compatibility checks.
   - Decomposed the monolithic 610-line `HelixGeneralSettingsPanel` into modular, single-responsibility panels (`HelixAppearancePanel`, `HelixBehaviorPanel`, `HelixGeneralSettingsPanel`).
+- **Kotlin Language Version**:
+  - Updated Kotlin compiler `languageVersion` to `2.2` in `build.gradle.kts` while maintaining `apiVersion` at `2.1` for IntelliJ platform compatibility.
 
 ### Fixed
 
