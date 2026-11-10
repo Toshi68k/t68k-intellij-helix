@@ -5,6 +5,11 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Fixed
+
+- **IntelliJ Platform API Compatibility**:
+  - Replaced scheduled-for-removal `SimpleListCellRenderer.create(String, Function)` in the General Settings panel with `SimpleListCellRenderer.create(Customizer)` to ensure clean compatibility with IntelliJ 2026.x and beyond.
+
 ## [0.6.0]
 
 ### Added

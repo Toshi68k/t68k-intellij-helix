@@ -224,7 +224,9 @@ class HelixGeneralSettingsPanel {
         section.add(titleLabel, BorderLayout.NORTH)
 
         val combo = ComboBox(HelixLineNumberMode.entries.toTypedArray())
-        combo.renderer = SimpleListCellRenderer.create("") { it.displayName }
+        combo.renderer = SimpleListCellRenderer.create { label, value, _ ->
+            label.text = value?.displayName.orEmpty()
+        }
         lineNumberModeComboBox = combo
 
         val comboPanel = JPanel(BorderLayout())
