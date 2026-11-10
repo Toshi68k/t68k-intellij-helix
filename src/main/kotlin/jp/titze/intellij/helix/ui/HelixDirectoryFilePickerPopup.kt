@@ -12,6 +12,7 @@ import com.intellij.openapi.ui.popup.JBPopupFactory
 import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.ui.CollectionListModel
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBList
 import com.intellij.ui.components.JBScrollPane
@@ -33,7 +34,6 @@ import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
 import javax.swing.BorderFactory
 import javax.swing.BoxLayout
-import javax.swing.DefaultListModel
 import javax.swing.JList
 import javax.swing.JPanel
 import javax.swing.ListCellRenderer
@@ -43,11 +43,13 @@ import javax.swing.event.DocumentEvent
 import javax.swing.event.DocumentListener
 
 data class DirectoryFileItem(val file: VirtualFile, val relativePath: String, val fileName: String) {
-    fun matches(query: String): Boolean {
-        if (query.isEmpty()) return true
-        val q = query.trim().lowercase()
-        val pathLower = relativePath.lowercase()
-        val nameLower = fileName.lowercase()
+    val pathLower: String = relativePath.lowercase()
+    val nameLower: String = fileName.lowercase()
+
+    fun matches(query: String): Boolean = matchesNormalized(query.trim().lowercase())
+
+    internal fun matchesNormalized(q: String): Boolean {
+        if (q.isEmpty()) return true
         if (nameLower.contains(q) || pathLower.contains(q)) return true
         val tokens = q.split(" ").filter { it.isNotEmpty() }
         if (tokens.size > 1) {
@@ -125,16 +127,20 @@ object HelixDirectoryFilePickerPopup {
         }
     }
 
-    private class KeycapBadge(text: String) : JPanel(BorderLayout()) {
+    private class KeycapBadge(initialText: String = "") : JPanel(BorderLayout()) {
+        private val label = JBLabel(initialText).apply {
+            font = Font(Font.MONOSPACED, Font.BOLD, JBUI.scaleFontSize(11f))
+            foreground = KEYCAP_FG
+            border = JBUI.Borders.empty(2, 6)
+        }
+
         init {
             isOpaque = false
-            add(
-                JBLabel(text).apply {
-                    font = Font(Font.MONOSPACED, Font.BOLD, JBUI.scaleFontSize(11f))
-                    foreground = KEYCAP_FG
-                    border = JBUI.Borders.empty(2, 6)
-                },
-            )
+            add(label, BorderLayout.CENTER)
+        }
+
+        fun setText(text: String) {
+            label.text = text
         }
 
         override fun paintComponent(g: Graphics) {
@@ -178,7 +184,7 @@ object HelixDirectoryFilePickerPopup {
         }
 
         visit(baseDir)
-        return items.sortedBy { it.relativePath.lowercase() }
+        return items.sortedBy { it.pathLower }
     }
 
     fun show(editor: Editor) {
@@ -210,10 +216,9 @@ object HelixDirectoryFilePickerPopup {
         }
         mainPanel.add(northPanel, BorderLayout.NORTH)
 
-        val listModel = DefaultListModel<DirectoryFileItem>().apply {
-            allItems.forEach { addElement(it) }
-        }
+        val listModel = CollectionListModel(allItems)
         val list = createFileList(listModel)
+        list.prototypeCellValue = allItems.firstOrNull()
         val scrollPane = JBScrollPane(list).apply {
             border = JBUI.Borders.empty(4, 6)
             isOpaque = false
@@ -273,7 +278,7 @@ object HelixDirectoryFilePickerPopup {
         add(inputPanel, BorderLayout.CENTER)
     }
 
-    private fun createFileList(listModel: DefaultListModel<DirectoryFileItem>): JBList<DirectoryFileItem> {
+    private fun createFileList(listModel: CollectionListModel<DirectoryFileItem>): JBList<DirectoryFileItem> {
         val list = JBList(listModel)
         list.selectionMode = ListSelectionModel.SINGLE_SELECTION
         list.selectedIndex = 0
@@ -305,7 +310,7 @@ object HelixDirectoryFilePickerPopup {
                 }
             }
 
-            private val badgeHolder = JPanel(BorderLayout()).apply { isOpaque = false }
+            private val badge = KeycapBadge()
             private val textPanel = JPanel(BorderLayout(JBUI.scale(6), 0)).apply { isOpaque = false }
             private val nameLabel = JBLabel().apply {
                 font = JBUI.Fonts.label().deriveFont(Font.BOLD, JBUI.scaleFontSize(12f).toFloat())
@@ -317,7 +322,7 @@ object HelixDirectoryFilePickerPopup {
             }
 
             init {
-                cellPanel.add(badgeHolder, BorderLayout.WEST)
+                cellPanel.add(badge, BorderLayout.WEST)
                 val westDetails = JPanel().apply {
                     layout = BoxLayout(this, BoxLayout.X_AXIS)
                     isOpaque = false
@@ -336,10 +341,9 @@ object HelixDirectoryFilePickerPopup {
                 cellHasFocus: Boolean,
             ): Component {
                 cellPanel.isSelectedRow = isSelected
-                badgeHolder.removeAll()
                 if (value != null) {
                     val ext = value.file.extension ?: "file"
-                    badgeHolder.add(KeycapBadge(ext), BorderLayout.CENTER)
+                    badge.setText(ext)
                     nameLabel.text = value.fileName
                     pathLabel.text = value.relativePath
                 }
@@ -360,17 +364,21 @@ object HelixDirectoryFilePickerPopup {
     private fun setupListeners(
         textField: JBTextField,
         list: JBList<DirectoryFileItem>,
-        listModel: DefaultListModel<DirectoryFileItem>,
+        listModel: CollectionListModel<DirectoryFileItem>,
         allItems: List<DirectoryFileItem>,
         popup: JBPopup,
         editor: Editor,
     ) {
+        var lastQuery: String? = null
         val filterAction = {
             val q = textField.text.trim()
-            listModel.clear()
-            val filtered = allItems.filter { it.matches(q) }
-            filtered.forEach { listModel.addElement(it) }
-            if (listModel.size > 0) list.selectedIndex = 0
+            if (q != lastQuery) {
+                lastQuery = q
+                val qLower = q.lowercase()
+                val filtered = if (qLower.isEmpty()) allItems else allItems.filter { it.matchesNormalized(qLower) }
+                listModel.replaceAll(filtered)
+                if (listModel.size > 0) list.selectedIndex = 0
+            }
         }
 
         textField.document.addDocumentListener(object : DocumentListener {
@@ -413,7 +421,7 @@ object HelixDirectoryFilePickerPopup {
     private fun handleKeyNavigation(
         e: KeyEvent,
         list: JBList<DirectoryFileItem>,
-        listModel: DefaultListModel<DirectoryFileItem>,
+        listModel: CollectionListModel<DirectoryFileItem>,
         popup: JBPopup,
         selectCurrent: () -> Unit,
     ) {
@@ -468,7 +476,7 @@ object HelixDirectoryFilePickerPopup {
 
     private fun navigateList(
         list: JBList<DirectoryFileItem>,
-        listModel: DefaultListModel<DirectoryFileItem>,
+        listModel: CollectionListModel<DirectoryFileItem>,
         delta: Int,
     ) {
         if (listModel.size == 0) return
