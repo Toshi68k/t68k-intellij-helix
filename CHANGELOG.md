@@ -16,6 +16,13 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
     - **`Keybindings` (Child Tree Leaf)**: Dedicated full-screen sub-page in the Settings tree hosting the Visual Keymap Browser and OS-level Ctrl Key routing tabs.
     - **`Configuration (TOML)` (Child Tree Leaf)**: Dedicated sub-page in the Settings tree for `intellij.toml` path management, live reload diagnostics, and CLI compatibility checks.
   - Decomposed the monolithic 610-line `HelixGeneralSettingsPanel` into modular, single-responsibility panels (`HelixAppearancePanel`, `HelixBehaviorPanel`, `HelixGeneralSettingsPanel`).
+- **UI Popup Performance & List Rendering Overhaul**:
+  - Eliminated typing stutter, EDT allocations, and list churn across all high-volume popups (`HelixDirectoryFilePickerPopup`, `HelixMacrosPopup`, `HelixRegistersPopup`, and `HelixJumplistPopup`).
+  - Switched list backings from `DefaultListModel` with sequential clear/add cycles to `CollectionListModel` with atomic `replaceAll(...)` batch events.
+  - Configured `prototypeCellValue` on list components to bypass expensive multi-hundred element cell size calculations during layout and search.
+  - Made `KeycapBadge` renderer components reusable in place with dynamic text and state updating (`setText(...)` / `update(...)`), eliminating panel and label re-allocations on every scroll and repaint.
+  - Precomputed normalized lowercase fields for data items (`DirectoryFileItem`, `HelixMacroItem`, `HelixRegisterItem`, `JumpListItem`) and single-pass search query normalization.
+  - Bounded register search buffer matching to prevent UI freezes when large multi-megabyte clipboard contents are stored.
 - **Kotlin Language Version**:
   - Updated Kotlin compiler `languageVersion` to `2.2` in `build.gradle.kts` while maintaining `apiVersion` at `2.1` for IntelliJ platform compatibility.
 

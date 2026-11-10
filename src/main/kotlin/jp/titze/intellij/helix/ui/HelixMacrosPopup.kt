@@ -7,6 +7,7 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.ui.popup.JBPopup
 import com.intellij.openapi.ui.popup.JBPopupFactory
+import com.intellij.ui.CollectionListModel
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBList
 import com.intellij.ui.components.JBScrollPane
@@ -30,7 +31,6 @@ import java.awt.event.KeyEvent
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
 import javax.swing.BorderFactory
-import javax.swing.DefaultListModel
 import javax.swing.JList
 import javax.swing.JPanel
 import javax.swing.ListCellRenderer
@@ -91,16 +91,20 @@ object HelixMacrosPopup {
         }
     }
 
-    private class KeycapBadge(text: String) : JPanel(BorderLayout()) {
+    private class KeycapBadge(initialText: String = "") : JPanel(BorderLayout()) {
+        private val label = JBLabel(initialText).apply {
+            font = Font(Font.MONOSPACED, Font.BOLD, JBUI.scaleFontSize(11f))
+            foreground = KEYCAP_FG
+            border = JBUI.Borders.empty(2, 6)
+        }
+
         init {
             isOpaque = false
-            add(
-                JBLabel(text).apply {
-                    font = Font(Font.MONOSPACED, Font.BOLD, JBUI.scaleFontSize(11f))
-                    foreground = KEYCAP_FG
-                    border = JBUI.Borders.empty(2, 6)
-                },
-            )
+            add(label, BorderLayout.CENTER)
+        }
+
+        fun setText(text: String) {
+            label.text = text
         }
 
         override fun paintComponent(g: Graphics) {
@@ -137,10 +141,9 @@ object HelixMacrosPopup {
         }
         mainPanel.add(northPanel, BorderLayout.NORTH)
 
-        val listModel = DefaultListModel<HelixMacroItem>().apply {
-            allItems.forEach { addElement(it) }
-        }
+        val listModel = CollectionListModel(allItems)
         val list = createMacroList(listModel)
+        list.prototypeCellValue = allItems.firstOrNull()
         val scrollPane = JBScrollPane(list).apply {
             border = JBUI.Borders.empty(4, 6)
             isOpaque = false
@@ -195,7 +198,7 @@ object HelixMacrosPopup {
         add(inputPanel, BorderLayout.CENTER)
     }
 
-    private fun createMacroList(listModel: DefaultListModel<HelixMacroItem>): JBList<HelixMacroItem> {
+    private fun createMacroList(listModel: CollectionListModel<HelixMacroItem>): JBList<HelixMacroItem> {
         val list = JBList(listModel)
         list.selectionMode = ListSelectionModel.SINGLE_SELECTION
         list.selectedIndex = 0
@@ -225,7 +228,7 @@ object HelixMacrosPopup {
             }
         }
 
-        private val badgeHolder = JPanel(BorderLayout()).apply { isOpaque = false }
+        private val badge = KeycapBadge()
         private val textContainer = JPanel(BorderLayout(0, JBUI.scale(2))).apply {
             isOpaque = false
         }
@@ -254,7 +257,7 @@ object HelixMacrosPopup {
             textContainer.add(topRow, BorderLayout.NORTH)
             textContainer.add(bottomRow, BorderLayout.CENTER)
 
-            cellPanel.add(badgeHolder, BorderLayout.WEST)
+            cellPanel.add(badge, BorderLayout.WEST)
             cellPanel.add(textContainer, BorderLayout.CENTER)
         }
 
@@ -266,10 +269,9 @@ object HelixMacrosPopup {
             cellHasFocus: Boolean,
         ): Component {
             cellPanel.isSelectedRow = isSelected
-            badgeHolder.removeAll()
             if (value != null) {
                 val badgeText = if (value.isRecent) "REC" else "M"
-                badgeHolder.add(KeycapBadge(badgeText), BorderLayout.CENTER)
+                badge.setText(badgeText)
                 nameLabel.text = value.name
                 tagLabel.text = "${value.actionCount} actions"
                 val preview = value.previewText
@@ -286,17 +288,21 @@ object HelixMacrosPopup {
     private fun setupListeners(
         textField: JBTextField,
         list: JBList<HelixMacroItem>,
-        listModel: DefaultListModel<HelixMacroItem>,
+        listModel: CollectionListModel<HelixMacroItem>,
         allItems: List<HelixMacroItem>,
         popup: JBPopup,
         editor: Editor,
     ) {
+        var lastQuery: String? = null
         val filterAction = {
             val q = textField.text.trim()
-            listModel.clear()
-            val filtered = allItems.filter { it.matches(q) }
-            filtered.forEach { listModel.addElement(it) }
-            if (listModel.size > 0) list.selectedIndex = 0
+            if (q != lastQuery) {
+                lastQuery = q
+                val qLower = q.lowercase()
+                val filtered = if (qLower.isEmpty()) allItems else allItems.filter { it.matchesNormalized(qLower) }
+                listModel.replaceAll(filtered)
+                if (listModel.size > 0) list.selectedIndex = 0
+            }
         }
 
         textField.document.addDocumentListener(object : DocumentListener {
@@ -335,7 +341,7 @@ object HelixMacrosPopup {
     private fun handleKeyNavigation(
         e: KeyEvent,
         list: JBList<HelixMacroItem>,
-        listModel: DefaultListModel<HelixMacroItem>,
+        listModel: CollectionListModel<HelixMacroItem>,
         popup: JBPopup,
         selectCurrent: () -> Unit,
         openEditMacros: () -> Unit,
@@ -396,7 +402,11 @@ object HelixMacrosPopup {
         }
     }
 
-    private fun moveSelection(list: JBList<HelixMacroItem>, listModel: DefaultListModel<HelixMacroItem>, delta: Int) {
+    private fun moveSelection(
+        list: JBList<HelixMacroItem>,
+        listModel: CollectionListModel<HelixMacroItem>,
+        delta: Int,
+    ) {
         if (listModel.size == 0) return
         val current = list.selectedIndex
         val next = (current + delta).coerceIn(0, listModel.size - 1)

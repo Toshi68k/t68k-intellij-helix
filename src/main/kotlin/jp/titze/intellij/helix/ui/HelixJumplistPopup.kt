@@ -6,6 +6,7 @@ package jp.titze.intellij.helix.ui
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.ui.popup.JBPopupFactory
+import com.intellij.ui.CollectionListModel
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBList
 import com.intellij.ui.components.JBScrollPane
@@ -30,7 +31,6 @@ import java.awt.event.MouseEvent
 import javax.swing.BorderFactory
 import javax.swing.Box
 import javax.swing.BoxLayout
-import javax.swing.DefaultListModel
 import javax.swing.JList
 import javax.swing.JPanel
 import javax.swing.ListCellRenderer
@@ -40,13 +40,19 @@ import javax.swing.event.DocumentEvent
 import javax.swing.event.DocumentListener
 
 data class JumpListItem(val originalIndex: Int, val entry: HelixJumpEntry, val isCurrent: Boolean) {
-    fun matches(query: String): Boolean {
-        if (query.isEmpty()) return true
-        val q = query.lowercase()
-        return entry.virtualFile.name.lowercase().contains(q) ||
-            entry.virtualFile.path.lowercase().contains(q) ||
-            entry.line.toString().contains(q) ||
-            entry.previewText.lowercase().contains(q)
+    val nameLower: String = entry.virtualFile.name.lowercase()
+    val pathLower: String = entry.virtualFile.path.lowercase()
+    val lineStr: String = entry.line.toString()
+    val previewTextLower: String = entry.previewText.lowercase()
+
+    fun matches(query: String): Boolean = matchesNormalized(query.lowercase())
+
+    internal fun matchesNormalized(q: String): Boolean {
+        if (q.isEmpty()) return true
+        return nameLower.contains(q) ||
+            pathLower.contains(q) ||
+            lineStr.contains(q) ||
+            previewTextLower.contains(q)
     }
 }
 
@@ -99,25 +105,29 @@ object HelixJumplistPopup {
         }
     }
 
-    private class KeycapBadge(text: String, isCurrent: Boolean = false) : JPanel(BorderLayout()) {
-        private val bg = if (isCurrent) KEYCAP_CURRENT_BG else KEYCAP_BG
-        private val fg = if (isCurrent) KEYCAP_CURRENT_FG else KEYCAP_FG
+    private class KeycapBadge(initialText: String = "", initialCurrent: Boolean = false) : JPanel(BorderLayout()) {
+        private var isCurrent = initialCurrent
+        private val label = JBLabel(initialText).apply {
+            font = Font(Font.MONOSPACED, Font.BOLD, JBUI.scaleFontSize(11f))
+            foreground = if (initialCurrent) KEYCAP_CURRENT_FG else KEYCAP_FG
+            border = JBUI.Borders.empty(2, 6)
+        }
 
         init {
             isOpaque = false
-            add(
-                JBLabel(text).apply {
-                    font = Font(Font.MONOSPACED, Font.BOLD, JBUI.scaleFontSize(11f))
-                    foreground = fg
-                    border = JBUI.Borders.empty(2, 6)
-                },
-            )
+            add(label, BorderLayout.CENTER)
+        }
+
+        fun update(text: String, current: Boolean) {
+            label.text = text
+            isCurrent = current
+            label.foreground = if (current) KEYCAP_CURRENT_FG else KEYCAP_FG
         }
 
         override fun paintComponent(g: Graphics) {
             val g2 = g.create() as Graphics2D
             g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
-            g2.color = bg
+            g2.color = if (isCurrent) KEYCAP_CURRENT_BG else KEYCAP_BG
             g2.fillRoundRect(0, 0, width, height, JBUI.scale(4), JBUI.scale(4))
             g2.color = KEYCAP_BORDER
             g2.drawRoundRect(0, 0, width - 1, height - 1, JBUI.scale(4), JBUI.scale(4))
@@ -187,14 +197,14 @@ object HelixJumplistPopup {
             )
         }.reversed()
 
-        val listModel = DefaultListModel<JumpListItem>()
-        items.forEach { listModel.addElement(it) }
+        val listModel = CollectionListModel(items)
 
         val list = JBList(listModel)
         list.selectionMode = ListSelectionModel.SINGLE_SELECTION
         list.selectedIndex = items.indexOfFirst { it.isCurrent }.coerceAtLeast(0)
         list.isOpaque = false
         list.cursor = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
+        list.prototypeCellValue = items.firstOrNull()
 
         list.cellRenderer = object : ListCellRenderer<JumpListItem> {
             private val cellPanel = object : JPanel(BorderLayout(JBUI.scale(10), 0)) {
@@ -217,7 +227,7 @@ object HelixJumplistPopup {
                 }
             }
 
-            private val badgeHolder = JPanel(BorderLayout()).apply { isOpaque = false }
+            private val badge = KeycapBadge()
             private val textPanel = JPanel(BorderLayout(JBUI.scale(6), 0)).apply { isOpaque = false }
             private val fileLabel = JBLabel().apply {
                 font = JBUI.Fonts.label().deriveFont(Font.BOLD, JBUI.scaleFontSize(12f).toFloat())
@@ -233,7 +243,7 @@ object HelixJumplistPopup {
             }
 
             init {
-                cellPanel.add(badgeHolder, BorderLayout.WEST)
+                cellPanel.add(badge, BorderLayout.WEST)
                 val westDetails = JPanel().apply {
                     layout = BoxLayout(this, BoxLayout.X_AXIS)
                     isOpaque = false
@@ -254,11 +264,10 @@ object HelixJumplistPopup {
                 cellHasFocus: Boolean,
             ): Component {
                 cellPanel.isSelectedRow = isSelected
-                badgeHolder.removeAll()
                 if (value != null) {
                     val indicator = if (value.isCurrent) "> " else "  "
                     val loc = "$indicator${value.entry.line}:${value.entry.column}"
-                    badgeHolder.add(KeycapBadge(loc, value.isCurrent), BorderLayout.CENTER)
+                    badge.update(loc, value.isCurrent)
 
                     fileLabel.text = value.entry.virtualFile.name
                     pathLabel.text = value.entry.virtualFile.parent?.name?.let { "[$it]" } ?: ""
@@ -291,11 +300,14 @@ object HelixJumplistPopup {
             .setCancelOnOtherWindowOpen(true)
             .createPopup()
 
+        var lastQuery: String? = null
         fun updateFilter() {
             val q = textField.text.trim()
-            listModel.clear()
-            val filtered = items.filter { it.matches(q) }
-            filtered.forEach { listModel.addElement(it) }
+            if (q == lastQuery) return
+            lastQuery = q
+            val qLower = q.lowercase()
+            val filtered = if (qLower.isEmpty()) items else items.filter { it.matchesNormalized(qLower) }
+            listModel.replaceAll(filtered)
             if (listModel.size > 0) {
                 list.selectedIndex = 0
             }

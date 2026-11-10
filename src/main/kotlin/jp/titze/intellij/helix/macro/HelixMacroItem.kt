@@ -10,12 +10,14 @@ data class HelixMacroItem(
     val previewText: String,
     val rawMacro: Any? = null,
 ) {
-    fun matches(query: String): Boolean {
-        if (query.isEmpty()) return true
-        val q = query.lowercase()
-        if (name.lowercase().contains(q)) return true
-        if (previewText.lowercase().contains(q)) return true
-        return false
+    val nameLower: String = name.lowercase()
+    val previewTextLower: String = previewText.lowercase()
+
+    fun matches(query: String): Boolean = matchesNormalized(query.lowercase())
+
+    internal fun matchesNormalized(q: String): Boolean {
+        if (q.isEmpty()) return true
+        return nameLower.contains(q) || previewTextLower.contains(q)
     }
 
     companion object {
@@ -45,8 +47,7 @@ data class HelixMacroItem(
 
         private fun extractActions(macro: Any): List<*> = try {
             val getActions = macro.javaClass.getMethod("getActions")
-            val result = getActions.invoke(macro)
-            when (result) {
+            when (val result = getActions.invoke(macro)) {
                 is Array<*> -> result.toList()
                 is List<*> -> result
                 else -> emptyList<Any>()

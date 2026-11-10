@@ -7,6 +7,7 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.ui.popup.JBPopup
 import com.intellij.openapi.ui.popup.JBPopupFactory
+import com.intellij.ui.CollectionListModel
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBList
 import com.intellij.ui.components.JBScrollPane
@@ -32,7 +33,6 @@ import java.awt.event.MouseEvent
 import javax.swing.BorderFactory
 import javax.swing.Box
 import javax.swing.BoxLayout
-import javax.swing.DefaultListModel
 import javax.swing.JList
 import javax.swing.JPanel
 import javax.swing.ListCellRenderer
@@ -93,16 +93,20 @@ object HelixRegistersPopup {
         }
     }
 
-    private class KeycapBadge(text: String) : JPanel(BorderLayout()) {
+    private class KeycapBadge(initialText: String = "") : JPanel(BorderLayout()) {
+        private val label = JBLabel(initialText).apply {
+            font = Font(Font.MONOSPACED, Font.BOLD, JBUI.scaleFontSize(11f))
+            foreground = KEYCAP_FG
+            border = JBUI.Borders.empty(2, 6)
+        }
+
         init {
             isOpaque = false
-            add(
-                JBLabel(text).apply {
-                    font = Font(Font.MONOSPACED, Font.BOLD, JBUI.scaleFontSize(11f))
-                    foreground = KEYCAP_FG
-                    border = JBUI.Borders.empty(2, 6)
-                },
-            )
+            add(label, BorderLayout.CENTER)
+        }
+
+        fun setText(text: String) {
+            label.text = text
         }
 
         override fun paintComponent(g: Graphics) {
@@ -139,10 +143,9 @@ object HelixRegistersPopup {
         }
         mainPanel.add(northPanel, BorderLayout.NORTH)
 
-        val listModel = DefaultListModel<HelixRegisterItem>().apply {
-            allItems.forEach { addElement(it) }
-        }
+        val listModel = CollectionListModel(allItems)
         val list = createRegisterList(listModel)
+        list.prototypeCellValue = allItems.firstOrNull()
         val scrollPane = JBScrollPane(list).apply {
             border = JBUI.Borders.empty(4, 6)
             isOpaque = false
@@ -197,7 +200,7 @@ object HelixRegistersPopup {
         add(inputPanel, BorderLayout.CENTER)
     }
 
-    private fun createRegisterList(listModel: DefaultListModel<HelixRegisterItem>): JBList<HelixRegisterItem> {
+    private fun createRegisterList(listModel: CollectionListModel<HelixRegisterItem>): JBList<HelixRegisterItem> {
         val list = JBList(listModel)
         list.selectionMode = ListSelectionModel.SINGLE_SELECTION
         list.selectedIndex = 0
@@ -228,7 +231,7 @@ object HelixRegistersPopup {
                 }
             }
 
-            private val badgeHolder = JPanel(BorderLayout()).apply { isOpaque = false }
+            private val badge = KeycapBadge()
             private val textPanel = JPanel(BorderLayout(JBUI.scale(6), 0)).apply { isOpaque = false }
             private val nameLabel = JBLabel().apply {
                 font = JBUI.Fonts.label().deriveFont(Font.BOLD, JBUI.scaleFontSize(12f).toFloat())
@@ -244,7 +247,7 @@ object HelixRegistersPopup {
             }
 
             init {
-                cellPanel.add(badgeHolder, BorderLayout.WEST)
+                cellPanel.add(badge, BorderLayout.WEST)
                 val westDetails = JPanel().apply {
                     layout = BoxLayout(this, BoxLayout.X_AXIS)
                     isOpaque = false
@@ -265,9 +268,8 @@ object HelixRegistersPopup {
                 cellHasFocus: Boolean,
             ): Component {
                 cellPanel.isSelectedRow = isSelected
-                badgeHolder.removeAll()
                 if (value != null) {
-                    badgeHolder.add(KeycapBadge(value.register.toString()), BorderLayout.CENTER)
+                    badge.setText(value.register.toString())
                     nameLabel.text = value.description
                     tagLabel.text = value.tagText ?: ""
                     val preview = value.previewText
@@ -284,17 +286,21 @@ object HelixRegistersPopup {
     private fun setupListeners(
         textField: JBTextField,
         list: JBList<HelixRegisterItem>,
-        listModel: DefaultListModel<HelixRegisterItem>,
+        listModel: CollectionListModel<HelixRegisterItem>,
         allItems: List<HelixRegisterItem>,
         popup: JBPopup,
         editor: Editor,
     ) {
+        var lastQuery: String? = null
         val filterAction = {
             val q = textField.text.trim()
-            listModel.clear()
-            val filtered = allItems.filter { it.matches(q) }
-            filtered.forEach { listModel.addElement(it) }
-            if (listModel.size > 0) list.selectedIndex = 0
+            if (q != lastQuery) {
+                lastQuery = q
+                val qLower = q.lowercase()
+                val filtered = if (qLower.isEmpty()) allItems else allItems.filter { it.matchesNormalized(qLower) }
+                listModel.replaceAll(filtered)
+                if (listModel.size > 0) list.selectedIndex = 0
+            }
         }
 
         textField.document.addDocumentListener(object : DocumentListener {
@@ -327,7 +333,7 @@ object HelixRegistersPopup {
     private fun handleKeyNavigation(
         e: KeyEvent,
         list: JBList<HelixRegisterItem>,
-        listModel: DefaultListModel<HelixRegisterItem>,
+        listModel: CollectionListModel<HelixRegisterItem>,
         popup: JBPopup,
         selectCurrent: () -> Unit,
     ) {
@@ -366,7 +372,7 @@ object HelixRegistersPopup {
 
     private fun navigateList(
         list: JBList<HelixRegisterItem>,
-        listModel: DefaultListModel<HelixRegisterItem>,
+        listModel: CollectionListModel<HelixRegisterItem>,
         delta: Int,
     ) {
         if (listModel.size > 0) {
