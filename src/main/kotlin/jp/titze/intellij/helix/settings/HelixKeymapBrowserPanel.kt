@@ -80,7 +80,7 @@ class HelixKeymapBrowserPanel {
     }
 
     private fun createTopFilterBar(): JPanel {
-        val bar = JPanel(BorderLayout(10, 0))
+        val bar = JPanel(BorderLayout(0, 6))
 
         val leftControls = JPanel(FlowLayout(FlowLayout.LEFT, 8, 0))
         leftControls.add(JBLabel(HelixBundle.message("settings.keymap.mode.label")))
@@ -89,22 +89,22 @@ class HelixKeymapBrowserPanel {
         leftControls.add(JBLabel(HelixBundle.message("settings.keymap.prefix.label")))
         leftControls.add(prefixComboBox)
 
-        val rightControls = JPanel(BorderLayout(4, 0))
+        val rightControls = JPanel(BorderLayout(6, 0))
         searchField.textEditor.emptyText.text = HelixBundle.message("settings.keymap.search.placeholder")
         recordButton.toolTipText = HelixBundle.message("settings.keymap.record.tooltip")
 
         rightControls.add(searchField, BorderLayout.CENTER)
         rightControls.add(recordButton, BorderLayout.EAST)
 
-        bar.add(leftControls, BorderLayout.WEST)
-        bar.add(rightControls, BorderLayout.CENTER)
+        bar.add(leftControls, BorderLayout.NORTH)
+        bar.add(rightControls, BorderLayout.SOUTH)
         return bar
     }
 
     private fun createBottomActionBar(): JPanel {
-        val bar = JPanel(BorderLayout())
+        val bar = JPanel(BorderLayout(0, 6))
 
-        val leftActions = JPanel(FlowLayout(FlowLayout.LEFT, 6, 0))
+        val primaryActions = JPanel(FlowLayout(FlowLayout.LEFT, 6, 0))
         val openTomlBtn = JButton(HelixBundle.message("settings.keymap.btn.openToml"))
         openTomlBtn.addActionListener {
             val project = ProjectManager.getInstance().openProjects.firstOrNull { !it.isDisposed }
@@ -123,20 +123,26 @@ class HelixKeymapBrowserPanel {
 
         updateActionButtonsState()
 
-        leftActions.add(addBindingBtn)
-        leftActions.add(editBindingBtn)
-        leftActions.add(resetBindingBtn)
-        leftActions.add(disableBindingBtn)
-        leftActions.add(openTomlBtn)
-        leftActions.add(refreshBtn)
+        primaryActions.add(addBindingBtn)
+        primaryActions.add(editBindingBtn)
+        primaryActions.add(resetBindingBtn)
+        primaryActions.add(disableBindingBtn)
+
+        val secondaryBar = JPanel(BorderLayout())
+        val secondaryActions = JPanel(FlowLayout(FlowLayout.LEFT, 6, 0))
+        secondaryActions.add(openTomlBtn)
+        secondaryActions.add(refreshBtn)
 
         val rightStatus = JPanel(FlowLayout(FlowLayout.RIGHT, 0, 0))
         statusLabel.font = JBUI.Fonts.smallFont()
         statusLabel.foreground = UIUtil.getContextHelpForeground()
         rightStatus.add(statusLabel)
 
-        bar.add(leftActions, BorderLayout.WEST)
-        bar.add(rightStatus, BorderLayout.EAST)
+        secondaryBar.add(secondaryActions, BorderLayout.WEST)
+        secondaryBar.add(rightStatus, BorderLayout.EAST)
+
+        bar.add(primaryActions, BorderLayout.NORTH)
+        bar.add(secondaryBar, BorderLayout.SOUTH)
         return bar
     }
 
@@ -145,14 +151,28 @@ class HelixKeymapBrowserPanel {
         table.fillsViewportHeight = true
         table.setShowGrid(false)
         table.rowHeight = JBUI.scale(24)
-        table.preferredScrollableViewportSize = Dimension(JBUI.scale(550), JBUI.scale(220))
+        table.preferredScrollableViewportSize = Dimension(JBUI.scale(500), JBUI.scale(220))
+        table.autoResizeMode = JTable.AUTO_RESIZE_ALL_COLUMNS
 
-        table.columnModel.getColumn(0).preferredWidth = JBUI.scale(120)
-        table.columnModel.getColumn(1).preferredWidth = JBUI.scale(220)
-        table.columnModel.getColumn(2).preferredWidth = JBUI.scale(280)
-        table.columnModel.getColumn(3).preferredWidth = JBUI.scale(120)
+        val col0 = table.columnModel.getColumn(0)
+        col0.preferredWidth = JBUI.scale(85)
+        col0.minWidth = JBUI.scale(65)
+        col0.maxWidth = JBUI.scale(110)
 
-        table.columnModel.getColumn(3).cellRenderer = SourceCellRenderer()
+        val col1 = table.columnModel.getColumn(1)
+        col1.preferredWidth = JBUI.scale(180)
+        col1.minWidth = JBUI.scale(130)
+        col1.maxWidth = JBUI.scale(260)
+
+        val col2 = table.columnModel.getColumn(2)
+        col2.preferredWidth = JBUI.scale(220)
+        col2.minWidth = JBUI.scale(140)
+
+        val col3 = table.columnModel.getColumn(3)
+        col3.preferredWidth = JBUI.scale(75)
+        col3.minWidth = JBUI.scale(60)
+        col3.maxWidth = JBUI.scale(95)
+        col3.cellRenderer = SourceCellRenderer()
 
         table.selectionModel.addListSelectionListener {
             updateActionButtonsState()

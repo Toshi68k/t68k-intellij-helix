@@ -5,10 +5,22 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Changed
+
+- **Settings Structure & Tree Hierarchy**:
+  - Reorganized the crowded General Settings panel into a clean, hierarchical layout following IntelliJ UX conventions (similar to `Diff & Merge`):
+    - **`Helix Keymap` (Parent)**: Houses core user preferences partitioned into 3 focused tabs:
+      - **`General`**: Master enable, editor scopes (Diff, Console, Commit message, Other editors), tab switch mode reset, and clipboard synchronization.
+      - **`Appearance`**: Theme (Sync/Dark/Light), status bar mode pills, dynamic cursor tinting, gutter line numbers (Relative/Hybrid/Smart/Off), and Which-Key popups/hint mode/columns.
+      - **`Behavior`**: Line navigation (Stock Helix visual vs Vim physical), search prompt UI & history capacity, scratch window splits, and jump list capacity.
+    - **`Keybindings` (Child Tree Leaf)**: Dedicated full-screen sub-page in the Settings tree hosting the Visual Keymap Browser and OS-level Ctrl Key routing tabs.
+    - **`Configuration (TOML)` (Child Tree Leaf)**: Dedicated sub-page in the Settings tree for `intellij.toml` path management, live reload diagnostics, and CLI compatibility checks.
+  - Decomposed the monolithic 610-line `HelixGeneralSettingsPanel` into modular, single-responsibility panels (`HelixAppearancePanel`, `HelixBehaviorPanel`, `HelixGeneralSettingsPanel`).
+
 ### Fixed
 
 - **IntelliJ Platform API Compatibility**:
-  - Replaced scheduled-for-removal `SimpleListCellRenderer.create(String, Function)` in the General Settings panel with `SimpleListCellRenderer.create(Customizer)` to ensure clean compatibility with IntelliJ 2026.x and beyond.
+  - Replaced scheduled-for-removal `SimpleListCellRenderer.create(...)` in the Appearance settings panel with a direct `SimpleListCellRenderer` subclass implementation to ensure clean compatibility with IntelliJ 2026.x and beyond.
 
 ## [0.6.0]
 

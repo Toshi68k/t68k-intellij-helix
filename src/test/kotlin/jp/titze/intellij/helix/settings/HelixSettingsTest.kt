@@ -22,7 +22,7 @@ class HelixSettingsTest : BasePlatformTestCase() {
         val settings = HelixSettings.instance
         settings.searchUiMode = HelixSearchUiMode.STOCK_HELIX
         settings.lineNavigationMode = HelixLineNavigationMode.HELIX_STANDARD
-        settings.lineNumberMode = jp.titze.intellij.helix.settings.HelixLineNumberMode.IDE_DEFAULT
+        settings.lineNumberMode = HelixLineNumberMode.IDE_DEFAULT
         settings.jumpListMaxEntries = HelixSettings.DEFAULT_JUMP_LIST_MAX_ENTRIES
         settings.promptHistoryMaxEntries = HelixSettings.DEFAULT_PROMPT_HISTORY_MAX_ENTRIES
         settings.colorTheme = HelixColorTheme.SYNC
@@ -43,26 +43,26 @@ class HelixSettingsTest : BasePlatformTestCase() {
         settings.colorTheme shouldBe HelixColorTheme.SYNC
         settings.colorModes.shouldBeTrue()
         settings.cursorTint.shouldBeTrue()
-        settings.lineNumberMode shouldBe jp.titze.intellij.helix.settings.HelixLineNumberMode.IDE_DEFAULT
+        settings.lineNumberMode shouldBe HelixLineNumberMode.IDE_DEFAULT
         settings.resetToNormalOnTabSwitch.shouldBeTrue()
     }
 
     fun testLineNumberModePersistence() {
         val settings = HelixSettings.instance
-        settings.lineNumberMode = jp.titze.intellij.helix.settings.HelixLineNumberMode.SMART
-        settings.lineNumberMode shouldBe jp.titze.intellij.helix.settings.HelixLineNumberMode.SMART
+        settings.lineNumberMode = HelixLineNumberMode.SMART
+        settings.lineNumberMode shouldBe HelixLineNumberMode.SMART
 
-        settings.lineNumberMode = jp.titze.intellij.helix.settings.HelixLineNumberMode.RELATIVE
-        settings.lineNumberMode shouldBe jp.titze.intellij.helix.settings.HelixLineNumberMode.RELATIVE
+        settings.lineNumberMode = HelixLineNumberMode.RELATIVE
+        settings.lineNumberMode shouldBe HelixLineNumberMode.RELATIVE
 
-        settings.lineNumberMode = jp.titze.intellij.helix.settings.HelixLineNumberMode.HYBRID
-        settings.lineNumberMode shouldBe jp.titze.intellij.helix.settings.HelixLineNumberMode.HYBRID
+        settings.lineNumberMode = HelixLineNumberMode.HYBRID
+        settings.lineNumberMode shouldBe HelixLineNumberMode.HYBRID
 
-        settings.lineNumberMode = jp.titze.intellij.helix.settings.HelixLineNumberMode.ABSOLUTE
-        settings.lineNumberMode shouldBe jp.titze.intellij.helix.settings.HelixLineNumberMode.ABSOLUTE
+        settings.lineNumberMode = HelixLineNumberMode.ABSOLUTE
+        settings.lineNumberMode shouldBe HelixLineNumberMode.ABSOLUTE
 
-        settings.lineNumberMode = jp.titze.intellij.helix.settings.HelixLineNumberMode.OFF
-        settings.lineNumberMode shouldBe jp.titze.intellij.helix.settings.HelixLineNumberMode.OFF
+        settings.lineNumberMode = HelixLineNumberMode.OFF
+        settings.lineNumberMode shouldBe HelixLineNumberMode.OFF
     }
 
     fun testJumpListMaxEntriesClamping() {
@@ -233,6 +233,18 @@ class HelixSettingsTest : BasePlatformTestCase() {
         val component = configurable.createComponent()
         assertNotNull(component)
         configurable.disposeUIResources()
+
+        val keybindingsConfigurable = HelixKeybindingsConfigurable()
+        keybindingsConfigurable.id shouldBe "jp.titze.intellij.helix.settings.keybindings"
+        keybindingsConfigurable.displayName shouldBe "Keybindings"
+        assertNotNull(keybindingsConfigurable.createComponent())
+        keybindingsConfigurable.disposeUIResources()
+
+        val configFileConfigurable = HelixConfigFileConfigurable()
+        configFileConfigurable.id shouldBe "jp.titze.intellij.helix.settings.config"
+        configFileConfigurable.displayName shouldBe "Configuration (TOML)"
+        assertNotNull(configFileConfigurable.createComponent())
+        configFileConfigurable.disposeUIResources()
     }
 
     fun testActivationScopeSettings() {
@@ -321,7 +333,7 @@ class HelixSettingsTest : BasePlatformTestCase() {
     }
 
     fun testCtrlKeyConfigurableModification() {
-        val configurable = HelixConfigurable()
+        val configurable = HelixKeybindingsConfigurable()
         configurable.createComponent()
         val settings = HelixSettings.instance
 
@@ -337,7 +349,7 @@ class HelixSettingsTest : BasePlatformTestCase() {
     }
 
     fun testCustomConfigPathInSettingsAndConfigurable() {
-        val configurable = HelixConfigurable()
+        val configurable = HelixConfigFileConfigurable()
         configurable.createComponent()
         val settings = HelixSettings.instance
         val originalPath = settings.customConfigPath

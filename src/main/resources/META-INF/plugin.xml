@@ -79,15 +79,14 @@
   <li><b><kbd>Space</kbd> + <code>k</code> / <code>?</code></b> → Documentation hover &amp; command search</li>
 </ul>
 
-<h3>Configuration &amp; Tabbed Settings</h3>
+<h3>Configuration &amp; Settings Hierarchy</h3>
 <p>
-  Configure all plugin behavior under <b>Settings → Tools → Helix Keymap</b> across 4 organized tabs:
+  Configure all plugin behavior under <b>Settings → Tools → Helix Keymap</b>:
 </p>
 <ul>
-  <li><b>General:</b> Activation scope (diff viewers, console, commit messages), line number modes (Relative/Hybrid/Smart), visual feedback (color modes, cursor tinting, flash-on-yank), and navigation styles.</li>
-  <li><b>Keybindings:</b> Visual keymap browser, keystroke recorder, conflict warnings, and custom binding dialogs.</li>
-  <li><b>Ctrl Keys:</b> Platform-aware Ctrl key routing (Helix vs. IDE ownership per mode).</li>
-  <li><b>Config File (TOML):</b> Dedicated <code>intellij.toml</code> path management, CLI conflict guards, and live reload diagnostics.</li>
+  <li><b>Helix Keymap:</b> Core preferences across 3 tabs (<i>General &amp; Scope</i>, <i>Appearance &amp; UI</i>, and <i>Behavior &amp; Navigation</i>).</li>
+  <li><b>Keybindings (sub-page):</b> Dedicated visual keymap browser, keystroke recorder, conflict warnings, custom binding editor, and platform Ctrl key routing.</li>
+  <li><b>Configuration (sub-page):</b> Dedicated <code>intellij.toml</code> path management, CLI conflict guards, and live reload diagnostics.</li>
 </ul>
 
 <h3>Documentation &amp; Support</h3>
@@ -99,6 +98,7 @@
     ]]></description>
 
     <depends>com.intellij.modules.platform</depends>
+    <!--suppress PluginXmlValidity -->
     <incompatible-with>IdeaVIM</incompatible-with>
 
     <resource-bundle>messages.HelixBundle</resource-bundle>
@@ -107,13 +107,18 @@
         <editorFactoryListener implementation="jp.titze.intellij.helix.editor.HelixEditorListener"/>
         <statusBarWidgetFactory implementation="jp.titze.intellij.helix.ui.HelixStatusBarWidgetFactory"
                                 id="jp.titze.intellij.helix.status"/>
-        <applicationService serviceImplementation="jp.titze.intellij.helix.settings.HelixSettings"/>
-        <applicationService serviceImplementation="jp.titze.intellij.helix.editor.HelixPluginLifecycle"/>
         <applicationConfigurable parentId="tools"
                                  instance="jp.titze.intellij.helix.settings.HelixConfigurable"
                                  id="jp.titze.intellij.helix.settings"
-                                 displayName="Helix Keymap"
                                  key="settings.displayName"/>
+        <applicationConfigurable parentId="jp.titze.intellij.helix.settings"
+                                 instance="jp.titze.intellij.helix.settings.HelixKeybindingsConfigurable"
+                                 id="jp.titze.intellij.helix.settings.keybindings"
+                                 key="settings.keybindings.displayName"/>
+        <applicationConfigurable parentId="jp.titze.intellij.helix.settings"
+                                 instance="jp.titze.intellij.helix.settings.HelixConfigFileConfigurable"
+                                 id="jp.titze.intellij.helix.settings.config"
+                                 key="settings.config.displayName"/>
     </extensions>
 
     <applicationListeners>

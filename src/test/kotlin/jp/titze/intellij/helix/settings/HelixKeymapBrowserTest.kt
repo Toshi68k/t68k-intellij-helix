@@ -135,15 +135,32 @@ class HelixKeymapBrowserTest : BasePlatformTestCase() {
         component.shouldNotBeNull()
         component.shouldBeInstanceOf<JBTabbedPane>()
 
-        val tabs = component as JBTabbedPane
-        tabs.tabCount shouldBe 4
+        val tabs = component
+        tabs.tabCount shouldBe 3
         tabs.getTitleAt(0) shouldBe "General"
-        tabs.getTitleAt(1) shouldBe "Keybindings"
-        tabs.getTitleAt(2) shouldBe "Ctrl Keys"
-        tabs.getTitleAt(3) shouldBe "Config File (TOML)"
+        tabs.getTitleAt(1) shouldBe "Appearance"
+        tabs.getTitleAt(2) shouldBe "Behavior"
 
         configurable.isModified.shouldBeFalse()
         configurable.disposeUIResources()
+
+        val keybindingsConfigurable = HelixKeybindingsConfigurable()
+        val kbComponent = keybindingsConfigurable.createComponent()
+        kbComponent.shouldNotBeNull()
+        kbComponent.shouldBeInstanceOf<JBTabbedPane>()
+
+        val kbTabs = kbComponent
+        kbTabs.tabCount shouldBe 2
+        kbTabs.getTitleAt(0) shouldBe "Keybindings"
+        kbTabs.getTitleAt(1) shouldBe "Ctrl Keys"
+
+        keybindingsConfigurable.isModified.shouldBeFalse()
+        keybindingsConfigurable.disposeUIResources()
+
+        val configFileConfigurable = HelixConfigFileConfigurable()
+        configFileConfigurable.createComponent().shouldNotBeNull()
+        configFileConfigurable.isModified.shouldBeFalse()
+        configFileConfigurable.disposeUIResources()
     }
 
     fun testActionExtractorFiltersQueries() {
@@ -177,7 +194,7 @@ class HelixKeymapBrowserTest : BasePlatformTestCase() {
         gRow.command shouldBe "move_char_left"
         gRow.isShadowed.shouldBeTrue()
         gRow.conflictReason.shouldNotBeNull()
-        gRow.conflictReason!!.contains("child chords take precedence").shouldBeTrue()
+        gRow.conflictReason.contains("child chords take precedence").shouldBeTrue()
     }
 
     fun testKeymapBrowserActionButtonsStateOnSelection() {

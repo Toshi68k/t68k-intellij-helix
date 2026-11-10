@@ -729,49 +729,43 @@ Helix Keymap supports two switchable search and regex prompt styles:
 
 #### Settings & Visual Keymap Explorer
 
-Configure Helix Keymap preferences under **Preferences / Settings &rarr; Tools &rarr; Helix Keymap**, organized into 4 dedicated tabs:
+Configure Helix Keymap preferences under **Preferences / Settings &rarr; Tools &rarr; Helix Keymap**:
 
-##### Tab 1: General
-Structured into 3 cohesive domains with native IntelliJ section dividers:
-- **Activation & Editor Scope**:
+##### Parent Page: Helix Keymap
+Organized into 3 dedicated tabs for core editor preferences:
+
+- **Tab 1: General & Scope**:
   - **Master Enable**: Toggle Helix modal editing across the IDE.
-  - **Editor Environments**: Configure active scopes for Main text editors, Diff viewers, Consoles, and Commit messages.
-  - **Color Theme & Mode Colors**: Choose between Sync with IDE, Dark, or Light themes for all Helix overlays. Independently toggle mode-colored status pills (`color-modes = true`) and mode cursor tinting (`cursor-tint = true`).
-- **Editing & Navigation Behavior**:
-  - **Line Navigation (Vertical Movement)** *(default: Stock Helix)*: Toggle between **Stock Helix** (`j`/`k` move visual screen lines, `gj`/`gk` jump physical document lines) and **Vim Standard** (`j`/`k` move physical lines, `gj`/`gk` move visual lines). Also toggled via `:toggle-line-nav`.
-  - **Gutter Line Numbers (`line-number`)**: Choose between **Use IDE Default**, **Absolute**, **Relative** (distance from cursor line), **Hybrid** (absolute on current line, relative on others), and **Smart** (relative in Normal/Select mode, automatic absolute fallback in Insert mode). Also toggled via `:toggle-relative-line-numbers` or `:set line-number relative|smart|hybrid|absolute|off`.
-  - **Scratch Window Splits** *(default: Interactive)*: Configure whether `<C-w>ns` / `<C-w>nv` prompts for file language (`NewScratchFile`) or opens an instant plain-text buffer (`NewScratchBuffer`).
+  - **Editor Environments**: Configure active scopes for Main text editors, Diff viewers, Consoles, Commit messages, and Other editors.
   - **System Clipboard**: Toggle synchronization of system clipboard with the default `"` register.
   - **Reset to Normal Mode on Tab Switch** *(default: enabled)*: Ensures each tab starts in Normal mode with a block cursor.
-  - **Jump List Capacity**: Set maximum recorded jump entries (10–1000).
-- **Visual Prompts & Feedback**:
-  - **Search & Selection Prompt UI**: Toggle between Stock Helix inline bottom bar and Popup dialog.
-  - **Prompt History Capacity**: Set maximum remembered prompt history entries per category (10–500, default: 100).
+
+- **Tab 2: Appearance & UI**:
+  - **Color Theme & Mode Colors**: Choose between Sync with IDE, Dark, or Light themes for all Helix overlays. Independently toggle mode-colored status pills (`color-modes = true`) and mode cursor tinting (`cursor-tint = true`).
+  - **Gutter Line Numbers (`line-number`)**: Choose between **Use IDE Default**, **Absolute**, **Relative** (distance from cursor line), **Hybrid** (absolute on current line, relative on others), and **Smart** (relative in Normal/Select mode, automatic absolute fallback in Insert mode). Also toggled via `:toggle-relative-line-numbers` or `:set line-number relative|smart|hybrid|absolute|off`.
   - **Which-Key Chord Menus**: Enable or disable Which-Key chord popups, choose hint display style (Helix command names vs IntelliJ Action IDs), and configure column layout (3 columns compact vs 2 columns classic).
 
-##### Tab 2: Keybindings (Visual Keymap Explorer & Editor)
-An interactive explorer and visual customizer for discovering, searching, inspecting, and editing active Helix keybindings:
-- **Visual Editing Actions**:
-  - **Add Keybinding (`[ Add Binding... ]`)**: Launch a dialog to bind any keystroke or chord in Normal, Select, or Insert mode to an IntelliJ Action, Helix built-in command, or macro.
-  - **Edit Keybinding (`[ Edit... ]` / Double-Click)**: Double-click any row or click Edit to modify the assigned shortcut or command in-place.
-  - **Reset to Default (`[ Reset to Default ]`)**: Revert any custom override back to the stock Helix keymap, cleanly removing it from your TOML config.
-  - **Disable Shortcut (`[ Disable (no_op) ]`)**: Quickly disable any shortcut by assigning `"no_op"`.
-  - **Context Menu**: Right-click any row to Add Binding..., Edit..., Reset to Default, Disable (no_op), Copy Helix Command, or Copy Shortcut.
-- **Mode Selector**: Switch between **Normal**, **Select**, and **Insert** modes.
-- **Prefix Filter**: Filter table to specific chord families (`All Chords`, `Space Chords (space)`, `Goto Chords (g)`, `View Chords (z)`, `Match Chords (m)`, `Window Chords (C-w)`, `Bracket Chords ([ / ])`, or `Single Keys & Other`).
-- **Live Search**: Real-time filtering by shortcut sequence, canonical Helix command, or action description.
-- **Find Shortcut by Keystroke (`[ Find by Keystroke... ]`)**: Click the shortcut finder button and press any key combination or chord (e.g. `space f`, `g d`, `C-s`) to instantly look up or filter the assigned command.
-- **IntelliJ Action Discovery (`[ Browse... ]`)**: Inside the Add/Edit Keybinding dialog, click **Browse...** to launch a searchable action picker to explore all registered IntelliJ IDEA actions, inspect native IDE shortcuts, and select actions.
-- **Trie Conflict & Shadowing Warnings**: Automatic trie analysis detects shadowed shortcuts (e.g. binding `g` or `space` directly when child chords `gd`, `gh`, `space f` exist). Shadowed bindings are flagged with `⚠`, conflict tooltips, and diagnostics during TOML configuration validation.
-- **Provenance Badges**: Clearly shows whether each binding is stock `[Default]`, custom from `[custom: intellij]`, `[custom: config]`, or disabled `[no_op]`.
-- **Direct Links (`[ Open in TOML ]`, `[ Refresh ]`)**: Quick buttons to open the active TOML configuration in the editor or reload active keybindings.
+- **Tab 3: Behavior & Navigation**:
+  - **Line Navigation (Vertical Movement)** *(default: Stock Helix)*: Toggle between **Stock Helix** (`j`/`k` move visual screen lines, `gj`/`gk` jump physical document lines) and **Vim Standard** (`j`/`k` move physical lines, `gj`/`gk` move visual lines). Also toggled via `:toggle-line-nav`.
+  - **Search & Selection Prompt UI**: Toggle between Stock Helix inline bottom bar and Popup dialog.
+  - **Prompt History Capacity**: Set maximum remembered prompt history entries per category (10–500, default: 100).
+  - **Scratch Window Splits** *(default: Interactive)*: Configure whether `<C-w>ns` / `<C-w>nv` prompts for file language (`NewScratchFile`) or opens an instant plain-text buffer (`NewScratchBuffer`).
+  - **Jump List Capacity**: Set maximum recorded jump entries (10–1000).
 
-##### Tab 3: Ctrl Keys
-Manage OS-level keystroke ownership for all 26 control keys (`Ctrl+A` through `Ctrl+Z`) in Normal and Insert modes, choosing whether IntelliJ IDEA or Helix processes each shortcut.
+##### Sub-Page 1: Keybindings (Visual Keymap Explorer & Editor)
+Dedicated full-screen configurable under **Helix Keymap &rarr; Keybindings** featuring two tabs:
+1. **Keymap Browser**:
+   - **Visual Editing Actions**: Add, edit, reset, or disable shortcuts via dialogs with non-destructive TOML persistence.
+   - **Mode Selector & Prefix Filter**: Filter table to Normal/Select/Insert modes and specific chord families (`Space`, `Goto`, `View`, `Match`, `Window`, `Bracket`, or `Single Keys`).
+   - **Live Search & Find by Keystroke**: Real-time filtering and physical keystroke recorder button.
+   - **Trie Conflict & Shadowing Warnings**: Automatic trie analysis flags shadowed chords with `⚠` and diagnostic warnings.
+   - **Provenance Badges**: Displays whether each binding is stock `[Default]`, custom, or disabled `[no_op]`.
+2. **Ctrl Keys**:
+   - Manage OS-level keystroke ownership for all 26 control keys (`Ctrl+A` through `Ctrl+Z`) in Normal and Insert modes.
 
-##### Tab 4: Config File (TOML)
-Manage and diagnose your `intellij.toml` or `config.toml` configuration:
-- Configure custom file paths with file chooser.
+##### Sub-Page 2: Configuration (TOML)
+Dedicated configurable under **Helix Keymap &rarr; Configuration (TOML)**:
+- Configure custom file paths (`intellij.toml` / `config.toml`) with file chooser.
 - Inspect live diagnostics: active binding count, syntax error reporting, and CLI compatibility warnings.
 - Quick actions: **Open in Editor**, **Reload Keymap**, and **Reset to Default**.
 
