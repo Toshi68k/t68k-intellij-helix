@@ -28,13 +28,13 @@ import java.awt.datatransfer.StringSelection
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
 import java.awt.font.TextAttribute
+import com.intellij.ui.components.JBScrollPane
 import javax.swing.Box
 import javax.swing.JButton
 import javax.swing.JComponent
 import javax.swing.JMenuItem
 import javax.swing.JPanel
 import javax.swing.JPopupMenu
-import javax.swing.JScrollPane
 import javax.swing.JTable
 import javax.swing.SwingUtilities
 import javax.swing.table.AbstractTableModel
@@ -73,7 +73,7 @@ class HelixKeymapBrowserPanel {
         root.border = JBUI.Borders.empty(12)
 
         root.add(createTopFilterBar(), BorderLayout.NORTH)
-        root.add(JScrollPane(table), BorderLayout.CENTER)
+        root.add(JBScrollPane(table), BorderLayout.CENTER)
         root.add(createBottomActionBar(), BorderLayout.SOUTH)
 
         return root
@@ -427,7 +427,12 @@ class HelixKeymapBrowserPanel {
         }
     }
 
+    private var lastQuery: String? = null
+    private var lastPrefix: KeymapPrefixGroup? = null
+
     fun reloadModeData() {
+        lastQuery = null
+        lastPrefix = null
         val mode = modeComboBox.selectedItem as? HelixMode ?: HelixMode.NORMAL
         allRowsForCurrentMode = HelixKeymapExtractor.extractRows(mode)
         applyFilter()
@@ -436,9 +441,12 @@ class HelixKeymapBrowserPanel {
     private fun applyFilter() {
         val selectedPrefix = prefixComboBox.selectedItem as? KeymapPrefixGroup ?: KeymapPrefixGroup.ALL
         val query = searchField.text.trim().lowercase()
+        if (query == lastQuery && selectedPrefix == lastPrefix) return
+        lastQuery = query
+        lastPrefix = selectedPrefix
 
         val filtered = allRowsForCurrentMode.filter { row ->
-            matchesPrefix(row, selectedPrefix) && matchesQuery(row, query)
+            matchesPrefix(row, selectedPrefix) && row.matchesQuery(query)
         }
 
         tableModel.setRows(filtered)
@@ -447,14 +455,6 @@ class HelixKeymapBrowserPanel {
 
     private fun matchesPrefix(row: HelixKeybindingRow, prefix: KeymapPrefixGroup): Boolean =
         prefix == KeymapPrefixGroup.ALL || row.prefixGroup == prefix
-
-    private fun matchesQuery(row: HelixKeybindingRow, query: String): Boolean {
-        if (query.isEmpty()) return true
-        return row.displayShortcut.lowercase().contains(query) ||
-            row.rawSequence.lowercase().contains(query) ||
-            row.command.lowercase().contains(query) ||
-            row.description.lowercase().contains(query)
-    }
 
     private fun updateStatus(visibleCount: Int) {
         val customCount = allRowsForCurrentMode.count { it.source != BindingSource.DEFAULT }

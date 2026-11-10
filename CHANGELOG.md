@@ -23,6 +23,11 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   - Made `KeycapBadge` renderer components reusable in place with dynamic text and state updating (`setText(...)` / `update(...)`), eliminating panel and label re-allocations on every scroll and repaint.
   - Precomputed normalized lowercase fields for data items (`DirectoryFileItem`, `HelixMacroItem`, `HelixRegisterItem`, `JumpListItem`) and single-pass search query normalization.
   - Bounded register search buffer matching to prevent UI freezes when large multi-megabyte clipboard contents are stored.
+- **Action Picker & Keymap Browser Search Optimization**:
+  - Prevented 10,000–30,000 temporary string allocations on the Swing EDT per keystroke in `HelixActionPickerDialog` by precomputing lowercase fields (`actionIdLower`, `displayNameLower`, `descriptionLower`) on `HelixIntelliJAction`.
+  - Optimized sorting in `HelixActionExtractor.extractActions()` using precomputed lowercase fields, avoiding ~130,000 lowercase allocations during action catalog initialization.
+  - Precomputed normalized lowercase lookup strings (`displayShortcutLower`, `rawSequenceLower`, `commandLower`, `descriptionLower`) on `HelixKeybindingRow` to make `HelixKeymapBrowserPanel` search filtering instantaneous without per-row string transformations.
+  - Added duplicate query and prefix suppression in `HelixActionPickerDialog` and `HelixKeymapBrowserPanel` to skip redundant filter passes on non-textual input events.
 - **Kotlin Language Version**:
   - Updated Kotlin compiler `languageVersion` to `2.2` in `build.gradle.kts` while maintaining `apiVersion` at `2.1` for IntelliJ platform compatibility.
 
@@ -30,6 +35,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 - **IntelliJ Platform API Compatibility**:
   - Replaced scheduled-for-removal `SimpleListCellRenderer.create(...)` in the Appearance settings panel with a direct `SimpleListCellRenderer` subclass implementation to ensure clean compatibility with IntelliJ 2026.x and beyond.
+  - Replaced standard Swing `JScrollPane` usages in `HelixActionPickerDialog` and `HelixKeymapBrowserPanel` with `com.intellij.ui.components.JBScrollPane` to follow IntelliJ UI conventions and eliminate IDE warnings.
 
 ## [0.6.0]
 

@@ -14,6 +14,13 @@ data class HelixIntelliJAction(
     val shortcutText: String,
 ) {
     val tomlCommand: String get() = ":action $actionId"
+    val actionIdLower: String = actionId.lowercase()
+    val displayNameLower: String = displayName.lowercase()
+    val descriptionLower: String = description.lowercase()
+
+    fun matches(terms: List<String>): Boolean = terms.all { term ->
+        actionIdLower.contains(term) || displayNameLower.contains(term) || descriptionLower.contains(term)
+    }
 }
 
 /**
@@ -51,12 +58,12 @@ object HelixActionExtractor {
             )
         }
 
-        return result.sortedWith(compareBy({ it.displayName.lowercase() }, { it.actionId.lowercase() }))
+        return result.sortedWith(compareBy({ it.displayNameLower }, { it.actionIdLower }))
     }
 
     private fun shouldSkipActionId(id: String): Boolean {
         if (id.isBlank()) return true
-        if (id.startsWith("$") && !id.startsWith("\$Undo") && !id.startsWith("\$Redo")) {
+        if (id.startsWith("$") && !id.startsWith($$"$Undo") && !id.startsWith($$"$Redo")) {
             return true
         }
         return false
@@ -66,13 +73,7 @@ object HelixActionExtractor {
         val trimmed = query.trim().lowercase()
         if (trimmed.isEmpty()) return actions
         val terms = trimmed.split(" ").filter { it.isNotEmpty() }
-        return actions.filter { item ->
-            val id = item.actionId.lowercase()
-            val name = item.displayName.lowercase()
-            val desc = item.description.lowercase()
-            terms.all { term ->
-                id.contains(term) || name.contains(term) || desc.contains(term)
-            }
-        }
+        if (terms.isEmpty()) return actions
+        return actions.filter { item -> item.matches(terms) }
     }
 }

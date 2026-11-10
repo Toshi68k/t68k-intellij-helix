@@ -19,10 +19,10 @@ import java.awt.FlowLayout
 import java.awt.datatransfer.StringSelection
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
+import com.intellij.ui.components.JBScrollPane
 import javax.swing.JButton
 import javax.swing.JComponent
 import javax.swing.JPanel
-import javax.swing.JScrollPane
 import javax.swing.JTextField
 import javax.swing.ListSelectionModel
 import javax.swing.event.DocumentEvent
@@ -48,9 +48,6 @@ class HelixActionPickerDialog(parent: JComponent) : DialogWrapper(parent, true) 
 
     var selectedAction: HelixIntelliJAction? = null
         private set
-
-    val selectedTomlCommand: String?
-        get() = selectedAction?.tomlCommand
 
     init {
         title = HelixBundle.message("dialog.actionPicker.title")
@@ -79,7 +76,7 @@ class HelixActionPickerDialog(parent: JComponent) : DialogWrapper(parent, true) 
         return panel
     }
 
-    private fun createTablePanel(): JScrollPane {
+    private fun createTablePanel(): JBScrollPane {
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION)
         table.rowHeight = JBUI.scale(24)
         table.setShowGrid(false)
@@ -91,7 +88,7 @@ class HelixActionPickerDialog(parent: JComponent) : DialogWrapper(parent, true) 
         colModel.getColumn(2).preferredWidth = JBUI.scale(100)
         colModel.getColumn(3).preferredWidth = JBUI.scale(240)
 
-        return JScrollPane(table)
+        return JBScrollPane(table)
     }
 
     private fun createBottomPreviewPanel(): JPanel {
@@ -142,8 +139,13 @@ class HelixActionPickerDialog(parent: JComponent) : DialogWrapper(parent, true) 
         })
     }
 
+    private var lastQuery: String? = null
+
     private fun applyFilter(query: String) {
-        filteredActions = HelixActionExtractor.filterActions(allActions, query)
+        val trimmed = query.trim()
+        if (trimmed == lastQuery) return
+        lastQuery = trimmed
+        filteredActions = HelixActionExtractor.filterActions(allActions, trimmed)
         tableModel.fireTableDataChanged()
         statusLabel.text = HelixBundle.message(
             "dialog.actionPicker.status.count",
