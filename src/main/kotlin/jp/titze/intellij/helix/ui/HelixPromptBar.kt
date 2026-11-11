@@ -12,6 +12,7 @@ import com.intellij.util.ui.JBUI
 import jp.titze.intellij.helix.HelixBundle
 import jp.titze.intellij.helix.action.HelixActions
 import jp.titze.intellij.helix.action.HelixCaretSnapshot
+import jp.titze.intellij.helix.action.HelixRegexActions
 import jp.titze.intellij.helix.action.HelixShellActions
 import java.awt.BorderLayout
 import java.awt.Component
@@ -60,6 +61,7 @@ class HelixPromptBar(private val editor: Editor) : JPanel(BorderLayout(JBUI.scal
     private var currentCount: Int = 1
     private var baseSnapshot: List<HelixCaretSnapshot> = emptyList()
     private var isUpdatingPreview = false
+    private var lastPreviewQuery: String? = null
     private var historyNavigator = HelixPromptHistoryNavigator(HelixPromptCategory.SEARCH)
 
     private class KeycapBadge(keyText: String) : JPanel(BorderLayout()) {
@@ -202,6 +204,7 @@ class HelixPromptBar(private val editor: Editor) : JPanel(BorderLayout(JBUI.scal
         historyNavigator = HelixPromptHistoryNavigator(type.toCategory())
 
         isUpdatingPreview = true
+        lastPreviewQuery = null
         textField.text = ""
         statusLabel.text = ""
         isUpdatingPreview = false
@@ -218,6 +221,8 @@ class HelixPromptBar(private val editor: Editor) : JPanel(BorderLayout(JBUI.scal
     private fun updatePreview() {
         if (isUpdatingPreview) return
         val query = textField.text
+        if (query == lastPreviewQuery) return
+        lastPreviewQuery = query
 
         if (currentType.isShellType) {
             statusLabel.text = if (query.isEmpty()) "" else HelixBundle.message("prompt.shell.pressEnter")
@@ -304,25 +309,39 @@ class HelixPromptBar(private val editor: Editor) : JPanel(BorderLayout(JBUI.scal
 
                 else -> Unit
             }
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             statusLabel.text = HelixBundle.message("prompt.regex.invalid")
             statusLabel.foreground = MATCH_WARN_FG
         }
     }
 
     private fun updateStatusSelectionCount(count: Int) {
+        val displayCount = if (count >=
+            HelixRegexActions.MAX_MATCH_COUNT
+        ) {
+                "${HelixRegexActions.MAX_MATCH_COUNT}+"
+            } else {
+                count.toString()
+            }
         statusLabel.text = when {
             count == 1 -> HelixBundle.message("prompt.selections.one")
-            count > 1 -> HelixBundle.message("prompt.selections.count", count)
+            count > 1 -> HelixBundle.message("prompt.selections.count", displayCount)
             else -> HelixBundle.message("prompt.selections.zero")
         }
         statusLabel.foreground = if (count > 0) MATCH_SUCCESS_FG else MATCH_WARN_FG
     }
 
     private fun updateStatusText(matches: Int) {
+        val displayCount = if (matches >=
+            HelixRegexActions.MAX_MATCH_COUNT
+        ) {
+                "${HelixRegexActions.MAX_MATCH_COUNT}+"
+            } else {
+                matches.toString()
+            }
         statusLabel.text = when {
             matches == 1 -> HelixBundle.message("prompt.matches.one")
-            matches > 1 -> HelixBundle.message("prompt.matches.count", matches)
+            matches > 1 -> HelixBundle.message("prompt.matches.count", displayCount)
             else -> HelixBundle.message("prompt.matches.zero")
         }
         statusLabel.foreground = if (matches > 0) MATCH_SUCCESS_FG else MATCH_WARN_FG

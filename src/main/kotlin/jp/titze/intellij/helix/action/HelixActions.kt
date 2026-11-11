@@ -95,7 +95,7 @@ object HelixActions {
                     val selectedText = doc.charsSequence.subSequence(start, end)
                     val sb = StringBuilder(selectedText.length)
                     val isReplacementNewline = replacement == '\n' || replacement == '\r'
-                    for (i in 0 until selectedText.length) {
+                    for (i in selectedText.indices) {
                         val c = selectedText[i]
                         val isCharNewline = c == '\n' || c == '\r'
                         if (isCharNewline && !isReplacementNewline) {
@@ -344,11 +344,18 @@ object HelixActions {
     fun previewSplitRegex(editor: Editor, pattern: String, baseSnapshot: List<HelixCaretSnapshot>): Boolean =
         HelixRegexActions.previewSplitRegex(editor, pattern, baseSnapshot)
 
-    fun countRegexMatchesInSnapshot(editor: Editor, pattern: String, baseSnapshot: List<HelixCaretSnapshot>): Int =
-        HelixRegexActions.countRegexMatchesInSnapshot(editor, pattern, baseSnapshot)
+    fun countRegexMatchesInSnapshot(
+        editor: Editor,
+        pattern: String,
+        baseSnapshot: List<HelixCaretSnapshot>,
+        maxCount: Int = HelixRegexActions.MAX_MATCH_COUNT,
+    ): Int = HelixRegexActions.countRegexMatchesInSnapshot(editor, pattern, baseSnapshot, maxCount)
 
-    fun countDocumentRegexMatches(editor: Editor, pattern: String): Int =
-        HelixRegexActions.countDocumentRegexMatches(editor, pattern)
+    fun countDocumentRegexMatches(
+        editor: Editor,
+        pattern: String,
+        maxCount: Int = HelixRegexActions.MAX_MATCH_COUNT,
+    ): Int = HelixRegexActions.countDocumentRegexMatches(editor, pattern, maxCount)
 
     // -------------------------------------------------------------------------
     // Case action delegates
@@ -450,7 +457,8 @@ object HelixActions {
         pattern: String,
         keepMatching: Boolean,
         baseSnapshot: List<HelixCaretSnapshot>,
-    ): Int = HelixRegexActions.countFilterSelectionsMatches(editor, pattern, keepMatching, baseSnapshot)
+        maxCount: Int = HelixRegexActions.MAX_MATCH_COUNT,
+    ): Int = HelixRegexActions.countFilterSelectionsMatches(editor, pattern, keepMatching, baseSnapshot, maxCount)
 
     fun filterSelections(editor: Editor, pattern: String, keepMatching: Boolean) =
         HelixRegexActions.filterSelections(editor, pattern, keepMatching)

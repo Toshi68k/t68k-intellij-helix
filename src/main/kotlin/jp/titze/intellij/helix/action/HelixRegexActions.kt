@@ -9,13 +9,15 @@ import jp.titze.intellij.helix.state.HelixStateManager
 
 object HelixRegexActions {
 
+    const val MAX_MATCH_COUNT = 1000
+
     fun selectRegex(editor: Editor, pattern: String): Boolean {
         if (pattern.isEmpty()) return false
         val doc = editor.document
         val text = doc.charsSequence
         val regex = try {
             Regex(pattern)
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             Regex(Regex.escape(pattern))
         }
 
@@ -63,10 +65,10 @@ object HelixRegexActions {
         val text = doc.charsSequence
         val regex = try {
             Regex(pattern)
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             try {
                 Regex(Regex.escape(pattern))
-            } catch (e2: Exception) {
+            } catch (_: Exception) {
                 return 0
             }
         }
@@ -105,7 +107,7 @@ object HelixRegexActions {
         val text = doc.charsSequence
         val regex = try {
             Regex(pattern)
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             Regex(Regex.escape(pattern))
         }
 
@@ -157,10 +159,10 @@ object HelixRegexActions {
         val text = doc.charsSequence
         val regex = try {
             Regex(pattern)
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             try {
                 Regex(Regex.escape(pattern))
-            } catch (e2: Exception) {
+            } catch (_: Exception) {
                 HelixCaretUtils.restoreCarets(editor, baseSnapshot)
                 return false
             }
@@ -211,10 +213,10 @@ object HelixRegexActions {
         val text = doc.charsSequence
         val regex = try {
             Regex(pattern)
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             try {
                 Regex(Regex.escape(pattern))
-            } catch (e2: Exception) {
+            } catch (_: Exception) {
                 HelixCaretUtils.restoreCarets(editor, baseSnapshot)
                 return false
             }
@@ -258,35 +260,41 @@ object HelixRegexActions {
         return true
     }
 
-    fun countRegexMatchesInSnapshot(editor: Editor, pattern: String, baseSnapshot: List<HelixCaretSnapshot>): Int {
-        if (pattern.isEmpty()) return 0
+    fun countRegexMatchesInSnapshot(
+        editor: Editor,
+        pattern: String,
+        baseSnapshot: List<HelixCaretSnapshot>,
+        maxCount: Int = MAX_MATCH_COUNT,
+    ): Int {
+        if (pattern.isEmpty() || maxCount <= 0) return 0
         val doc = editor.document
         val text = doc.charsSequence
         val regex = try {
             Regex(pattern)
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             try {
                 Regex(Regex.escape(pattern))
-            } catch (e2: Exception) {
+            } catch (_: Exception) {
                 return 0
             }
         }
 
-        val rangesToSearch = baseSnapshot.map { caret ->
-            if (caret.selectionEnd > caret.selectionStart) {
+        val rangesToSearch = baseSnapshot.mapNotNull { caret ->
+            val (rangeStart, rangeEnd) = if (caret.selectionEnd > caret.selectionStart) {
                 Pair(caret.selectionStart, caret.selectionEnd)
             } else {
                 val offset = caret.offset
                 Pair(offset, (offset + 1).coerceAtMost(doc.textLength))
             }
+            if (rangeStart < rangeEnd) Pair(rangeStart, rangeEnd) else null
         }
 
         var count = 0
         for ((rangeStart, rangeEnd) in rangesToSearch) {
-            if (rangeStart >= rangeEnd) continue
+            if (count >= maxCount) break
             val targetSub = text.subSequence(rangeStart, rangeEnd).toString()
             var currentPos = 0
-            while (currentPos < targetSub.length) {
+            while (currentPos < targetSub.length && count < maxCount) {
                 val match = regex.find(targetSub, currentPos) ?: break
                 if (match.range.last >= match.range.first) {
                     count++
@@ -299,21 +307,21 @@ object HelixRegexActions {
         return count
     }
 
-    fun countDocumentRegexMatches(editor: Editor, pattern: String): Int {
-        if (pattern.isEmpty()) return 0
+    fun countDocumentRegexMatches(editor: Editor, pattern: String, maxCount: Int = MAX_MATCH_COUNT): Int {
+        if (pattern.isEmpty() || maxCount <= 0) return 0
         val text = editor.document.charsSequence
         val regex = try {
             Regex(pattern)
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             try {
                 Regex(Regex.escape(pattern))
-            } catch (e2: Exception) {
+            } catch (_: Exception) {
                 return 0
             }
         }
         var count = 0
         var currentPos = 0
-        while (currentPos < text.length) {
+        while (currentPos < text.length && count < maxCount) {
             val match = regex.find(text, currentPos) ?: break
             if (match.range.last >= match.range.first) {
                 count++
@@ -339,10 +347,10 @@ object HelixRegexActions {
         val text = doc.charsSequence
         val regex = try {
             Regex(pattern)
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             try {
                 Regex(Regex.escape(pattern))
-            } catch (e2: Exception) {
+            } catch (_: Exception) {
                 HelixCaretUtils.restoreCarets(editor, baseSnapshot)
                 return false
             }
@@ -375,32 +383,36 @@ object HelixRegexActions {
         pattern: String,
         keepMatching: Boolean,
         baseSnapshot: List<HelixCaretSnapshot>,
+        maxCount: Int = MAX_MATCH_COUNT,
     ): Int {
-        if (pattern.isEmpty()) return baseSnapshot.size
+        if (pattern.isEmpty()) return baseSnapshot.size.coerceAtMost(maxCount)
+        if (maxCount <= 0) return 0
         val doc = editor.document
         val text = doc.charsSequence
         val regex = try {
             Regex(pattern)
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             try {
                 Regex(Regex.escape(pattern))
-            } catch (e2: Exception) {
+            } catch (_: Exception) {
                 return 0
             }
         }
 
-        return baseSnapshot.count { caret ->
-            val rangeStart = caret.selectionStart
-            val rangeEnd = caret.selectionEnd
+        var count = 0
+        for ((offset, rangeStart, rangeEnd) in baseSnapshot) {
+            if (count >= maxCount) break
             val targetSub = if (rangeEnd > rangeStart) {
                 text.subSequence(rangeStart, rangeEnd).toString()
             } else {
-                val offset = caret.offset
                 if (offset < doc.textLength) text.subSequence(offset, offset + 1).toString() else ""
             }
             val matches = regex.containsMatchIn(targetSub)
-            if (keepMatching) matches else !matches
+            if (if (keepMatching) matches else !matches) {
+                count++
+            }
         }
+        return count
     }
 
     fun filterSelections(editor: Editor, pattern: String, keepMatching: Boolean) {
