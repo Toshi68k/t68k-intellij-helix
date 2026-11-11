@@ -15,6 +15,7 @@ import com.intellij.util.ui.JBUI
 import jp.titze.intellij.helix.HelixBundle
 import jp.titze.intellij.helix.action.HelixActions
 import jp.titze.intellij.helix.action.HelixCaretUtils
+import jp.titze.intellij.helix.action.HelixRegexActions
 import java.awt.BorderLayout
 import java.awt.Dimension
 import java.awt.Font
@@ -268,8 +269,11 @@ object HelixSelectRegexPopup {
             .setShowShadow(true)
             .createPopup()
 
+        var lastQuery: String? = null
         fun updateStatus() {
             val query = textField.text
+            if (query == lastQuery) return
+            lastQuery = query
             if (query.isEmpty()) {
                 statusLabel.text = HelixBundle.message("popup.selectRegex.hint.typePattern")
                 statusLabel.foreground = HINT_FG
@@ -279,9 +283,10 @@ object HelixSelectRegexPopup {
                     when (mode) {
                         Mode.SELECT -> {
                             val matches = HelixActions.countRegexMatchesInSnapshot(editor, query, snapshot)
+                            val displayMatches = if (matches >= HelixRegexActions.MAX_MATCH_COUNT) "${HelixRegexActions.MAX_MATCH_COUNT}+" else matches.toString()
                             statusLabel.text = when {
                                 matches == 1 -> HelixBundle.message("popup.selectRegex.status.inSelection.one")
-                                matches > 1 -> HelixBundle.message("popup.selectRegex.status.inSelection", matches)
+                                matches > 1 -> HelixBundle.message("popup.selectRegex.status.inSelection", displayMatches)
                                 else -> HelixBundle.message("popup.selectRegex.status.inSelection.zero")
                             }
                             statusLabel.foreground = if (matches > 0) MATCH_SUCCESS_FG else MATCH_WARN_FG
@@ -289,9 +294,10 @@ object HelixSelectRegexPopup {
 
                         Mode.SPLIT -> {
                             val matches = HelixActions.countRegexMatchesInSnapshot(editor, query, snapshot)
+                            val displayMatches = if (matches >= HelixRegexActions.MAX_MATCH_COUNT) "${HelixRegexActions.MAX_MATCH_COUNT}+" else matches.toString()
                             statusLabel.text = when {
                                 matches == 1 -> HelixBundle.message("popup.selectRegex.status.toSplit.one")
-                                matches > 1 -> HelixBundle.message("popup.selectRegex.status.toSplit", matches)
+                                matches > 1 -> HelixBundle.message("popup.selectRegex.status.toSplit", displayMatches)
                                 else -> HelixBundle.message("popup.selectRegex.status.toSplit.zero")
                             }
                             statusLabel.foreground = if (matches > 0) MATCH_SUCCESS_FG else MATCH_WARN_FG
@@ -299,9 +305,10 @@ object HelixSelectRegexPopup {
 
                         Mode.KEEP -> {
                             val count = HelixActions.countFilterSelectionsMatches(editor, query, true, snapshot)
+                            val displayCount = if (count >= HelixRegexActions.MAX_MATCH_COUNT) "${HelixRegexActions.MAX_MATCH_COUNT}+" else count.toString()
                             statusLabel.text = when {
                                 count == 1 -> HelixBundle.message("popup.selectRegex.status.matchingSelections.one")
-                                count > 1 -> HelixBundle.message("popup.selectRegex.status.matchingSelections", count)
+                                count > 1 -> HelixBundle.message("popup.selectRegex.status.matchingSelections", displayCount)
                                 else -> HelixBundle.message("popup.selectRegex.status.matchingSelections.zero")
                             }
                             statusLabel.foreground = if (count > 0) MATCH_SUCCESS_FG else MATCH_WARN_FG
@@ -309,9 +316,10 @@ object HelixSelectRegexPopup {
 
                         Mode.REMOVE -> {
                             val count = HelixActions.countFilterSelectionsMatches(editor, query, false, snapshot)
+                            val displayCount = if (count >= HelixRegexActions.MAX_MATCH_COUNT) "${HelixRegexActions.MAX_MATCH_COUNT}+" else count.toString()
                             statusLabel.text = when {
                                 count == 1 -> HelixBundle.message("popup.selectRegex.status.remainingSelections.one")
-                                count > 1 -> HelixBundle.message("popup.selectRegex.status.remainingSelections", count)
+                                count > 1 -> HelixBundle.message("popup.selectRegex.status.remainingSelections", displayCount)
                                 else -> HelixBundle.message("popup.selectRegex.status.remainingSelections.zero")
                             }
                             statusLabel.foreground = if (count > 0) MATCH_SUCCESS_FG else MATCH_WARN_FG

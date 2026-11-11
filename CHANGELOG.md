@@ -28,6 +28,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   - Optimized sorting in `HelixActionExtractor.extractActions()` using precomputed lowercase fields, avoiding ~130,000 lowercase allocations during action catalog initialization.
   - Precomputed normalized lowercase lookup strings (`displayShortcutLower`, `rawSequenceLower`, `commandLower`, `descriptionLower`) on `HelixKeybindingRow` to make `HelixKeymapBrowserPanel` search filtering instantaneous without per-row string transformations.
   - Added duplicate query and prefix suppression in `HelixActionPickerDialog` and `HelixKeymapBrowserPanel` to skip redundant filter passes on non-textual input events.
+- **Large-Document Regex Match Bounding & Live Search Optimization**:
+  - Capped live document and selection regex match counting at `MAX_MATCH_COUNT = 1000` (`countDocumentRegexMatches`, `countRegexMatchesInSnapshot`, and `countFilterSelectionsMatches`), terminating search loops early to prevent EDT lockups when typing patterns in large buffers.
+  - Added duplicate query deduplication (`lastQuery == query`) across `HelixPromptBar`, `HelixSearchPopup`, and `HelixSelectRegexPopup` to eliminate redundant regex evaluation passes on no-op events.
+  - Formatted status indicators to gracefully display `"1000+ matches"` / `"1000+ matches found"` / `"1000+ in selection"` using existing bundle format templates when matches reach the threshold.
 - **Kotlin Language Version**:
   - Updated Kotlin compiler `languageVersion` to `2.2` in `build.gradle.kts` while maintaining `apiVersion` at `2.1` for IntelliJ platform compatibility.
 
