@@ -221,9 +221,8 @@ object HelixDirectoryFilePickerPopup {
         list.prototypeCellValue = allItems.firstOrNull()
         val scrollPane = JBScrollPane(list).apply {
             border = JBUI.Borders.empty(4, 6)
-            isOpaque = false
-            viewport.isOpaque = false
         }
+        HelixScrollBarUI.apply(scrollPane)
         mainPanel.add(scrollPane, BorderLayout.CENTER)
         mainPanel.add(createFooterPanel(), BorderLayout.SOUTH)
 

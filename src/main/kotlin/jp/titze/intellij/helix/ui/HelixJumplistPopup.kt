@@ -281,11 +281,11 @@ object HelixJumplistPopup {
             }
         }
 
-        val scrollPane = JBScrollPane(list)
-        scrollPane.border = JBUI.Borders.empty(4, 6)
-        scrollPane.isOpaque = false
-        scrollPane.viewport.isOpaque = false
-        scrollPane.horizontalScrollBarPolicy = javax.swing.ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER
+        val scrollPane = JBScrollPane(list).apply {
+            border = JBUI.Borders.empty(4, 6)
+            horizontalScrollBarPolicy = javax.swing.ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER
+        }
+        HelixScrollBarUI.apply(scrollPane)
         mainPanel.add(scrollPane, BorderLayout.CENTER)
 
         mainPanel.preferredSize = Dimension(JBUI.scale(560), JBUI.scale(380))

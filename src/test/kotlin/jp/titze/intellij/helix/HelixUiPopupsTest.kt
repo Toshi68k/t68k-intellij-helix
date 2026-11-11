@@ -11,6 +11,7 @@ import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.string.shouldContain
+import io.kotest.matchers.types.shouldBeInstanceOf
 import io.kotest.matchers.types.shouldBeSameInstanceAs
 import jp.titze.intellij.helix.action.HelixActionDelegate
 import jp.titze.intellij.helix.action.HelixActions
@@ -462,6 +463,8 @@ class HelixUiPopupsTest : BasePlatformTestCase() {
 
         val scrollPane = panel.components.filterIsInstance<com.intellij.ui.components.JBScrollPane>().first()
         val scrollBar = scrollPane.verticalScrollBar
+        scrollBar.isOpaque.shouldBeFalse()
+        scrollBar.ui.shouldBeInstanceOf<jp.titze.intellij.helix.ui.HelixScrollBarUI>()
 
         val keyListener = panel.keyListeners.first()
 
