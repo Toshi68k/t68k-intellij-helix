@@ -29,6 +29,8 @@ class HelixSettingsTest : BasePlatformTestCase() {
         settings.colorModes = true
         settings.cursorTint = true
         settings.resetToNormalOnTabSwitch = true
+        settings.whichKeyColumnLayout = WhichKeyColumnLayout.AUTO
+        settings.whichKeyMaxRows = 0
         settings.ctrlKeyOverrides = emptyMap()
         jp.titze.intellij.helix.ui.HelixPromptHistory.clear()
         super.tearDown()
@@ -45,6 +47,8 @@ class HelixSettingsTest : BasePlatformTestCase() {
         settings.cursorTint.shouldBeTrue()
         settings.lineNumberMode shouldBe HelixLineNumberMode.IDE_DEFAULT
         settings.resetToNormalOnTabSwitch.shouldBeTrue()
+        settings.whichKeyColumnLayout shouldBe WhichKeyColumnLayout.AUTO
+        settings.whichKeyMaxRows shouldBe 0
     }
 
     fun testLineNumberModePersistence() {
@@ -63,6 +67,28 @@ class HelixSettingsTest : BasePlatformTestCase() {
 
         settings.lineNumberMode = HelixLineNumberMode.OFF
         settings.lineNumberMode shouldBe HelixLineNumberMode.OFF
+    }
+
+    fun testWhichKeyLayoutAndMaxRowsPersistence() {
+        val settings = HelixSettings.instance
+
+        settings.whichKeyColumnLayout = WhichKeyColumnLayout.FOUR_COLUMNS
+        settings.whichKeyColumnLayout shouldBe WhichKeyColumnLayout.FOUR_COLUMNS
+
+        settings.whichKeyColumnLayout = WhichKeyColumnLayout.SINGLE_COLUMN
+        settings.whichKeyColumnLayout shouldBe WhichKeyColumnLayout.SINGLE_COLUMN
+
+        settings.whichKeyColumnLayout = WhichKeyColumnLayout.AUTO
+        settings.whichKeyColumnLayout shouldBe WhichKeyColumnLayout.AUTO
+
+        settings.whichKeyMaxRows = 8
+        settings.whichKeyMaxRows shouldBe 8
+
+        settings.whichKeyMaxRows = -5
+        settings.whichKeyMaxRows shouldBe 0
+
+        settings.whichKeyMaxRows = 100
+        settings.whichKeyMaxRows shouldBe 50
     }
 
     fun testJumpListMaxEntriesClamping() {

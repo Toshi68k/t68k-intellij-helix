@@ -7,6 +7,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- **Responsive 1–4 Column Layout & Configurable Max Rows for Which-Key Popups**:
+  - Expanded `WhichKeyColumnLayout` with `AUTO` (responsive based on editor width up to 4 columns), `FOUR_COLUMNS` (ultra-compact, packing the 30-item `SPACE` menu into just 8 rows on widescreen displays), `THREE_COLUMNS` (standard), `TWO_COLUMNS` (narrow), and `SINGLE_COLUMN` (vertical list).
+  - Added configurable **Preferred Max Rows** (`whichKeyMaxRows`) in **Preferences &rarr; Tools &rarr; Helix Keymap &rarr; Appearance**, dynamically allocating columns to keep row counts within user-targeted limits (e.g. 8, 10, 12, 15, or dynamic).
+  - Added responsive viewport width clamping in `HelixWhichKeyPopup` so wide multi-column layouts gracefully scale down to fit narrow editor split panes without horizontal overflow.
 - **Custom Transparent Scrollbar UI (`HelixScrollBarUI`)**:
   - Implemented `HelixScrollBarUI` featuring a 100% transparent track, stealth zero-size arrow steppers, and a sleek, semi-transparent rounded pill thumb matching `HelixTheme.CARD_BG`.
   - Applied across all floating card popups (`HelixWhichKeyPopup`, `HelixCommandPopup`, `HelixJumplistPopup`, `HelixRegistersPopup`, `HelixMacrosPopup`, and `HelixDirectoryFilePickerPopup`), eliminating stark white scrollbar tracks and corner clipping on macOS and Light IDE themes.

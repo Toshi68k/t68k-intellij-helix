@@ -16,6 +16,7 @@ import jp.titze.intellij.helix.HelixBundle
 import jp.titze.intellij.helix.keymap.HelixKeyHandler
 import jp.titze.intellij.helix.macro.HelixMacroExecutor
 import jp.titze.intellij.helix.settings.HelixSettings
+import jp.titze.intellij.helix.settings.WhichKeyColumnLayout
 import jp.titze.intellij.helix.settings.WhichKeyHintMode
 import jp.titze.intellij.helix.state.HelixStateManager
 import java.awt.BorderLayout
@@ -107,7 +108,7 @@ object HelixWhichKeyPopup {
         val viewHeight = if (visibleRect.height > 0) visibleRect.height else component.height
 
         val maxAvailableHeight = if (viewHeight > 0) viewHeight - JBUI.scale(40) else 600
-        val panel = createWhichKeyPanel(title, items, editor, maxAvailableHeight)
+        val panel = createWhichKeyPanel(title, items, editor, maxAvailableHeight, viewWidth)
 
         val popup = JBPopupFactory.getInstance()
             .createComponentPopupBuilder(panel, panel)
@@ -179,40 +180,30 @@ object HelixWhichKeyPopup {
         items: List<WhichKeyItem>,
         editor: Editor,
         maxHeight: Int = 600,
+        maxWidth: Int = 0,
     ): JPanel {
         val settings = HelixSettings.instance
-        val maxCols = settings.whichKeyColumnLayout.maxColumns
-        val numColumns = when {
-            maxCols >= 3 && items.size > 18 -> 3
-            items.size > 8 -> 2
-            else -> 1
+        val (numColumns, cardMinWidth) = computeColumnAllocation(settings, items.size, maxWidth, editor)
+        val mainPanel = RoundedCardPanel(BorderLayout(), minWidth = cardMinWidth).apply {
+            isFocusable = true
+            focusTraversalKeysEnabled = false
         }
-        val cardMinWidth = when (numColumns) {
-            3 -> JBUI.scale(760)
-            2 -> JBUI.scale(520)
-            else -> JBUI.scale(280)
-        }
-        val mainPanel = RoundedCardPanel(BorderLayout(), minWidth = cardMinWidth)
-        mainPanel.isFocusable = true
-        mainPanel.focusTraversalKeysEnabled = false
 
         var activeHintMode = settings.whichKeyHintMode
 
-        val headerPanel = JPanel(BorderLayout(JBUI.scale(12), 0))
-        headerPanel.isOpaque = false
-        headerPanel.border = BorderFactory.createCompoundBorder(
-            BorderFactory.createMatteBorder(0, 0, 1, 0, DIVIDER_COLOR),
-            JBUI.Borders.empty(8, 12, 6, 12),
-        )
-
-        val titleLabel = JBLabel(title)
-        titleLabel.font = JBUI.Fonts.label().deriveFont(Font.BOLD, JBUI.scaleFontSize(11.5f).toFloat())
-        titleLabel.foreground = TITLE_COLOR
-        headerPanel.add(titleLabel, BorderLayout.WEST)
-
-        val rightHeaderPanel = JPanel(FlowLayout(FlowLayout.RIGHT, JBUI.scale(10), 0)).apply {
+        val headerPanel = JPanel(BorderLayout(JBUI.scale(12), 0)).apply {
             isOpaque = false
+            border = BorderFactory.createCompoundBorder(
+                BorderFactory.createMatteBorder(0, 0, 1, 0, DIVIDER_COLOR),
+                JBUI.Borders.empty(8, 12, 6, 12),
+            )
         }
+
+        val titleLabel = JBLabel(title).apply {
+            font = JBUI.Fonts.label().deriveFont(Font.BOLD, JBUI.scaleFontSize(11.5f).toFloat())
+            foreground = TITLE_COLOR
+        }
+        headerPanel.add(titleLabel, BorderLayout.WEST)
 
         fun hintBadgeText(mode: WhichKeyHintMode) = if (mode == WhichKeyHintMode.HELIX_COMMAND) {
             HelixBundle.message("whichKey.badge.helix")
@@ -232,10 +223,12 @@ object HelixWhichKeyPopup {
             foreground = CANCEL_COLOR
         }
 
-        rightHeaderPanel.add(toggleModeLabel)
-        rightHeaderPanel.add(cancelLabel)
+        val rightHeaderPanel = JPanel(FlowLayout(FlowLayout.RIGHT, JBUI.scale(10), 0)).apply {
+            isOpaque = false
+            add(toggleModeLabel)
+            add(cancelLabel)
+        }
         headerPanel.add(rightHeaderPanel, BorderLayout.EAST)
-
         mainPanel.add(headerPanel, BorderLayout.NORTH)
 
         val allRows = mutableListOf<WhichKeyRow>()
@@ -266,53 +259,7 @@ object HelixWhichKeyPopup {
             }
         })
 
-        fun createRow(item: WhichKeyItem): JPanel {
-            val row = WhichKeyRow(item, activeHintMode) {
-                val state = HelixStateManager.getOrCreate(editor)
-                val inStickyView = state.pendingSequence == "Z"
-                if (!inStickyView) {
-                    hide()
-                }
-                val triggerChar = if (item.key.equals("Space", ignoreCase = true)) ' ' else item.key[0]
-                val handled = HelixKeyHandler.handleKey(triggerChar, editor)
-                if (inStickyView && (!handled || state.pendingSequence != "Z")) {
-                    hide()
-                }
-            }
-            allRows.add(row)
-            return row
-        }
-
-        val itemsPanel = JPanel()
-        itemsPanel.isOpaque = false
-        itemsPanel.border = JBUI.Borders.empty(4, 6, 6, 6)
-
-        val rowsPerCol = (items.size + numColumns - 1) / numColumns
-        if (numColumns == 1) {
-            itemsPanel.layout = javax.swing.BoxLayout(itemsPanel, javax.swing.BoxLayout.Y_AXIS)
-            for (item in items) {
-                itemsPanel.add(createRow(item))
-                itemsPanel.add(javax.swing.Box.createVerticalStrut(JBUI.scale(1)))
-            }
-        } else {
-            itemsPanel.layout = java.awt.GridLayout(1, numColumns, JBUI.scale(10), 0)
-            for (col in 0 until numColumns) {
-                val colPanel = JPanel().apply {
-                    layout = javax.swing.BoxLayout(this, javax.swing.BoxLayout.Y_AXIS)
-                    isOpaque = false
-                }
-                val start = col * rowsPerCol
-                val end = minOf(start + rowsPerCol, items.size)
-                if (start < items.size) {
-                    for (item in items.subList(start, end)) {
-                        colPanel.add(createRow(item))
-                        colPanel.add(javax.swing.Box.createVerticalStrut(JBUI.scale(1)))
-                    }
-                }
-                itemsPanel.add(colPanel)
-            }
-        }
-
+        val itemsPanel = createItemsPanel(items, numColumns, activeHintMode, editor, allRows)
         val scrollPane = com.intellij.ui.components.JBScrollPane(itemsPanel).apply {
             border = JBUI.Borders.empty()
             horizontalScrollBarPolicy = javax.swing.ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER
@@ -325,26 +272,15 @@ object HelixWhichKeyPopup {
         val headerHeight = headerPanel.preferredSize.height
         val totalPreferredHeight = prefItemsHeight + headerHeight + JBUI.scale(10)
 
-        val isScrollable = totalPreferredHeight > maxHeight
-        if (isScrollable) {
-            val boundedScrollHeight = maxHeight - headerHeight - JBUI.scale(10)
+        if (totalPreferredHeight > maxHeight) {
+            val footerPanel = createFooterPanel()
+            val footerHeight = footerPanel.preferredSize.height
+            val boundedScrollHeight = maxHeight - headerHeight - footerHeight - JBUI.scale(10)
+            val scrollBarWidth = scrollPane.verticalScrollBar.preferredSize.width
             scrollPane.preferredSize = java.awt.Dimension(
-                itemsPanel.preferredSize.width,
+                itemsPanel.preferredSize.width + scrollBarWidth,
                 boundedScrollHeight.coerceAtLeast(JBUI.scale(150)),
             )
-
-            val footerPanel = JPanel(BorderLayout()).apply {
-                isOpaque = false
-                border = BorderFactory.createCompoundBorder(
-                    BorderFactory.createMatteBorder(1, 0, 0, 0, DIVIDER_COLOR),
-                    JBUI.Borders.empty(6, 14, 6, 14),
-                )
-                val hint = JBLabel("Tab: toggle hint | ↑/↓: scroll | PgUp/PgDn: page").apply {
-                    font = JBUI.Fonts.smallFont()
-                    foreground = CANCEL_COLOR
-                }
-                add(hint, BorderLayout.WEST)
-            }
             mainPanel.add(footerPanel, BorderLayout.SOUTH)
         }
 
@@ -393,6 +329,134 @@ object HelixWhichKeyPopup {
         })
 
         return mainPanel
+    }
+
+    internal fun computeColumnAllocation(
+        settings: HelixSettings,
+        itemsSize: Int,
+        maxWidth: Int,
+        editor: Editor,
+    ): Pair<Int, Int> {
+        val layoutPreference = settings.whichKeyColumnLayout
+        val maxAllowedCols = layoutPreference.maxColumns
+
+        val effectiveWidth = if (maxWidth > 0) {
+            maxWidth
+        } else {
+            val component = editor.component
+            val visibleRect = component.visibleRect
+            if (visibleRect.width > 0) visibleRect.width else component.width
+        }
+
+        val widthSupportedCols = if (effectiveWidth > 0) {
+            when {
+                effectiveWidth >= JBUI.scale(1160) -> 4
+                effectiveWidth >= JBUI.scale(760) -> 3
+                effectiveWidth >= JBUI.scale(520) -> 2
+                else -> 1
+            }
+        } else {
+            maxAllowedCols
+        }
+
+        val upperColBound = minOf(maxAllowedCols, widthSupportedCols)
+
+        val prefRows = settings.whichKeyMaxRows
+        val numColumns = if (prefRows > 0) {
+            val needed = (itemsSize + prefRows - 1) / prefRows
+            needed.coerceIn(1, upperColBound)
+        } else if (layoutPreference == WhichKeyColumnLayout.FOUR_COLUMNS) {
+            when {
+                upperColBound >= 4 && itemsSize > 24 -> 4
+                upperColBound >= 3 && itemsSize > 18 -> 3
+                upperColBound >= 2 && itemsSize > 8 -> 2
+                else -> 1
+            }
+        } else {
+            val targetMax = minOf(upperColBound, 3)
+            when {
+                targetMax >= 3 && itemsSize > 18 -> 3
+                targetMax >= 2 && itemsSize > 8 -> 2
+                else -> 1
+            }
+        }
+        val cardMinWidth = when (numColumns) {
+            4 -> JBUI.scale(1080)
+            3 -> JBUI.scale(760)
+            2 -> JBUI.scale(520)
+            else -> JBUI.scale(280)
+        }
+        return numColumns to cardMinWidth
+    }
+
+    private fun createItemsPanel(
+        items: List<WhichKeyItem>,
+        numColumns: Int,
+        activeHintMode: WhichKeyHintMode,
+        editor: Editor,
+        allRows: MutableList<WhichKeyRow>,
+    ): JPanel {
+        fun createRow(item: WhichKeyItem): JPanel {
+            val row = WhichKeyRow(item, activeHintMode) {
+                val state = HelixStateManager.getOrCreate(editor)
+                val inStickyView = state.pendingSequence == "Z"
+                if (!inStickyView) {
+                    hide()
+                }
+                val triggerChar = if (item.key.equals("Space", ignoreCase = true)) ' ' else item.key[0]
+                val handled = HelixKeyHandler.handleKey(triggerChar, editor)
+                if (inStickyView && (!handled || state.pendingSequence != "Z")) {
+                    hide()
+                }
+            }
+            allRows.add(row)
+            return row
+        }
+
+        val itemsPanel = JPanel().apply {
+            isOpaque = false
+            border = JBUI.Borders.empty(4, 6, 6, 6)
+        }
+
+        val rowsPerCol = (items.size + numColumns - 1) / numColumns
+        if (numColumns == 1) {
+            itemsPanel.layout = javax.swing.BoxLayout(itemsPanel, javax.swing.BoxLayout.Y_AXIS)
+            for (item in items) {
+                itemsPanel.add(createRow(item))
+                itemsPanel.add(javax.swing.Box.createVerticalStrut(JBUI.scale(1)))
+            }
+        } else {
+            itemsPanel.layout = java.awt.GridLayout(1, numColumns, JBUI.scale(10), 0)
+            for (col in 0 until numColumns) {
+                val colPanel = JPanel().apply {
+                    layout = javax.swing.BoxLayout(this, javax.swing.BoxLayout.Y_AXIS)
+                    isOpaque = false
+                }
+                val start = col * rowsPerCol
+                val end = minOf(start + rowsPerCol, items.size)
+                if (start < items.size) {
+                    for (item in items.subList(start, end)) {
+                        colPanel.add(createRow(item))
+                        colPanel.add(javax.swing.Box.createVerticalStrut(JBUI.scale(1)))
+                    }
+                }
+                itemsPanel.add(colPanel)
+            }
+        }
+        return itemsPanel
+    }
+
+    private fun createFooterPanel(): JPanel = JPanel(BorderLayout()).apply {
+        isOpaque = false
+        border = BorderFactory.createCompoundBorder(
+            BorderFactory.createMatteBorder(1, 0, 0, 0, DIVIDER_COLOR),
+            JBUI.Borders.empty(6, 14),
+        )
+        val hint = JBLabel("Tab: toggle hint | ↑/↓: scroll | PgUp/PgDn: page").apply {
+            font = JBUI.Fonts.smallFont()
+            foreground = CANCEL_COLOR
+        }
+        add(hint, BorderLayout.WEST)
     }
 
     private fun handleNavigationKeys(e: KeyEvent, scrollPane: com.intellij.ui.components.JBScrollPane) {
