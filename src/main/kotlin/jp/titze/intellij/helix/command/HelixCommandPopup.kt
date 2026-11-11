@@ -234,11 +234,11 @@ object HelixCommandPopup {
             }
         }
 
-        val scrollPane = JBScrollPane(list)
-        scrollPane.border = JBUI.Borders.empty(0, 6)
-        scrollPane.isOpaque = false
-        scrollPane.viewport.isOpaque = false
-        scrollPane.horizontalScrollBarPolicy = javax.swing.ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER
+        val scrollPane = JBScrollPane(list).apply {
+            border = JBUI.Borders.empty(0, 6)
+            horizontalScrollBarPolicy = javax.swing.ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER
+        }
+        jp.titze.intellij.helix.ui.HelixScrollBarUI.apply(scrollPane)
         mainPanel.add(scrollPane, BorderLayout.CENTER)
 
         val footerPanel = JPanel(BorderLayout())

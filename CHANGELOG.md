@@ -5,6 +5,12 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+
+- **Custom Transparent Scrollbar UI (`HelixScrollBarUI`)**:
+  - Implemented `HelixScrollBarUI` featuring a 100% transparent track, stealth zero-size arrow steppers, and a sleek, semi-transparent rounded pill thumb matching `HelixTheme.CARD_BG`.
+  - Applied across all floating card popups (`HelixWhichKeyPopup`, `HelixCommandPopup`, `HelixJumplistPopup`, `HelixRegistersPopup`, `HelixMacrosPopup`, and `HelixDirectoryFilePickerPopup`), eliminating stark white scrollbar tracks and corner clipping on macOS and Light IDE themes.
+
 ## [0.6.1]
 
 ### Changed

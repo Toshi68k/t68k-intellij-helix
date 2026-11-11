@@ -11,6 +11,7 @@ import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.string.shouldContain
+import io.kotest.matchers.types.shouldBeInstanceOf
 import io.kotest.matchers.types.shouldBeSameInstanceAs
 import jp.titze.intellij.helix.action.HelixActionDelegate
 import jp.titze.intellij.helix.action.HelixActions
@@ -321,10 +322,10 @@ class HelixUiPopupsTest : BasePlatformTestCase() {
         myFixture.configureByText("test.txt", "test")
         val editor = myFixture.editor
         var executedAction: String? = null
-        val originalExecutor = jp.titze.intellij.helix.action.HelixActionDelegate.actionExecutor
+        val originalExecutor = HelixActionDelegate.actionExecutor
 
         try {
-            jp.titze.intellij.helix.action.HelixActionDelegate.actionExecutor = { actionId, _ ->
+            HelixActionDelegate.actionExecutor = { actionId, _ ->
                 executedAction = actionId
                 true
             }
@@ -339,7 +340,7 @@ class HelixUiPopupsTest : BasePlatformTestCase() {
             val terminalCmd = HelixCommandPopup.COMMANDS.first { it.name == "terminal" }
             terminalCmd.aliases.contains("sh").shouldBeTrue()
         } finally {
-            jp.titze.intellij.helix.action.HelixActionDelegate.actionExecutor = originalExecutor
+            HelixActionDelegate.actionExecutor = originalExecutor
         }
     }
 
@@ -376,7 +377,7 @@ class HelixUiPopupsTest : BasePlatformTestCase() {
         val editor = myFixture.editor
 
         val executedActions = mutableListOf<String>()
-        jp.titze.intellij.helix.action.HelixActionDelegate.actionExecutor = { actionId, _ ->
+        HelixActionDelegate.actionExecutor = { actionId, _ ->
             executedActions.add(actionId)
             true
         }
@@ -429,7 +430,7 @@ class HelixUiPopupsTest : BasePlatformTestCase() {
             HelixCommands.execute("hover", editor)
             executedActions.contains("QuickJavaDoc").shouldBeTrue()
         } finally {
-            jp.titze.intellij.helix.action.HelixActionDelegate.actionExecutor = null
+            HelixActionDelegate.actionExecutor = null
         }
     }
 
@@ -462,41 +463,43 @@ class HelixUiPopupsTest : BasePlatformTestCase() {
 
         val scrollPane = panel.components.filterIsInstance<com.intellij.ui.components.JBScrollPane>().first()
         val scrollBar = scrollPane.verticalScrollBar
+        scrollBar.isOpaque.shouldBeFalse()
+        scrollBar.ui.shouldBeInstanceOf<jp.titze.intellij.helix.ui.HelixScrollBarUI>()
 
         val keyListener = panel.keyListeners.first()
 
         // Down arrow
-        val downEvent = java.awt.event.KeyEvent(
+        val downEvent = KeyEvent(
             panel,
-            java.awt.event.KeyEvent.KEY_PRESSED,
+            KeyEvent.KEY_PRESSED,
             System.currentTimeMillis(),
             0,
-            java.awt.event.KeyEvent.VK_DOWN,
-            java.awt.event.KeyEvent.CHAR_UNDEFINED,
+            KeyEvent.VK_DOWN,
+            KeyEvent.CHAR_UNDEFINED,
         )
         keyListener.keyPressed(downEvent)
         downEvent.isConsumed.shouldBeTrue()
 
         // Page down
-        val pageDownEvent = java.awt.event.KeyEvent(
+        val pageDownEvent = KeyEvent(
             panel,
-            java.awt.event.KeyEvent.KEY_PRESSED,
+            KeyEvent.KEY_PRESSED,
             System.currentTimeMillis(),
             0,
-            java.awt.event.KeyEvent.VK_PAGE_DOWN,
-            java.awt.event.KeyEvent.CHAR_UNDEFINED,
+            KeyEvent.VK_PAGE_DOWN,
+            KeyEvent.CHAR_UNDEFINED,
         )
         keyListener.keyPressed(pageDownEvent)
         pageDownEvent.isConsumed.shouldBeTrue()
 
         // Home
-        val homeEvent = java.awt.event.KeyEvent(
+        val homeEvent = KeyEvent(
             panel,
-            java.awt.event.KeyEvent.KEY_PRESSED,
+            KeyEvent.KEY_PRESSED,
             System.currentTimeMillis(),
             0,
-            java.awt.event.KeyEvent.VK_HOME,
-            java.awt.event.KeyEvent.CHAR_UNDEFINED,
+            KeyEvent.VK_HOME,
+            KeyEvent.CHAR_UNDEFINED,
         )
         keyListener.keyPressed(homeEvent)
         homeEvent.isConsumed.shouldBeTrue()
@@ -578,12 +581,12 @@ class HelixUiPopupsTest : BasePlatformTestCase() {
         val panel = HelixWhichKeyPopup.createWhichKeyPanel(spaceTitle, spaceItems, editor)
 
         val keyListener = panel.keyListeners.first()
-        val tabEvent = java.awt.event.KeyEvent(
+        val tabEvent = KeyEvent(
             panel,
-            java.awt.event.KeyEvent.KEY_PRESSED,
+            KeyEvent.KEY_PRESSED,
             System.currentTimeMillis(),
             0,
-            java.awt.event.KeyEvent.VK_TAB,
+            KeyEvent.VK_TAB,
             '\t',
         )
         keyListener.keyPressed(tabEvent)
@@ -642,10 +645,10 @@ class HelixUiPopupsTest : BasePlatformTestCase() {
         myFixture.configureByText("test.txt", "sample")
         val editor = myFixture.editor
         val executedActions = mutableListOf<String>()
-        val originalExecutor = jp.titze.intellij.helix.action.HelixActionDelegate.actionExecutor
+        val originalExecutor = HelixActionDelegate.actionExecutor
 
         try {
-            jp.titze.intellij.helix.action.HelixActionDelegate.actionExecutor = { actionId, _ ->
+            HelixActionDelegate.actionExecutor = { actionId, _ ->
                 executedActions.add(actionId)
                 true
             }
@@ -679,7 +682,7 @@ class HelixUiPopupsTest : BasePlatformTestCase() {
             openCmd.matches("file-picker").shouldBeTrue()
             openCmd.matches("file_picker").shouldBeTrue()
         } finally {
-            jp.titze.intellij.helix.action.HelixActionDelegate.actionExecutor = originalExecutor
+            HelixActionDelegate.actionExecutor = originalExecutor
         }
 
         val testFile = java.io.File.createTempFile("opened_file", ".txt")
@@ -697,10 +700,10 @@ class HelixUiPopupsTest : BasePlatformTestCase() {
         myFixture.configureByText("test.txt", "sample")
         val editor = myFixture.editor
         val executedActions = mutableListOf<String>()
-        val originalExecutor = jp.titze.intellij.helix.action.HelixActionDelegate.actionExecutor
+        val originalExecutor = HelixActionDelegate.actionExecutor
 
         try {
-            jp.titze.intellij.helix.action.HelixActionDelegate.actionExecutor = { actionId, _ ->
+            HelixActionDelegate.actionExecutor = { actionId, _ ->
                 executedActions.add(actionId)
                 true
             }
@@ -720,7 +723,7 @@ class HelixUiPopupsTest : BasePlatformTestCase() {
             val findCmd = HelixCommandPopup.COMMANDS.first { it.name == "find" }
             findCmd.matches("find").shouldBeTrue()
         } finally {
-            jp.titze.intellij.helix.action.HelixActionDelegate.actionExecutor = originalExecutor
+            HelixActionDelegate.actionExecutor = originalExecutor
         }
     }
 
@@ -728,10 +731,10 @@ class HelixUiPopupsTest : BasePlatformTestCase() {
         myFixture.configureByText("test.txt", "sample")
         val editor = myFixture.editor
         val executedActions = mutableListOf<String>()
-        val originalExecutor = jp.titze.intellij.helix.action.HelixActionDelegate.actionExecutor
+        val originalExecutor = HelixActionDelegate.actionExecutor
 
         try {
-            jp.titze.intellij.helix.action.HelixActionDelegate.actionExecutor = { actionId, _ ->
+            HelixActionDelegate.actionExecutor = { actionId, _ ->
                 executedActions.add(actionId)
                 true
             }
@@ -766,7 +769,7 @@ class HelixUiPopupsTest : BasePlatformTestCase() {
             HelixCommandPopup.executeCommand("n", editor)
             executedActions.last() shouldBe "NewScratchFile"
         } finally {
-            jp.titze.intellij.helix.action.HelixActionDelegate.actionExecutor = originalExecutor
+            HelixActionDelegate.actionExecutor = originalExecutor
         }
     }
 
@@ -1078,8 +1081,8 @@ class HelixUiPopupsTest : BasePlatformTestCase() {
         val state = HelixStateManager.getOrCreate(editor)
 
         val executedActions = mutableListOf<String>()
-        val originalExecutor = jp.titze.intellij.helix.action.HelixActionDelegate.actionExecutor
-        jp.titze.intellij.helix.action.HelixActionDelegate.actionExecutor = { actionId, _ ->
+        val originalExecutor = HelixActionDelegate.actionExecutor
+        HelixActionDelegate.actionExecutor = { actionId, _ ->
             executedActions.add(actionId)
             true
         }
@@ -1169,7 +1172,7 @@ class HelixUiPopupsTest : BasePlatformTestCase() {
             HelixKeyHandler.handleKey('v', editor)
             executedActions.last() shouldBe "ActivateDebugToolWindow"
         } finally {
-            jp.titze.intellij.helix.action.HelixActionDelegate.actionExecutor = originalExecutor
+            HelixActionDelegate.actionExecutor = originalExecutor
         }
     }
 
@@ -1178,8 +1181,8 @@ class HelixUiPopupsTest : BasePlatformTestCase() {
         val editor = myFixture.editor
 
         val executedActions = mutableListOf<String>()
-        val originalExecutor = jp.titze.intellij.helix.action.HelixActionDelegate.actionExecutor
-        jp.titze.intellij.helix.action.HelixActionDelegate.actionExecutor = { actionId, _ ->
+        val originalExecutor = HelixActionDelegate.actionExecutor
+        HelixActionDelegate.actionExecutor = { actionId, _ ->
             executedActions.add(actionId)
             true
         }
@@ -1248,7 +1251,7 @@ class HelixUiPopupsTest : BasePlatformTestCase() {
             HelixCommandPopup.executeCommand("param-info", editor)
             executedActions.last() shouldBe "ParameterInfo"
         } finally {
-            jp.titze.intellij.helix.action.HelixActionDelegate.actionExecutor = originalExecutor
+            HelixActionDelegate.actionExecutor = originalExecutor
         }
     }
 
@@ -1257,8 +1260,8 @@ class HelixUiPopupsTest : BasePlatformTestCase() {
         val editor = myFixture.editor
 
         val executedActions = mutableListOf<String>()
-        val originalExecutor = jp.titze.intellij.helix.action.HelixActionDelegate.actionExecutor
-        jp.titze.intellij.helix.action.HelixActionDelegate.actionExecutor = { actionId, _ ->
+        val originalExecutor = HelixActionDelegate.actionExecutor
+        HelixActionDelegate.actionExecutor = { actionId, _ ->
             executedActions.add(actionId)
             true
         }
@@ -1300,7 +1303,7 @@ class HelixUiPopupsTest : BasePlatformTestCase() {
             HelixCommandPopup.executeCommand("redo-later", editor)
             executedActions.last() shouldBe "\$Redo"
         } finally {
-            jp.titze.intellij.helix.action.HelixActionDelegate.actionExecutor = originalExecutor
+            HelixActionDelegate.actionExecutor = originalExecutor
         }
     }
 
@@ -1328,8 +1331,8 @@ class HelixUiPopupsTest : BasePlatformTestCase() {
         val state = HelixStateManager.getOrCreate(editor)
 
         val executedActions = mutableListOf<String>()
-        val originalExecutor = jp.titze.intellij.helix.action.HelixActionDelegate.actionExecutor
-        jp.titze.intellij.helix.action.HelixActionDelegate.actionExecutor = { actionId, _ ->
+        val originalExecutor = HelixActionDelegate.actionExecutor
+        HelixActionDelegate.actionExecutor = { actionId, _ ->
             executedActions.add(actionId)
             true
         }
@@ -1382,7 +1385,7 @@ class HelixUiPopupsTest : BasePlatformTestCase() {
             // Folding actions should NOT be invoked by View mode chords
             executedActions.isEmpty().shouldBeTrue()
         } finally {
-            jp.titze.intellij.helix.action.HelixActionDelegate.actionExecutor = originalExecutor
+            HelixActionDelegate.actionExecutor = originalExecutor
         }
     }
 
@@ -1391,8 +1394,8 @@ class HelixUiPopupsTest : BasePlatformTestCase() {
         val editor = myFixture.editor
 
         val executedActions = mutableListOf<String>()
-        val originalExecutor = jp.titze.intellij.helix.action.HelixActionDelegate.actionExecutor
-        jp.titze.intellij.helix.action.HelixActionDelegate.actionExecutor = { actionId, _ ->
+        val originalExecutor = HelixActionDelegate.actionExecutor
+        HelixActionDelegate.actionExecutor = { actionId, _ ->
             executedActions.add(actionId)
             true
         }
@@ -1416,7 +1419,7 @@ class HelixUiPopupsTest : BasePlatformTestCase() {
             HelixCommandPopup.executeCommand("unfold_all", editor)
             executedActions.last() shouldBe "ExpandAllRegions"
         } finally {
-            jp.titze.intellij.helix.action.HelixActionDelegate.actionExecutor = originalExecutor
+            HelixActionDelegate.actionExecutor = originalExecutor
         }
     }
 
@@ -1471,7 +1474,7 @@ class HelixUiPopupsTest : BasePlatformTestCase() {
         myFixture.configureByText("test.txt", "sample")
         val editor = myFixture.editor
         val executedActions = mutableListOf<String>()
-        jp.titze.intellij.helix.action.HelixActionDelegate.actionExecutor = { id, _ ->
+        HelixActionDelegate.actionExecutor = { id, _ ->
             executedActions.add(id)
             true
         }
@@ -1509,7 +1512,7 @@ class HelixUiPopupsTest : BasePlatformTestCase() {
             jp.titze.intellij.helix.keymap.HelixSpaceKeymap.handle('E', editor).shouldBeTrue()
             executedActions shouldBe listOf("SelectInProjectView")
         } finally {
-            jp.titze.intellij.helix.action.HelixActionDelegate.actionExecutor = null
+            HelixActionDelegate.actionExecutor = null
         }
     }
 
@@ -1519,17 +1522,17 @@ class HelixUiPopupsTest : BasePlatformTestCase() {
         val settings = HelixSettings.instance
         settings.enabled = true
 
-        jp.titze.intellij.helix.editor.HelixEditorEligibility.isActive(editor).shouldBeTrue()
+        HelixEditorEligibility.isActive(editor).shouldBeTrue()
 
         // Toggle via command palette :toggle-helix
         HelixCommands.execute("toggle-helix", editor)
         settings.enabled.shouldBeFalse()
-        jp.titze.intellij.helix.editor.HelixEditorEligibility.isActive(editor).shouldBeFalse()
+        HelixEditorEligibility.isActive(editor).shouldBeFalse()
 
         // Re-enable
         HelixCommands.execute("toggle-helix", editor)
         settings.enabled.shouldBeTrue()
-        jp.titze.intellij.helix.editor.HelixEditorEligibility.isActive(editor).shouldBeTrue()
+        HelixEditorEligibility.isActive(editor).shouldBeTrue()
     }
 
     fun testUpdateAndExitCommands() {

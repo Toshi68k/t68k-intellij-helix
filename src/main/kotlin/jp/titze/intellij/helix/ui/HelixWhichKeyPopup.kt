@@ -313,13 +313,13 @@ object HelixWhichKeyPopup {
             }
         }
 
-        val scrollPane = com.intellij.ui.components.JBScrollPane(itemsPanel)
-        scrollPane.border = JBUI.Borders.empty()
-        scrollPane.isOpaque = false
-        scrollPane.viewport.isOpaque = false
-        scrollPane.horizontalScrollBarPolicy = javax.swing.ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER
-        scrollPane.verticalScrollBar.unitIncrement = JBUI.scale(16)
-        scrollPane.verticalScrollBar.blockIncrement = JBUI.scale(80)
+        val scrollPane = com.intellij.ui.components.JBScrollPane(itemsPanel).apply {
+            border = JBUI.Borders.empty()
+            horizontalScrollBarPolicy = javax.swing.ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER
+            verticalScrollBar.unitIncrement = JBUI.scale(16)
+            verticalScrollBar.blockIncrement = JBUI.scale(80)
+        }
+        HelixScrollBarUI.apply(scrollPane)
 
         val prefItemsHeight = itemsPanel.preferredSize.height
         val headerHeight = headerPanel.preferredSize.height
