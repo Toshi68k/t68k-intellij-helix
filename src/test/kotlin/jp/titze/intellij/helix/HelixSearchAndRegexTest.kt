@@ -10,6 +10,8 @@ import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
 import jp.titze.intellij.helix.action.HelixActionDelegate
 import jp.titze.intellij.helix.action.HelixActions
+import jp.titze.intellij.helix.action.HelixCaretSnapshot
+import jp.titze.intellij.helix.action.HelixRegexActions
 import jp.titze.intellij.helix.action.HelixSearchActions
 import jp.titze.intellij.helix.editor.HelixEventDispatcher
 import jp.titze.intellij.helix.keymap.HelixKeyHandler
@@ -657,5 +659,55 @@ class HelixSearchAndRegexTest : BasePlatformTestCase() {
         HelixActions.splitSelection(editor, "\\s+")
         state.mode shouldBe HelixMode.NORMAL
         editor.caretModel.caretCount shouldBe 3
+    }
+
+    fun testCountDocumentRegexMatchesBoundsAtMaxCount() {
+        // Document with 1,500 occurrences
+        val text = "foo bar ".repeat(1500)
+        myFixture.configureByText("test.txt", text)
+        val editor = myFixture.editor
+
+        val defaultCount = HelixActions.countDocumentRegexMatches(editor, "foo")
+        defaultCount shouldBe HelixRegexActions.MAX_MATCH_COUNT
+        defaultCount shouldBe 1000
+
+        val customCount = HelixActions.countDocumentRegexMatches(editor, "foo", maxCount = 42)
+        customCount shouldBe 42
+    }
+
+    fun testCountRegexMatchesInSnapshotBoundsAtMaxCount() {
+        val text = "target ".repeat(1500)
+        myFixture.configureByText("test.txt", text)
+        val editor = myFixture.editor
+        editor.selectionModel.setSelection(0, text.length)
+        val snapshot = HelixActions.captureCarets(editor)
+
+        val defaultCount = HelixActions.countRegexMatchesInSnapshot(editor, "target", snapshot)
+        defaultCount shouldBe HelixRegexActions.MAX_MATCH_COUNT
+
+        val customCount = HelixActions.countRegexMatchesInSnapshot(editor, "target", snapshot, maxCount = 25)
+        customCount shouldBe 25
+    }
+
+    fun testCountFilterSelectionsMatchesBoundsAtMaxCount() {
+        val text = "item ".repeat(1500)
+        myFixture.configureByText("test.txt", text)
+        val editor = myFixture.editor
+        val snapshot = (0 until 1500).map { i ->
+            val start = i * 5
+            HelixCaretSnapshot(start, start, start + 4)
+        }
+
+        val defaultCount = HelixActions.countFilterSelectionsMatches(editor, "item", keepMatching = true, snapshot)
+        defaultCount shouldBe HelixRegexActions.MAX_MATCH_COUNT
+
+        val customCount = HelixActions.countFilterSelectionsMatches(
+            editor,
+            "item",
+            keepMatching = true,
+            snapshot,
+            maxCount = 10,
+        )
+        customCount shouldBe 10
     }
 }

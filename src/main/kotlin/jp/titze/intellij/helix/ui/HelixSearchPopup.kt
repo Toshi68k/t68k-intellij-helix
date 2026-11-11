@@ -14,6 +14,7 @@ import com.intellij.ui.components.JBTextField
 import com.intellij.util.ui.JBUI
 import jp.titze.intellij.helix.HelixBundle
 import jp.titze.intellij.helix.action.HelixActions
+import jp.titze.intellij.helix.action.HelixRegexActions
 import jp.titze.intellij.helix.action.HelixSearchActions
 import jp.titze.intellij.helix.state.HelixMode
 import jp.titze.intellij.helix.state.HelixStateManager
@@ -249,21 +250,31 @@ object HelixSearchPopup {
             .setShowShadow(true)
             .createPopup()
 
+        var lastQuery: String? = null
         fun updateStatus() {
             val query = textField.text
+            if (query == lastQuery) return
+            lastQuery = query
             if (query.isEmpty()) {
                 statusLabel.text = HelixBundle.message("popup.search.hint.typePattern")
                 statusLabel.foreground = HINT_FG
             } else {
                 try {
                     val matches = HelixActions.countDocumentRegexMatches(editor, query)
+                    val displayMatches = if (matches >=
+                        HelixRegexActions.MAX_MATCH_COUNT
+                    ) {
+                            "${HelixRegexActions.MAX_MATCH_COUNT}+"
+                        } else {
+                            matches.toString()
+                        }
                     statusLabel.text = when {
                         matches == 1 -> HelixBundle.message("popup.search.matches.one")
-                        matches > 1 -> HelixBundle.message("popup.search.matches.found", matches)
+                        matches > 1 -> HelixBundle.message("popup.search.matches.found", displayMatches)
                         else -> HelixBundle.message("popup.search.matches.zero")
                     }
                     statusLabel.foreground = if (matches > 0) MATCH_SUCCESS_FG else MATCH_WARN_FG
-                } catch (e: Exception) {
+                } catch (_: Exception) {
                     statusLabel.text = HelixBundle.message("prompt.regex.invalid")
                     statusLabel.foreground = MATCH_WARN_FG
                 }
