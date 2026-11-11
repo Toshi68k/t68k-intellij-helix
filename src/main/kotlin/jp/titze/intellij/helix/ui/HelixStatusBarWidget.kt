@@ -86,15 +86,7 @@ class HelixStatusBarWidget(private val project: Project) : CustomStatusBarWidget
         }
     }
 
-    var macroRecordingProvider: () -> Boolean = {
-        try {
-            val clazz = Class.forName("com.intellij.ide.actionMacro.ActionMacroManager")
-            val manager = clazz.getMethod("getInstance").invoke(null)
-            clazz.getMethod("isRecording").invoke(manager) as? Boolean ?: false
-        } catch (_: Throwable) {
-            false
-        }
-    }
+    var macroRecordingProvider: () -> Boolean = { isMacroRecording() }
         set(value) {
             field = value
             updateComponent()
@@ -155,20 +147,31 @@ class HelixStatusBarWidget(private val project: Project) : CustomStatusBarWidget
     }
 
     fun updateComponent() {
-        if (HelixSettings.instance.colorModes) {
+        val newIcon: Icon? = if (HelixSettings.instance.colorModes) {
             val state = currentState
             val editor = currentEditor
             if (editor != null && HelixEditorEligibility.isActive(editor) && state != null) {
-                panel.icon = ModePillIcon(state.mode)
+                MODE_PILL_ICONS[state.mode]
             } else {
-                panel.icon = null
+                null
             }
         } else {
-            panel.icon = null
+            null
         }
-        panel.text = computeText()
-        panel.toolTipText = computeTooltipText()
-        myStatusBar?.updateWidget(ID())
+
+        val newText = computeText()
+        val newTooltip = computeTooltipText()
+
+        val iconChanged = panel.icon != newIcon
+        val textChanged = panel.text != newText
+        val tooltipChanged = panel.toolTipText != newTooltip
+
+        if (iconChanged || textChanged || tooltipChanged) {
+            panel.icon = newIcon
+            panel.text = newText
+            panel.toolTipText = newTooltip
+            myStatusBar?.updateWidget(ID())
+        }
     }
 
     private class ModePillIcon(val mode: HelixMode) : Icon {
@@ -275,6 +278,44 @@ class HelixStatusBarWidget(private val project: Project) : CustomStatusBarWidget
 
     companion object {
         const val WIDGET_ID = "jp.titze.intellij.helix.status"
+
+        private val MODE_PILL_ICONS: Map<HelixMode, ModePillIcon> =
+            HelixMode.entries.associateWith { ModePillIcon(it) }
+
+        private val macroManagerClass: Class<*>? by lazy {
+            try {
+                Class.forName("com.intellij.ide.actionMacro.ActionMacroManager")
+            } catch (_: Throwable) {
+                null
+            }
+        }
+
+        private val getInstanceMethod by lazy {
+            try {
+                macroManagerClass?.getMethod("getInstance")
+            } catch (_: Throwable) {
+                null
+            }
+        }
+
+        private val isRecordingMethod by lazy {
+            try {
+                macroManagerClass?.getMethod("isRecording")
+            } catch (_: Throwable) {
+                null
+            }
+        }
+
+        fun isMacroRecording(): Boolean = try {
+            val manager = getInstanceMethod?.invoke(null)
+            if (manager != null) {
+                isRecordingMethod?.invoke(manager) as? Boolean ?: false
+            } else {
+                false
+            }
+        } catch (_: Throwable) {
+            false
+        }
 
         fun updateAllWidgets() {
             ProjectManager.getInstance().openProjects.forEach { project ->
