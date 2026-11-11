@@ -32,6 +32,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   - Capped live document and selection regex match counting at `MAX_MATCH_COUNT = 1000` (`countDocumentRegexMatches`, `countRegexMatchesInSnapshot`, and `countFilterSelectionsMatches`), terminating search loops early to prevent EDT lockups when typing patterns in large buffers.
   - Added duplicate query deduplication (`lastQuery == query`) across `HelixPromptBar`, `HelixSearchPopup`, and `HelixSelectRegexPopup` to eliminate redundant regex evaluation passes on no-op events.
   - Formatted status indicators to gracefully display `"1000+ matches"` / `"1000+ matches found"` / `"1000+ in selection"` using existing bundle format templates when matches reach the threshold.
+- **Status Bar Widget Hot-Path Optimization**:
+  - Eliminated redundant `Class.forName(...)` and `getMethod(...)` reflection calls on the caret and state update hot paths by caching `ActionMacroManager` reflection lookups statically.
+  - Pre-allocated immutable `ModePillIcon` instances for each mode (`NORMAL`, `INSERT`, `SELECT`), eliminating icon object re-instantiations on editor focus and caret events.
+  - Added dirty-checking for icon, text, and tooltip changes in `HelixStatusBarWidget.updateComponent()` to skip unnecessary status bar repaints when widget state remains unchanged.
 - **Kotlin Language Version**:
   - Updated Kotlin compiler `languageVersion` to `2.2` in `build.gradle.kts` while maintaining `apiVersion` at `2.1` for IntelliJ platform compatibility.
 

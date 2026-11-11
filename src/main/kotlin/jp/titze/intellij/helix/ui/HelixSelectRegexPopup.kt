@@ -286,10 +286,10 @@ object HelixSelectRegexPopup {
                             val displayMatches = if (matches >=
                                 HelixRegexActions.MAX_MATCH_COUNT
                             ) {
-                                    "${HelixRegexActions.MAX_MATCH_COUNT}+"
-                                } else {
-                                    matches.toString()
-                                }
+                                "${HelixRegexActions.MAX_MATCH_COUNT}+"
+                            } else {
+                                matches.toString()
+                            }
                             statusLabel.text = when {
                                 matches == 1 -> HelixBundle.message("popup.selectRegex.status.inSelection.one")
 
@@ -308,10 +308,10 @@ object HelixSelectRegexPopup {
                             val displayMatches = if (matches >=
                                 HelixRegexActions.MAX_MATCH_COUNT
                             ) {
-                                    "${HelixRegexActions.MAX_MATCH_COUNT}+"
-                                } else {
-                                    matches.toString()
-                                }
+                                "${HelixRegexActions.MAX_MATCH_COUNT}+"
+                            } else {
+                                matches.toString()
+                            }
                             statusLabel.text = when {
                                 matches == 1 -> HelixBundle.message("popup.selectRegex.status.toSplit.one")
                                 matches > 1 -> HelixBundle.message("popup.selectRegex.status.toSplit", displayMatches)
@@ -325,10 +325,10 @@ object HelixSelectRegexPopup {
                             val displayCount = if (count >=
                                 HelixRegexActions.MAX_MATCH_COUNT
                             ) {
-                                    "${HelixRegexActions.MAX_MATCH_COUNT}+"
-                                } else {
-                                    count.toString()
-                                }
+                                "${HelixRegexActions.MAX_MATCH_COUNT}+"
+                            } else {
+                                count.toString()
+                            }
                             statusLabel.text = when {
                                 count == 1 -> HelixBundle.message("popup.selectRegex.status.matchingSelections.one")
 
@@ -347,10 +347,10 @@ object HelixSelectRegexPopup {
                             val displayCount = if (count >=
                                 HelixRegexActions.MAX_MATCH_COUNT
                             ) {
-                                    "${HelixRegexActions.MAX_MATCH_COUNT}+"
-                                } else {
-                                    count.toString()
-                                }
+                                "${HelixRegexActions.MAX_MATCH_COUNT}+"
+                            } else {
+                                count.toString()
+                            }
                             statusLabel.text = when {
                                 count == 1 -> HelixBundle.message("popup.selectRegex.status.remainingSelections.one")
 

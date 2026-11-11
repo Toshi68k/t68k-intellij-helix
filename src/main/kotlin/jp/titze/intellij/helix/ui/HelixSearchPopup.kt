@@ -264,10 +264,10 @@ object HelixSearchPopup {
                     val displayMatches = if (matches >=
                         HelixRegexActions.MAX_MATCH_COUNT
                     ) {
-                            "${HelixRegexActions.MAX_MATCH_COUNT}+"
-                        } else {
-                            matches.toString()
-                        }
+                        "${HelixRegexActions.MAX_MATCH_COUNT}+"
+                    } else {
+                        matches.toString()
+                    }
                     statusLabel.text = when {
                         matches == 1 -> HelixBundle.message("popup.search.matches.one")
                         matches > 1 -> HelixBundle.message("popup.search.matches.found", displayMatches)

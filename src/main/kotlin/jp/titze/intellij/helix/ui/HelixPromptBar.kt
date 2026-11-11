@@ -319,10 +319,10 @@ class HelixPromptBar(private val editor: Editor) : JPanel(BorderLayout(JBUI.scal
         val displayCount = if (count >=
             HelixRegexActions.MAX_MATCH_COUNT
         ) {
-                "${HelixRegexActions.MAX_MATCH_COUNT}+"
-            } else {
-                count.toString()
-            }
+            "${HelixRegexActions.MAX_MATCH_COUNT}+"
+        } else {
+            count.toString()
+        }
         statusLabel.text = when {
             count == 1 -> HelixBundle.message("prompt.selections.one")
             count > 1 -> HelixBundle.message("prompt.selections.count", displayCount)
@@ -335,10 +335,10 @@ class HelixPromptBar(private val editor: Editor) : JPanel(BorderLayout(JBUI.scal
         val displayCount = if (matches >=
             HelixRegexActions.MAX_MATCH_COUNT
         ) {
-                "${HelixRegexActions.MAX_MATCH_COUNT}+"
-            } else {
-                matches.toString()
-            }
+            "${HelixRegexActions.MAX_MATCH_COUNT}+"
+        } else {
+            matches.toString()
+        }
         statusLabel.text = when {
             matches == 1 -> HelixBundle.message("prompt.matches.one")
             matches > 1 -> HelixBundle.message("prompt.matches.count", displayCount)
