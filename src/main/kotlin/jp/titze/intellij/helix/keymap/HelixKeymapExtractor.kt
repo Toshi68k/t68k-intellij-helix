@@ -34,7 +34,20 @@ data class HelixKeybindingRow(
     val prefixGroup: KeymapPrefixGroup,
     val isShadowed: Boolean = false,
     val conflictReason: String? = null,
-)
+) {
+    val displayShortcutLower: String = displayShortcut.lowercase()
+    val rawSequenceLower: String = rawSequence.lowercase()
+    val commandLower: String = command.lowercase()
+    val descriptionLower: String = description.lowercase()
+
+    fun matchesQuery(query: String): Boolean {
+        if (query.isEmpty()) return true
+        return displayShortcutLower.contains(query) ||
+            rawSequenceLower.contains(query) ||
+            commandLower.contains(query) ||
+            descriptionLower.contains(query)
+    }
+}
 
 /**
  * Extracts and flattens active HelixKeymapTrie trees into tabular rows for UI inspection.
