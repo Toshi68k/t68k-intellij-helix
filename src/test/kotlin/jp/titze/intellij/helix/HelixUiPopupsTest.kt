@@ -625,19 +625,56 @@ class HelixUiPopupsTest : BasePlatformTestCase() {
         myFixture.configureByText("test.txt", "test")
         val editor = myFixture.editor
         val settings = HelixSettings.instance
-        val original = settings.whichKeyColumnLayout
+        val originalLayout = settings.whichKeyColumnLayout
+        val originalMaxRows = settings.whichKeyMaxRows
 
         try {
-            settings.whichKeyColumnLayout = jp.titze.intellij.helix.settings.WhichKeyColumnLayout.TWO_COLUMNS
+            settings.whichKeyMaxRows = 0
+
+            settings.whichKeyColumnLayout = jp.titze.intellij.helix.settings.WhichKeyColumnLayout.SINGLE_COLUMN
             val (spaceTitle, spaceItems) = HelixWhichKeyMenus.getMenu(" ") ?: return
+            val panel1Col = HelixWhichKeyPopup.createWhichKeyPanel(spaceTitle, spaceItems, editor)
+            (panel1Col.preferredSize.width >= 260).shouldBeTrue()
+
+            settings.whichKeyColumnLayout = jp.titze.intellij.helix.settings.WhichKeyColumnLayout.TWO_COLUMNS
             val panel2Cols = HelixWhichKeyPopup.createWhichKeyPanel(spaceTitle, spaceItems, editor)
             (panel2Cols.preferredSize.width >= 500).shouldBeTrue()
+            (panel2Cols.preferredSize.width > panel1Col.preferredSize.width).shouldBeTrue()
 
             settings.whichKeyColumnLayout = jp.titze.intellij.helix.settings.WhichKeyColumnLayout.THREE_COLUMNS
             val panel3Cols = HelixWhichKeyPopup.createWhichKeyPanel(spaceTitle, spaceItems, editor)
-            (panel3Cols.preferredSize.width >= panel2Cols.preferredSize.width).shouldBeTrue()
+            (panel3Cols.preferredSize.width > panel2Cols.preferredSize.width).shouldBeTrue()
+
+            settings.whichKeyColumnLayout = jp.titze.intellij.helix.settings.WhichKeyColumnLayout.FOUR_COLUMNS
+            val panel4Cols = HelixWhichKeyPopup.createWhichKeyPanel(spaceTitle, spaceItems, editor)
+            (panel4Cols.preferredSize.width > panel3Cols.preferredSize.width).shouldBeTrue()
+
+            // In Default / AUTO mode without maxRows constraint, space menu uses 3 columns
+            settings.whichKeyColumnLayout = jp.titze.intellij.helix.settings.WhichKeyColumnLayout.AUTO
+            val panelAuto = HelixWhichKeyPopup.createWhichKeyPanel(spaceTitle, spaceItems, editor)
+            panelAuto.preferredSize.width shouldBe panel3Cols.preferredSize.width
+
+            // Test Preferred Max Rows packing
+            settings.whichKeyMaxRows = 8
+            val panelMaxRows8 = HelixWhichKeyPopup.createWhichKeyPanel(spaceTitle, spaceItems, editor)
+            panelMaxRows8.preferredSize.width shouldBe panel4Cols.preferredSize.width
+
+            settings.whichKeyMaxRows = 15
+            val panelMaxRows15 = HelixWhichKeyPopup.createWhichKeyPanel(spaceTitle, spaceItems, editor)
+            panelMaxRows15.preferredSize.width shouldBe panel2Cols.preferredSize.width
+
+            // Test responsive width clamping: narrow maxWidth restricts column allocation
+            val clampedPanel = HelixWhichKeyPopup.createWhichKeyPanel(
+                spaceTitle,
+                spaceItems,
+                editor,
+                maxHeight = 600,
+                maxWidth = 600,
+            )
+            clampedPanel.preferredSize.width shouldBe panel2Cols.preferredSize.width
         } finally {
-            settings.whichKeyColumnLayout = original
+            settings.whichKeyColumnLayout = originalLayout
+            settings.whichKeyMaxRows = originalMaxRows
         }
     }
 

@@ -38,8 +38,8 @@ class HelixAppearancePanel {
     private var enableWhichKeyCheckBox: JBCheckBox? = null
     private var whichKeyHelixCommandRadio: JBRadioButton? = null
     private var whichKeyIntelliJActionRadio: JBRadioButton? = null
-    private var whichKey3ColsRadio: JBRadioButton? = null
-    private var whichKey2ColsRadio: JBRadioButton? = null
+    private var whichKeyColumnLayoutComboBox: ComboBox<WhichKeyColumnLayout>? = null
+    private var whichKeyMaxRowsComboBox: ComboBox<Int>? = null
 
     val panel: JComponent = createMainPanel()
 
@@ -166,18 +166,63 @@ class HelixAppearancePanel {
         modesPanel.add(helixRadio)
         modesPanel.add(ideaRadio)
 
-        val colRadioGroup = ButtonGroup()
-        val cols3Radio = JBRadioButton(HelixBundle.message("settings.whichKey.cols.3"))
-        val cols2Radio = JBRadioButton(HelixBundle.message("settings.whichKey.cols.2"))
-        whichKey3ColsRadio = cols3Radio
-        whichKey2ColsRadio = cols2Radio
-        colRadioGroup.add(cols3Radio)
-        colRadioGroup.add(cols2Radio)
+        val colCombo = ComboBox(WhichKeyColumnLayout.entries.toTypedArray())
+        colCombo.renderer = object : SimpleListCellRenderer<WhichKeyColumnLayout>() {
+            override fun customize(
+                list: JList<out WhichKeyColumnLayout>,
+                value: WhichKeyColumnLayout?,
+                index: Int,
+                selected: Boolean,
+                hasFocus: Boolean,
+            ) {
+                text = value?.displayName.orEmpty()
+            }
+        }
+        whichKeyColumnLayoutComboBox = colCombo
 
-        val columnsPanel = JPanel(GridLayout(2, 1, 0, 4))
-        columnsPanel.border = JBUI.Borders.empty(4, 24, 4, 0)
-        columnsPanel.add(cols3Radio)
-        columnsPanel.add(cols2Radio)
+        val maxRowsOptions = arrayOf(0, 6, 8, 10, 12, 15, 20)
+        val rowsCombo = ComboBox(maxRowsOptions)
+        rowsCombo.renderer = object : SimpleListCellRenderer<Int>() {
+            override fun customize(
+                list: JList<out Int>,
+                value: Int?,
+                index: Int,
+                selected: Boolean,
+                hasFocus: Boolean,
+            ) {
+                text = when (value) {
+                    0, null -> HelixBundle.message("settings.whichKey.maxRows.auto")
+                    else -> HelixBundle.message("settings.whichKey.maxRows.count", value)
+                }
+            }
+        }
+        whichKeyMaxRowsComboBox = rowsCombo
+
+        val dropdownsPanel = JPanel(java.awt.GridBagLayout()).apply {
+            isOpaque = false
+            border = JBUI.Borders.empty(6, 24, 4, 0)
+            val gbc = java.awt.GridBagConstraints().apply {
+                gridx = 0
+                gridy = 0
+                anchor = java.awt.GridBagConstraints.WEST
+                insets = JBUI.insets(2, 0, 4, 12)
+            }
+            add(JBLabel(HelixBundle.message("settings.whichKey.cols.label")), gbc)
+            gbc.gridx = 1
+            gbc.fill = java.awt.GridBagConstraints.HORIZONTAL
+            gbc.weightx = 1.0
+            add(colCombo, gbc)
+
+            gbc.gridx = 0
+            gbc.gridy = 1
+            gbc.fill = java.awt.GridBagConstraints.NONE
+            gbc.weightx = 0.0
+            add(JBLabel(HelixBundle.message("settings.whichKey.maxRows.label")), gbc)
+            gbc.gridx = 1
+            gbc.fill = java.awt.GridBagConstraints.HORIZONTAL
+            gbc.weightx = 1.0
+            add(rowsCombo, gbc)
+        }
 
         val helpLabel = JBLabel(HelixBundle.message("settings.whichKey.help"))
         helpLabel.font = JBUI.Fonts.smallFont()
@@ -191,8 +236,7 @@ class HelixAppearancePanel {
         val settingsBox = JPanel()
         settingsBox.layout = BoxLayout(settingsBox, BoxLayout.Y_AXIS)
         settingsBox.add(modesPanel)
-        settingsBox.add(Box.createVerticalStrut(JBUI.scale(6)))
-        settingsBox.add(columnsPanel)
+        settingsBox.add(dropdownsPanel)
         optionsPanel.add(settingsBox, BorderLayout.CENTER)
 
         val inner = JPanel(BorderLayout(0, 6))
@@ -216,11 +260,10 @@ class HelixAppearancePanel {
         WhichKeyHintMode.HELIX_COMMAND
     }
 
-    private fun getSelectedWhichKeyColumnLayout(): WhichKeyColumnLayout = if (whichKey2ColsRadio?.isSelected == true) {
-        WhichKeyColumnLayout.TWO_COLUMNS
-    } else {
-        WhichKeyColumnLayout.THREE_COLUMNS
-    }
+    private fun getSelectedWhichKeyColumnLayout(): WhichKeyColumnLayout =
+        (whichKeyColumnLayoutComboBox?.selectedItem as? WhichKeyColumnLayout) ?: WhichKeyColumnLayout.AUTO
+
+    private fun getSelectedWhichKeyMaxRows(): Int = (whichKeyMaxRowsComboBox?.selectedItem as? Int) ?: 0
 
     fun isModified(settings: HelixSettings): Boolean {
         val themeModified = getSelectedColorTheme() != settings.colorTheme ||
@@ -229,7 +272,8 @@ class HelixAppearancePanel {
         val lineNumModified = (lineNumberModeComboBox?.selectedItem as? HelixLineNumberMode) != settings.lineNumberMode
         val whichKeyModified = enableWhichKeyCheckBox?.isSelected != settings.enableWhichKeyPopups ||
             getSelectedWhichKeyHintMode() != settings.whichKeyHintMode ||
-            getSelectedWhichKeyColumnLayout() != settings.whichKeyColumnLayout
+            getSelectedWhichKeyColumnLayout() != settings.whichKeyColumnLayout ||
+            getSelectedWhichKeyMaxRows() != settings.whichKeyMaxRows
         return themeModified || lineNumModified || whichKeyModified
     }
 
@@ -241,6 +285,7 @@ class HelixAppearancePanel {
         enableWhichKeyCheckBox?.let { settings.enableWhichKeyPopups = it.isSelected }
         settings.whichKeyHintMode = getSelectedWhichKeyHintMode()
         settings.whichKeyColumnLayout = getSelectedWhichKeyColumnLayout()
+        settings.whichKeyMaxRows = getSelectedWhichKeyMaxRows()
 
         HelixEditorEligibility.refreshAllEditors()
     }
@@ -257,8 +302,8 @@ class HelixAppearancePanel {
         enableWhichKeyCheckBox?.isSelected = settings.enableWhichKeyPopups
         whichKeyHelixCommandRadio?.isSelected = (settings.whichKeyHintMode == WhichKeyHintMode.HELIX_COMMAND)
         whichKeyIntelliJActionRadio?.isSelected = (settings.whichKeyHintMode == WhichKeyHintMode.INTELLIJ_ACTION)
-        whichKey3ColsRadio?.isSelected = (settings.whichKeyColumnLayout == WhichKeyColumnLayout.THREE_COLUMNS)
-        whichKey2ColsRadio?.isSelected = (settings.whichKeyColumnLayout == WhichKeyColumnLayout.TWO_COLUMNS)
+        whichKeyColumnLayoutComboBox?.selectedItem = settings.whichKeyColumnLayout
+        whichKeyMaxRowsComboBox?.selectedItem = settings.whichKeyMaxRows
     }
 
     fun disposeUIResources() {
@@ -271,7 +316,7 @@ class HelixAppearancePanel {
         enableWhichKeyCheckBox = null
         whichKeyHelixCommandRadio = null
         whichKeyIntelliJActionRadio = null
-        whichKey3ColsRadio = null
-        whichKey2ColsRadio = null
+        whichKeyColumnLayoutComboBox = null
+        whichKeyMaxRowsComboBox = null
     }
 }

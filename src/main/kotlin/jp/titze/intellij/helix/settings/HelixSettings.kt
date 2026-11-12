@@ -26,8 +26,11 @@ enum class WhichKeyHintMode(val displayName: String) {
 }
 
 enum class WhichKeyColumnLayout(val displayName: String, val maxColumns: Int) {
-    THREE_COLUMNS("Up to 3 columns (Compact / Shorter)", 3),
+    AUTO("Auto: Responsive to window width (Up to 4 columns)", 4),
+    FOUR_COLUMNS("Up to 4 columns (Ultra-Compact / Shortest)", 4),
+    THREE_COLUMNS("Up to 3 columns (Compact / Standard)", 3),
     TWO_COLUMNS("Up to 2 columns (Classic / Narrower)", 2),
+    SINGLE_COLUMN("Single column (Vertical list)", 1),
 }
 
 enum class HelixLineNavigationMode(val displayName: String) {
@@ -63,7 +66,8 @@ class HelixSettingsState {
     var syncClipboardWithDefaultRegister: Boolean = true
     var enableWhichKeyPopups: Boolean = true
     var whichKeyHintMode: String = WhichKeyHintMode.HELIX_COMMAND.name
-    var whichKeyColumnLayout: String = WhichKeyColumnLayout.THREE_COLUMNS.name
+    var whichKeyColumnLayout: String = WhichKeyColumnLayout.AUTO.name
+    var whichKeyMaxRows: Int = 0
     var searchHistory: MutableList<String> = mutableListOf()
     var regexHistory: MutableList<String> = mutableListOf()
     var shellHistory: MutableList<String> = mutableListOf()
@@ -87,7 +91,7 @@ class HelixSettings : PersistentStateComponent<HelixSettingsState> {
     var searchUiMode: HelixSearchUiMode
         get() = try {
             HelixSearchUiMode.valueOf(myState.searchUiMode)
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             HelixSearchUiMode.STOCK_HELIX
         }
         set(value) {
@@ -97,7 +101,7 @@ class HelixSettings : PersistentStateComponent<HelixSettingsState> {
     var lineNavigationMode: HelixLineNavigationMode
         get() = try {
             HelixLineNavigationMode.valueOf(myState.lineNavigationMode)
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             HelixLineNavigationMode.HELIX_STANDARD
         }
         set(value) {
@@ -161,7 +165,7 @@ class HelixSettings : PersistentStateComponent<HelixSettingsState> {
     var colorTheme: HelixColorTheme
         get() = try {
             HelixColorTheme.valueOf(myState.colorTheme)
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             HelixColorTheme.SYNC
         }
         set(value) {
@@ -201,7 +205,7 @@ class HelixSettings : PersistentStateComponent<HelixSettingsState> {
     var whichKeyHintMode: WhichKeyHintMode
         get() = try {
             WhichKeyHintMode.valueOf(myState.whichKeyHintMode)
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             WhichKeyHintMode.HELIX_COMMAND
         }
         set(value) {
@@ -211,11 +215,17 @@ class HelixSettings : PersistentStateComponent<HelixSettingsState> {
     var whichKeyColumnLayout: WhichKeyColumnLayout
         get() = try {
             WhichKeyColumnLayout.valueOf(myState.whichKeyColumnLayout)
-        } catch (e: Exception) {
-            WhichKeyColumnLayout.THREE_COLUMNS
+        } catch (_: Exception) {
+            WhichKeyColumnLayout.AUTO
         }
         set(value) {
             myState.whichKeyColumnLayout = value.name
+        }
+
+    var whichKeyMaxRows: Int
+        get() = myState.whichKeyMaxRows.coerceIn(0, 50)
+        set(value) {
+            myState.whichKeyMaxRows = value.coerceIn(0, 50)
         }
 
     var enabled: Boolean
