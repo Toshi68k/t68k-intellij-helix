@@ -1,8 +1,6 @@
-name: Build release asset
+name: Build plugin and release to JetBrains Marketplace
 
 on:
-  release:
-    types: [ published ]
   push:
     tags:
       - 'v*'
@@ -12,6 +10,10 @@ on:
         description: 'Release tag name (e.g. v0.1.0)'
         required: false
         type: string
+      hidden:
+        description: 'Publish as hidden release on JetBrains Marketplace'
+        type: boolean
+        default: true
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -25,6 +27,8 @@ jobs:
     name: Build, Verify and Release Plugin
     runs-on: ubuntu-latest
 
+    environment: marketplace
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7 (7.0.1)
@@ -32,7 +36,7 @@ jobs:
           fetch-depth: 0
 
       - name: Set up JDK 21
-        uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6 (6.0.1)
+        uses: actions/setup-java@77dd5b2ce225ea11469928ac317850245a74ae78 # v6 (6.2.0)
         with:
           java-version: '21'
           distribution: 'corretto'
@@ -48,7 +52,7 @@ jobs:
             ${{ runner.os }}-plugin-verifier-ides-
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@80e941e61874822d2a89974089c4915748e8f4b7 # v4
+        uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6 (6.4.1)
         with:
           cache-read-only: ${{ github.ref != 'refs/heads/main' }}
 
@@ -70,25 +74,38 @@ jobs:
       - name: Test, Verify, and Build Plugin
         run: ./gradlew test verifyPlugin buildPlugin -PpluginVersion="${{ steps.version.outputs.plugin_version }}" --no-parallel
 
-      - name: Sign Plugin
+      - name: Determine release channels
+        id: meta
+        run: |
+          if [[ "${{ github.ref_name }}" == *"-eap"* || "${{ github.ref_name }}" == *"-beta"* ]]; then
+            echo "channels=eap" >> "$GITHUB_OUTPUT"
+          else
+            # Publishing stable to both default ("") and "eap" ensures EAP subscribers upgrade to final
+            echo "channels=default,eap" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Sign and publish plugin to JetBrains Marketplace
         if: env.CERTIFICATE_CHAIN != '' && env.PRIVATE_KEY != ''
         env:
           CERTIFICATE_CHAIN: ${{ secrets.CERTIFICATE_CHAIN }}
           PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
           PRIVATE_KEY_PASSWORD: ${{ secrets.PRIVATE_KEY_PASSWORD }}
-        run: ./gradlew signPlugin -PpluginVersion="${{ steps.version.outputs.plugin_version }}" --no-daemon
+          PUBLISH_TOKEN: ${{ secrets.PUBLISH_TOKEN }}
+          PUBLISH_HIDDEN: ${{ inputs.hidden || contains(github.ref, '-rc') }}
+          PUBLISH_CHANNELS: ${{ steps.meta.outputs.channels }}
+        run: ./gradlew publishPlugin -PpluginVersion="${{ steps.version.outputs.plugin_version }}" --no-daemon
 
       - name: Upload Plugin to Workflow Run
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7 (7.0.1)
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7 (7.0.2)
         with:
           name: plugin-distribution
-          path: build/distributions/*.zip
+          path: build/distributions/*-signed.zip
           if-no-files-found: error
 
       - name: Upload Plugin to GitHub Release
-        uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3 (3.0.3)
+        uses: softprops/action-gh-release@8a0cd651e5b2365bd640854a3fa5dfc70e4875f3 # v3 (3.0.4)
         if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'release' || (inputs.tag_name != null && inputs.tag_name != '')
         with:
           tag_name: ${{ inputs.tag_name || github.ref_name }}
-          files: build/distributions/*.zip
+          files: build/distributions/*-signed.zip
           generate_release_notes: true
