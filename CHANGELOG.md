@@ -15,6 +15,11 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   - Implemented `HelixScrollBarUI` featuring a 100% transparent track, stealth zero-size arrow steppers, and a sleek, semi-transparent rounded pill thumb matching `HelixTheme.CARD_BG`.
   - Applied across all floating card popups (`HelixWhichKeyPopup`, `HelixCommandPopup`, `HelixJumplistPopup`, `HelixRegistersPopup`, `HelixMacrosPopup`, and `HelixDirectoryFilePickerPopup`), eliminating stark white scrollbar tracks and corner clipping on macOS and Light IDE themes.
 
+### Fixed
+
+- **Command Palette & Modal Picker Selection Corner Artifacts**:
+  - Eliminated four white/light corner dots visible around selected rows in `:` Command Palette, File Picker, Jumplist, Registers, and Macros popups.
+
 ## [0.6.1]
 
 ### Changed

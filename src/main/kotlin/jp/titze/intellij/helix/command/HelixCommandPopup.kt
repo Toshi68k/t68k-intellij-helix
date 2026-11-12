@@ -13,6 +13,7 @@ import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.components.JBTextField
 import com.intellij.util.ui.JBUI
 import jp.titze.intellij.helix.HelixBundle
+import jp.titze.intellij.helix.ui.HelixListUI
 import jp.titze.intellij.helix.ui.HelixTheme
 import java.awt.BorderLayout
 import java.awt.Component
@@ -165,80 +166,13 @@ object HelixCommandPopup {
         mainPanel.add(northPanel, BorderLayout.NORTH)
 
         val listModel = CollectionListModel(COMMANDS)
-
-        val list = JBList(listModel)
-        list.selectionMode = ListSelectionModel.SINGLE_SELECTION
-        list.selectedIndex = 0
-        list.isOpaque = false
-        list.cursor = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
-        list.prototypeCellValue = COMMANDS.firstOrNull()
-        list.cellRenderer = object : ListCellRenderer<HelixCommandItem> {
-            private val cellPanel = object : JPanel(BorderLayout(JBUI.scale(10), 0)) {
-                var isSelectedRow = false
-
-                init {
-                    isOpaque = false
-                    border = JBUI.Borders.empty(4, 8)
-                }
-
-                override fun paintComponent(g: Graphics) {
-                    if (isSelectedRow) {
-                        val g2 = g.create() as Graphics2D
-                        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
-                        g2.color = HOVER_BG
-                        g2.fillRoundRect(0, 0, width, height, JBUI.scale(6), JBUI.scale(6))
-                        g2.dispose()
-                    }
-                    super.paintComponent(g)
-                }
-            }
-
-            private val badge = KeycapBadge()
-            private val textPanel = JPanel(BorderLayout(JBUI.scale(6), 0)).apply { isOpaque = false }
-            private val descLabel = JBLabel().apply {
-                font = JBUI.Fonts.label().deriveFont(Font.PLAIN, JBUI.scaleFontSize(12.5f).toFloat())
-                foreground = ITEM_TEXT_COLOR
-            }
-            private val aliasLabel = JBLabel().apply {
-                font = JBUI.Fonts.smallFont()
-                foreground = ITEM_DESC_COLOR
-            }
-
-            init {
-                cellPanel.add(badge, BorderLayout.WEST)
-                textPanel.add(descLabel, BorderLayout.WEST)
-                textPanel.add(aliasLabel, BorderLayout.EAST)
-                cellPanel.add(textPanel, BorderLayout.CENTER)
-            }
-
-            override fun getListCellRendererComponent(
-                list: JList<out HelixCommandItem>?,
-                value: HelixCommandItem?,
-                index: Int,
-                isSelected: Boolean,
-                cellHasFocus: Boolean,
-            ): Component {
-                cellPanel.isSelectedRow = isSelected
-                val cmdName = value?.name ?: ""
-                badge.setText(":$cmdName")
-
-                descLabel.text = value?.description ?: ""
-                aliasLabel.text = if (value != null && value.aliases.isNotEmpty()) {
-                    HelixBundle.message("popup.command.aliasPrefix", value.aliases.joinToString(", :"))
-                } else {
-                    ""
-                }
-                cellPanel.accessibleContext.accessibleName =
-                    value?.let { "${it.displayCommand}: ${it.description}" } ?: ""
-                return cellPanel
-            }
-        }
+        val list = createCommandList(listModel)
 
         val scrollPane = JBScrollPane(list).apply {
             border = JBUI.Borders.empty(0, 6)
             horizontalScrollBarPolicy = javax.swing.ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER
         }
-        jp.titze.intellij.helix.ui.HelixScrollBarUI.apply(scrollPane)
+        jp.titze.intellij.helix.ui.HelixScrollBarUI.apply(scrollPane, list)
         mainPanel.add(scrollPane, BorderLayout.CENTER)
 
         val footerPanel = JPanel(BorderLayout())
@@ -421,6 +355,80 @@ object HelixCommandPopup {
             popup.showCenteredInCurrentWindow(project)
         } else {
             popup.showInBestPositionFor(editor)
+        }
+    }
+
+    internal fun createCommandList(listModel: CollectionListModel<HelixCommandItem>): JBList<HelixCommandItem> {
+        val list = JBList(listModel)
+        list.selectionMode = ListSelectionModel.SINGLE_SELECTION
+        list.selectedIndex = 0
+        list.isOpaque = false
+        list.cursor = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
+        list.prototypeCellValue = COMMANDS.firstOrNull()
+        list.cellRenderer = createCellRenderer()
+        HelixListUI.install(list)
+        return list
+    }
+
+    private fun createCellRenderer(): ListCellRenderer<HelixCommandItem> = object : ListCellRenderer<HelixCommandItem> {
+        private val cellPanel = object : JPanel(BorderLayout(JBUI.scale(10), 0)) {
+            var isSelectedRow = false
+
+            init {
+                isOpaque = false
+                border = JBUI.Borders.empty(4, 8)
+            }
+
+            override fun paintComponent(g: Graphics) {
+                if (isSelectedRow) {
+                    val g2 = g.create() as Graphics2D
+                    g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
+                    g2.color = HOVER_BG
+                    g2.fillRoundRect(0, 0, width, height, JBUI.scale(6), JBUI.scale(6))
+                    g2.dispose()
+                }
+                super.paintComponent(g)
+            }
+        }
+
+        private val badge = KeycapBadge()
+        private val textPanel = JPanel(BorderLayout(JBUI.scale(6), 0)).apply { isOpaque = false }
+        private val descLabel = JBLabel().apply {
+            font = JBUI.Fonts.label().deriveFont(Font.PLAIN, JBUI.scaleFontSize(12.5f).toFloat())
+            foreground = ITEM_TEXT_COLOR
+        }
+        private val aliasLabel = JBLabel().apply {
+            font = JBUI.Fonts.smallFont()
+            foreground = ITEM_DESC_COLOR
+        }
+
+        init {
+            cellPanel.add(badge, BorderLayout.WEST)
+            textPanel.add(descLabel, BorderLayout.WEST)
+            textPanel.add(aliasLabel, BorderLayout.EAST)
+            cellPanel.add(textPanel, BorderLayout.CENTER)
+        }
+
+        override fun getListCellRendererComponent(
+            list: JList<out HelixCommandItem>?,
+            value: HelixCommandItem?,
+            index: Int,
+            isSelected: Boolean,
+            cellHasFocus: Boolean,
+        ): Component {
+            cellPanel.isSelectedRow = isSelected
+            val cmdName = value?.name ?: ""
+            badge.setText(":$cmdName")
+
+            descLabel.text = value?.description ?: ""
+            aliasLabel.text = if (value != null && value.aliases.isNotEmpty()) {
+                HelixBundle.message("popup.command.aliasPrefix", value.aliases.joinToString(", :"))
+            } else {
+                ""
+            }
+            cellPanel.accessibleContext.accessibleName =
+                value?.let { "${it.displayCommand}: ${it.description}" } ?: ""
+            return cellPanel
         }
     }
 

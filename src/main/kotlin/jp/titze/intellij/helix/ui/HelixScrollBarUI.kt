@@ -92,7 +92,7 @@ class HelixScrollBarUI : BasicScrollBarUI() {
     }
 
     companion object {
-        fun apply(scrollPane: JBScrollPane) {
+        fun apply(scrollPane: JBScrollPane, list: com.intellij.ui.components.JBList<*>? = null) {
             scrollPane.isOpaque = false
             scrollPane.viewport.isOpaque = false
             scrollPane.verticalScrollBar?.apply {
@@ -102,6 +102,9 @@ class HelixScrollBarUI : BasicScrollBarUI() {
             scrollPane.horizontalScrollBar?.apply {
                 isOpaque = false
                 setUI(HelixScrollBarUI())
+            }
+            if (list != null) {
+                HelixListUI.install(list)
             }
         }
     }
