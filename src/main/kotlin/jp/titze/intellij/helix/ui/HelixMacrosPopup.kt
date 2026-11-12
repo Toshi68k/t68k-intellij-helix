@@ -148,7 +148,7 @@ object HelixMacrosPopup {
             border = JBUI.Borders.empty(4, 6)
             horizontalScrollBarPolicy = javax.swing.ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER
         }
-        HelixScrollBarUI.apply(scrollPane)
+        HelixScrollBarUI.apply(scrollPane, list)
         mainPanel.add(scrollPane, BorderLayout.CENTER)
 
         val popup = JBPopupFactory.getInstance()
@@ -203,6 +203,7 @@ object HelixMacrosPopup {
         list.selectedIndex = 0
         list.isOpaque = false
         list.cursor = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
+        HelixListUI.install(list)
         list.cellRenderer = createCellRenderer()
         return list
     }

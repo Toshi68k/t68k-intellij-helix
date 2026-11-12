@@ -204,6 +204,7 @@ object HelixJumplistPopup {
         list.selectedIndex = items.indexOfFirst { it.isCurrent }.coerceAtLeast(0)
         list.isOpaque = false
         list.cursor = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
+        HelixListUI.install(list)
         list.prototypeCellValue = items.firstOrNull()
 
         list.cellRenderer = object : ListCellRenderer<JumpListItem> {
@@ -285,7 +286,7 @@ object HelixJumplistPopup {
             border = JBUI.Borders.empty(4, 6)
             horizontalScrollBarPolicy = javax.swing.ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER
         }
-        HelixScrollBarUI.apply(scrollPane)
+        HelixScrollBarUI.apply(scrollPane, list)
         mainPanel.add(scrollPane, BorderLayout.CENTER)
 
         mainPanel.preferredSize = Dimension(JBUI.scale(560), JBUI.scale(380))

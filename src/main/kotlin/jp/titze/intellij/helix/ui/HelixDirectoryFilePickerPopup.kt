@@ -222,7 +222,7 @@ object HelixDirectoryFilePickerPopup {
         val scrollPane = JBScrollPane(list).apply {
             border = JBUI.Borders.empty(4, 6)
         }
-        HelixScrollBarUI.apply(scrollPane)
+        HelixScrollBarUI.apply(scrollPane, list)
         mainPanel.add(scrollPane, BorderLayout.CENTER)
         mainPanel.add(createFooterPanel(), BorderLayout.SOUTH)
 
@@ -283,6 +283,7 @@ object HelixDirectoryFilePickerPopup {
         list.selectedIndex = 0
         list.isOpaque = false
         list.cursor = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
+        HelixListUI.install(list)
         list.cellRenderer = createCellRenderer()
         return list
     }

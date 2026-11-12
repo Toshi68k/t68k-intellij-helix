@@ -4,6 +4,7 @@
 package jp.titze.intellij.helix
 
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
+import com.intellij.ui.CollectionListModel
 import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.collections.shouldNotBeEmpty
@@ -36,6 +37,7 @@ import jp.titze.intellij.helix.settings.HelixSettings
 import jp.titze.intellij.helix.state.HelixMode
 import jp.titze.intellij.helix.state.HelixStateManager
 import jp.titze.intellij.helix.ui.HelixDirectoryFilePickerPopup
+import jp.titze.intellij.helix.ui.HelixListUI
 import jp.titze.intellij.helix.ui.HelixPromptBar
 import jp.titze.intellij.helix.ui.HelixPromptType
 import jp.titze.intellij.helix.ui.HelixSearchPopup
@@ -2428,5 +2430,24 @@ class HelixUiPopupsTest : BasePlatformTestCase() {
         } finally {
             HelixActionDelegate.actionExecutor = null
         }
+    }
+
+    fun testHelixCommandPopupListConfiguredWithTransparentSelection() {
+        val listModel = CollectionListModel(HelixCommandPopup.COMMANDS)
+        val list = HelixCommandPopup.createCommandList(listModel)
+
+        list.ui.shouldBeInstanceOf<HelixListUI>()
+        list.selectionBackground.alpha shouldBe 0
+    }
+
+    fun testHelixScrollBarUIConfiguresListTransparentSelection() {
+        val listModel = CollectionListModel(listOf("item1", "item2"))
+        val list = com.intellij.ui.components.JBList(listModel)
+        val scrollPane = com.intellij.ui.components.JBScrollPane(list)
+
+        jp.titze.intellij.helix.ui.HelixScrollBarUI.apply(scrollPane, list)
+
+        list.ui.shouldBeInstanceOf<HelixListUI>()
+        list.selectionBackground.alpha shouldBe 0
     }
 }
