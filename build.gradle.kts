@@ -128,5 +128,11 @@ intellijPlatform {
 
     publishing {
         token = providers.environmentVariable("PUBLISH_TOKEN")
+        hidden = providers.environmentVariable("PUBLISH_HIDDEN")
+            .map { it.toBoolean() }
+            .orElse(false)
+        channels = providers.environmentVariable("PUBLISH_CHANNELS")
+            .map { it.split(',').map(String::trim).filter(String::isNotEmpty) }
+            .orElse(emptyList())
     }
 }
