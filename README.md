@@ -356,6 +356,7 @@ and [Helix Textobjects](https://docs.helix-editor.com/textobjects.html):
 - `gs` &rarr; `goto_first_nonwhitespace` (First non-whitespace character)
 - `gl` &rarr; `goto_line_end` (Line end)
 - `gt` &rarr; `goto_window_top` (Top visible line in viewport)
+- `gT` &rarr; `goto_test` (Toggle between test and subject / implementation)
 - `gc` &rarr; `goto_window_center` (Middle visible line in viewport)
 - `gb` &rarr; `goto_window_bottom` (Bottom visible line in viewport)
 - `gf` &rarr; `goto_file` (Goto file at caret)
@@ -448,6 +449,7 @@ pressed. Code folding is available via `:fold`, `:unfold`, `:fold-all`, and `:un
 | `space + a`               | `code_action`                              | `ShowIntentionActions`             | Code actions & quick-fixes (Alt+Enter)                 |
 | `space + r`               | `rename_symbol`                            | `RenameElement`                    | Refactor rename symbol                                 |
 | `space + m`               | `refactor_menu`                            | —                                  | Open interactive Refactoring submenu                   |
+| `space + t`               | `test_menu`                                | —                                  | Open interactive Testing & TDD submenu                 |
 | `space + c`               | `toggle_comments`                          | `CommentByLineComment`             | Toggle line comments on selection or line              |
 | `space + C`               | `toggle_block_comments`                    | `CommentByBlockComment`            | Toggle block comments on selection                     |
 | `space + h`               | `select_references_to_symbol_under_cursor` | `FindUsages`                       | Find symbol references / usages across project         |
@@ -498,6 +500,18 @@ pressed. Code folding is available via `:fold`, `:unfold`, `:fold-all`, and `:un
 | `space + m o` | `override_methods`  | `OverrideMethods`                   | Generate / override superclass methods                 |
 | `space + m I` | `implement_methods` | `ImplementMethods`                  | Implement interface methods                            |
 | `space + m ?` | `refactor_this`     | `Refactorings.QuickListPopupAction` | Open IntelliJ "Refactor This..." quick picker          |
+
+#### Testing & TDD (`space + t`)
+
+| Key           | Helix Command       | IntelliJ Action                    | Description                                               |
+|---------------|---------------------|------------------------------------|-----------------------------------------------------------|
+| `space + t t` | `test_run`          | `RunClass` / `Run`                 | Run test method or class at caret (context runner)        |
+| `space + t r` | `test_run`          | `RunClass` / `Run`                 | Run test method or class at caret (alias)                 |
+| `space + t d` | `test_debug`        | `DebugClass` / `Debug`             | Debug test method or class at caret                       |
+| `space + t l` | `test_rerun`        | `Rerun`                            | Rerun last execution                                      |
+| `space + t f` | `test_rerun_failed` | `RerunFailedTests`                 | Rerun failed tests                                        |
+| `space + t c` | `test_coverage`     | `RunCoverage` / `Coverage`         | Run test with code coverage                               |
+| `space + t a` | `goto_test`         | `GotoTest`                         | Toggle between test and subject (implementation) file     |
 
 #### Unimpaired Navigation (`[` / `]`)
 
@@ -570,6 +584,10 @@ to execute):
 - `:unfold-all` / `:unfold_all` &rarr; Expand all folds in file (`ExpandAllRegions`)
 - `:optimize-imports` / `:oi` &rarr; Optimize imports (`OptimizeImports`)
 - `:goto-test` / `:test` &rarr; Jump to test or code under test (`GotoTest`)
+- `:test-run` / `:test-at-caret` &rarr; Run test method or class at caret (`RunClass` / `Run`, `space + t t`)
+- `:test-debug` &rarr; Debug test method or class at caret (`DebugClass` / `Debug`, `space + t d`)
+- `:test-rerun-failed` / `:rerun-failed` &rarr; Rerun failed tests (`RerunFailedTests`, `space + t f`)
+- `:test-coverage` / `:coverage` &rarr; Run test with code coverage (`RunCoverage` / `Coverage`, `space + t c`)
 - `:goto-declaration` / `:declaration` &rarr; Jump to declaration (`GotoDeclarationOnly`)
 - `:goto-definition` / `:definition` &rarr; Jump to definition or declaration (`GotoDeclaration`)
 - `:goto-prev-spelling-error` / `:prev-spelling-error` &rarr; Jump to previous spelling error

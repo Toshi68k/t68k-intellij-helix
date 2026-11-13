@@ -158,7 +158,7 @@ class HelixKeymapTest : BasePlatformTestCase() {
         try {
             HelixKeymapManager.bind(
                 HelixMode.NORMAL,
-                "space t",
+                "space x",
                 ":action ActivateTerminalToolWindow",
                 "Terminal",
             )
@@ -167,8 +167,8 @@ class HelixKeymapTest : BasePlatformTestCase() {
             HelixKeyHandler.handleKey(' ', editor).shouldBeTrue()
             state.pendingSequence shouldBe " "
 
-            // Step 2: type t
-            HelixKeyHandler.handleKey('t', editor).shouldBeTrue()
+            // Step 2: type x
+            HelixKeyHandler.handleKey('x', editor).shouldBeTrue()
             state.pendingSequence shouldBe ""
             executedActions shouldBe listOf("ActivateTerminalToolWindow")
         } finally {
@@ -198,17 +198,17 @@ class HelixKeymapTest : BasePlatformTestCase() {
     fun testDynamicWhichKeyOverlay() {
         HelixKeymapManager.bind(
             HelixMode.NORMAL,
-            "space t",
+            "space x",
             ":action ActivateTerminalToolWindow",
             "Terminal",
         )
 
         val menu = HelixWhichKeyMenus.getMenu(" ", HelixMode.NORMAL)
         menu.shouldNotBeNull()
-        val itemT = menu.second.firstOrNull { it.key == "t" }
-        itemT.shouldNotBeNull()
-        itemT.label shouldBe "Terminal"
-        itemT.intelliJAction shouldBe "ActivateTerminalToolWindow"
+        val itemX = menu.second.firstOrNull { it.key == "x" }
+        itemX.shouldNotBeNull()
+        itemX.label shouldBe "Terminal"
+        itemX.intelliJAction shouldBe "ActivateTerminalToolWindow"
     }
 
     fun testDynamicWhichKeyNewPrefix() {
@@ -277,7 +277,7 @@ class HelixKeymapTest : BasePlatformTestCase() {
             tempFile.writeText(
                 """
                 [keys.normal]
-                "space"."t" = ":action ActivateTerminalToolWindow"
+                "space"."x" = ":action ActivateTerminalToolWindow"
                 "C-j" = ["move_line_down", "move_line_down"]
                 """.trimIndent(),
             )
@@ -292,9 +292,9 @@ class HelixKeymapTest : BasePlatformTestCase() {
                 true
             }
             try {
-                // Test space t
+                // Test space x
                 HelixKeyHandler.handleKey(' ', editor).shouldBeTrue()
-                HelixKeyHandler.handleKey('t', editor).shouldBeTrue()
+                HelixKeyHandler.handleKey('x', editor).shouldBeTrue()
                 executedActions shouldBe listOf("ActivateTerminalToolWindow")
 
                 // Test macro C-j
@@ -345,26 +345,23 @@ class HelixKeymapTest : BasePlatformTestCase() {
             val vf = com.intellij.openapi.vfs.LocalFileSystem.getInstance()
                 .refreshAndFindFileByIoFile(tempFile)
             vf.shouldNotBeNull()
-            val mockEvent = com.intellij.openapi.vfs.newvfs.events.VFileContentChangeEvent(
-                this,
-                vf,
-                0L,
-                1L,
-            )
-
-            tempFile.writeText(
-                """
-                [keys.normal]
-                "x" = ":action Copy"
-                """.trimIndent(),
-            )
+            val events = com.intellij.testFramework.VfsTestUtil.getEvents {
+                com.intellij.openapi.application.runWriteAction {
+                    vf.setBinaryContent(
+                        """
+                        [keys.normal]
+                        "x" = ":action Copy"
+                        """.trimIndent().toByteArray(),
+                    )
+                }
+            }
 
             HelixConfigWatcher.lastReloadTime = 0L
             val watcher = HelixConfigWatcher()
-            watcher.after(listOf(mockEvent))
+            watcher.after(events)
 
             reloadedResult.shouldNotBeNull()
-            reloadedResult?.bindingCount shouldBe 1
+            reloadedResult.bindingCount shouldBe 1
 
             val strokeX = HelixKeyStroke.fromString("x")
             val trieResult = HelixKeymapManager.resolve(HelixMode.NORMAL, listOf(strokeX))
@@ -430,17 +427,17 @@ class HelixKeymapTest : BasePlatformTestCase() {
 
         val shiftTab = HelixKeyStroke.fromString("shift-tab")
         shiftTab.isShift.shouldBeTrue()
-        shiftTab.keyCode shouldBe java.awt.event.KeyEvent.VK_TAB
+        shiftTab.keyCode shouldBe KeyEvent.VK_TAB
 
         val metaF = HelixKeyStroke.fromString("meta-f")
         metaF.isMeta.shouldBeTrue()
         metaF.keyChar shouldBe 'f'
 
         val ins = HelixKeyStroke.fromString("ins")
-        ins.keyCode shouldBe java.awt.event.KeyEvent.VK_INSERT
+        ins.keyCode shouldBe KeyEvent.VK_INSERT
 
         val insert = HelixKeyStroke.fromString("insert")
-        insert.keyCode shouldBe java.awt.event.KeyEvent.VK_INSERT
+        insert.keyCode shouldBe KeyEvent.VK_INSERT
     }
 
     fun testExtendedCommandsRegistered() {
@@ -704,8 +701,8 @@ class HelixKeymapTest : BasePlatformTestCase() {
         val parsed = HelixTomlParser.parse(toml)
         parsed.bindings.size shouldBe 16
 
-        for (b in parsed.bindings) {
-            HelixKeymapManager.bind(b.mode, b.sequence, b.action as String)
+        for ((mode, sequence, action) in parsed.bindings) {
+            HelixKeymapManager.bind(mode, sequence, action as String)
         }
 
         // Test next quote: mn"

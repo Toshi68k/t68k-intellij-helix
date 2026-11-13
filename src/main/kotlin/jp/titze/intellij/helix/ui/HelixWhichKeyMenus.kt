@@ -46,6 +46,7 @@ object HelixWhichKeyMenus {
         WhichKeyItem("a", "Code action", "code_action", "ShowIntentionActions"),
         WhichKeyItem("r", "Rename symbol", "rename_symbol", "RenameElement"),
         WhichKeyItem("m", "Refactor menu", "refactor_menu"),
+        WhichKeyItem("t", "Test menu", "test_menu"),
         WhichKeyItem("c", "Toggle line comment", "toggle_comments", "CommentByLineComment"),
         WhichKeyItem("C", "Toggle block comment", "toggle_block_comments", "CommentByBlockComment"),
         WhichKeyItem("h", "Select references", "select_references", "FindUsages"),
@@ -87,6 +88,7 @@ object HelixWhichKeyMenus {
                 WhichKeyItem("l", "Goto line end", "goto_line_end"),
                 WhichKeyItem("s", "Goto first non-whitespace", "goto_first_nonwhitespace"),
                 WhichKeyItem("t", "Goto window top", "goto_window_top"),
+                WhichKeyItem("T", "Toggle test / subject", "goto_test", "GotoTest"),
                 WhichKeyItem("c", "Goto window center", "goto_window_center"),
                 WhichKeyItem("b", "Goto window bottom", "goto_window_bottom"),
                 WhichKeyItem("f", "Goto file at caret", "goto_file"),
@@ -246,6 +248,16 @@ object HelixWhichKeyMenus {
         WhichKeyItem("?", "Refactor this menu", "refactor_this", "Refactorings.QuickListPopupAction"),
     )
 
+    val testItems = listOf(
+        WhichKeyItem("t", "Run test at caret", "test_run", "RunClass"),
+        WhichKeyItem("r", "Run test at caret", "test_run", "RunClass"),
+        WhichKeyItem("d", "Debug test at caret", "test_debug", "DebugClass"),
+        WhichKeyItem("l", "Rerun last execution", "test_rerun", "Rerun"),
+        WhichKeyItem("f", "Rerun failed tests", "test_rerun_failed", "RerunFailedTests"),
+        WhichKeyItem("c", "Run with coverage", "test_coverage", "RunCoverage"),
+        WhichKeyItem("a", "Toggle test / subject", "goto_test", "GotoTest"),
+    )
+
     fun getMenu(prefix: String): Pair<String, List<WhichKeyItem>>? = getMenu(prefix, HelixMode.NORMAL)
 
     fun getMenu(prefix: String, mode: HelixMode): Pair<String, List<WhichKeyItem>>? {
@@ -270,6 +282,7 @@ object HelixWhichKeyMenus {
         " " -> HelixBundle.message("whichKey.menu.space") to spaceItems
         " G", "space G", "G", "dap" -> HelixBundle.message("whichKey.menu.debug") to debugItems
         " m", "space m", "refactor" -> HelixBundle.message("whichKey.menu.refactor") to refactorItems
+        " t", "space t", "test" -> HelixBundle.message("whichKey.menu.test") to testItems
         "g" -> HelixBundle.message("whichKey.menu.goto") to gotoItems
         "m" -> HelixBundle.message("whichKey.menu.match") to matchItems
         "ma" -> HelixBundle.message("whichKey.menu.selectAround") to textObjectItems

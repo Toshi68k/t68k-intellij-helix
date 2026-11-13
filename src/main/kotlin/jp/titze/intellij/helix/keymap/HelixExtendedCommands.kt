@@ -28,6 +28,7 @@ internal object HelixExtendedCommands {
         registerNumbers()
         registerNavigationAndWindow()
         registerDapCommands()
+        registerTestCommands()
         HelixRefactorCommands.registerAll()
         registerVisualToggleCommands()
         registerWorkflowCommands()
@@ -184,7 +185,7 @@ internal object HelixExtendedCommands {
 
     private fun registerSurroundAndMatch() {
         HelixCommandRegistry.register("match_brackets", "Match opening/closing bracket") { ed, cnt ->
-            jp.titze.intellij.helix.motion.HelixMotionHistory.recordMatchBracket()
+            HelixMotionHistory.recordMatchBracket()
             HelixMotions.matchBrackets(ed, cnt)
         }
         HelixCommandRegistry.register("surround_add", "Surround add") { ed, _ ->
@@ -500,6 +501,28 @@ internal object HelixExtendedCommands {
         }
         HelixCommandRegistry.register("dap_view_breakpoints", "View breakpoints", "ViewBreakpoints") { ed, _ ->
             HelixActionDelegate.executeAction("ViewBreakpoints", ed)
+        }
+    }
+
+    private fun registerTestCommands() {
+        HelixCommandRegistry.register("test_run", "Run test at caret", "RunClass") { ed, _ ->
+            HelixActionDelegate.executeAction("RunClass", ed) || HelixActionDelegate.executeAction("Run", ed)
+        }
+        HelixCommandRegistry.register("test_debug", "Debug test at caret", "DebugClass") { ed, _ ->
+            HelixActionDelegate.executeAction("DebugClass", ed) || HelixActionDelegate.executeAction("Debug", ed)
+        }
+        HelixCommandRegistry.register("test_rerun", "Rerun last execution", "Rerun") { ed, _ ->
+            HelixActionDelegate.executeAction("Rerun", ed)
+        }
+        HelixCommandRegistry.register("test_rerun_failed", "Rerun failed tests", "RerunFailedTests") { ed, _ ->
+            HelixActionDelegate.executeAction("RerunFailedTests", ed)
+        }
+        HelixCommandRegistry.register("test_coverage", "Run with coverage", "RunCoverage") { ed, _ ->
+            HelixActionDelegate.executeAction("RunCoverage", ed) || HelixActionDelegate.executeAction("Coverage", ed)
+        }
+        HelixCommandRegistry.register("goto_test", "Toggle test / subject", "GotoTest") { ed, _ ->
+            HelixKeyHandler.recordJump(ed)
+            HelixActionDelegate.executeAction("GotoTest", ed)
         }
     }
 

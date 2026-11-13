@@ -21,7 +21,7 @@ object HelixKeymapManager {
     fun resetToDefaults() {
         defaultKeymaps.clear()
         activeKeymaps.clear()
-        for (mode in HelixMode.values()) {
+        for (mode in HelixMode.entries) {
             val trie = HelixDefaultKeymap.buildDefaultTrie(mode)
             defaultKeymaps[mode] = trie
             activeKeymaps[mode] = trie.copy()
@@ -78,6 +78,8 @@ object HelixKeymapManager {
         " G" -> listOf(HelixKeyStroke.fromString("space"), HelixKeyStroke('G'))
 
         " m" -> listOf(HelixKeyStroke.fromString("space"), HelixKeyStroke('m'))
+
+        " t" -> listOf(HelixKeyStroke.fromString("space"), HelixKeyStroke('t'))
 
         "C-w" -> listOf(HelixKeyStroke.fromString("C-w"))
 

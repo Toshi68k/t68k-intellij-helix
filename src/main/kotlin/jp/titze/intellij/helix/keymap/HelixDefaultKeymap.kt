@@ -166,6 +166,13 @@ object HelixDefaultKeymap {
         bind(trie, "space m o", "override_methods", "Override methods")
         bind(trie, "space m I", "implement_methods", "Implement methods")
         bind(trie, "space m ?", "refactor_this", "Refactor this menu")
+        bind(trie, "space t t", "test_run", "Run test at caret")
+        bind(trie, "space t r", "test_run", "Run test at caret")
+        bind(trie, "space t d", "test_debug", "Debug test at caret")
+        bind(trie, "space t l", "test_rerun", "Rerun last execution")
+        bind(trie, "space t f", "test_rerun_failed", "Rerun failed tests")
+        bind(trie, "space t c", "test_coverage", "Run with coverage")
+        bind(trie, "space t a", "goto_test", "Toggle test / subject")
     }
 
     private fun populateGotoChords(trie: HelixKeymapTrie) {
@@ -181,6 +188,7 @@ object HelixDefaultKeymap {
         bind(trie, "g l", "goto_line_end", "Goto line end")
         bind(trie, "g s", "goto_first_nonwhitespace", "Goto first non-whitespace")
         bind(trie, "g t", "goto_window_top", "Goto window top")
+        bind(trie, "g T", "goto_test", "Toggle test / subject")
         bind(trie, "g c", "goto_window_center", "Goto window center")
         bind(trie, "g b", "goto_window_bottom", "Goto window bottom")
         bind(trie, "g f", "goto_file", "Goto file at caret")

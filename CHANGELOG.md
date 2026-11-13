@@ -7,6 +7,17 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- **Dedicated Test Leader (`space + t`) & TDD Workflow Support**:
+  - Implemented a dedicated test leader submenu in `HelixTestKeymap` providing context-to-global fallback actions:
+    - `space + t t` / `space + t r`: **Run Test at Caret** (`RunClass` &rarr; `Run`).
+    - `space + t d`: **Debug Test at Caret** (`DebugClass` &rarr; `Debug`).
+    - `space + t l`: **Rerun Last Execution** (`Rerun`).
+    - `space + t f`: **Rerun Failed Tests** (`RerunFailedTests`).
+    - `space + t c`: **Run with Coverage** (`RunCoverage` &rarr; `Coverage`).
+    - `space + t a`: **Toggle Test and Subject** (`GotoTest`, records jump to jumplist).
+  - Integrated `TEST MENU` into interactive Which-Key popup on chord `space + t` with Tab action ID toggling support.
+  - Added fast test toggle motion `g T` in `HelixGotoKeymap` complementing unimpaired test jumps (`]T` / `[T`).
+  - Registered built-in commands `:test-run`, `:test-debug`, `:test-rerun-failed`, and `:test-coverage` in `HelixBuiltinCommands`.
 - **Responsive 1–4 Column Layout & Configurable Max Rows for Which-Key Popups**:
   - Expanded `WhichKeyColumnLayout` with `AUTO` (responsive based on editor width up to 4 columns), `FOUR_COLUMNS` (ultra-compact, packing the 30-item `SPACE` menu into just 8 rows on widescreen displays), `THREE_COLUMNS` (standard), `TWO_COLUMNS` (narrow), and `SINGLE_COLUMN` (vertical list).
   - Added configurable **Preferred Max Rows** (`whichKeyMaxRows`) in **Preferences &rarr; Tools &rarr; Helix Keymap &rarr; Appearance**, dynamically allocating columns to keep row counts within user-targeted limits (e.g. 8, 10, 12, 15, or dynamic).
