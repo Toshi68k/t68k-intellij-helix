@@ -45,6 +45,11 @@ internal object HelixGotoKeymap {
             true
         }
 
+        'T' -> {
+            HelixKeyHandler.recordJump(editor)
+            HelixActionDelegate.executeAction("GotoTest", editor)
+        }
+
         'c' -> {
             jp.titze.intellij.helix.motion.HelixViewMotions.gotoWindowCenter(editor)
             true

@@ -113,6 +113,13 @@ internal object HelixSpaceKeymap {
                 true
             }
 
+            't' -> {
+                val state = HelixStateManager.getOrCreate(editor)
+                state.setPendingSequence(" t")
+                jp.titze.intellij.helix.ui.HelixWhichKeyPopup.show(editor, " t")
+                true
+            }
+
             'w' -> {
                 HelixKeyHandler.startWindowChord(editor)
                 true

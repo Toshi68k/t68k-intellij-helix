@@ -227,11 +227,11 @@ internal object HelixBuiltinCommands {
         },
         HelixCommandItem("earlier", listOf("undo-earlier"), "Undo earlier changes (Alt+u)") { editor ->
             val count = HelixStateManager.getOrCreate(editor).takeCount() ?: 1
-            repeat(count) { HelixActionDelegate.executeAction("\$Undo", editor) }
+            repeat(count) { HelixActionDelegate.executeAction($$"$Undo", editor) }
         },
         HelixCommandItem("later", listOf("redo-later"), "Redo later changes (Alt+U)") { editor ->
             val count = HelixStateManager.getOrCreate(editor).takeCount() ?: 1
-            repeat(count) { HelixActionDelegate.executeAction("\$Redo", editor) }
+            repeat(count) { HelixActionDelegate.executeAction($$"$Redo", editor) }
         },
         HelixCommandItem(
             "commit-undo-checkpoint",
@@ -823,6 +823,37 @@ internal object HelixBuiltinCommands {
             "Rerun last execution (Rerun)",
         ) { editor ->
             HelixActionDelegate.executeAction("Rerun", editor)
+        },
+        HelixCommandItem(
+            "test-run",
+            listOf("test_run", "test-at-caret"),
+            "Run test method or class at caret (RunClass / Run)",
+        ) { editor ->
+            HelixActionDelegate.executeAction("RunClass", editor) ||
+                HelixActionDelegate.executeAction("Run", editor)
+        },
+        HelixCommandItem(
+            "test-debug",
+            listOf("test_debug"),
+            "Debug test method or class at caret (DebugClass / Debug)",
+        ) { editor ->
+            HelixActionDelegate.executeAction("DebugClass", editor) ||
+                HelixActionDelegate.executeAction("Debug", editor)
+        },
+        HelixCommandItem(
+            "test-rerun-failed",
+            listOf("test_rerun_failed", "rerun-failed"),
+            "Rerun failed tests (RerunFailedTests)",
+        ) { editor ->
+            HelixActionDelegate.executeAction("RerunFailedTests", editor)
+        },
+        HelixCommandItem(
+            "test-coverage",
+            listOf("test_coverage", "coverage"),
+            "Run test with coverage (RunCoverage / Coverage)",
+        ) { editor ->
+            HelixActionDelegate.executeAction("RunCoverage", editor) ||
+                HelixActionDelegate.executeAction("Coverage", editor)
         },
         HelixCommandItem(
             "build",

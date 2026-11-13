@@ -177,31 +177,7 @@ object HelixKeyHandler {
                 HelixGotoKeymap.handle(ch, editor, count)
             }
 
-            " " -> {
-                when (ch) {
-                    'm' -> {
-                        state.setPendingSequence(" m")
-                        HelixWhichKeyPopup.show(editor, " m")
-                        true
-                    }
-
-                    'G' -> {
-                        state.setPendingSequence(" G")
-                        HelixWhichKeyPopup.show(editor, " G")
-                        true
-                    }
-
-                    'w' -> {
-                        startWindowChord(editor)
-                        true
-                    }
-
-                    else -> {
-                        state.clearPendingSequence()
-                        HelixSpaceKeymap.handle(ch, editor)
-                    }
-                }
-            }
+            " " -> handleSpaceChord(ch, editor, state)
 
             " m" -> {
                 state.clearPendingSequence()
@@ -211,6 +187,11 @@ object HelixKeyHandler {
             " G" -> {
                 state.clearPendingSequence()
                 HelixDebugKeymap.handle(ch, editor)
+            }
+
+            " t" -> {
+                state.clearPendingSequence()
+                HelixTestKeymap.handle(ch, editor)
             }
 
             "[" -> {
@@ -269,6 +250,36 @@ object HelixKeyHandler {
             }
 
             else -> HelixMatchKeymap.handleSubmenu(prefix, ch, editor, state)
+        }
+    }
+
+    private fun handleSpaceChord(ch: Char, editor: Editor, state: HelixEditorState): Boolean = when (ch) {
+        'm' -> {
+            state.setPendingSequence(" m")
+            HelixWhichKeyPopup.show(editor, " m")
+            true
+        }
+
+        'G' -> {
+            state.setPendingSequence(" G")
+            HelixWhichKeyPopup.show(editor, " G")
+            true
+        }
+
+        't' -> {
+            state.setPendingSequence(" t")
+            HelixWhichKeyPopup.show(editor, " t")
+            true
+        }
+
+        'w' -> {
+            startWindowChord(editor)
+            true
+        }
+
+        else -> {
+            state.clearPendingSequence()
+            HelixSpaceKeymap.handle(ch, editor)
         }
     }
 
