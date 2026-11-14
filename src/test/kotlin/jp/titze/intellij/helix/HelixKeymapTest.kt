@@ -465,6 +465,32 @@ class HelixKeymapTest : BasePlatformTestCase() {
         HelixCommandRegistry.get("insert_newline").shouldNotBeNull()
         HelixCommandRegistry.get("increment").shouldNotBeNull()
         HelixCommandRegistry.get("decrement").shouldNotBeNull()
+        HelixCommandRegistry.get("move_parent_node_start").shouldNotBeNull()
+        HelixCommandRegistry.get("move_parent_node_end").shouldNotBeNull()
+        HelixCommandRegistry.get("select_all_siblings").shouldNotBeNull()
+        HelixCommandRegistry.get("select_all_children").shouldNotBeNull()
+    }
+
+    fun testAstMotionDefaultKeybindings() {
+        val strokeAb = HelixKeyStroke.fromString("A-b")
+        val resAb = HelixKeymapManager.resolve(HelixMode.NORMAL, listOf(strokeAb))
+        resAb.shouldBeInstanceOf<HelixKeymapResult.Leaf>()
+        resAb.command shouldBe "move_parent_node_start"
+
+        val strokeAe = HelixKeyStroke.fromString("A-e")
+        val resAe = HelixKeymapManager.resolve(HelixMode.NORMAL, listOf(strokeAe))
+        resAe.shouldBeInstanceOf<HelixKeymapResult.Leaf>()
+        resAe.command shouldBe "move_parent_node_end"
+
+        val strokeAa = HelixKeyStroke.fromString("A-a")
+        val resAa = HelixKeymapManager.resolve(HelixMode.NORMAL, listOf(strokeAa))
+        resAa.shouldBeInstanceOf<HelixKeymapResult.Leaf>()
+        resAa.command shouldBe "select_all_siblings"
+
+        val strokeAi = HelixKeyStroke.fromString("A-I")
+        val resAi = HelixKeymapManager.resolve(HelixMode.NORMAL, listOf(strokeAi))
+        resAi.shouldBeInstanceOf<HelixKeymapResult.Leaf>()
+        resAi.command shouldBe "select_all_children"
     }
 
     fun testValidationDiagnosticsOnUnknownCommands() {

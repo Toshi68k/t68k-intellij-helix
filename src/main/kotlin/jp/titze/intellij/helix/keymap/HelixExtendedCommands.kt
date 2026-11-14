@@ -278,6 +278,18 @@ internal object HelixExtendedCommands {
         HelixCommandRegistry.register("select_prev_sibling", "Select previous sibling AST node") { ed, _ ->
             HelixActions.selectPrevSibling(ed)
         }
+        HelixCommandRegistry.register("move_parent_node_start", "Move to start of parent AST node") { ed, _ ->
+            HelixActions.moveParentNodeStart(ed)
+        }
+        HelixCommandRegistry.register("move_parent_node_end", "Move to end of parent AST node") { ed, _ ->
+            HelixActions.moveParentNodeEnd(ed)
+        }
+        HelixCommandRegistry.register("select_all_siblings", "Select all sibling AST elements") { ed, _ ->
+            HelixActions.selectAllSiblings(ed)
+        }
+        HelixCommandRegistry.register("select_all_children", "Select all direct children AST elements") { ed, _ ->
+            HelixActions.selectAllChildren(ed)
+        }
         HelixCommandRegistry.register("split_selection_on_newlines", "Split selection on newlines") { ed, _ ->
             HelixMotions.splitSelectionOnNewlines(ed)
             true
