@@ -122,6 +122,10 @@ object HelixDefaultKeymap {
         bind(trie, "A-i", "shrink_selection", "Shrink selection")
         bind(trie, "A-p", "select_prev_sibling", "Select previous sibling")
         bind(trie, "A-n", "select_next_sibling", "Select next sibling")
+        bind(trie, "A-b", "move_parent_node_start", "Move to start of parent AST node")
+        bind(trie, "A-e", "move_parent_node_end", "Move to end of parent AST node")
+        bind(trie, "A-a", "select_all_siblings", "Select all sibling AST elements")
+        bind(trie, "A-I", "select_all_children", "Select all direct children AST elements")
     }
 
     private fun populateSpaceChords(trie: HelixKeymapTrie) {

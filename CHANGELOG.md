@@ -49,6 +49,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- **AST Motion Keybindings Parity**:
+  - Bound `Alt+b` (`move_parent_node_start`), `Alt+e` (`move_parent_node_end`), `Alt+a` (`select_all_siblings`), and `Alt+I` (`select_all_children`) in `HelixDefaultKeymap` and registered them in `HelixCommandRegistry` to restore full parity with documentation and Keymap Browser inspection.
 - **Command Palette & Modal Picker Selection Corner Artifacts**:
   - Eliminated four white/light corner dots visible around selected rows in `:` Command Palette, File Picker, Jumplist, Registers, and Macros popups.
 
