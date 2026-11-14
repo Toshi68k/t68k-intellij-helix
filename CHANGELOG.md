@@ -7,6 +7,18 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- **Code Generation & Refactoring Expansion (`space + m`)**:
+  - Expanded the Refactor submenu (`space + m`) and Which-Key interactive chord menu with essential code generation, safe deletion, and OOP refactorings:
+    - `space + m g`: **Generate Code** (`Generate`) for generating constructors, getters/setters, equals/hashCode, toString, and test methods.
+    - `space + m d`: **Safe Delete** (`SafeDelete`) to safely remove unused classes, methods, and fields with IDE usage checking.
+    - `space + m u`: **Pull Members Up** (`MembersPullUp`) to move members up to superclasses or interfaces.
+    - `space + m D`: **Push Members Down** (`PushMembersDown`) to move members down to subclasses.
+  - Added new built-in command palette entries and aliases:
+    - `:generate` / `:gen` / `:generate-code`: Invoke IntelliJ's code generation popup (`Generate`).
+    - `:safe-delete` / `:safe_delete` / `:safedelete`: Invoke Safe Delete dialog with usage validation (`SafeDelete`).
+    - `:pull-up` / `:pull_up` / `:members-pull-up`: Invoke Members Pull Up refactoring (`MembersPullUp`).
+    - `:push-down` / `:push_down` / `:push-members-down`: Invoke Push Members Down refactoring (`PushMembersDown`).
+    - `:cleanup` / `:clean` / `:code-cleanup` / `:reformat-cleanup`: One-step format and optimize imports executing `ReformatWithCodeCleanup` (with automatic fallback to `ReformatCode` + `OptimizeImports`).
 - **Git & VCS Workflow Enhancements (`space + v`)**:
   - Implemented a dedicated Version Control leader submenu in `HelixVcsKeymap` providing ergonomic access to daily VCS micro-actions:
     - `space + v r`: **Rollback / Revert Hunk at Caret** (`Vcs.RollbackChangedLines`).

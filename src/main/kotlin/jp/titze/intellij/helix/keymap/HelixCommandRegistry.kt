@@ -349,12 +349,27 @@ object HelixCommandRegistry {
             }
             res
         }
+        register("cleanup", "Reformat and optimize imports", "ReformatWithCodeCleanup") { ed, _ ->
+            val executed = HelixActionDelegate.executeAction("ReformatWithCodeCleanup", ed)
+            val res = if (!executed) {
+                val r = HelixActionDelegate.executeAction("ReformatCode", ed)
+                val o = HelixActionDelegate.executeAction("OptimizeImports", ed)
+                r || o
+            } else {
+                true
+            }
+            val state = HelixStateManager.getOrCreate(ed)
+            if (state.mode == HelixMode.SELECT) {
+                state.setMode(HelixMode.NORMAL)
+            }
+            res
+        }
     }
 
     private fun registerSelectAndHistory() {
         register("record_macro", "Record macro", "StartStopMacroRecording") { ed, _ ->
             val success = HelixActionDelegate.executeAction("StartStopMacroRecording", ed)
-            jp.titze.intellij.helix.state.HelixStateManager.getOrCreate(ed).notifyListeners()
+            HelixStateManager.getOrCreate(ed).notifyListeners()
             success
         }
         register("replay_macro", "Replay macro", "PlaybackLastMacro") { ed, cnt ->
@@ -385,12 +400,12 @@ object HelixCommandRegistry {
             HelixMotions.copySelectionOnNextLine(ed, cnt)
             true
         }
-        register("undo", "Undo", "\$Undo") { ed, cnt ->
-            repeat(cnt) { HelixActionDelegate.executeAction("\$Undo", ed) }
+        register("undo", "Undo", $$"$Undo") { ed, cnt ->
+            repeat(cnt) { HelixActionDelegate.executeAction($$"$Undo", ed) }
             true
         }
-        register("redo", "Redo", "\$Redo") { ed, cnt ->
-            repeat(cnt) { HelixActionDelegate.executeAction("\$Redo", ed) }
+        register("redo", "Redo", $$"$Redo") { ed, cnt ->
+            repeat(cnt) { HelixActionDelegate.executeAction($$"$Redo", ed) }
             true
         }
         register("jump_backward", "Jump backward in jumplist") { ed, cnt ->

@@ -469,6 +469,32 @@ class HelixKeymapTest : BasePlatformTestCase() {
         HelixCommandRegistry.get("move_parent_node_end").shouldNotBeNull()
         HelixCommandRegistry.get("select_all_siblings").shouldNotBeNull()
         HelixCommandRegistry.get("select_all_children").shouldNotBeNull()
+        HelixCommandRegistry.get("generate").shouldNotBeNull()
+        HelixCommandRegistry.get("safe_delete").shouldNotBeNull()
+        HelixCommandRegistry.get("pull_up").shouldNotBeNull()
+        HelixCommandRegistry.get("push_down").shouldNotBeNull()
+        HelixCommandRegistry.get("cleanup").shouldNotBeNull()
+    }
+
+    fun testRefactorChordBindings() {
+        val space = HelixKeyStroke.fromString("space")
+        val m = HelixKeyStroke.fromString("m")
+
+        val resG = HelixKeymapManager.resolve(HelixMode.NORMAL, listOf(space, m, HelixKeyStroke.fromString("g")))
+        resG.shouldBeInstanceOf<HelixKeymapResult.Leaf>()
+        resG.command shouldBe "generate"
+
+        val resD = HelixKeymapManager.resolve(HelixMode.NORMAL, listOf(space, m, HelixKeyStroke.fromString("d")))
+        resD.shouldBeInstanceOf<HelixKeymapResult.Leaf>()
+        resD.command shouldBe "safe_delete"
+
+        val resU = HelixKeymapManager.resolve(HelixMode.NORMAL, listOf(space, m, HelixKeyStroke.fromString("u")))
+        resU.shouldBeInstanceOf<HelixKeymapResult.Leaf>()
+        resU.command shouldBe "pull_up"
+
+        val resPushDown = HelixKeymapManager.resolve(HelixMode.NORMAL, listOf(space, m, HelixKeyStroke.fromString("D")))
+        resPushDown.shouldBeInstanceOf<HelixKeymapResult.Leaf>()
+        resPushDown.command shouldBe "push_down"
     }
 
     fun testAstMotionDefaultKeybindings() {

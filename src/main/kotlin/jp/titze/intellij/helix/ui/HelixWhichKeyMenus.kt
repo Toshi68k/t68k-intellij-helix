@@ -248,6 +248,10 @@ object HelixWhichKeyMenus {
         WhichKeyItem("w", "Surround with template", "surround_with", "SurroundWith"),
         WhichKeyItem("o", "Override methods", "override_methods", "OverrideMethods"),
         WhichKeyItem("I", "Implement methods", "implement_methods", "ImplementMethods"),
+        WhichKeyItem("g", "Generate code", "generate", "Generate"),
+        WhichKeyItem("d", "Safe delete", "safe_delete", "SafeDelete"),
+        WhichKeyItem("u", "Pull members up", "pull_up", "MembersPullUp"),
+        WhichKeyItem("D", "Push members down", "push_down", "PushMembersDown"),
         WhichKeyItem("?", "Refactor this menu", "refactor_this", "Refactorings.QuickListPopupAction"),
     )
 

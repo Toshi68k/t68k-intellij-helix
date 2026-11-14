@@ -195,6 +195,7 @@ object HelixCommands {
 
     private fun executeFallbackCommand(cleanCmd: String, editor: Editor) {
         if (executeVcsCommand(cleanCmd, editor)) return
+        if (executeRefactorFallbackCommand(cleanCmd, editor)) return
 
         when (cleanCmd) {
             "jumps" -> HelixJumplistPopup.show(editor)
@@ -369,6 +370,38 @@ object HelixCommands {
         else -> false
     }
 
+    private fun executeRefactorFallbackCommand(cleanCmd: String, editor: Editor): Boolean = when (cleanCmd) {
+        "cleanup", "clean", "code-cleanup", "reformat-cleanup" -> {
+            if (!HelixActionDelegate.executeAction("ReformatWithCodeCleanup", editor)) {
+                HelixActionDelegate.executeAction("ReformatCode", editor)
+                HelixActionDelegate.executeAction("OptimizeImports", editor)
+            }
+            true
+        }
+
+        "safe-delete", "safe_delete", "safedelete" -> {
+            HelixActionDelegate.executeAction("SafeDelete", editor)
+            true
+        }
+
+        "pull-up", "pull_up", "members-pull-up" -> {
+            HelixActionDelegate.executeAction("MembersPullUp", editor)
+            true
+        }
+
+        "push-down", "push_down", "push-members-down" -> {
+            HelixActionDelegate.executeAction("PushMembersDown", editor)
+            true
+        }
+
+        "generate", "gen" -> {
+            HelixActionDelegate.executeAction("Generate", editor)
+            true
+        }
+
+        else -> false
+    }
+
     private fun openFile(path: String, editor: Editor) {
         val project = editor.project ?: return
         val resolved = HelixDirectoryManager.resolvePath(
@@ -462,10 +495,12 @@ object HelixCommands {
                         HelixSettings.instance.searchUiMode = HelixSearchUiMode.STOCK_HELIX
                         true
                     }
+
                     "popup" -> {
                         HelixSettings.instance.searchUiMode = HelixSearchUiMode.POPUP
                         true
                     }
+
                     else -> {
                         false
                     }
@@ -478,10 +513,12 @@ object HelixCommands {
                         HelixSettings.instance.lineNavigationMode = HelixLineNavigationMode.HELIX_STANDARD
                         true
                     }
+
                     in listOf("vim", "physical") -> {
                         HelixSettings.instance.lineNavigationMode = HelixLineNavigationMode.VIM_STANDARD
                         true
                     }
+
                     else -> {
                         false
                     }
@@ -494,10 +531,12 @@ object HelixCommands {
                         HelixSettings.instance.scratchSplitMode = HelixScratchSplitMode.INTERACTIVE
                         true
                     }
+
                     in listOf("buffer", "plain", "helix", "empty") -> {
                         HelixSettings.instance.scratchSplitMode = HelixScratchSplitMode.EMPTY_BUFFER
                         true
                     }
+
                     else -> {
                         false
                     }

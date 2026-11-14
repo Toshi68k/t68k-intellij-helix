@@ -154,6 +154,16 @@ internal object HelixBuiltinCommands {
             "Optimize and clean imports in current file",
         ) { editor -> HelixActionDelegate.executeAction("OptimizeImports", editor) },
         HelixCommandItem(
+            "cleanup",
+            listOf("clean", "code-cleanup", "format-cleanup", "reformat-cleanup"),
+            "Format code and optimize imports in current buffer (ReformatWithCodeCleanup)",
+        ) { editor ->
+            if (!HelixActionDelegate.executeAction("ReformatWithCodeCleanup", editor)) {
+                HelixActionDelegate.executeAction("ReformatCode", editor)
+                HelixActionDelegate.executeAction("OptimizeImports", editor)
+            }
+        },
+        HelixCommandItem(
             "goto-test",
             listOf("goto_test", "test"),
             "Navigate to or create test for current class (GotoTest)",
@@ -1007,6 +1017,21 @@ internal object HelixBuiltinCommands {
             "Surround selection with template (space + m w)",
         ) { editor -> HelixActionDelegate.executeAction("SurroundWith", editor) },
         HelixCommandItem(
+            "safe-delete",
+            listOf("safe_delete", "safedelete"),
+            "Safely delete unused symbols with usage checking (space + m d)",
+        ) { editor -> HelixActionDelegate.executeAction("SafeDelete", editor) },
+        HelixCommandItem(
+            "pull-up",
+            listOf("pull_up", "pullup", "members-pull-up"),
+            "Pull members up to superclass or interface (space + m u)",
+        ) { editor -> HelixActionDelegate.executeAction("MembersPullUp", editor) },
+        HelixCommandItem(
+            "push-down",
+            listOf("push_down", "pushdown", "push-members-down"),
+            "Push members down to subclasses (space + m D)",
+        ) { editor -> HelixActionDelegate.executeAction("PushMembersDown", editor) },
+        HelixCommandItem(
             "refactor-this",
             listOf("refactor"),
             "Open Refactor This popup menu (space + m ?)",
@@ -1076,8 +1101,8 @@ internal object HelixBuiltinCommands {
         },
         HelixCommandItem(
             "generate",
-            listOf("gen"),
-            "Generate code constructors, getters, setters (Generate)",
+            listOf("gen", "generate-code", "generate_code"),
+            "Generate constructors, getters, setters, etc. (Generate, space + m g)",
         ) { editor ->
             HelixActionDelegate.executeAction("Generate", editor)
         },
