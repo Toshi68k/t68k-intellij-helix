@@ -68,7 +68,7 @@
 <ul>
   <li><b><kbd>Space</kbd> + <code>f</code> / <code>b</code></b> → File picker (<code>GotoFile</code>) / Buffer switcher (<code>RecentFiles</code>)</li>
   <li><b><kbd>Space</kbd> + <code>B</code></b> → Recent Locations with visual code snippet previews (<code>RecentLocations</code>)</li>
-  <li><b><kbd>Space</kbd> + <code>m</code></b> → Refactor submenu (extract variable/method/constant, inline, rename, change signature)</li>
+  <li><b><kbd>Space</kbd> + <code>m</code></b> → Refactor submenu (extract variable/method/constant, inline, rename, change signature, safe delete, generate code, pull up / push down)</li>
   <li><b><kbd>Space</kbd> + <code>/</code></b> → Project-wide text search (<code>FindInPath</code>)</li>
   <li><b><kbd>Space</kbd> + <code>s</code> / <code>S</code></b> → Document structure &amp; workspace symbol search</li>
   <li><b><kbd>Space</kbd> + <code>a</code> / <code>r</code></b> → Code actions (<kbd>Alt+Enter</kbd>) &amp; symbol rename</li>

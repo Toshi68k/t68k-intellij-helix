@@ -1331,16 +1331,16 @@ class HelixUiPopupsTest : BasePlatformTestCase() {
             executedActions.last() shouldBe "GotoDeclaration"
 
             HelixCommandPopup.executeCommand("earlier", editor)
-            executedActions.last() shouldBe "\$Undo"
+            executedActions.last() shouldBe $$"$Undo"
 
             HelixCommandPopup.executeCommand("undo-earlier", editor)
-            executedActions.last() shouldBe "\$Undo"
+            executedActions.last() shouldBe $$"$Undo"
 
             HelixCommandPopup.executeCommand("later", editor)
-            executedActions.last() shouldBe "\$Redo"
+            executedActions.last() shouldBe $$"$Redo"
 
             HelixCommandPopup.executeCommand("redo-later", editor)
-            executedActions.last() shouldBe "\$Redo"
+            executedActions.last() shouldBe $$"$Redo"
         } finally {
             HelixActionDelegate.actionExecutor = originalExecutor
         }
@@ -1483,7 +1483,7 @@ class HelixUiPopupsTest : BasePlatformTestCase() {
         val rootDir = myFixture.tempDirFixture.findOrCreateDir("picker_test")
         val fileA = myFixture.addFileToProject("picker_test/alpha.kt", "fun a() {}").virtualFile
         myFixture.tempDirFixture.findOrCreateDir("picker_test/nested")
-        val fileB = myFixture.addFileToProject("picker_test/nested/beta.kt", "fun b() {}").virtualFile
+        myFixture.addFileToProject("picker_test/nested/beta.kt", "fun b() {}").virtualFile
         myFixture.tempDirFixture.findOrCreateDir("picker_test/build")
         myFixture.addFileToProject("picker_test/build/ignored.txt", "repo")
 
@@ -1811,7 +1811,7 @@ class HelixUiPopupsTest : BasePlatformTestCase() {
         }
     }
 
-    fun testRefactoringAndNavigationWorkflowCommands() {
+    fun testNavigationWorkflowCommands() {
         myFixture.configureByText("test.txt", "sample")
         val editor = myFixture.editor
         val executedActions = mutableListOf<String>()
@@ -1849,6 +1849,24 @@ class HelixUiPopupsTest : BasePlatformTestCase() {
             HelixCommands.execute("file-structure", editor)
             executedActions shouldBe listOf("FileStructurePopup")
 
+            executedActions.clear()
+            HelixCommands.execute("replace-in-path", editor)
+            executedActions shouldBe listOf("ReplaceInPath")
+        } finally {
+            HelixActionDelegate.actionExecutor = null
+        }
+    }
+
+    fun testRefactoringAndCleanupWorkflowCommands() {
+        myFixture.configureByText("test.txt", "sample")
+        val editor = myFixture.editor
+        val executedActions = mutableListOf<String>()
+        HelixActionDelegate.actionExecutor = { id, _ ->
+            executedActions.add(id)
+            true
+        }
+
+        try {
             executedActions.clear()
             HelixCommands.execute("extract-variable", editor)
             executedActions shouldBe listOf("IntroduceVariable")
@@ -1934,8 +1952,53 @@ class HelixUiPopupsTest : BasePlatformTestCase() {
             executedActions shouldBe listOf("Generate")
 
             executedActions.clear()
-            HelixCommands.execute("replace-in-path", editor)
-            executedActions shouldBe listOf("ReplaceInPath")
+            HelixCommands.execute("gen", editor)
+            executedActions shouldBe listOf("Generate")
+
+            executedActions.clear()
+            HelixCommands.execute("safe-delete", editor)
+            executedActions shouldBe listOf("SafeDelete")
+
+            executedActions.clear()
+            HelixCommands.execute("safe_delete", editor)
+            executedActions shouldBe listOf("SafeDelete")
+
+            executedActions.clear()
+            HelixCommands.execute("pull-up", editor)
+            executedActions shouldBe listOf("MembersPullUp")
+
+            executedActions.clear()
+            HelixCommands.execute("pull_up", editor)
+            executedActions shouldBe listOf("MembersPullUp")
+
+            executedActions.clear()
+            HelixCommands.execute("push-down", editor)
+            executedActions shouldBe listOf("PushMembersDown")
+
+            executedActions.clear()
+            HelixCommands.execute("push_down", editor)
+            executedActions shouldBe listOf("PushMembersDown")
+
+            executedActions.clear()
+            HelixCommands.execute("cleanup", editor)
+            executedActions shouldBe listOf("ReformatWithCodeCleanup")
+
+            executedActions.clear()
+            HelixCommands.execute("clean", editor)
+            executedActions shouldBe listOf("ReformatWithCodeCleanup")
+
+            // Test cleanup fallback to ReformatCode + OptimizeImports when ReformatWithCodeCleanup returns false
+            executedActions.clear()
+            HelixActionDelegate.actionExecutor = { actionId, _ ->
+                if (actionId == "ReformatWithCodeCleanup") {
+                    false
+                } else {
+                    executedActions.add(actionId)
+                    true
+                }
+            }
+            HelixCommands.execute("cleanup", editor)
+            executedActions shouldBe listOf("ReformatCode", "OptimizeImports")
         } finally {
             HelixActionDelegate.actionExecutor = null
         }
@@ -2002,6 +2065,18 @@ class HelixUiPopupsTest : BasePlatformTestCase() {
             menu.second.any { it.key == "v" && it.helixCommand == "extract_variable" }.shouldBeTrue()
             menu.second.any { it.key == "m" && it.helixCommand == "extract_method" }.shouldBeTrue()
             menu.second.any { it.key == "i" && it.helixCommand == "inline" }.shouldBeTrue()
+            menu.second.any {
+                it.key == "g" && it.helixCommand == "generate" && it.intelliJAction == "Generate"
+            }.shouldBeTrue()
+            menu.second.any {
+                it.key == "d" && it.helixCommand == "safe_delete" && it.intelliJAction == "SafeDelete"
+            }.shouldBeTrue()
+            menu.second.any {
+                it.key == "u" && it.helixCommand == "pull_up" && it.intelliJAction == "MembersPullUp"
+            }.shouldBeTrue()
+            menu.second.any {
+                it.key == "D" && it.helixCommand == "push_down" && it.intelliJAction == "PushMembersDown"
+            }.shouldBeTrue()
 
             // Space followed by m transitions to pending refactor chord
             HelixKeyHandler.handleKey(' ', editor)
@@ -2080,6 +2155,30 @@ class HelixUiPopupsTest : BasePlatformTestCase() {
             HelixKeyHandler.handleKey('m', editor)
             HelixKeyHandler.handleKey('I', editor)
             executedActions.last() shouldBe "ImplementMethods"
+
+            // Test generate
+            HelixKeyHandler.handleKey(' ', editor)
+            HelixKeyHandler.handleKey('m', editor)
+            HelixKeyHandler.handleKey('g', editor)
+            executedActions.last() shouldBe "Generate"
+
+            // Test safe delete
+            HelixKeyHandler.handleKey(' ', editor)
+            HelixKeyHandler.handleKey('m', editor)
+            HelixKeyHandler.handleKey('d', editor)
+            executedActions.last() shouldBe "SafeDelete"
+
+            // Test pull up
+            HelixKeyHandler.handleKey(' ', editor)
+            HelixKeyHandler.handleKey('m', editor)
+            HelixKeyHandler.handleKey('u', editor)
+            executedActions.last() shouldBe "MembersPullUp"
+
+            // Test push down
+            HelixKeyHandler.handleKey(' ', editor)
+            HelixKeyHandler.handleKey('m', editor)
+            HelixKeyHandler.handleKey('D', editor)
+            executedActions.last() shouldBe "PushMembersDown"
 
             // Test refactor this popup
             HelixKeyHandler.handleKey(' ', editor)

@@ -500,6 +500,10 @@ pressed. Code folding is available via `:fold`, `:unfold`, `:fold-all`, and `:un
 | `space + m w` | `surround_with`     | `SurroundWith`                      | Wrap selection in template (`try/catch`, `if`, etc.)   |
 | `space + m o` | `override_methods`  | `OverrideMethods`                   | Generate / override superclass methods                 |
 | `space + m I` | `implement_methods` | `ImplementMethods`                  | Implement interface methods                            |
+| `space + m g` | `generate`          | `Generate`                          | Generate code (constructors, getters/setters, etc.)   |
+| `space + m d` | `safe_delete`       | `SafeDelete`                        | Safely remove unused symbol with usage checking       |
+| `space + m u` | `pull_up`           | `MembersPullUp`                     | Pull members up to superclass or interface            |
+| `space + m D` | `push_down`         | `PushMembersDown`                   | Push members down to subclasses                       |
 | `space + m ?` | `refactor_this`     | `Refactorings.QuickListPopupAction` | Open IntelliJ "Refactor This..." quick picker          |
 
 #### Testing & TDD (`space + t`)
@@ -597,11 +601,16 @@ to execute):
 - `:implement` &rarr; Implement interface methods (`ImplementMethods`, `space + m I`)
 - `:surround-with` / `:surround` &rarr; Surround selection with template (`SurroundWith`, `space + m w`)
 - `:refactor-this` / `:refactor` &rarr; Open Refactor This popup menu (`Refactorings.QuickListPopupAction`, `space + m ?`)
+- `:generate` / `:gen` &rarr; Generate constructors, getters, setters, etc. (`Generate`, `space + m g`)
+- `:safe-delete` / `:safe_delete` &rarr; Safely delete unused symbols with usage checking (`SafeDelete`, `space + m d`)
+- `:pull-up` / `:pull_up` &rarr; Pull members up to superclass or interface (`MembersPullUp`, `space + m u`)
+- `:push-down` / `:push_down` &rarr; Push members down to subclasses (`PushMembersDown`, `space + m D`)
 - `:fold` &rarr; Fold block under cursor (`CollapseRegion`)
 - `:unfold` &rarr; Unfold block under cursor (`ExpandRegion`)
 - `:fold-all` / `:fold_all` &rarr; Fold all methods and classes in file (`CollapseAllRegions`)
 - `:unfold-all` / `:unfold_all` &rarr; Expand all folds in file (`ExpandAllRegions`)
 - `:optimize-imports` / `:oi` &rarr; Optimize imports (`OptimizeImports`)
+- `:cleanup` / `:clean` &rarr; Format code and optimize imports (`ReformatWithCodeCleanup`)
 - `:goto-test` / `:test` &rarr; Jump to test or code under test (`GotoTest`)
 - `:test-run` / `:test-at-caret` &rarr; Run test method or class at caret (`RunClass` / `Run`, `space + t t`)
 - `:test-debug` &rarr; Debug test method or class at caret (`DebugClass` / `Debug`, `space + t d`)

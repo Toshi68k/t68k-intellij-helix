@@ -44,6 +44,18 @@ internal object HelixRefactorCommands {
         HelixCommandRegistry.register("surround_with", "Surround with template", "SurroundWith") { ed, _ ->
             executeRefactor("SurroundWith", ed)
         }
+        HelixCommandRegistry.register("generate", "Generate code", "Generate") { ed, _ ->
+            executeRefactor("Generate", ed)
+        }
+        HelixCommandRegistry.register("safe_delete", "Safe delete", "SafeDelete") { ed, _ ->
+            executeRefactor("SafeDelete", ed)
+        }
+        HelixCommandRegistry.register("pull_up", "Pull members up", "MembersPullUp") { ed, _ ->
+            executeRefactor("MembersPullUp", ed)
+        }
+        HelixCommandRegistry.register("push_down", "Push members down", "PushMembersDown") { ed, _ ->
+            executeRefactor("PushMembersDown", ed)
+        }
         HelixCommandRegistry.register(
             "refactor_this",
             "Refactor this menu",

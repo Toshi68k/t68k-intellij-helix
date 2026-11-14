@@ -21,6 +21,10 @@ internal object HelixRefactorKeymap {
             'w' -> "SurroundWith"
             'o' -> "OverrideMethods"
             'I' -> "ImplementMethods"
+            'g' -> "Generate"
+            'd' -> "SafeDelete"
+            'u' -> "MembersPullUp"
+            'D' -> "PushMembersDown"
             '?', ' ' -> "Refactorings.QuickListPopupAction"
             else -> return false
         }
