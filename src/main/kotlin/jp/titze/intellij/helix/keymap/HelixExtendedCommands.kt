@@ -32,6 +32,7 @@ internal object HelixExtendedCommands {
         HelixRefactorCommands.registerAll()
         registerVisualToggleCommands()
         registerWorkflowCommands()
+        registerVcsCommands()
     }
 
     private fun registerUnimpaired() {
@@ -119,6 +120,16 @@ internal object HelixExtendedCommands {
             HelixKeyHandler.recordJump(ed)
             HelixMotionHistory.recordBracket(isOpen = false, targetChar = 'G')
             HelixMotions.moveChange(ed, forward = true, count = cnt, toEnd = true)
+        }
+        HelixCommandRegistry.register("goto_prev_conflict", "Go to previous merge conflict") { ed, cnt ->
+            HelixKeyHandler.recordJump(ed)
+            HelixMotionHistory.recordBracket(isOpen = true, targetChar = 'C')
+            HelixMotions.moveConflict(ed, forward = false, count = cnt)
+        }
+        HelixCommandRegistry.register("goto_next_conflict", "Go to next merge conflict") { ed, cnt ->
+            HelixKeyHandler.recordJump(ed)
+            HelixMotionHistory.recordBracket(isOpen = false, targetChar = 'C')
+            HelixMotions.moveConflict(ed, forward = true, count = cnt)
         }
     }
 
@@ -617,5 +628,77 @@ internal object HelixExtendedCommands {
         ) { ed, _ ->
             HelixActionDelegate.executeAction("CloseAllUnmodifiedEditors", ed)
         }
+    }
+
+    private fun registerVcsCommands() {
+        HelixCommandRegistry.register(
+            "vcs_rollback_hunk",
+            "Rollback VCS change hunk",
+            "Vcs.RollbackChangedLines",
+        ) { ed, _ -> HelixActionDelegate.executeAction("Vcs.RollbackChangedLines", ed) }
+        HelixCommandRegistry.register(
+            "vcs_diff",
+            "Show diff for file or selection",
+            "Compare.SameVersion",
+        ) { ed, _ ->
+            HelixActionDelegate.executeAction("Compare.SameVersion", ed) ||
+                HelixActionDelegate.executeAction("Diff.ShowDiff", ed)
+        }
+        HelixCommandRegistry.register(
+            "vcs_file_history",
+            "Show file history",
+            "Vcs.ShowTabbedFileHistory",
+        ) { ed, _ ->
+            HelixActionDelegate.executeAction("Vcs.ShowTabbedFileHistory", ed) ||
+                HelixActionDelegate.executeAction("Vcs.ShowHistory", ed)
+        }
+        HelixCommandRegistry.register(
+            "vcs_stash",
+            "Git stash changes",
+            "Git.Stash",
+        ) { ed, _ -> HelixActionDelegate.executeAction("Git.Stash", ed) }
+        HelixCommandRegistry.register(
+            "vcs_unstash",
+            "Git unstash changes",
+            "Git.Unstash",
+        ) { ed, _ -> HelixActionDelegate.executeAction("Git.Unstash", ed) }
+        HelixCommandRegistry.register(
+            "vcs_blame",
+            "Toggle Git blame / annotate",
+            "Annotate",
+        ) { ed, _ -> HelixActionDelegate.executeAction("Annotate", ed) }
+        HelixCommandRegistry.register(
+            "vcs_commit",
+            "Commit changes",
+            "CheckinProject",
+        ) { ed, _ -> HelixActionDelegate.executeAction("CheckinProject", ed) }
+        HelixCommandRegistry.register(
+            "vcs_push",
+            "Push commits",
+            "Vcs.Push",
+        ) { ed, _ -> HelixActionDelegate.executeAction("Vcs.Push", ed) }
+        HelixCommandRegistry.register(
+            "vcs_pull",
+            "Update project / pull",
+            "Vcs.UpdateProject",
+        ) { ed, _ -> HelixActionDelegate.executeAction("Vcs.UpdateProject", ed) }
+        HelixCommandRegistry.register(
+            "vcs_log",
+            "Show VCS / Git log",
+            "Vcs.Show.Log",
+        ) { ed, _ -> HelixActionDelegate.executeAction("Vcs.Show.Log", ed) }
+        HelixCommandRegistry.register(
+            "vcs_branches",
+            "Show Git branches",
+            "Git.Branches",
+        ) { ed, _ ->
+            HelixActionDelegate.executeAction("Git.Branches", ed) ||
+                HelixActionDelegate.executeAction("Vcs.Branches", ed)
+        }
+        HelixCommandRegistry.register(
+            "vcs_menu",
+            "VCS operations popup",
+            "Vcs.QuickListPopupAction",
+        ) { ed, _ -> HelixActionDelegate.executeAction("Vcs.QuickListPopupAction", ed) }
     }
 }

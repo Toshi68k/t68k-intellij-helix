@@ -194,6 +194,11 @@ object HelixKeyHandler {
                 HelixTestKeymap.handle(ch, editor)
             }
 
+            " v" -> {
+                state.clearPendingSequence()
+                HelixVcsKeymap.handle(ch, editor)
+            }
+
             "[" -> {
                 state.clearPendingSequence()
                 jp.titze.intellij.helix.motion.HelixMotionHistory.recordBracket(isOpen = true, targetChar = ch)

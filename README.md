@@ -450,6 +450,7 @@ pressed. Code folding is available via `:fold`, `:unfold`, `:fold-all`, and `:un
 | `space + r`               | `rename_symbol`                            | `RenameElement`                    | Refactor rename symbol                                 |
 | `space + m`               | `refactor_menu`                            | —                                  | Open interactive Refactoring submenu                   |
 | `space + t`               | `test_menu`                                | —                                  | Open interactive Testing & TDD submenu                 |
+| `space + v`               | `vcs_menu`                                 | —                                  | Open interactive Version Control / Git submenu         |
 | `space + c`               | `toggle_comments`                          | `CommentByLineComment`             | Toggle line comments on selection or line              |
 | `space + C`               | `toggle_block_comments`                    | `CommentByBlockComment`            | Toggle block comments on selection                     |
 | `space + h`               | `select_references_to_symbol_under_cursor` | `FindUsages`                       | Find symbol references / usages across project         |
@@ -513,6 +514,23 @@ pressed. Code folding is available via `:fold`, `:unfold`, `:fold-all`, and `:un
 | `space + t c` | `test_coverage`     | `RunCoverage` / `Coverage`         | Run test with code coverage                               |
 | `space + t a` | `goto_test`         | `GotoTest`                         | Toggle between test and subject (implementation) file     |
 
+#### Version Control & Git (`space + v`)
+
+| Key Stroke    | Helix Command       | Target Action                      | Description                                            |
+|:--------------|:--------------------|:-----------------------------------|:-------------------------------------------------------|
+| `space + v r` | `vcs_rollback_hunk` | `Vcs.RollbackChangedLines`         | Rollback / revert VCS change hunk under caret          |
+| `space + v d` | `vcs_diff`          | `Compare.SameVersion`              | Show diff for active file / selection                  |
+| `space + v h` | `vcs_file_history`  | `Vcs.ShowTabbedFileHistory`        | Show Git/VCS file history                              |
+| `space + v s` | `vcs_stash`         | `Git.Stash`                        | Git stash changes dialog                               |
+| `space + v u` | `vcs_unstash`       | `Git.Unstash`                      | Git unstash changes dialog                             |
+| `space + v b` | `vcs_blame`         | `Annotate`                         | Toggle Git blame annotations in gutter                 |
+| `space + v c` | `vcs_commit`        | `CheckinProject`                   | Open Git commit tool window or dialog                  |
+| `space + v p` | `vcs_push`          | `Vcs.Push`                         | Push commits to remote                                 |
+| `space + v P` | `vcs_pull`          | `Vcs.UpdateProject`                | Pull / update project from remote                      |
+| `space + v l` | `vcs_log`           | `Vcs.Show.Log`                     | Open VCS / Git log window                              |
+| `space + v B` | `vcs_branches`      | `Git.Branches`                     | Open Git branches popup                                |
+| `space + v ?` | `vcs_menu`          | `Vcs.QuickListPopupAction`         | Open IntelliJ VCS operations quick popup               |
+
 #### Unimpaired Navigation (`[` / `]`)
 
 | Forward (`]`) | Backward (`[`) | Helix Command                                           | Description                                         |
@@ -525,6 +543,7 @@ pressed. Code folding is available via `:fold`, `:unfold`, `:fold-all`, and `:un
 | `]p`          | `[p`           | `goto_next_paragraph` / `goto_prev_paragraph`           | Next / previous paragraph (blank line)              |
 | `]g`          | `[g`           | `goto_next_change` / `goto_prev_change`                 | Next / previous VCS change marker                   |
 | `]G`          | `[G`           | `goto_last_change` / `goto_first_change`                | Last / first VCS change marker                      |
+| `]C`          | `[C`           | `goto_next_conflict` / `goto_prev_conflict`             | Next / previous merge conflict (marker fallback)    |
 | `]d`          | `[d`           | `goto_next_diag` / `goto_prev_diag`                     | Next / previous diagnostic error                    |
 | `]D`          | `[D`           | `goto_last_diag` / `goto_first_diag`                    | Last / first diagnostic error                       |
 | `]Space`      | `[Space`       | `add_newline_below` / `add_newline_above`               | Add empty line below / above                        |
@@ -658,7 +677,7 @@ to execute):
 - `:select-prev-occurrence` / `:select-prev` &rarr; Add cursor at previous occurrence of selection / word (`add_selection_prev`)
 - `:select-all-occurrences` / `:select-all-matches` &rarr; Select all occurrences of selection / word across buffer (`select_all_occurrences`)
 - `:yank-diagnostic` / `:yank-diag` &rarr; Copy error/warning under cursor to clipboard and active register
-- `:reset-diff-change` / `:diffget` / `:diffg` &rarr; Revert VCS hunk under cursor (`Vcs.RollbackChangedLines`)
+- `:reset-diff-change` / `:diffget` / `:diffg` / `:rollback-hunk` / `:revert-hunk` &rarr; Revert VCS hunk under cursor (`Vcs.RollbackChangedLines`, `space + v r`)
 - `:reflow` / `:reflow-paragraph` &rarr; Hard-wrap selected lines or comments to editor column margin (`FillParagraph`)
 - `:clear-register [reg]` &rarr; Clear specific named register or all registers (`HelixRegisterManager.clear`)
 - `:copy-path` / `:copy-absolute-path` &rarr; Copy absolute file path to clipboard (`CopyAbsolutePath`)
@@ -710,6 +729,9 @@ to execute):
 - `:pull` / `:git-pull` / `:update-project` &rarr; Update project / pull from remote (`Vcs.UpdateProject`)
 - `:vcs-log` / `:git-log` &rarr; Show VCS / Git log (`Vcs.Show.Log`)
 - `:branches` / `:git-branches` &rarr; Open Git branches popup (`Git.Branches`)
+- `:file-history` / `:history` / `:git-history` &rarr; Show Git/VCS file history (`Vcs.ShowTabbedFileHistory`, `space + v h`)
+- `:stash` / `:git-stash` &rarr; Open Git stash dialog (`Git.Stash`, `space + v s`)
+- `:unstash` / `:git-unstash` &rarr; Open Git unstash dialog (`Git.Unstash`, `space + v u`)
 - `:goto-implementation` / `:implementation` &rarr; Jump to implementation (`GotoImplementation`, `gi`)
 - `:goto-type-definition` / `:type-definition` &rarr; Jump to type definition (`GotoTypeDeclaration`, `gy`)
 - `:goto-reference` / `:references` &rarr; Find symbol references / usages (`FindUsages`, `gr`)

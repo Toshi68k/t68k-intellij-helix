@@ -1774,6 +1774,38 @@ class HelixUiPopupsTest : BasePlatformTestCase() {
             executedActions.clear()
             HelixCommands.execute("vcs-log", editor)
             executedActions shouldBe listOf("Vcs.Show.Log")
+
+            executedActions.clear()
+            HelixCommands.execute("file-history", editor)
+            executedActions shouldBe listOf("Vcs.ShowTabbedFileHistory")
+
+            executedActions.clear()
+            HelixCommands.execute("history", editor)
+            executedActions shouldBe listOf("Vcs.ShowTabbedFileHistory")
+
+            executedActions.clear()
+            HelixCommands.execute("stash", editor)
+            executedActions shouldBe listOf("Git.Stash")
+
+            executedActions.clear()
+            HelixCommands.execute("git-stash", editor)
+            executedActions shouldBe listOf("Git.Stash")
+
+            executedActions.clear()
+            HelixCommands.execute("unstash", editor)
+            executedActions shouldBe listOf("Git.Unstash")
+
+            executedActions.clear()
+            HelixCommands.execute("git-unstash", editor)
+            executedActions shouldBe listOf("Git.Unstash")
+
+            executedActions.clear()
+            HelixCommands.execute("rollback-hunk", editor)
+            executedActions shouldBe listOf("Vcs.RollbackChangedLines")
+
+            executedActions.clear()
+            HelixCommands.execute("revert-hunk", editor)
+            executedActions shouldBe listOf("Vcs.RollbackChangedLines")
         } finally {
             HelixActionDelegate.actionExecutor = null
         }
@@ -2065,6 +2097,167 @@ class HelixUiPopupsTest : BasePlatformTestCase() {
         } finally {
             HelixActionDelegate.actionExecutor = null
         }
+    }
+
+    fun testVcsMenuChordsAndConflictNavigation() {
+        val text = "line 0\n" +
+            "<<<<<<< HEAD\n" +
+            "ours 1\n" +
+            "=======\n" +
+            "theirs 1\n" +
+            ">>>>>>> branch\n" +
+            "middle line\n" +
+            "<<<<<<< HEAD\n" +
+            "ours 2\n" +
+            "=======\n" +
+            "theirs 2\n" +
+            ">>>>>>> branch\n"
+        myFixture.configureByText("test.txt", text)
+        val editor = myFixture.editor
+        val state = HelixStateManager.getOrCreate(editor)
+        val executedActions = mutableListOf<String>()
+        HelixActionDelegate.actionExecutor = { actionId, _ ->
+            executedActions.add(actionId)
+            true
+        }
+
+        try {
+            // Verify Which-Key Space menu metadata contains VCS item
+            val spaceMenu = HelixWhichKeyMenus.getMenu(" ")
+            spaceMenu.shouldNotBeNull()
+            val spaceItemV = spaceMenu.second.find { it.key == "v" }
+            spaceItemV.shouldNotBeNull()
+            spaceItemV.label shouldBe "VCS / Git menu"
+            spaceItemV.helixCommand shouldBe "vcs_menu"
+
+            // Verify Which-Key VCS menu metadata
+            val vcsMenu = HelixWhichKeyMenus.getMenu(" v")
+            vcsMenu.shouldNotBeNull()
+            vcsMenu.first shouldBe "VCS / GIT MENU"
+            vcsMenu.second.shouldNotBeEmpty()
+            vcsMenu.second.any { it.key == "r" && it.helixCommand == "vcs_rollback_hunk" }.shouldBeTrue()
+            vcsMenu.second.any { it.key == "d" && it.helixCommand == "vcs_diff" }.shouldBeTrue()
+            vcsMenu.second.any { it.key == "h" && it.helixCommand == "vcs_file_history" }.shouldBeTrue()
+            vcsMenu.second.any { it.key == "s" && it.helixCommand == "vcs_stash" }.shouldBeTrue()
+            vcsMenu.second.any { it.key == "u" && it.helixCommand == "vcs_unstash" }.shouldBeTrue()
+
+            // Space followed by v transitions to pending vcs chord
+            HelixKeyHandler.handleKey(' ', editor)
+            state.pendingSequence shouldBe " "
+            HelixKeyHandler.handleKey('v', editor)
+            state.pendingSequence shouldBe " v"
+
+            // Test rollback hunk
+            HelixKeyHandler.handleKey('r', editor)
+            state.pendingSequence.isEmpty().shouldBeTrue()
+            executedActions.last() shouldBe "Vcs.RollbackChangedLines"
+
+            // Test show diff
+            HelixKeyHandler.handleKey(' ', editor)
+            HelixKeyHandler.handleKey('v', editor)
+            HelixKeyHandler.handleKey('d', editor)
+            executedActions.last() shouldBe "Compare.SameVersion"
+
+            // Test file history
+            HelixKeyHandler.handleKey(' ', editor)
+            HelixKeyHandler.handleKey('v', editor)
+            HelixKeyHandler.handleKey('h', editor)
+            executedActions.last() shouldBe "Vcs.ShowTabbedFileHistory"
+
+            // Test stash
+            HelixKeyHandler.handleKey(' ', editor)
+            HelixKeyHandler.handleKey('v', editor)
+            HelixKeyHandler.handleKey('s', editor)
+            executedActions.last() shouldBe "Git.Stash"
+
+            // Test unstash
+            HelixKeyHandler.handleKey(' ', editor)
+            HelixKeyHandler.handleKey('v', editor)
+            HelixKeyHandler.handleKey('u', editor)
+            executedActions.last() shouldBe "Git.Unstash"
+
+            // Test blame
+            HelixKeyHandler.handleKey(' ', editor)
+            HelixKeyHandler.handleKey('v', editor)
+            HelixKeyHandler.handleKey('b', editor)
+            executedActions.last() shouldBe "Annotate"
+
+            // Test commit
+            HelixKeyHandler.handleKey(' ', editor)
+            HelixKeyHandler.handleKey('v', editor)
+            HelixKeyHandler.handleKey('c', editor)
+            executedActions.last() shouldBe "CheckinProject"
+
+            // Test push
+            HelixKeyHandler.handleKey(' ', editor)
+            HelixKeyHandler.handleKey('v', editor)
+            HelixKeyHandler.handleKey('p', editor)
+            executedActions.last() shouldBe "Vcs.Push"
+
+            // Test pull
+            HelixKeyHandler.handleKey(' ', editor)
+            HelixKeyHandler.handleKey('v', editor)
+            HelixKeyHandler.handleKey('P', editor)
+            executedActions.last() shouldBe "Vcs.UpdateProject"
+
+            // Test log
+            HelixKeyHandler.handleKey(' ', editor)
+            HelixKeyHandler.handleKey('v', editor)
+            HelixKeyHandler.handleKey('l', editor)
+            executedActions.last() shouldBe "Vcs.Show.Log"
+
+            // Test branches
+            HelixKeyHandler.handleKey(' ', editor)
+            HelixKeyHandler.handleKey('v', editor)
+            HelixKeyHandler.handleKey('B', editor)
+            executedActions.last() shouldBe "Git.Branches"
+
+            // Test VCS popup menu
+            HelixKeyHandler.handleKey(' ', editor)
+            HelixKeyHandler.handleKey('v', editor)
+            HelixKeyHandler.handleKey('?', editor)
+            executedActions.last() shouldBe "Vcs.QuickListPopupAction"
+
+            // Verify bracket menu items for conflict navigation
+            val bracketOpen = HelixWhichKeyMenus.getMenu("[")
+            bracketOpen.shouldNotBeNull()
+            bracketOpen.second.any { it.key == "C" && it.helixCommand == "goto_prev_conflict" }.shouldBeTrue()
+
+            val bracketClose = HelixWhichKeyMenus.getMenu("]")
+            bracketClose.shouldNotBeNull()
+            bracketClose.second.any { it.key == "C" && it.helixCommand == "goto_next_conflict" }.shouldBeTrue()
+
+            // Test conflict action dispatch when IDE action succeeds
+            HelixKeyHandler.handleKey(']', editor)
+            HelixKeyHandler.handleKey('C', editor)
+            executedActions.last() shouldBe "NextConflict"
+
+            HelixKeyHandler.handleKey('[', editor)
+            HelixKeyHandler.handleKey('C', editor)
+            executedActions.last() shouldBe "PreviousConflict"
+        } finally {
+            HelixActionDelegate.actionExecutor = null
+        }
+
+        // Test fallback text conflict navigation when IDE action fails / returns false
+        editor.caretModel.moveToOffset(0)
+        HelixKeyHandler.handleKey(']', editor)
+        HelixKeyHandler.handleKey('C', editor)
+        // First conflict starts at line 1 ("<<<<<<< HEAD")
+        val line1 = editor.document.getLineNumber(editor.caretModel.offset)
+        line1 shouldBe 1
+
+        HelixKeyHandler.handleKey(']', editor)
+        HelixKeyHandler.handleKey('C', editor)
+        // Second conflict starts at line 7
+        val line2 = editor.document.getLineNumber(editor.caretModel.offset)
+        line2 shouldBe 7
+
+        HelixKeyHandler.handleKey('[', editor)
+        HelixKeyHandler.handleKey('C', editor)
+        // Back to line 1
+        val line3 = editor.document.getLineNumber(editor.caretModel.offset)
+        line3 shouldBe 1
     }
 
     fun testVisualTogglePaletteCommands() {

@@ -81,6 +81,8 @@ object HelixKeymapManager {
 
         " t" -> listOf(HelixKeyStroke.fromString("space"), HelixKeyStroke('t'))
 
+        " v" -> listOf(HelixKeyStroke.fromString("space"), HelixKeyStroke('v'))
+
         "C-w" -> listOf(HelixKeyStroke.fromString("C-w"))
 
         "C-w n" -> listOf(HelixKeyStroke.fromString("C-w"), HelixKeyStroke('n'))

@@ -194,6 +194,8 @@ object HelixCommands {
     }
 
     private fun executeFallbackCommand(cleanCmd: String, editor: Editor) {
+        if (executeVcsCommand(cleanCmd, editor)) return
+
         when (cleanCmd) {
             "jumps" -> HelixJumplistPopup.show(editor)
 
@@ -326,10 +328,6 @@ object HelixCommands {
                 HelixSettings.instance.scratchSplitMode = next
             }
 
-            "diffget", "diffg", "reset-diff-change", "reset_diff_change" -> {
-                HelixActionDelegate.executeAction("Vcs.RollbackChangedLines", editor)
-            }
-
             "reflow", "reflow-paragraph", "fill-paragraph" -> {
                 HelixActionDelegate.executeAction("FillParagraph", editor)
             }
@@ -346,6 +344,29 @@ object HelixCommands {
                 HelixActions.reverseSelectionsContents(editor)
             }
         }
+    }
+
+    private fun executeVcsCommand(cleanCmd: String, editor: Editor): Boolean = when (cleanCmd) {
+        "diffget", "diffg", "reset-diff-change", "reset_diff_change",
+        "rollback-hunk", "rollback_hunk", "revert-hunk", "revert_hunk",
+        -> {
+            HelixActionDelegate.executeAction("Vcs.RollbackChangedLines", editor)
+        }
+
+        "file-history", "file_history", "history", "git-history" -> {
+            HelixActionDelegate.executeAction("Vcs.ShowTabbedFileHistory", editor) ||
+                HelixActionDelegate.executeAction("Vcs.ShowHistory", editor)
+        }
+
+        "stash", "git-stash", "git_stash" -> {
+            HelixActionDelegate.executeAction("Git.Stash", editor)
+        }
+
+        "unstash", "git-unstash", "git_unstash" -> {
+            HelixActionDelegate.executeAction("Git.Unstash", editor)
+        }
+
+        else -> false
     }
 
     private fun openFile(path: String, editor: Editor) {
@@ -388,7 +409,7 @@ object HelixCommands {
             return true
         }
         if (baseCmd == "clear-register" || baseCmd == "clear_register") {
-            val regChar = if (arg.isNotEmpty()) arg.first() else null
+            val regChar = arg.firstOrNull()
             HelixRegisterManager.clear(regChar)
             return true
         }
@@ -436,38 +457,50 @@ object HelixCommands {
         val normVal = value.lowercase()
         return when (normKey) {
             "search-ui", "search-ui.mode", "search.ui" -> {
-                if (normVal in listOf("inline", "stock")) {
-                    HelixSettings.instance.searchUiMode = HelixSearchUiMode.STOCK_HELIX
-                    true
-                } else if (normVal == "popup") {
-                    HelixSettings.instance.searchUiMode = HelixSearchUiMode.POPUP
-                    true
-                } else {
-                    false
+                when (normVal) {
+                    in listOf("inline", "stock") -> {
+                        HelixSettings.instance.searchUiMode = HelixSearchUiMode.STOCK_HELIX
+                        true
+                    }
+                    "popup" -> {
+                        HelixSettings.instance.searchUiMode = HelixSearchUiMode.POPUP
+                        true
+                    }
+                    else -> {
+                        false
+                    }
                 }
             }
 
             "line-nav", "line-navigation", "line-navigation.mode" -> {
-                if (normVal in listOf("helix", "stock")) {
-                    HelixSettings.instance.lineNavigationMode = HelixLineNavigationMode.HELIX_STANDARD
-                    true
-                } else if (normVal in listOf("vim", "physical")) {
-                    HelixSettings.instance.lineNavigationMode = HelixLineNavigationMode.VIM_STANDARD
-                    true
-                } else {
-                    false
+                when (normVal) {
+                    in listOf("helix", "stock") -> {
+                        HelixSettings.instance.lineNavigationMode = HelixLineNavigationMode.HELIX_STANDARD
+                        true
+                    }
+                    in listOf("vim", "physical") -> {
+                        HelixSettings.instance.lineNavigationMode = HelixLineNavigationMode.VIM_STANDARD
+                        true
+                    }
+                    else -> {
+                        false
+                    }
                 }
             }
 
             "scratch-mode", "scratch.mode" -> {
-                if (normVal in listOf("interactive", "file")) {
-                    HelixSettings.instance.scratchSplitMode = HelixScratchSplitMode.INTERACTIVE
-                    true
-                } else if (normVal in listOf("buffer", "plain", "helix", "empty")) {
-                    HelixSettings.instance.scratchSplitMode = HelixScratchSplitMode.EMPTY_BUFFER
-                    true
-                } else {
-                    false
+                when (normVal) {
+                    in listOf("interactive", "file") -> {
+                        HelixSettings.instance.scratchSplitMode = HelixScratchSplitMode.INTERACTIVE
+                        true
+                    }
+                    in listOf("buffer", "plain", "helix", "empty") -> {
+                        HelixSettings.instance.scratchSplitMode = HelixScratchSplitMode.EMPTY_BUFFER
+                        true
+                    }
+                    else -> {
+                        false
+                    }
                 }
             }
 

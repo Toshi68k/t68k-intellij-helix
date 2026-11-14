@@ -336,6 +336,47 @@ object HelixJumpMotions {
         return true
     }
 
+    /**
+     * [C / ]C: VCS merge conflict navigation
+     */
+    fun moveConflict(editor: Editor, forward: Boolean, count: Int = 1): Boolean {
+        val action = if (forward) "NextConflict" else "PreviousConflict"
+        var executed = false
+        val totalCount = count.coerceAtLeast(1)
+        repeat(totalCount) {
+            if (HelixActionDelegate.executeAction(action, editor)) {
+                executed = true
+            }
+        }
+        if (executed) return true
+
+        val ranges = findConflictRanges(editor.document)
+        return navigateToRange(editor, ranges, forward, totalCount)
+    }
+
+    private fun findConflictRanges(doc: Document): List<TextRange> {
+        val ranges = mutableListOf<TextRange>()
+        for (line in 0 until doc.lineCount) {
+            val start = doc.getLineStartOffset(line)
+            val end = doc.getLineEndOffset(line)
+            val text = doc.charsSequence.subSequence(start, end).toString()
+            if (text.startsWith("<<<<<<<")) {
+                ranges.add(TextRange(start, end))
+            }
+        }
+        if (ranges.isEmpty()) {
+            for (line in 0 until doc.lineCount) {
+                val start = doc.getLineStartOffset(line)
+                val end = doc.getLineEndOffset(line)
+                val text = doc.charsSequence.subSequence(start, end).toString()
+                if (text.startsWith("=======") || text.startsWith(">>>>>>>")) {
+                    ranges.add(TextRange(start, end))
+                }
+            }
+        }
+        return ranges
+    }
+
     private fun getMatchingRangesFromPsi(editor: Editor, predicate: (PsiElement) -> Boolean): List<TextRange> {
         val project = editor.project ?: return emptyList()
         val doc = editor.document
