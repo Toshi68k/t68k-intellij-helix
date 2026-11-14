@@ -456,7 +456,15 @@ internal object HelixBuiltinCommands {
         ) { editor -> HelixActions.yankDiagnostic(editor) },
         HelixCommandItem(
             "reset-diff-change",
-            listOf("reset_diff_change", "diffget", "diffg"),
+            listOf(
+                "reset_diff_change",
+                "diffget",
+                "diffg",
+                "rollback-hunk",
+                "rollback_hunk",
+                "revert-hunk",
+                "revert_hunk",
+            ),
             "Revert VCS git hunk under cursor (Vcs.RollbackChangedLines)",
         ) { editor -> HelixActionDelegate.executeAction("Vcs.RollbackChangedLines", editor) },
         HelixCommandItem(
@@ -920,6 +928,28 @@ internal object HelixBuiltinCommands {
         ) { editor ->
             HelixActionDelegate.executeAction("Git.Branches", editor) ||
                 HelixActionDelegate.executeAction("Vcs.Branches", editor)
+        },
+        HelixCommandItem(
+            "file-history",
+            listOf("file_history", "history", "git-history"),
+            "Show Git/VCS file history (Vcs.ShowTabbedFileHistory)",
+        ) { editor ->
+            HelixActionDelegate.executeAction("Vcs.ShowTabbedFileHistory", editor) ||
+                HelixActionDelegate.executeAction("Vcs.ShowHistory", editor)
+        },
+        HelixCommandItem(
+            "stash",
+            listOf("git-stash", "git_stash"),
+            "Git stash changes (Git.Stash)",
+        ) { editor ->
+            HelixActionDelegate.executeAction("Git.Stash", editor)
+        },
+        HelixCommandItem(
+            "unstash",
+            listOf("git-unstash", "git_unstash"),
+            "Git unstash changes (Git.Unstash)",
+        ) { editor ->
+            HelixActionDelegate.executeAction("Git.Unstash", editor)
         },
         HelixCommandItem(
             "extract-variable",

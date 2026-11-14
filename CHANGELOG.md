@@ -7,6 +7,27 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- **Git & VCS Workflow Enhancements (`space + v`)**:
+  - Implemented a dedicated Version Control leader submenu in `HelixVcsKeymap` providing ergonomic access to daily VCS micro-actions:
+    - `space + v r`: **Rollback / Revert Hunk at Caret** (`Vcs.RollbackChangedLines`).
+    - `space + v d`: **Show Diff for Current File / Selection** (`Compare.SameVersion` &rarr; `Diff.ShowDiff`).
+    - `space + v h`: **File History** (`Vcs.ShowTabbedFileHistory` &rarr; `Vcs.ShowHistory`).
+    - `space + v s`: **Git Stash** (`Git.Stash`).
+    - `space + v u`: **Git Unstash** (`Git.Unstash`).
+    - `space + v b`: **Toggle Git Blame / Annotate** (`Annotate`).
+    - `space + v c`: **Commit Changes** (`CheckinProject`).
+    - `space + v p`: **Push Commits** (`Vcs.Push`).
+    - `space + v P`: **Pull / Update Project** (`Vcs.UpdateProject`).
+    - `space + v l`: **Show VCS / Git Log** (`Vcs.Show.Log`).
+    - `space + v B`: **Git Branches Popup** (`Git.Branches` &rarr; `Vcs.Branches`).
+    - `space + v ?`: **VCS Operations Quick Popup** (`Vcs.QuickListPopupAction`).
+  - Integrated `VCS / GIT MENU` into interactive Which-Key popup on chord `space + v` and added `v` (`vcs_menu`) to `spaceItems`.
+  - Added new built-in command palette entries and aliases: `:rollback-hunk`, `:revert-hunk`, `:file-history` (`:history`, `:git-history`), `:stash` (`:git-stash`), and `:unstash` (`:git-unstash`).
+- **Merge Conflict Navigation (`]C` / `[C`)**:
+  - Added unimpaired bracket navigation for merge conflicts: `]C` (next conflict) and `[C` (previous conflict).
+  - Implemented smart hybrid resolution: delegates to native IDE `NextConflict` / `PreviousConflict` actions with automatic fallback to document conflict marker scanning (`<<<<<<<`, `=======`, `>>>>>>>`) for raw buffer conflicts.
+  - Integrated with `HelixMotionHistory` for repetition via `Alt+.` and count prefixes (e.g., `2]C`).
+  - Added `C` entries to Which-Key `[` and `]` bracket navigation menus.
 - **Dedicated Test Leader (`space + t`) & TDD Workflow Support**:
   - Implemented a dedicated test leader submenu in `HelixTestKeymap` providing context-to-global fallback actions:
     - `space + t t` / `space + t r`: **Run Test at Caret** (`RunClass` &rarr; `Run`).

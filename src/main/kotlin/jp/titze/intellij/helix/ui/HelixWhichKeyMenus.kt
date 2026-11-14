@@ -47,6 +47,7 @@ object HelixWhichKeyMenus {
         WhichKeyItem("r", "Rename symbol", "rename_symbol", "RenameElement"),
         WhichKeyItem("m", "Refactor menu", "refactor_menu"),
         WhichKeyItem("t", "Test menu", "test_menu"),
+        WhichKeyItem("v", "VCS / Git menu", "vcs_menu"),
         WhichKeyItem("c", "Toggle line comment", "toggle_comments", "CommentByLineComment"),
         WhichKeyItem("C", "Toggle block comment", "toggle_block_comments", "CommentByBlockComment"),
         WhichKeyItem("h", "Select references", "select_references", "FindUsages"),
@@ -123,6 +124,7 @@ object HelixWhichKeyMenus {
         WhichKeyItem("p", "Previous paragraph", "goto_prev_paragraph"),
         WhichKeyItem("g", "Previous change", "goto_prev_change", "VcsShowPrevChangeMarker"),
         WhichKeyItem("G", "First change", "goto_first_change"),
+        WhichKeyItem("C", "Previous conflict", "goto_prev_conflict", "PreviousConflict"),
         WhichKeyItem("e", "Previous entry", "goto_prev_entry"),
         WhichKeyItem("s", "Previous spelling error", "goto_prev_spelling_error", "GotoPreviousSpellingError"),
         WhichKeyItem("Space", "Add newline above", "add_newline_above"),
@@ -141,6 +143,7 @@ object HelixWhichKeyMenus {
         WhichKeyItem("p", "Next paragraph", "goto_next_paragraph"),
         WhichKeyItem("g", "Next change", "goto_next_change", "VcsShowNextChangeMarker"),
         WhichKeyItem("G", "Last change", "goto_last_change"),
+        WhichKeyItem("C", "Next conflict", "goto_next_conflict", "NextConflict"),
         WhichKeyItem("e", "Next entry", "goto_next_entry"),
         WhichKeyItem("s", "Next spelling error", "goto_next_spelling_error", "GotoNextSpellingError"),
         WhichKeyItem("Space", "Add newline below", "add_newline_below"),
@@ -258,6 +261,21 @@ object HelixWhichKeyMenus {
         WhichKeyItem("a", "Toggle test / subject", "goto_test", "GotoTest"),
     )
 
+    val vcsItems = listOf(
+        WhichKeyItem("r", "Rollback change hunk", "vcs_rollback_hunk", "Vcs.RollbackChangedLines"),
+        WhichKeyItem("d", "Show diff", "vcs_diff", "Compare.SameVersion"),
+        WhichKeyItem("h", "File history", "vcs_file_history", "Vcs.ShowTabbedFileHistory"),
+        WhichKeyItem("s", "Git stash changes", "vcs_stash", "Git.Stash"),
+        WhichKeyItem("u", "Git unstash changes", "vcs_unstash", "Git.Unstash"),
+        WhichKeyItem("b", "Git blame / annotate", "vcs_blame", "Annotate"),
+        WhichKeyItem("c", "Commit changes", "vcs_commit", "CheckinProject"),
+        WhichKeyItem("p", "Push commits", "vcs_push", "Vcs.Push"),
+        WhichKeyItem("P", "Pull / update project", "vcs_pull", "Vcs.UpdateProject"),
+        WhichKeyItem("l", "VCS / Git log", "vcs_log", "Vcs.Show.Log"),
+        WhichKeyItem("B", "Git branches", "vcs_branches", "Git.Branches"),
+        WhichKeyItem("?", "VCS operations popup", "vcs_menu", "Vcs.QuickListPopupAction"),
+    )
+
     fun getMenu(prefix: String): Pair<String, List<WhichKeyItem>>? = getMenu(prefix, HelixMode.NORMAL)
 
     fun getMenu(prefix: String, mode: HelixMode): Pair<String, List<WhichKeyItem>>? {
@@ -283,6 +301,7 @@ object HelixWhichKeyMenus {
         " G", "space G", "G", "dap" -> HelixBundle.message("whichKey.menu.debug") to debugItems
         " m", "space m", "refactor" -> HelixBundle.message("whichKey.menu.refactor") to refactorItems
         " t", "space t", "test" -> HelixBundle.message("whichKey.menu.test") to testItems
+        " v", "space v", "vcs" -> HelixBundle.message("whichKey.menu.vcs") to vcsItems
         "g" -> HelixBundle.message("whichKey.menu.goto") to gotoItems
         "m" -> HelixBundle.message("whichKey.menu.match") to matchItems
         "ma" -> HelixBundle.message("whichKey.menu.selectAround") to textObjectItems
