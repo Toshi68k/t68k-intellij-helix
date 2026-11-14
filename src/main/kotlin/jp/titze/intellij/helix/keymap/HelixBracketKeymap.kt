@@ -57,6 +57,11 @@ internal object HelixBracketKeymap {
             HelixMotions.moveChange(editor, forward = false, count = count, toEnd = true)
         }
 
+        'C' -> {
+            HelixKeyHandler.recordJump(editor)
+            HelixMotions.moveConflict(editor, forward = false, count = count)
+        }
+
         'e' -> {
             HelixKeyHandler.recordJump(editor)
             HelixMotions.moveEntry(editor, forward = false, count = count)
@@ -127,6 +132,11 @@ internal object HelixBracketKeymap {
         'G' -> {
             HelixKeyHandler.recordJump(editor)
             HelixMotions.moveChange(editor, forward = true, count = count, toEnd = true)
+        }
+
+        'C' -> {
+            HelixKeyHandler.recordJump(editor)
+            HelixMotions.moveConflict(editor, forward = true, count = count)
         }
 
         'e' -> {
