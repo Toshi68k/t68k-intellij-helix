@@ -11,6 +11,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   - Excluded lightweight Swing text component editors (`TextComponentEditorImpl`) from `HelixEditorEligibility` so dialog inputs and plain text areas (e.g. run configurations, commit templates, tool window fields) bypass modal editing and route directly to standard IDE action handlers.
   - Added defensive exception handling in `HelixStateManager.updateCursorColor` when retrieving `editor.colorsScheme` to prevent unhandled `UnsupportedOperationException` on the AWT Event Dispatch Thread when interacting with non-standard or stub editor implementations.
 
+- **EDT Freeze During Config Reload on File Save**:
+  - Decoupled `HelixConfigWatcher` automatic reload from the VFS `BulkFileListener.after` write-lock callback using `Application.invokeLater`, preventing synchronous EDT lockups when saving `config.toml` or `intellij.toml`.
+  - Mutated `editor.settings` directly when applying `soft-wrap` and `whitespace.render` in `HelixEffectiveSettings` and `HelixEditorOptions`, eliminating nested `ActionManager.tryToExecute` calls that trigger coroutine-based action expand deadlocks on the Event Dispatch Thread.
+
 ### Changed
 
 - **UI Color Modernization & IntelliJ DevKit Compliance**:

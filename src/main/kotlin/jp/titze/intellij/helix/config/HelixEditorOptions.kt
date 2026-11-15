@@ -363,7 +363,7 @@ object HelixEditorOptions {
 
         override fun apply(value: Boolean, editor: Editor?): Boolean {
             forEachTargetEditor(editor) { ed ->
-                HelixVisualToggleActions.toggleSoftWrap(ed, value)
+                ed.settings.isUseSoftWraps = value
             }
             return true
         }
@@ -396,7 +396,7 @@ object HelixEditorOptions {
 
         override fun apply(value: Boolean, editor: Editor?): Boolean {
             forEachTargetEditor(editor) { ed ->
-                HelixVisualToggleActions.toggleWhitespace(ed, value)
+                ed.settings.isWhitespacesShown = value
             }
             return true
         }
