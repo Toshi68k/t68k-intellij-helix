@@ -26,8 +26,7 @@ object HelixTheme {
 
     val TRANSPARENT: JBColor = HelixColor(Color(0, 0, 0, 0), Color(0, 0, 0, 0))
 
-    fun color(lightRgb: Int, darkRgb: Int): JBColor =
-        HelixColor(Color(lightRgb), Color(darkRgb))
+    fun color(lightRgb: Int, darkRgb: Int): JBColor = HelixColor(Color(lightRgb), Color(darkRgb))
 
     fun color(light: Color, dark: Color): JBColor = HelixColor(light, dark)
 
