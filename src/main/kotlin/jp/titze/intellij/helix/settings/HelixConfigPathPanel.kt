@@ -21,6 +21,7 @@ import javax.swing.Box
 import javax.swing.BoxLayout
 import javax.swing.JButton
 import javax.swing.JPanel
+import javax.swing.table.DefaultTableModel
 
 /**
  * Settings panel for managing the Helix TOML configuration file path, diagnostics, and reload actions.
@@ -31,6 +32,27 @@ class HelixConfigPathPanel {
     val statusLabel = JBLabel()
     val warningLabel = JBLabel()
     val panel: JPanel = JPanel(BorderLayout(0, 8))
+
+    val overridesTableModel = DefaultTableModel(
+        arrayOf(
+            HelixBundle.message("settings.config.overrides.col.key"),
+            HelixBundle.message("settings.config.overrides.col.value"),
+            HelixBundle.message("settings.config.overrides.col.source"),
+            HelixBundle.message("settings.config.overrides.col.status"),
+        ),
+        0,
+    )
+    val overridesTable = com.intellij.ui.table.JBTable(overridesTableModel).apply {
+        fillsViewportHeight = true
+        setShowGrid(true)
+        addMouseListener(object : java.awt.event.MouseAdapter() {
+            override fun mouseClicked(e: java.awt.event.MouseEvent) {
+                if (e.clickCount == 2) {
+                    openSelectedOverride()
+                }
+            }
+        })
+    }
 
     init {
         panel.border = JBUI.Borders.empty(16)
@@ -82,6 +104,17 @@ class HelixConfigPathPanel {
         helpLabel.font = JBUI.Fonts.smallFont()
         helpLabel.foreground = UIUtil.getContextHelpForeground()
 
+        val overridesTitle = JBLabel(HelixBundle.message("settings.config.overrides.title")).apply {
+            font = JBUI.Fonts.label().asBold()
+            alignmentX = java.awt.Component.LEFT_ALIGNMENT
+        }
+
+        val tableScrollPane = com.intellij.ui.components.JBScrollPane(overridesTable).apply {
+            alignmentX = java.awt.Component.LEFT_ALIGNMENT
+            preferredSize = Dimension(Int.MAX_VALUE, JBUI.scale(160))
+            minimumSize = Dimension(100, JBUI.scale(100))
+        }
+
         pathField.alignmentX = java.awt.Component.LEFT_ALIGNMENT
         buttonPanel.alignmentX = java.awt.Component.LEFT_ALIGNMENT
         statusLabel.alignmentX = java.awt.Component.LEFT_ALIGNMENT
@@ -106,6 +139,10 @@ class HelixConfigPathPanel {
         contentBox.add(warningLabel)
         contentBox.add(Box.createVerticalStrut(JBUI.scale(8)))
         contentBox.add(helpLabel)
+        contentBox.add(Box.createVerticalStrut(JBUI.scale(16)))
+        contentBox.add(overridesTitle)
+        contentBox.add(Box.createVerticalStrut(JBUI.scale(8)))
+        contentBox.add(tableScrollPane)
 
         val topContainer = JPanel(BorderLayout(0, 8))
         topContainer.add(titleLabel, BorderLayout.NORTH)
@@ -131,6 +168,46 @@ class HelixConfigPathPanel {
         })
     }
 
+    private fun openSelectedOverride() {
+        val row = overridesTable.selectedRow
+        if (row != -1) {
+            val target = pathField.text.trim()
+            val file = if (target.isNotEmpty()) File(target) else HelixConfigLoader.findConfigFile() ?: return
+            val overrides = if (file.exists()) {
+                val parseResult = try {
+                    jp.titze.intellij.helix.config.HelixTomlParser.parse(file.readText())
+                } catch (_: Exception) {
+                    null
+                }
+                if (parseResult != null) {
+                    jp.titze.intellij.helix.config.HelixEditorOptions
+                        .evaluateTomlOptions(parseResult.editorOptions, file)
+                        .values
+                        .toList()
+                } else {
+                    HelixEffectiveSettings.getAllOverrides()
+                }
+            } else {
+                HelixEffectiveSettings.getAllOverrides()
+            }
+
+            if (row < overrides.size) {
+                val override = overrides[row]
+                val sourceFile = override.sourceFile ?: file
+                if (sourceFile.exists()) {
+                    val project = ProjectManager.getInstance().openProjects.firstOrNull { !it.isDisposed }
+                    val vf = com.intellij.openapi.vfs.LocalFileSystem.getInstance().refreshAndFindFileByIoFile(
+                        sourceFile,
+                    )
+                    if (vf != null && project != null) {
+                        val line = maxOf(0, override.lineNumber - 1)
+                        com.intellij.openapi.fileEditor.OpenFileDescriptor(project, vf, line, 0).navigate(true)
+                    }
+                }
+            }
+        }
+    }
+
     fun refreshStatus() {
         val target = pathField.text.trim()
         val file = if (target.isNotEmpty()) File(target) else HelixConfigLoader.findConfigFile()
@@ -139,6 +216,7 @@ class HelixConfigPathPanel {
             statusLabel.text = HelixBundle.message("settings.config.status.default", defaultTarget)
             statusLabel.foreground = UIUtil.getContextHelpForeground()
             warningLabel.isVisible = false
+            overridesTableModel.rowCount = 0
             return
         }
 
@@ -154,7 +232,34 @@ class HelixConfigPathPanel {
         } catch (e: Exception) {
             statusLabel.text = HelixBundle.message("settings.config.status.error", e.message ?: "read error")
             statusLabel.foreground = com.intellij.util.ui.NamedColorUtil.getErrorForeground()
+            overridesTableModel.rowCount = 0
             return
+        }
+
+        val parseResult = try {
+            jp.titze.intellij.helix.config.HelixTomlParser.parse(file.readText())
+        } catch (_: Exception) {
+            null
+        }
+        val currentOverrides = if (parseResult != null) {
+            jp.titze.intellij.helix.config.HelixEditorOptions
+                .evaluateTomlOptions(parseResult.editorOptions, file)
+                .values
+                .toList()
+        } else {
+            HelixEffectiveSettings.getAllOverrides()
+        }
+        overridesTableModel.rowCount = 0
+        for (override in currentOverrides) {
+            val src = "${override.sourceFile?.name ?: file.name}:${override.lineNumber}"
+            overridesTableModel.addRow(
+                arrayOf(
+                    override.key,
+                    override.rawValueString,
+                    src,
+                    override.status.displayName,
+                ),
+            )
         }
 
         if (result.errors.isNotEmpty()) {

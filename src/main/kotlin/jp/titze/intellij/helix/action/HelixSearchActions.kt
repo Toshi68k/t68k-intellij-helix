@@ -29,16 +29,7 @@ object HelixSearchActions {
             return false
         }
 
-        val regex = try {
-            Regex(pattern)
-        } catch (e: Exception) {
-            try {
-                Regex(Regex.escape(pattern))
-            } catch (e2: Exception) {
-                HelixCaretUtils.restoreCarets(editor, baseSnapshot)
-                return false
-            }
-        }
+        val regex = compileRegex(pattern)
 
         val matches = mutableListOf<Pair<Int, Int>>()
         var currentPos = 0
@@ -60,24 +51,22 @@ object HelixSearchActions {
         }
 
         val newCaretRanges = mutableListOf<Pair<Int, Int>>()
-        val totalMatches = matches.size
 
-        for (caret in baseSnapshot) {
-            val targetMatch: Pair<Int, Int>
-            if (!backward) {
-                val searchFrom = if (caret.selectionEnd > caret.selectionStart) caret.selectionEnd else caret.offset
-                val baseIdx = matches.indexOfFirst { it.first >= searchFrom }
-                val firstIdx = if (baseIdx >= 0) baseIdx else 0
-                val targetIdx = (firstIdx + (count.coerceAtLeast(1) - 1)) % totalMatches
-                targetMatch = matches[targetIdx]
+        for ((offset, selectionStart, selectionEnd) in baseSnapshot) {
+            val searchFrom = if (!backward) {
+                if (selectionEnd > selectionStart) selectionEnd else offset
             } else {
-                val searchFrom = if (caret.selectionEnd > caret.selectionStart) caret.selectionStart else caret.offset
-                val baseIdx = matches.indexOfLast { it.second <= searchFrom }
-                val firstIdx = if (baseIdx >= 0) baseIdx else (totalMatches - 1)
-                val targetIdx = Math.floorMod(firstIdx - (count.coerceAtLeast(1) - 1), totalMatches)
-                targetMatch = matches[targetIdx]
+                if (selectionEnd > selectionStart) selectionStart else offset
             }
-            newCaretRanges.add(targetMatch)
+            val targetMatch = getTargetMatch(matches, searchFrom, backward, count)
+            if (targetMatch != null) {
+                newCaretRanges.add(targetMatch)
+            }
+        }
+
+        if (newCaretRanges.isEmpty()) {
+            HelixCaretUtils.restoreCarets(editor, baseSnapshot)
+            return false
         }
 
         HelixCaretUtils.applyCarets(editor, newCaretRanges.distinct().sortedBy { it.first })
@@ -106,35 +95,26 @@ object HelixSearchActions {
         val textLen = text.length
         if (textLen == 0) return false
 
-        val regex = try {
-            Regex(pattern)
-        } catch (_: Exception) {
-            Regex(Regex.escape(pattern))
-        }
+        val regex = compileRegex(pattern)
 
         val matches = collectMatches(regex, text, textLen)
         if (matches.isEmpty()) return false
 
         val newCaretRanges = mutableListOf<Pair<Int, Int>>()
-        val totalMatches = matches.size
 
         for (caret in editor.caretModel.allCarets) {
-            val targetMatch: Pair<Int, Int>
-            if (!backward) {
-                val searchFrom = if (caret.hasSelection()) caret.selectionEnd else caret.offset
-                val baseIdx = matches.indexOfFirst { it.first >= searchFrom }
-                val firstIdx = if (baseIdx >= 0) baseIdx else 0
-                val targetIdx = (firstIdx + (count.coerceAtLeast(1) - 1)) % totalMatches
-                targetMatch = matches[targetIdx]
+            val searchFrom = if (!backward) {
+                if (caret.hasSelection()) caret.selectionEnd else caret.offset
             } else {
-                val searchFrom = if (caret.hasSelection()) caret.selectionStart else caret.offset
-                val baseIdx = matches.indexOfLast { it.second <= searchFrom }
-                val firstIdx = if (baseIdx >= 0) baseIdx else (totalMatches - 1)
-                val targetIdx = Math.floorMod(firstIdx - (count.coerceAtLeast(1) - 1), totalMatches)
-                targetMatch = matches[targetIdx]
+                if (caret.hasSelection()) caret.selectionStart else caret.offset
             }
-            newCaretRanges.add(targetMatch)
+            val targetMatch = getTargetMatch(matches, searchFrom, backward, count)
+            if (targetMatch != null) {
+                newCaretRanges.add(targetMatch)
+            }
         }
+
+        if (newCaretRanges.isEmpty()) return false
 
         HelixCaretUtils.applyCarets(editor, newCaretRanges.distinct().sortedBy { it.first })
         return true
@@ -166,11 +146,7 @@ object HelixSearchActions {
         val textLen = text.length
         if (textLen == 0) return false
 
-        val regex = try {
-            Regex(pattern)
-        } catch (_: Exception) {
-            Regex(Regex.escape(pattern))
-        }
+        val regex = compileRegex(pattern)
 
         val matches = collectMatches(regex, text, textLen)
         if (matches.isEmpty()) return false
@@ -207,6 +183,71 @@ object HelixSearchActions {
         return matches
     }
 
+    internal fun compileRegex(pattern: String): Regex {
+        val options = if (jp.titze.intellij.helix.settings.HelixEffectiveSettings.searchSmartCase &&
+            !pattern.any { it.isUpperCase() }
+        ) {
+            setOf(RegexOption.IGNORE_CASE)
+        } else {
+            emptySet()
+        }
+        return try {
+            Regex(pattern, options)
+        } catch (_: Exception) {
+            try {
+                Regex(Regex.escape(pattern), options)
+            } catch (_: Exception) {
+                Regex(Regex.escape(pattern))
+            }
+        }
+    }
+
+    private fun getTargetMatch(
+        matches: List<Pair<Int, Int>>,
+        searchFrom: Int,
+        backward: Boolean,
+        count: Int,
+    ): Pair<Int, Int>? {
+        val totalMatches = matches.size
+        if (totalMatches == 0) return null
+        val wrap = jp.titze.intellij.helix.settings.HelixEffectiveSettings.searchWrapAround
+        val steps = count.coerceAtLeast(1) - 1
+
+        return if (!backward) {
+            val baseIdx = matches.indexOfFirst { it.first >= searchFrom }
+            if (baseIdx >= 0) {
+                val targetIdx = baseIdx + steps
+                if (wrap) {
+                    matches[targetIdx % totalMatches]
+                } else {
+                    if (targetIdx < totalMatches) matches[targetIdx] else null
+                }
+            } else {
+                if (wrap) {
+                    matches[steps % totalMatches]
+                } else {
+                    null
+                }
+            }
+        } else {
+            val baseIdx = matches.indexOfLast { it.second <= searchFrom }
+            if (baseIdx >= 0) {
+                val targetIdx = baseIdx - steps
+                if (wrap) {
+                    matches[Math.floorMod(targetIdx, totalMatches)]
+                } else {
+                    if (targetIdx >= 0) matches[targetIdx] else null
+                }
+            } else {
+                if (wrap) {
+                    matches[Math.floorMod(totalMatches - 1 - steps, totalMatches)]
+                } else {
+                    null
+                }
+            }
+        }
+    }
+
     private fun findNextUnselectedMatch(
         matches: List<Pair<Int, Int>>,
         existing: List<Pair<Int, Int>>,
@@ -216,22 +257,16 @@ object HelixSearchActions {
     ): Pair<Int, Int>? {
         val existingSet = existing.toSet()
         val available = matches.filter { it !in existingSet }
-        val pool = if (available.isNotEmpty()) available else matches
+        val pool = available.ifEmpty { matches }
         val total = pool.size
         if (total == 0) return null
 
-        val steps = (count.coerceAtLeast(1) - 1)
-        return if (!backward) {
-            val searchFrom = if (primary.hasSelection()) primary.selectionEnd else primary.offset
-            val baseIdx = pool.indexOfFirst { it.first >= searchFrom }
-            val firstIdx = if (baseIdx >= 0) baseIdx else 0
-            pool[(firstIdx + steps) % total]
+        val searchFrom = if (!backward) {
+            if (primary.hasSelection()) primary.selectionEnd else primary.offset
         } else {
-            val searchFrom = if (primary.hasSelection()) primary.selectionStart else primary.offset
-            val baseIdx = pool.indexOfLast { it.second <= searchFrom }
-            val firstIdx = if (baseIdx >= 0) baseIdx else (total - 1)
-            pool[Math.floorMod(firstIdx - steps, total)]
+            if (primary.hasSelection()) primary.selectionStart else primary.offset
         }
+        return getTargetMatch(pool, searchFrom, backward, count)
     }
 
     fun searchSelection(editor: Editor, detectWordBoundaries: Boolean = true): Boolean {

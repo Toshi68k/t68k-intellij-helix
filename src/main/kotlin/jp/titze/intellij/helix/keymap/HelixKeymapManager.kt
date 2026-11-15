@@ -26,6 +26,7 @@ object HelixKeymapManager {
             defaultKeymaps[mode] = trie
             activeKeymaps[mode] = trie.copy()
         }
+        jp.titze.intellij.helix.settings.HelixEffectiveSettings.clearSessionOverrides()
     }
 
     fun getActiveTrie(mode: HelixMode): HelixKeymapTrie = activeKeymaps[mode] ?: defaultKeymaps.getOrPut(mode) {

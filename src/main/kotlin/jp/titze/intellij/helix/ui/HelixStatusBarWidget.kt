@@ -23,7 +23,6 @@ import com.intellij.util.ui.JBUI
 import jp.titze.intellij.helix.HelixBundle
 import jp.titze.intellij.helix.command.HelixCommandPopup
 import jp.titze.intellij.helix.editor.HelixEditorEligibility
-import jp.titze.intellij.helix.settings.HelixSettings
 import jp.titze.intellij.helix.state.HelixEditorState
 import jp.titze.intellij.helix.state.HelixMode
 import jp.titze.intellij.helix.state.HelixStateManager
@@ -145,9 +144,8 @@ class HelixStatusBarWidget(private val project: Project) : CustomStatusBarWidget
         val editor = FileEditorManager.getInstance(project).selectedTextEditor
         attachEditor(editor)
     }
-
     fun updateComponent() {
-        val newIcon: Icon? = if (HelixSettings.instance.colorModes) {
+        val newIcon: Icon? = if (jp.titze.intellij.helix.settings.HelixEffectiveSettings.colorModes) {
             val state = currentState
             val editor = currentEditor
             if (editor != null && HelixEditorEligibility.isActive(editor) && state != null) {
@@ -237,7 +235,8 @@ class HelixStatusBarWidget(private val project: Project) : CustomStatusBarWidget
         val seq = state.pendingSequence
         val prefix = if (seq.isNotEmpty()) " $seq-" else ""
 
-        val modeStr = if (HelixSettings.instance.colorModes) "" else state.mode.shortCode
+        val colorModes = jp.titze.intellij.helix.settings.HelixEffectiveSettings.colorModes
+        val modeStr = if (colorModes) "" else state.mode.shortCode
         val rest = "$recStr$selStr$regStr$countStr$prefix"
         return if (modeStr.isEmpty()) rest.trimStart() else "$modeStr$rest"
     }

@@ -14,6 +14,8 @@ import com.intellij.util.ui.UIUtil
 import jp.titze.intellij.helix.HelixBundle
 import jp.titze.intellij.helix.editor.HelixEditorEligibility
 import java.awt.BorderLayout
+import java.awt.GridBagConstraints
+import java.awt.GridBagLayout
 import java.awt.GridLayout
 import javax.swing.Box
 import javax.swing.BoxLayout
@@ -32,8 +34,18 @@ class HelixAppearancePanel {
     private var lightThemeRadio: JBRadioButton? = null
     private var colorModesCheckBox: JBCheckBox? = null
     private var cursorTintCheckBox: JBCheckBox? = null
+    private var colorModesNotice: HelixOverrideNoticePanel? = null
+    private var cursorTintNotice: HelixOverrideNoticePanel? = null
 
-    private var lineNumberModeComboBox: ComboBox<HelixLineNumberMode>? = null
+    private var cursorShapeNormalComboBox: ComboBox<HelixCursorShape>? = null
+    private var cursorShapeInsertComboBox: ComboBox<HelixCursorShape>? = null
+    private var cursorShapeSelectComboBox: ComboBox<HelixCursorShape>? = null
+    private var cursorShapeNormalNotice: HelixOverrideNoticePanel? = null
+    private var cursorShapeInsertNotice: HelixOverrideNoticePanel? = null
+    private var cursorShapeSelectNotice: HelixOverrideNoticePanel? = null
+
+    internal var lineNumberModeComboBox: ComboBox<HelixLineNumberMode>? = null
+    internal var lineNumberNotice: HelixOverrideNoticePanel? = null
 
     private var enableWhichKeyCheckBox: JBCheckBox? = null
     private var whichKeyHelixCommandRadio: JBRadioButton? = null
@@ -49,6 +61,8 @@ class HelixAppearancePanel {
         contentBox.border = JBUI.Borders.empty(16)
 
         contentBox.add(createThemeGroup())
+        contentBox.add(Box.createVerticalStrut(JBUI.scale(20)))
+        contentBox.add(createCursorShapeGroup())
         contentBox.add(Box.createVerticalStrut(JBUI.scale(20)))
         contentBox.add(createLineNumbersGroup())
         contentBox.add(Box.createVerticalStrut(JBUI.scale(20)))
@@ -75,35 +89,138 @@ class HelixAppearancePanel {
         radioGroup.add(dark)
         radioGroup.add(light)
 
-        val optionsPanel = JPanel(GridLayout(3, 1, 0, 6))
-        optionsPanel.border = JBUI.Borders.emptyLeft(12)
-        optionsPanel.add(sync)
-        optionsPanel.add(dark)
-        optionsPanel.add(light)
-
         val colorModesCb = JBCheckBox(HelixBundle.message("settings.theme.colorModes"))
         val cursorTintCb = JBCheckBox(HelixBundle.message("settings.theme.cursorTint"))
         colorModesCheckBox = colorModesCb
         cursorTintCheckBox = cursorTintCb
 
-        val togglesPanel = JPanel(GridLayout(2, 1, 0, 4))
-        togglesPanel.border = JBUI.Borders.empty(6, 12, 0, 0)
-        togglesPanel.add(colorModesCb)
-        togglesPanel.add(cursorTintCb)
+        val cmNotice = HelixOverrideNoticePanel("color-modes")
+        val ctNotice = HelixOverrideNoticePanel("cursor-tint")
+        colorModesNotice = cmNotice
+        cursorTintNotice = ctNotice
+
+        val controlsPanel = JPanel(GridBagLayout()).apply {
+            isOpaque = false
+            border = JBUI.Borders.emptyLeft(12)
+            val gbc = GridBagConstraints().apply {
+                gridx = 0
+                gridy = 0
+                anchor = GridBagConstraints.WEST
+                fill = GridBagConstraints.NONE
+                weightx = 1.0
+                insets = JBUI.insets(2, 0)
+            }
+            add(sync, gbc)
+            gbc.gridy = 1
+            add(dark, gbc)
+            gbc.gridy = 2
+            add(light, gbc)
+            gbc.gridy = 3
+            gbc.insets = JBUI.insets(6, 0, 2, 0)
+            add(colorModesCb, gbc)
+            gbc.gridy = 4
+            gbc.insets = JBUI.insetsBottom(2)
+            add(cmNotice, gbc)
+            gbc.gridy = 5
+            gbc.insets = JBUI.insets(4, 0, 2, 0)
+            add(cursorTintCb, gbc)
+            gbc.gridy = 6
+            gbc.insets = JBUI.insetsBottom(2)
+            add(ctNotice, gbc)
+        }
 
         val helpLabel = JBLabel(HelixBundle.message("settings.theme.help"))
         helpLabel.font = JBUI.Fonts.smallFont()
         helpLabel.foreground = UIUtil.getContextHelpForeground()
         helpLabel.border = JBUI.Borders.empty(8, 12, 0, 0)
 
-        val controlsBox = JPanel()
-        controlsBox.layout = BoxLayout(controlsBox, BoxLayout.Y_AXIS)
-        controlsBox.add(optionsPanel)
-        controlsBox.add(togglesPanel)
+        val inner = JPanel(BorderLayout(0, 6))
+        inner.border = JBUI.Borders.emptyLeft(8)
+        inner.add(controlsPanel, BorderLayout.NORTH)
+        inner.add(helpLabel, BorderLayout.CENTER)
+
+        group.add(inner, BorderLayout.CENTER)
+        return group
+    }
+
+    private fun createCursorShapeGroup(): JPanel {
+        val group = JPanel(BorderLayout(0, 10))
+        group.add(TitledSeparator(HelixBundle.message("settings.cursorShape.title")), BorderLayout.NORTH)
+
+        fun createShapeCombo(): ComboBox<HelixCursorShape> {
+            val combo = ComboBox(HelixCursorShape.entries.toTypedArray())
+            combo.renderer = object : SimpleListCellRenderer<HelixCursorShape>() {
+                override fun customize(
+                    list: JList<out HelixCursorShape>,
+                    value: HelixCursorShape?,
+                    index: Int,
+                    selected: Boolean,
+                    hasFocus: Boolean,
+                ) {
+                    text = value?.displayName.orEmpty()
+                }
+            }
+            return combo
+        }
+
+        val normalCombo = createShapeCombo()
+        val insertCombo = createShapeCombo()
+        val selectCombo = createShapeCombo()
+        cursorShapeNormalComboBox = normalCombo
+        cursorShapeInsertComboBox = insertCombo
+        cursorShapeSelectComboBox = selectCombo
+
+        val normalNotice = HelixOverrideNoticePanel("cursor-shape.normal")
+        val insertNotice = HelixOverrideNoticePanel("cursor-shape.insert")
+        val selectNotice = HelixOverrideNoticePanel("cursor-shape.select")
+        cursorShapeNormalNotice = normalNotice
+        cursorShapeInsertNotice = insertNotice
+        cursorShapeSelectNotice = selectNotice
+
+        val shapesGrid = JPanel(GridBagLayout()).apply {
+            isOpaque = false
+            border = JBUI.Borders.empty(4, 12, 0, 0)
+            val gbc = GridBagConstraints().apply {
+                gridx = 0
+                gridy = 0
+                anchor = GridBagConstraints.WEST
+                insets = JBUI.insets(2, 0, 2, 8)
+            }
+            add(JBLabel(HelixBundle.message("settings.cursorShape.normal")), gbc)
+            gbc.gridx = 1
+            add(normalCombo, gbc)
+            gbc.gridx = 2
+            gbc.insets = JBUI.insets(2, 16, 2, 8)
+            add(JBLabel(HelixBundle.message("settings.cursorShape.insert")), gbc)
+            gbc.gridx = 3
+            gbc.insets = JBUI.insets(2, 0, 2, 8)
+            add(insertCombo, gbc)
+            gbc.gridx = 4
+            gbc.insets = JBUI.insets(2, 16, 2, 8)
+            add(JBLabel(HelixBundle.message("settings.cursorShape.select")), gbc)
+            gbc.gridx = 5
+            gbc.insets = JBUI.insets(2, 0)
+            add(selectCombo, gbc)
+
+            gbc.gridx = 0
+            gbc.gridy = 1
+            gbc.gridwidth = 6
+            gbc.insets = JBUI.insets(2, 0)
+            add(normalNotice, gbc)
+            gbc.gridy = 2
+            add(insertNotice, gbc)
+            gbc.gridy = 3
+            add(selectNotice, gbc)
+        }
+
+        val helpLabel = JBLabel(HelixBundle.message("settings.cursorShape.help"))
+        helpLabel.font = JBUI.Fonts.smallFont()
+        helpLabel.foreground = UIUtil.getContextHelpForeground()
+        helpLabel.border = JBUI.Borders.empty(8, 12, 0, 0)
 
         val inner = JPanel(BorderLayout(0, 6))
         inner.border = JBUI.Borders.emptyLeft(8)
-        inner.add(controlsBox, BorderLayout.NORTH)
+        inner.add(shapesGrid, BorderLayout.NORTH)
         inner.add(helpLabel, BorderLayout.CENTER)
 
         group.add(inner, BorderLayout.CENTER)
@@ -127,10 +244,25 @@ class HelixAppearancePanel {
             }
         }
         lineNumberModeComboBox = combo
+        val lnNotice = HelixOverrideNoticePanel("line-number")
+        lineNumberNotice = lnNotice
 
-        val comboPanel = JPanel(BorderLayout())
-        comboPanel.border = JBUI.Borders.emptyLeft(12)
-        comboPanel.add(combo, BorderLayout.WEST)
+        val comboPanel = JPanel(GridBagLayout()).apply {
+            isOpaque = false
+            border = JBUI.Borders.emptyLeft(12)
+            val gbc = GridBagConstraints().apply {
+                gridx = 0
+                gridy = 0
+                anchor = GridBagConstraints.WEST
+                fill = GridBagConstraints.NONE
+                weightx = 1.0
+                insets = JBUI.insets(2, 0)
+            }
+            add(combo, gbc)
+            gbc.gridy = 1
+            gbc.insets = JBUI.emptyInsets()
+            add(lnNotice, gbc)
+        }
 
         val helpLabel = JBLabel(HelixBundle.message("settings.lineNumbers.help"))
         helpLabel.font = JBUI.Fonts.smallFont()
@@ -198,28 +330,28 @@ class HelixAppearancePanel {
         }
         whichKeyMaxRowsComboBox = rowsCombo
 
-        val dropdownsPanel = JPanel(java.awt.GridBagLayout()).apply {
+        val dropdownsPanel = JPanel(GridBagLayout()).apply {
             isOpaque = false
             border = JBUI.Borders.empty(6, 24, 4, 0)
-            val gbc = java.awt.GridBagConstraints().apply {
+            val gbc = GridBagConstraints().apply {
                 gridx = 0
                 gridy = 0
-                anchor = java.awt.GridBagConstraints.WEST
+                anchor = GridBagConstraints.WEST
                 insets = JBUI.insets(2, 0, 4, 12)
             }
             add(JBLabel(HelixBundle.message("settings.whichKey.cols.label")), gbc)
             gbc.gridx = 1
-            gbc.fill = java.awt.GridBagConstraints.HORIZONTAL
+            gbc.fill = GridBagConstraints.HORIZONTAL
             gbc.weightx = 1.0
             add(colCombo, gbc)
 
             gbc.gridx = 0
             gbc.gridy = 1
-            gbc.fill = java.awt.GridBagConstraints.NONE
+            gbc.fill = GridBagConstraints.NONE
             gbc.weightx = 0.0
             add(JBLabel(HelixBundle.message("settings.whichKey.maxRows.label")), gbc)
             gbc.gridx = 1
-            gbc.fill = java.awt.GridBagConstraints.HORIZONTAL
+            gbc.fill = GridBagConstraints.HORIZONTAL
             gbc.weightx = 1.0
             add(rowsCombo, gbc)
         }
@@ -265,23 +397,57 @@ class HelixAppearancePanel {
 
     private fun getSelectedWhichKeyMaxRows(): Int = (whichKeyMaxRowsComboBox?.selectedItem as? Int) ?: 0
 
-    fun isModified(settings: HelixSettings): Boolean {
+    fun isModified(settings: HelixSettings = HelixSettings.instance): Boolean {
         val themeModified = getSelectedColorTheme() != settings.colorTheme ||
-            colorModesCheckBox?.isSelected != settings.colorModes ||
-            cursorTintCheckBox?.isSelected != settings.cursorTint
-        val lineNumModified = (lineNumberModeComboBox?.selectedItem as? HelixLineNumberMode) != settings.lineNumberMode
+            (
+                !HelixEffectiveSettings.isOverridden("color-modes") &&
+                    colorModesCheckBox?.isSelected != settings.colorModes
+                ) ||
+            (
+                !HelixEffectiveSettings.isOverridden("cursor-tint") &&
+                    cursorTintCheckBox?.isSelected != settings.cursorTint
+                )
+        val lineNumModified = !HelixEffectiveSettings.isOverridden("line-number") &&
+            (lineNumberModeComboBox?.selectedItem as? HelixLineNumberMode) != settings.lineNumberMode
+        val cursorShapeModified = (
+            !HelixEffectiveSettings.isOverridden("cursor-shape.normal") &&
+                (cursorShapeNormalComboBox?.selectedItem as? HelixCursorShape) != settings.cursorShapeNormal
+            ) ||
+            (
+                !HelixEffectiveSettings.isOverridden("cursor-shape.insert") &&
+                    (cursorShapeInsertComboBox?.selectedItem as? HelixCursorShape) != settings.cursorShapeInsert
+                ) ||
+            (
+                !HelixEffectiveSettings.isOverridden("cursor-shape.select") &&
+                    (cursorShapeSelectComboBox?.selectedItem as? HelixCursorShape) != settings.cursorShapeSelect
+                )
         val whichKeyModified = enableWhichKeyCheckBox?.isSelected != settings.enableWhichKeyPopups ||
             getSelectedWhichKeyHintMode() != settings.whichKeyHintMode ||
             getSelectedWhichKeyColumnLayout() != settings.whichKeyColumnLayout ||
             getSelectedWhichKeyMaxRows() != settings.whichKeyMaxRows
-        return themeModified || lineNumModified || whichKeyModified
+        return themeModified || lineNumModified || cursorShapeModified || whichKeyModified
     }
 
-    fun apply(settings: HelixSettings) {
+    fun apply(settings: HelixSettings = HelixSettings.instance) {
         settings.colorTheme = getSelectedColorTheme()
-        colorModesCheckBox?.let { settings.colorModes = it.isSelected }
-        cursorTintCheckBox?.let { settings.cursorTint = it.isSelected }
-        (lineNumberModeComboBox?.selectedItem as? HelixLineNumberMode)?.let { settings.lineNumberMode = it }
+        if (!HelixEffectiveSettings.isOverridden("color-modes")) {
+            colorModesCheckBox?.let { settings.colorModes = it.isSelected }
+        }
+        if (!HelixEffectiveSettings.isOverridden("cursor-tint")) {
+            cursorTintCheckBox?.let { settings.cursorTint = it.isSelected }
+        }
+        if (!HelixEffectiveSettings.isOverridden("line-number")) {
+            (lineNumberModeComboBox?.selectedItem as? HelixLineNumberMode)?.let { settings.lineNumberMode = it }
+        }
+        if (!HelixEffectiveSettings.isOverridden("cursor-shape.normal")) {
+            (cursorShapeNormalComboBox?.selectedItem as? HelixCursorShape)?.let { settings.cursorShapeNormal = it }
+        }
+        if (!HelixEffectiveSettings.isOverridden("cursor-shape.insert")) {
+            (cursorShapeInsertComboBox?.selectedItem as? HelixCursorShape)?.let { settings.cursorShapeInsert = it }
+        }
+        if (!HelixEffectiveSettings.isOverridden("cursor-shape.select")) {
+            (cursorShapeSelectComboBox?.selectedItem as? HelixCursorShape)?.let { settings.cursorShapeSelect = it }
+        }
         enableWhichKeyCheckBox?.let { settings.enableWhichKeyPopups = it.isSelected }
         settings.whichKeyHintMode = getSelectedWhichKeyHintMode()
         settings.whichKeyColumnLayout = getSelectedWhichKeyColumnLayout()
@@ -290,14 +456,34 @@ class HelixAppearancePanel {
         HelixEditorEligibility.refreshAllEditors()
     }
 
-    fun reset(settings: HelixSettings) {
+    fun reset(settings: HelixSettings = HelixSettings.instance) {
         syncThemeRadio?.isSelected = (settings.colorTheme == HelixColorTheme.SYNC)
         darkThemeRadio?.isSelected = (settings.colorTheme == HelixColorTheme.DARK)
         lightThemeRadio?.isSelected = (settings.colorTheme == HelixColorTheme.LIGHT)
-        colorModesCheckBox?.isSelected = settings.colorModes
-        cursorTintCheckBox?.isSelected = settings.cursorTint
 
-        lineNumberModeComboBox?.selectedItem = settings.lineNumberMode
+        val cmOverridden = colorModesNotice?.update() == true
+        colorModesCheckBox?.isEnabled = !cmOverridden
+        colorModesCheckBox?.isSelected = HelixEffectiveSettings.colorModes
+
+        val ctOverridden = cursorTintNotice?.update() == true
+        cursorTintCheckBox?.isEnabled = !ctOverridden
+        cursorTintCheckBox?.isSelected = HelixEffectiveSettings.cursorTint
+
+        val lnOverridden = lineNumberNotice?.update() == true
+        lineNumberModeComboBox?.isEnabled = !lnOverridden
+        lineNumberModeComboBox?.selectedItem = HelixEffectiveSettings.lineNumberMode
+
+        val csnOverridden = cursorShapeNormalNotice?.update() == true
+        cursorShapeNormalComboBox?.isEnabled = !csnOverridden
+        cursorShapeNormalComboBox?.selectedItem = HelixEffectiveSettings.cursorShapeNormal
+
+        val csiOverridden = cursorShapeInsertNotice?.update() == true
+        cursorShapeInsertComboBox?.isEnabled = !csiOverridden
+        cursorShapeInsertComboBox?.selectedItem = HelixEffectiveSettings.cursorShapeInsert
+
+        val cssOverridden = cursorShapeSelectNotice?.update() == true
+        cursorShapeSelectComboBox?.isEnabled = !cssOverridden
+        cursorShapeSelectComboBox?.selectedItem = HelixEffectiveSettings.cursorShapeSelect
 
         enableWhichKeyCheckBox?.isSelected = settings.enableWhichKeyPopups
         whichKeyHelixCommandRadio?.isSelected = (settings.whichKeyHintMode == WhichKeyHintMode.HELIX_COMMAND)
@@ -312,7 +498,16 @@ class HelixAppearancePanel {
         lightThemeRadio = null
         colorModesCheckBox = null
         cursorTintCheckBox = null
+        colorModesNotice = null
+        cursorTintNotice = null
+        cursorShapeNormalComboBox = null
+        cursorShapeInsertComboBox = null
+        cursorShapeSelectComboBox = null
+        cursorShapeNormalNotice = null
+        cursorShapeInsertNotice = null
+        cursorShapeSelectNotice = null
         lineNumberModeComboBox = null
+        lineNumberNotice = null
         enableWhichKeyCheckBox = null
         whichKeyHelixCommandRadio = null
         whichKeyIntelliJActionRadio = null

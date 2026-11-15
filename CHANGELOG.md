@@ -7,6 +7,15 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- **`[editor]` Configuration Section Support**:
+  - Helix configuration files (`intellij.toml` and fallback `config.toml`) now configure editor behavior and appearance in addition to keymaps.
+  - Supported options: `line-number`, `color-modes`, `cursor-tint`, `scrolloff`, `cursorline`, `rulers`, `soft-wrap.enable`, `whitespace.render`, `indent-guides.render`, `cursor-shape.{normal,insert,select}`, `search.smart-case`, `search.wrap-around`, `jump-label-alphabet`, and `bufferline`.
+  - Known CLI/LSP options (e.g. `true-color`, `lsp.*`) are cleanly ignored without errors, while unrecognized keys produce non-fatal diagnostic warnings.
+  - Layered, non-destructive precedence: `:set-option (session only) › TOML [editor] › Settings UI (persisted) › built-in default`. TOML overrides sit on top of saved settings without altering persisted XML configuration.
+  - Overridden controls in Appearance and Behavior panels are automatically locked with provenance notice badges linking directly to the line in the TOML file.
+  - Added an **Active editor overrides** table in the Configuration (TOML) settings page with live status and double-click navigation.
+  - Configurable per-mode caret shapes (`block`, `bar`, `underline`, `hidden`) dynamically updating `CaretVisualAttributes` across single and multi-carets.
+
 - **Code Generation & Refactoring Expansion (`space + m`)**:
   - Expanded the Refactor submenu (`space + m`) and Which-Key interactive chord menu with essential code generation, safe deletion, and OOP refactorings:
     - `space + m g`: **Generate Code** (`Generate`) for generating constructors, getters/setters, equals/hashCode, toString, and test methods.

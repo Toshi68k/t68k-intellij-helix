@@ -16,6 +16,18 @@ import jp.titze.intellij.helix.state.HelixStateManager
 
 class HelixJumpToWordTest : BasePlatformTestCase() {
 
+    override fun setUp() {
+        super.setUp()
+        jp.titze.intellij.helix.settings.HelixEffectiveSettings.clearAllOverrides()
+        jp.titze.intellij.helix.settings.HelixSettings.instance.jumpLabelAlphabet = "jfkdlsaurieowpqnvmcxz"
+    }
+
+    override fun tearDown() {
+        jp.titze.intellij.helix.settings.HelixEffectiveSettings.clearAllOverrides()
+        jp.titze.intellij.helix.settings.HelixSettings.instance.jumpLabelAlphabet = "jfkdlsaurieowpqnvmcxz"
+        super.tearDown()
+    }
+
     fun testJumpToWordSingleLetterMode() {
         val text = "apple banana cherry date elderberry fig grape\n"
         myFixture.configureByText("test.txt", text)

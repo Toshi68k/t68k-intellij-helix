@@ -66,6 +66,9 @@ object HelixEditorEligibility {
         state.clearCount()
         state.clearSelectedRegister()
         editor.settings.isBlockCursor = EditorSettingsExternalizable.getInstance().isBlockCursor
+        editor.caretModel.allCarets.forEach { caret ->
+            caret.visualAttributes = com.intellij.openapi.editor.CaretVisualAttributes.getDefault()
+        }
     }
 
     fun deactivateAll() {

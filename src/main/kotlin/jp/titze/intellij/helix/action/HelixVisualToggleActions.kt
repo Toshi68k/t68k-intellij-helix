@@ -77,6 +77,9 @@ object HelixVisualToggleActions {
     }
 
     fun handleSetOption(key: String, value: String, editor: Editor): Boolean {
+        if (jp.titze.intellij.helix.config.HelixEditorOptions.setOption(key, value, editor)) {
+            return true
+        }
         val normalizedKey = key.trim().lowercase().replace('_', '-')
         val booleanVal = parseBooleanValue(value)
 
@@ -99,6 +102,7 @@ object HelixVisualToggleActions {
             "line-number", "line-numbers", "numbers" -> {
                 val mode = parseLineNumberMode(value)
                 if (mode != null) {
+                    jp.titze.intellij.helix.settings.HelixEffectiveSettings.setSessionOption("line-number", mode)
                     HelixSettings.instance.lineNumberMode = mode
                     HelixEditorEligibility.refreshAllEditors()
                     true
@@ -121,6 +125,7 @@ object HelixVisualToggleActions {
 
             "color-modes", "color-modes.enable" -> {
                 if (booleanVal == null) return false
+                jp.titze.intellij.helix.settings.HelixEffectiveSettings.setSessionOption("color-modes", booleanVal)
                 HelixSettings.instance.colorModes = booleanVal
                 HelixEditorEligibility.refreshAllEditors()
                 true
@@ -128,6 +133,7 @@ object HelixVisualToggleActions {
 
             "cursor-tint", "cursor-tint.enable", "cursor.tint" -> {
                 if (booleanVal == null) return false
+                jp.titze.intellij.helix.settings.HelixEffectiveSettings.setSessionOption("cursor-tint", booleanVal)
                 HelixSettings.instance.cursorTint = booleanVal
                 HelixEditorEligibility.refreshAllEditors()
                 true
@@ -156,13 +162,17 @@ object HelixVisualToggleActions {
             "breadcrumbs", "breadcrumbs.enable" -> toggleBreadcrumbs(editor)
 
             "color-modes", "color-modes.enable" -> {
-                HelixSettings.instance.colorModes = !HelixSettings.instance.colorModes
+                val newVal = !HelixSettings.instance.colorModes
+                HelixSettings.instance.colorModes = newVal
+                jp.titze.intellij.helix.settings.HelixEffectiveSettings.setSessionOption("color-modes", newVal)
                 HelixEditorEligibility.refreshAllEditors()
                 true
             }
 
             "cursor-tint", "cursor-tint.enable", "cursor.tint" -> {
-                HelixSettings.instance.cursorTint = !HelixSettings.instance.cursorTint
+                val newVal = !HelixSettings.instance.cursorTint
+                HelixSettings.instance.cursorTint = newVal
+                jp.titze.intellij.helix.settings.HelixEffectiveSettings.setSessionOption("cursor-tint", newVal)
                 HelixEditorEligibility.refreshAllEditors()
                 true
             }

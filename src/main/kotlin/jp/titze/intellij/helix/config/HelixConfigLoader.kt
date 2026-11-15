@@ -108,6 +108,16 @@ object HelixConfigLoader {
         for (conflict in conflicts) {
             diagnostics.add("Conflict: ${conflict.description}")
         }
+        val overrides = HelixEditorOptions.evaluateTomlOptions(parseResult.editorOptions, null)
+        for (override in overrides.values) {
+            if (override.status == OptionStatus.INVALID) {
+                val msg =
+                    override.diagnosticMessage ?: "Invalid value '${override.rawValueString}' for '${override.key}'"
+                diagnostics.add("Line ${override.lineNumber}: $msg")
+            } else if (override.status == OptionStatus.IGNORED) {
+                diagnostics.add("Line ${override.lineNumber}: Unknown [editor] option '${override.key}' (ignored)")
+            }
+        }
         return HelixConfigResult(null, parseResult.bindings.size, diagnostics)
     }
 
@@ -129,7 +139,10 @@ object HelixConfigLoader {
     fun loadConfig(explicitFile: File? = null): HelixConfigResult {
         val file = explicitFile ?: findConfigFile()
         if (file == null || !file.exists()) {
+            jp.titze.intellij.helix.settings.HelixEffectiveSettings.clearTomlOverrides()
             HelixKeymapManager.resetToDefaults()
+            jp.titze.intellij.helix.settings.HelixEffectiveSettings.applyAllToAllEditors()
+            jp.titze.intellij.helix.editor.HelixEditorEligibility.refreshAllEditors()
             return HelixConfigResult(null, 0, emptyList())
         }
 
@@ -143,6 +156,11 @@ object HelixConfigLoader {
         HelixKeymapManager.resetToDefaults()
 
         val parseResult = HelixTomlParser.parse(content)
+        val overrides = HelixEditorOptions.evaluateTomlOptions(parseResult.editorOptions, file)
+        jp.titze.intellij.helix.settings.HelixEffectiveSettings.setTomlOverrides(overrides)
+        jp.titze.intellij.helix.settings.HelixEffectiveSettings.applyAllToAllEditors()
+        jp.titze.intellij.helix.editor.HelixEditorEligibility.refreshAllEditors()
+
         var boundCount = 0
         for (binding in parseResult.bindings) {
             applyBinding(binding)
@@ -172,6 +190,23 @@ object HelixConfigLoader {
         #
         # Dedicated to IntelliJ Helix and safe from CLI Helix conflicts!
         # You can freely bind native IDE actions via ':action <ActionId>'.
+
+        # Editor options
+        # [editor]
+        # line-number = "relative"
+        # scrolloff = 5
+        # cursorline = true
+        # rulers = [80, 120]
+        # color-modes = true
+        #
+        # [editor.cursor-shape]
+        # normal = "block"
+        # insert = "bar"
+        # select = "underline"
+        #
+        # [editor.search]
+        # smart-case = true
+        # wrap-around = true
 
         [keys.normal]
         "C-s" = ":w"

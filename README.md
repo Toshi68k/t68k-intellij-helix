@@ -33,6 +33,7 @@ combining the authentic Helix selection-first workflow with native IntelliJ IDEA
     - **Normal** (`NOR`): Block cursor, selection motions, action triggers.
     - **Insert** (`INS`): Standard bar cursor, raw typing delegated to IntelliJ.
     - **Select** (`SEL`): Block cursor, motions extend selections from anchor.
+    - **Per-Mode Cursor Shapes**: Configurable caret shapes per mode (`block`, `bar`, `underline`, `hidden`) via Settings or `[editor.cursor-shape]`.
     - **Status Bar Widget**: Displays active mode in a color-coded pill (`NOR` in Indigo/Cyan, `INS` in Emerald
       Green, `SEL` in Purple/Magenta when `color-modes = true`), macro recording indicator (`[REC]`),
       multi-caret count (`3 sel`), active register (`reg: a`), and pending key chords (e.g., `NOR 3 sel reg: a 2 g-`).
@@ -42,11 +43,12 @@ combining the authentic Helix selection-first workflow with native IntelliJ IDEA
       yanking selections.
 - **Command Palette (`:`)**: Lightweight command prompt supporting standard Helix buffer commands (`:w`, `:q`,
   `:wq`, `:wa`, `:qa`, `:vsp`, `:sp`, `:format`, `:increment`, `:decrement`, `:toggle-helix`, `:config-open`,
-  `:config-reload`).
-- **Configurable Keymaps (`intellij.toml` / `config.toml`)**: Authentic Helix key rebinding via
-  `~/.config/helix/intellij.toml` (or fallback `~/.config/helix/config.toml` / custom path). Dedicated `intellij.toml`
-  protects your CLI Helix setup while supporting direct IntelliJ actions (`:action <ActionId>`), multi-command macros,
-  and automatic live reload on save without restarting the IDE.
+  `:config-reload`, `:set-option`).
+- **Configurable Keymaps & Editor Options (`intellij.toml` / `config.toml`)**: Authentic Helix key rebinding and
+  `[editor]` configuration via `~/.config/helix/intellij.toml` (or fallback `~/.config/helix/config.toml` / custom path).
+  Dedicated `intellij.toml` protects your CLI Helix setup while supporting direct IntelliJ actions (`:action <ActionId>`),
+  multi-command macros, live editor option overrides (`scrolloff`, `cursorline`, `rulers`, `line-number`, `color-modes`,
+  `cursor-shape`, `search.smart-case`, `soft-wrap`, `whitespace`, etc.), and automatic live reload on save without restarting the IDE.
 - **Dynamic Which-Key Menus**: Which-Key hints automatically adapt to user keybindings and chord overlays in real time.
 
 ---
@@ -791,12 +793,15 @@ Organized into 3 dedicated tabs for core editor preferences:
 
 - **Tab 2: Appearance & UI**:
   - **Color Theme & Mode Colors**: Choose between Sync with IDE, Dark, or Light themes for all Helix overlays. Independently toggle mode-colored status pills (`color-modes = true`) and mode cursor tinting (`cursor-tint = true`).
+  - **Per-Mode Cursor Shapes (`cursor-shape`)**: Configure caret shapes individually for Normal, Insert, and Select modes (**Block**, **Bar**, **Underline**, **Hidden**). Mode changes dynamically update caret visual attributes across single and multi-caret selections.
   - **Gutter Line Numbers (`line-number`)**: Choose between **Use IDE Default**, **Absolute**, **Relative** (distance from cursor line), **Hybrid** (absolute on current line, relative on others), and **Smart** (relative in Normal/Select mode, automatic absolute fallback in Insert mode). Also toggled via `:toggle-relative-line-numbers` or `:set line-number relative|smart|hybrid|absolute|off`.
   - **Which-Key Chord Menus**: Enable or disable Which-Key chord popups, choose hint display style (Helix command names vs IntelliJ Action IDs), and configure column layout (3 columns compact vs 2 columns classic).
+  - **Settings Lock & Provenance Notices**: Any setting overridden by active TOML configuration is locked (disabled) with an inline explanation badge (`Set by intellij.toml: <key> = <val> · Open file`) linking directly to the line in your TOML file.
 
 - **Tab 3: Behavior & Navigation**:
   - **Line Navigation (Vertical Movement)** *(default: Stock Helix)*: Toggle between **Stock Helix** (`j`/`k` move visual screen lines, `gj`/`gk` jump physical document lines) and **Vim Standard** (`j`/`k` move physical lines, `gj`/`gk` move visual lines). Also toggled via `:toggle-line-nav`.
   - **Search & Selection Prompt UI**: Toggle between Stock Helix inline bottom bar and Popup dialog.
+  - **Search Options (`search.smart-case`, `search.wrap-around`)**: Configure case sensitivity (Smart-Case compiles case-insensitively when lowercase, strictly when uppercase) and search wrap-around boundary behavior.
   - **Prompt History Capacity**: Set maximum remembered prompt history entries per category (10–500, default: 100).
   - **Scratch Window Splits** *(default: Interactive)*: Configure whether `<C-w>ns` / `<C-w>nv` prompts for file language (`NewScratchFile`) or opens an instant plain-text buffer (`NewScratchBuffer`).
   - **Jump List Capacity**: Set maximum recorded jump entries (10–1000).
@@ -816,6 +821,7 @@ Dedicated full-screen configurable under **Helix Keymap &rarr; Keybindings** fea
 Dedicated configurable under **Helix Keymap &rarr; Configuration (TOML)**:
 - Configure custom file paths (`intellij.toml` / `config.toml`) with file chooser.
 - Inspect live diagnostics: active binding count, syntax error reporting, and CLI compatibility warnings.
+- **Active Editor Overrides**: Live table displaying all options overridden from TOML, active value, source file:line, and status (`Applied`, `Not applicable`, `Unsupported`, `Invalid`, or `Ignored`). Double-clicking any row navigates directly to that line in your config file.
 - Quick actions: **Open in Editor**, **Reload Keymap**, and **Reset to Default**.
 
 #### Keymap Customization (`intellij.toml` / `config.toml`)
@@ -881,6 +887,78 @@ D = "goto_type_definition"
 - **Unbinding / No-op**: Map keys to `"no_op"` to disable unwanted default keybindings.
 - **Config Diagnostics**: Live validation in settings alerts you to unrecognized commands, missing files, or syntax issues.
 - **Dynamic Which-Key**: Custom bindings and chord overlays automatically reflect in Which-Key hint menus.
+
+#### Editor Configuration (`[editor]`)
+
+Helix Keymap supports authentic `[editor]` configuration tables in `intellij.toml` and fallback `config.toml`. Options defined in `[editor]` apply directly to IntelliJ editor windows and Helix runtime settings:
+
+```toml
+# ~/.config/helix/intellij.toml
+
+[editor]
+line-number = "relative"             # "absolute", "relative", "hybrid", "smart", "off"
+scrolloff = 8                        # Vertical scroll offset lines
+cursorline = true                    # Highlight current caret row
+color-modes = true                   # Color-code status bar pill by mode
+cursor-tint = true                   # Tint cursor color to mode color
+rulers = [80, 120]                   # Column guides (soft margins)
+bufferline = "multiple"              # "never", "always", "multiple"
+jump-label-alphabet = "jfkdlsaurieowpqnvmcxz"
+
+[editor.cursor-shape]
+normal = "block"                     # "block", "bar", "underline", "hidden"
+insert = "bar"
+select = "underline"
+
+[editor.search]
+smart-case = true                    # Case-insensitive when lowercase, sensitive when uppercase
+wrap-around = true                   # Wrap search around buffer boundaries
+
+[editor.soft-wrap]
+enable = true
+
+[editor.whitespace]
+render = "all"                       # "none", "all"
+
+[editor.indent-guides]
+render = true
+```
+
+##### Supported Options Mapping
+
+| Helix `[editor]` key | Target in IntelliJ / plugin | Description |
+|---|---|---|
+| `line-number` | `HelixLineNumberMode` | Gutter numbering: `"absolute"`, `"relative"`, `"hybrid"`, `"smart"`, `"off"` |
+| `scrolloff` | `EditorSettings.verticalScrollOffset` | Minimal number of visible lines above and below cursor |
+| `cursorline` | `EditorSettings.isCaretRowShown` | Highlight current line |
+| `rulers` | `EditorSettings.setSoftMargins` | List of soft margin column rulers (e.g. `[80, 120]`) |
+| `color-modes` | Status bar mode pill | Mode pill rendered in mode colors (Indigo/Cyan, Green, Purple) |
+| `cursor-tint` | Dynamic caret color | Editor caret color matches current mode |
+| `cursor-shape.normal` | `CaretVisualAttributes.Shape` | Caret shape in Normal mode (`block`, `bar`, `underline`, `hidden`) |
+| `cursor-shape.insert` | `CaretVisualAttributes.Shape` | Caret shape in Insert mode (`block`, `bar`, `underline`, `hidden`) |
+| `cursor-shape.select` | `CaretVisualAttributes.Shape` | Caret shape in Select mode (`block`, `bar`, `underline`, `hidden`) |
+| `search.smart-case` | `HelixSearchManager` | Case-insensitive unless query contains uppercase characters |
+| `search.wrap-around` | `HelixSearchManager` | Wrap around buffer boundaries during search |
+| `soft-wrap.enable` | `EditorSettings.isUseSoftWraps` | Enable soft wrapping |
+| `whitespace.render` | `EditorSettings.isWhitespacesShown` | Render whitespace characters (`"all"`, `"none"`) |
+| `indent-guides.render`| `EditorSettings.isIndentGuidesShown` | Show indentation guide lines |
+| `jump-label-alphabet`| `HelixJumpToWord` | Custom character sequence for `gw` word jump badges |
+| `bufferline` | `UISettings.editorTabPlacement` | Editor tab display (`"never"`, `"always"`, `"multiple"`) |
+
+##### Non-Destructive Precedence Hierarchy
+
+Settings follow a layered, non-destructive precedence model:
+
+```
+:set-option (session only)  ›  TOML [editor]  ›  Settings UI (persisted)  ›  built-in default
+```
+
+1. **Session Options (`:set-option <key> <val>`)**: Active for the current IDE session only. Wins over TOML configuration.
+2. **TOML Configuration (`[editor]`)**: Sits cleanly on top of Settings UI values without altering persisted XML configuration. Removing an option from TOML restores the saved Settings UI value on the next reload.
+3. **Settings UI**: Persisted values configured in IDE Preferences / Settings.
+4. **Built-in Defaults**: Fallback defaults if no overrides are present.
+
+When a setting is overridden by TOML, the corresponding Settings UI control is disabled with an explanatory notice badge (`Set by intellij.toml: <key> = <val> · Open file`) linking directly to the line in your configuration file.
 
 ---
 
