@@ -5,6 +5,13 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+
+- **AI Prompt Box Toggle & EditorTextField Modal Editing Scope**:
+  - Added `activateInAiPrompt` setting in **Settings | Editor | Helix | Activation** (disabled by default) allowing users to opt into Helix modal editing for AI assistant and LLM prompt inputs (e.g. JetBrains Air / `ml-llm`).
+  - Automatically excluded `HelixLineNumberManager` from applying gutter line numbers to AI prompt boxes and embedded `EditorTextField` components even when modal editing is active.
+  - Automatically bypassed `EditorTextField`-managed editors from modal editing unless explicitly enabled via `activateInOtherEditors`.
+
 ### Fixed
 
 - **UnsupportedOperationException in Swing Text Components (`TextComponentEditor`)**:
@@ -15,17 +22,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   - Decoupled `HelixConfigWatcher` automatic reload from the VFS `BulkFileListener.after` write-lock callback using `Application.invokeLater`, preventing synchronous EDT lockups when saving `config.toml` or `intellij.toml`.
   - Mutated `editor.settings` directly when applying `soft-wrap` and `whitespace.render` in `HelixEffectiveSettings` and `HelixEditorOptions`, eliminating nested `ActionManager.tryToExecute` calls that trigger coroutine-based action expand deadlocks on the Event Dispatch Thread.
 
-- **EDT Freeze During Config Reload on File Save**:
-  - Decoupled `HelixConfigWatcher` automatic reload from the VFS `BulkFileListener.after` write-lock callback using `Application.invokeLater`, preventing synchronous EDT lockups when saving `config.toml` or `intellij.toml`.
-  - Mutated `editor.settings` directly when applying `soft-wrap` and `whitespace.render` in `HelixEffectiveSettings` and `HelixEditorOptions`, eliminating nested `ActionManager.tryToExecute` calls that trigger coroutine-based action expand deadlocks on the Event Dispatch Thread.
-
 - **Unwanted Line Numbers in VCS Commit Message Box**:
   - Excluded VCS commit message editors from `HelixLineNumberManager.applyLineNumbers` to prevent relative/smart line numbers from unexpectedly appearing in the commit tool window during modal editing.
 
-- **AI Prompt Box Toggle & EditorTextField Modal Editing Scope**:
-  - Added `activateInAiPrompt` setting in **Settings | Editor | Helix | Activation** (disabled by default) allowing users to opt into Helix modal editing for AI assistant and LLM prompt inputs (e.g. JetBrains Air / `ml-llm`).
-  - Automatically excluded `HelixLineNumberManager` from applying gutter line numbers to AI prompt boxes and embedded `EditorTextField` components even when modal editing is active.
-  - Automatically bypassed `EditorTextField`-managed editors from modal editing unless explicitly enabled via `activateInOtherEditors`.
 
 ### Changed
 
