@@ -16,7 +16,6 @@ import jp.titze.intellij.helix.HelixBundle
 import jp.titze.intellij.helix.jumplist.HelixJumpEntry
 import jp.titze.intellij.helix.jumplist.HelixJumpListService
 import java.awt.BorderLayout
-import java.awt.Color
 import java.awt.Component
 import java.awt.Cursor
 import java.awt.Dimension
@@ -176,7 +175,7 @@ object HelixJumplistPopup {
         val textField = JBTextField()
         textField.border = BorderFactory.createEmptyBorder()
         textField.isOpaque = false
-        textField.background = Color(0, 0, 0, 0)
+        textField.background = HelixTheme.TRANSPARENT
         textField.foreground = ITEM_TEXT_COLOR
         textField.caretColor = ITEM_TEXT_COLOR
         textField.emptyText.text = HelixBundle.message("popup.jumplist.placeholder")

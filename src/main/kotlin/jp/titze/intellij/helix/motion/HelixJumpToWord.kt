@@ -7,10 +7,10 @@ import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.ScrollType
 import com.intellij.openapi.editor.colors.EditorFontType
 import com.intellij.openapi.util.Key
+import com.intellij.ui.JBColor
 import jp.titze.intellij.helix.keymap.HelixKeyHandler
 import jp.titze.intellij.helix.state.HelixMode
 import jp.titze.intellij.helix.state.HelixStateManager
-import java.awt.Color
 import java.awt.Graphics
 import java.awt.Graphics2D
 import java.awt.Point
@@ -27,6 +27,12 @@ object HelixJumpToWord {
     private const val ALPHABET = "jfkdlsaurieowpqnvmcxz"
     private const val BADGE_ARC = 4
     private const val BADGE_PADDING_X = 4
+
+    // High contrast badge colors: solid bright amber with dark border, bold black text
+    private val BADGE_BG = JBColor(0xFACC15, 0xFACC15)
+    private val BADGE_BORDER = JBColor(0xB45309, 0xB45309)
+    private val BADGE_ACTIVE_FG = JBColor(0x18181B, 0x18181B)
+    private val BADGE_PREFIX_FG = JBColor(0xA16207, 0xA16207)
 
     private val SESSION_KEY = Key.create<JumpSession>("HelixJumpToWordSession")
 
@@ -263,13 +269,6 @@ object HelixJumpToWord {
                 val lineHeight = editor.lineHeight
                 val badgeHeight = (lineHeight - 2).coerceAtLeast(fm.height)
 
-                // High contrast badge colors:
-                // Solid bright amber with dark border, bold black text
-                val bg = Color(0xFA, 0xCC, 0x15) // vibrant yellow/amber (solid, no bleed)
-                val border = Color(0xB4, 0x53, 0x09)
-                val activeFg = Color(0x18, 0x18, 0x1B) // bold near-black
-                val prefixFg = Color(0xA1, 0x62, 0x07) // dimmed amber for typed prefix
-
                 for (target in targets) {
                     val p = editor.offsetToPoint2D(target.offset)
                     if (!isBadgeInVisibleArea(p, lineHeight, visibleArea)) continue
@@ -280,9 +279,9 @@ object HelixJumpToWord {
                     val badgeWidth = textWidth + BADGE_PADDING_X * 2
 
                     // Solid opaque background to completely cover the underlying code characters!
-                    g2d.color = bg
+                    g2d.color = BADGE_BG
                     g2d.fillRoundRect(x, y, badgeWidth, badgeHeight, BADGE_ARC, BADGE_ARC)
-                    g2d.color = border
+                    g2d.color = BADGE_BORDER
                     g2d.drawRoundRect(x, y, badgeWidth - 1, badgeHeight - 1, BADGE_ARC, BADGE_ARC)
 
                     val textY = y + (badgeHeight - fm.height) / 2 + fm.ascent
@@ -290,13 +289,13 @@ object HelixJumpToWord {
 
                     if (prefix.isNotEmpty() && target.label.startsWith(prefix)) {
                         val prefixWidth = fm.stringWidth(prefix)
-                        g2d.color = prefixFg
+                        g2d.color = BADGE_PREFIX_FG
                         g2d.drawString(prefix, textX, textY)
                         val remaining = target.label.substring(prefix.length)
-                        g2d.color = activeFg
+                        g2d.color = BADGE_ACTIVE_FG
                         g2d.drawString(remaining, textX + prefixWidth, textY)
                     } else {
-                        g2d.color = activeFg
+                        g2d.color = BADGE_ACTIVE_FG
                         g2d.drawString(target.label, textX, textY)
                     }
                 }

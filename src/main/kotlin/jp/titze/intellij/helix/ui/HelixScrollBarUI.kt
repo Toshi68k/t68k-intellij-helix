@@ -5,7 +5,6 @@ package jp.titze.intellij.helix.ui
 
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.util.ui.JBUI
-import java.awt.Color
 import java.awt.Dimension
 import java.awt.Graphics
 import java.awt.Graphics2D
@@ -26,8 +25,8 @@ import javax.swing.plaf.basic.BasicScrollBarUI
 class HelixScrollBarUI : BasicScrollBarUI() {
 
     override fun configureScrollBarColors() {
-        thumbColor = Color(0, 0, 0, 0)
-        trackColor = Color(0, 0, 0, 0)
+        thumbColor = HelixTheme.TRANSPARENT
+        trackColor = HelixTheme.TRANSPARENT
     }
 
     override fun createDecreaseButton(orientation: Int): JButton = createZeroButton()
@@ -53,13 +52,11 @@ class HelixScrollBarUI : BasicScrollBarUI() {
         try {
             g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
 
-            val isDark = HelixTheme.isDark
-            val alpha = when {
-                isDragging -> if (isDark) 160 else 180
-                isThumbRollover -> if (isDark) 130 else 140
-                else -> if (isDark) 75 else 90
+            g2.color = when {
+                isDragging -> HelixTheme.SCROLLBAR_THUMB_DRAGGING
+                isThumbRollover -> HelixTheme.SCROLLBAR_THUMB_ROLLOVER
+                else -> HelixTheme.SCROLLBAR_THUMB_DEFAULT
             }
-            g2.color = if (isDark) Color(255, 255, 255, alpha) else Color(0, 0, 0, alpha)
 
             val isVertical = scrollbar.orientation == JScrollBar.VERTICAL
             if (isVertical) {

@@ -3,8 +3,8 @@
 
 package jp.titze.intellij.helix.ui
 
+import com.intellij.ui.JBColor
 import com.intellij.ui.components.JBList
-import java.awt.Color
 import javax.swing.plaf.basic.BasicListUI
 
 /**
@@ -31,7 +31,7 @@ import javax.swing.plaf.basic.BasicListUI
 class HelixListUI : BasicListUI() {
 
     companion object {
-        val TRANSPARENT: Color = Color(0, 0, 0, 0)
+        val TRANSPARENT: JBColor = HelixTheme.TRANSPARENT
 
         fun install(list: JBList<*>) {
             list.setUI(HelixListUI())
