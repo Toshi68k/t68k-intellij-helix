@@ -243,18 +243,33 @@ class HelixEditorOptionsTest : BasePlatformTestCase() {
 
         HelixStateManager.updateCursor(editor, HelixMode.NORMAL)
         editor.caretModel.primaryCaret.visualAttributes.shape shouldBe CaretVisualAttributes.Shape.BLOCK
+        editor.caretModel.primaryCaret.visualAttributes.thickness shouldBe HelixStateManager.THICKNESS_BLOCK
+        editor.settings.isBlockCursor.shouldBeTrue()
 
         HelixStateManager.updateCursor(editor, HelixMode.INSERT)
         editor.caretModel.primaryCaret.visualAttributes.shape shouldBe CaretVisualAttributes.Shape.BAR
+        editor.caretModel.primaryCaret.visualAttributes.thickness shouldBe HelixStateManager.THICKNESS_BAR
+        editor.settings.isBlockCursor.shouldBeFalse()
 
         HelixStateManager.updateCursor(editor, HelixMode.SELECT)
         editor.caretModel.primaryCaret.visualAttributes.shape shouldBe CaretVisualAttributes.Shape.UNDERSCORE
+        editor.caretModel.primaryCaret.visualAttributes.thickness shouldBe HelixStateManager.THICKNESS_UNDERLINE
+        editor.settings.isBlockCursor.shouldBeFalse()
 
         // Hidden cursor shape test
         HelixEffectiveSettings.setSessionOverride("cursor-shape.insert", HelixCursorShape.HIDDEN)
         HelixStateManager.updateCursor(editor, HelixMode.INSERT)
         editor.caretModel.primaryCaret.visualAttributes.shape shouldBe CaretVisualAttributes.Shape.BAR
-        editor.caretModel.primaryCaret.visualAttributes.thickness shouldBe 0.0f
+        editor.caretModel.primaryCaret.visualAttributes.thickness shouldBe HelixStateManager.THICKNESS_HIDDEN
+        editor.settings.isBlockCursor.shouldBeFalse()
+
+        // Multi-caret: newly added carets inherit the current mode visual attributes
+        val state = HelixStateManager.getOrCreate(editor)
+        state.setMode(HelixMode.INSERT)
+        val secondCaret = editor.caretModel.addCaret(editor.offsetToVisualPosition(5))
+        secondCaret.shouldNotBeNull()
+        secondCaret.visualAttributes.shape shouldBe CaretVisualAttributes.Shape.BAR
+        secondCaret.visualAttributes.thickness shouldBe HelixStateManager.THICKNESS_HIDDEN
 
         // Deactivation resets attributes
         HelixEditorEligibility.deactivate(editor)

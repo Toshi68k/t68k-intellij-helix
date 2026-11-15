@@ -6,6 +6,8 @@ package jp.titze.intellij.helix.state
 import com.intellij.openapi.editor.CaretVisualAttributes
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.colors.EditorColors
+import com.intellij.openapi.editor.event.CaretEvent
+import com.intellij.openapi.editor.event.CaretListener
 import com.intellij.openapi.util.Key
 import jp.titze.intellij.helix.editor.HelixLineNumberManager
 import jp.titze.intellij.helix.settings.HelixCursorShape
@@ -18,6 +20,11 @@ object HelixStateManager {
     private val ORIGINAL_CARET_COLOR_STORED = Key.create<Boolean>("ORIGINAL_CARET_COLOR_STORED")
     private val ORIGINAL_CARET_COLOR_KEY = Key.create<Color>("ORIGINAL_CARET_COLOR_KEY")
 
+    const val THICKNESS_BLOCK = 1.0f
+    const val THICKNESS_BAR = 0.25f
+    const val THICKNESS_UNDERLINE = 0.20f
+    const val THICKNESS_HIDDEN = 0.0f
+
     fun get(editor: Editor): HelixEditorState? = editor.getUserData(HELIX_STATE_KEY)
 
     fun getOrCreate(editor: Editor): HelixEditorState {
@@ -26,6 +33,13 @@ object HelixStateManager {
             state = HelixEditorState(editor)
             editor.putUserData(HELIX_STATE_KEY, state)
             state.addListener { updateCursor(editor, it.mode) }
+            editor.caretModel.addCaretListener(object : CaretListener {
+                override fun caretAdded(event: CaretEvent) {
+                    if (editor.isDisposed) return
+                    val s = get(editor) ?: return
+                    updateCursor(editor, s.mode)
+                }
+            })
             updateCursor(editor, state.mode)
         }
         return state
@@ -56,7 +70,12 @@ object HelixStateManager {
             HelixCursorShape.UNDERLINE -> CaretVisualAttributes.Shape.UNDERSCORE
             HelixCursorShape.HIDDEN -> CaretVisualAttributes.Shape.BAR
         }
-        val thickness = if (shape == HelixCursorShape.HIDDEN) 0.0f else 1.0f
+        val thickness = when (shape) {
+            HelixCursorShape.BLOCK -> THICKNESS_BLOCK
+            HelixCursorShape.BAR -> THICKNESS_BAR
+            HelixCursorShape.UNDERLINE -> THICKNESS_UNDERLINE
+            HelixCursorShape.HIDDEN -> THICKNESS_HIDDEN
+        }
 
         val visualAttributes = CaretVisualAttributes(
             tintColor,
