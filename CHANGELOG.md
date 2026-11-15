@@ -16,6 +16,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- **Cursor Shapes Rendering as Full Block**:
+  - Corrected thickness factor in `HelixStateManager` for `BAR` (`0.25f`) and `UNDERLINE` (`0.20f`) cursor shapes; previously, a hardcoded `1.0f` thickness caused IntelliJ's `EditorCaretPainter` to render bars and underscores across 100% of character cell width and line height, making them visually indistinguishable from solid block cursors.
+  - Added a `CaretListener` in `HelixStateManager` to ensure newly spawned carets (e.g., multi-cursor selections) immediately inherit the active mode's visual attributes.
+
 - **UnsupportedOperationException in Swing Text Components (`TextComponentEditor`)**:
   - Excluded lightweight Swing text component editors (`TextComponentEditorImpl`) from `HelixEditorEligibility` so dialog inputs and plain text areas (e.g. run configurations, commit templates, tool window fields) bypass modal editing and route directly to standard IDE action handlers.
   - Added defensive exception handling in `HelixStateManager.updateCursorColor` when retrieving `editor.colorsScheme` to prevent unhandled `UnsupportedOperationException` on the AWT Event Dispatch Thread when interacting with non-standard or stub editor implementations.
