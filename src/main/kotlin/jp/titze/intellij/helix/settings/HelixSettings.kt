@@ -97,6 +97,7 @@ class HelixSettingsState {
     var activateInDiff: Boolean = true
     var activateInConsole: Boolean = false
     var activateInCommitMessage: Boolean = false
+    var activateInAiPrompt: Boolean = false
     var activateInOtherEditors: Boolean = false
     var ctrlKeyOverrides: MutableMap<String, String> = mutableMapOf()
     var customConfigPath: String = ""
@@ -320,6 +321,12 @@ class HelixSettings : PersistentStateComponent<HelixSettingsState> {
         get() = myState.activateInCommitMessage
         set(value) {
             myState.activateInCommitMessage = value
+        }
+
+    var activateInAiPrompt: Boolean
+        get() = myState.activateInAiPrompt
+        set(value) {
+            myState.activateInAiPrompt = value
         }
 
     var activateInOtherEditors: Boolean

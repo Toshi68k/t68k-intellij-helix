@@ -28,9 +28,18 @@ class HelixConfigWatcher : BulkFileListener {
         if (now - lastReloadTime < DEBOUNCE_MS) return
         lastReloadTime = now
 
-        val result = HelixConfigLoader.loadConfig()
-        notifyReloadResult(result)
-        onReloadCallback?.invoke(result)
+        val app = ApplicationManager.getApplication()
+        val reloadTask = Runnable {
+            val result = HelixConfigLoader.loadConfig()
+            notifyReloadResult(result)
+            onReloadCallback?.invoke(result)
+        }
+
+        if (app != null && !app.isUnitTestMode) {
+            app.invokeLater(reloadTask)
+        } else {
+            reloadTask.run()
+        }
     }
 
     companion object {

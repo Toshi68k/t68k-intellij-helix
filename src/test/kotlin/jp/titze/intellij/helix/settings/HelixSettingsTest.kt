@@ -294,7 +294,12 @@ class HelixSettingsTest : BasePlatformTestCase() {
         settings.activateInDiff.shouldBeTrue()
         settings.activateInConsole.shouldBeFalse()
         settings.activateInCommitMessage.shouldBeFalse()
+        settings.activateInAiPrompt.shouldBeFalse()
         settings.activateInOtherEditors.shouldBeFalse()
+
+        settings.activateInAiPrompt = true
+        settings.activateInAiPrompt.shouldBeTrue()
+        settings.activateInAiPrompt = false
 
         settings.enabled = false
         settings.enabled.shouldBeFalse()

@@ -22,7 +22,7 @@ object HelixLineNumberManager {
         Key.create<EditorSettings.LineNumerationType>("HELIX_ORIGINAL_NUMERATION_TYPE")
 
     fun applyLineNumbers(editor: Editor, mode: HelixMode) {
-        if (editor.isDisposed) return
+        if (shouldSkipLineNumbers(editor)) return
 
         val configMode = jp.titze.intellij.helix.settings.HelixEffectiveSettings.lineNumberMode
         if (configMode == HelixLineNumberMode.IDE_DEFAULT) {
@@ -125,5 +125,12 @@ object HelixLineNumberManager {
         if (!editor.isDisposed) {
             (editor as? EditorEx)?.gutterComponentEx?.repaint()
         }
+    }
+
+    private fun shouldSkipLineNumbers(editor: Editor): Boolean {
+        if (editor.isDisposed) return true
+        if (HelixEditorEligibility.isCommitEditor(editor)) return true
+        if (HelixEditorEligibility.isAiPromptEditor(editor)) return true
+        return HelixEditorEligibility.isEditorTextField(editor)
     }
 }

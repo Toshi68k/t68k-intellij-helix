@@ -5,7 +5,6 @@ package jp.titze.intellij.helix.settings
 
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.EditorFactory
-import jp.titze.intellij.helix.action.HelixVisualToggleActions
 import jp.titze.intellij.helix.config.HelixEditorOptions
 import jp.titze.intellij.helix.config.HelixOptionOverride
 import jp.titze.intellij.helix.config.OptionStatus
@@ -199,8 +198,8 @@ object HelixEffectiveSettings {
             editor.settings.setSoftMargins(activeRulers)
         }
         indentGuides?.let { editor.settings.isIndentGuidesShown = it }
-        softWrap?.let { HelixVisualToggleActions.toggleSoftWrap(editor, it) }
-        whitespaceRender?.let { HelixVisualToggleActions.toggleWhitespace(editor, it) }
+        softWrap?.let { editor.settings.isUseSoftWraps = it }
+        whitespaceRender?.let { editor.settings.isWhitespacesShown = it }
         val state = HelixStateManager.get(editor)
         if (state != null) {
             HelixStateManager.updateCursor(editor, state.mode)
