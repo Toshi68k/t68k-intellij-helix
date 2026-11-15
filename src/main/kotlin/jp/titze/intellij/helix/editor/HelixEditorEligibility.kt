@@ -8,6 +8,7 @@ import com.intellij.openapi.editor.EditorFactory
 import com.intellij.openapi.editor.EditorKind
 import com.intellij.openapi.editor.ex.EditorSettingsExternalizable
 import com.intellij.openapi.editor.textarea.TextComponentEditor
+import com.intellij.ui.EditorTextField
 import jp.titze.intellij.helix.settings.HelixSettings
 import jp.titze.intellij.helix.state.HelixStateManager
 import jp.titze.intellij.helix.ui.HelixStatusBarWidget
@@ -23,6 +24,11 @@ object HelixEditorEligibility {
 
     private val TERMINAL_PREFIXES = listOf("org.jetbrains.plugins.terminal", "com.intellij.terminal")
     private val COMMIT_PREFIXES = listOf("com.intellij.openapi.vcs.ui.CommitMessage", "com.intellij.vcs.commit")
+    private val AI_PROMPT_PREFIXES = listOf(
+        "com.intellij.air",
+        "org.jetbrains.air",
+        "com.intellij.ml.llm",
+    )
     private const val MAX_ANCESTOR_DEPTH = 12
 
     fun isActive(editor: Editor?): Boolean {
@@ -32,7 +38,9 @@ object HelixEditorEligibility {
         if (editor is TextComponentEditor) return false
         if (editor.isOneLineMode || editor.isViewer || editor.isDisposed) return false
         if (hasAncestorClass(editor, TERMINAL_PREFIXES)) return false
-        if (hasAncestorClass(editor, COMMIT_PREFIXES)) return settings.activateInCommitMessage
+        if (isCommitEditor(editor)) return settings.activateInCommitMessage
+        if (isAiPromptEditor(editor)) return settings.activateInAiPrompt
+        if (isEditorTextField(editor) && !settings.activateInOtherEditors) return false
 
         val kind = editor.editorKind
         val isCodeEditor = kind == EditorKind.MAIN_EDITOR ||
@@ -77,6 +85,27 @@ object HelixEditorEligibility {
         EditorFactory.getInstance().allEditors.forEach { editor ->
             deactivate(editor)
         }
+    }
+
+    private val MANAGED_BY_FIELD by lazy {
+        try {
+            val field = EditorTextField::class.java.getDeclaredField("MANAGED_BY_FIELD")
+            field.isAccessible = true
+            @Suppress("UNCHECKED_CAST")
+            field.get(null) as? com.intellij.openapi.util.Key<Boolean>
+        } catch (_: Throwable) {
+            null
+        }
+    }
+
+    fun isCommitEditor(editor: Editor): Boolean = hasAncestorClass(editor, COMMIT_PREFIXES)
+
+    fun isAiPromptEditor(editor: Editor): Boolean = hasAncestorClass(editor, AI_PROMPT_PREFIXES)
+
+    fun isEditorTextField(editor: Editor): Boolean {
+        if (EditorTextField.managesEditor(editor)) return true
+        val key = MANAGED_BY_FIELD
+        return key != null && editor.getUserData(key) == true
     }
 
     private fun hasAncestorClass(editor: Editor, prefixes: List<String>): Boolean {

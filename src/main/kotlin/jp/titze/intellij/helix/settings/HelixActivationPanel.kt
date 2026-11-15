@@ -20,6 +20,7 @@ class HelixActivationPanel {
     private val diffBox = JBCheckBox(HelixBundle.message("settings.activation.diff"))
     private val consoleBox = JBCheckBox(HelixBundle.message("settings.activation.console"))
     private val commitMessageBox = JBCheckBox(HelixBundle.message("settings.activation.commitMessage"))
+    private val aiPromptBox = JBCheckBox(HelixBundle.message("settings.activation.aiPrompt"))
     private val otherEditorsBox = JBCheckBox(HelixBundle.message("settings.activation.otherEditors"))
 
     val panel: JPanel = JPanel(BorderLayout(0, 8))
@@ -32,12 +33,13 @@ class HelixActivationPanel {
         mainEditorBox.isSelected = true
         mainEditorBox.isEnabled = false
 
-        val scopeOptionsPanel = JPanel(GridLayout(5, 1, 0, 4))
+        val scopeOptionsPanel = JPanel(GridLayout(6, 1, 0, 4))
         scopeOptionsPanel.border = JBUI.Borders.empty(4, 24, 4, 0)
         scopeOptionsPanel.add(mainEditorBox)
         scopeOptionsPanel.add(diffBox)
         scopeOptionsPanel.add(consoleBox)
         scopeOptionsPanel.add(commitMessageBox)
+        scopeOptionsPanel.add(aiPromptBox)
         scopeOptionsPanel.add(otherEditorsBox)
 
         val settingsBox = JPanel()
@@ -64,6 +66,7 @@ class HelixActivationPanel {
         diffBox.isSelected != settings.activateInDiff ||
         consoleBox.isSelected != settings.activateInConsole ||
         commitMessageBox.isSelected != settings.activateInCommitMessage ||
+        aiPromptBox.isSelected != settings.activateInAiPrompt ||
         otherEditorsBox.isSelected != settings.activateInOtherEditors
 
     fun apply(settings: HelixSettings) {
@@ -71,6 +74,7 @@ class HelixActivationPanel {
         settings.activateInDiff = diffBox.isSelected
         settings.activateInConsole = consoleBox.isSelected
         settings.activateInCommitMessage = commitMessageBox.isSelected
+        settings.activateInAiPrompt = aiPromptBox.isSelected
         settings.activateInOtherEditors = otherEditorsBox.isSelected
     }
 
@@ -79,6 +83,7 @@ class HelixActivationPanel {
         diffBox.isSelected = settings.activateInDiff
         consoleBox.isSelected = settings.activateInConsole
         commitMessageBox.isSelected = settings.activateInCommitMessage
+        aiPromptBox.isSelected = settings.activateInAiPrompt
         otherEditorsBox.isSelected = settings.activateInOtherEditors
     }
 }
