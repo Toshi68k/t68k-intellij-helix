@@ -5,6 +5,12 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Fixed
+
+- **UnsupportedOperationException in Swing Text Components (`TextComponentEditor`)**:
+  - Excluded lightweight Swing text component editors (`TextComponentEditorImpl`) from `HelixEditorEligibility` so dialog inputs and plain text areas (e.g. run configurations, commit templates, tool window fields) bypass modal editing and route directly to standard IDE action handlers.
+  - Added defensive exception handling in `HelixStateManager.updateCursorColor` when retrieving `editor.colorsScheme` to prevent unhandled `UnsupportedOperationException` on the AWT Event Dispatch Thread when interacting with non-standard or stub editor implementations.
+
 ### Changed
 
 - **UI Color Modernization & IntelliJ DevKit Compliance**:

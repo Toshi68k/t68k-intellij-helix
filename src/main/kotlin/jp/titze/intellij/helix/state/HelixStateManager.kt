@@ -77,7 +77,11 @@ object HelixStateManager {
     }
 
     private fun updateCursorColor(editor: Editor, mode: HelixMode) {
-        val colorsScheme = editor.colorsScheme
+        val colorsScheme = try {
+            editor.colorsScheme
+        } catch (_: UnsupportedOperationException) {
+            return
+        }
         if (HelixEffectiveSettings.cursorTint) {
             if (editor.getUserData(ORIGINAL_CARET_COLOR_STORED) != true) {
                 editor.putUserData(ORIGINAL_CARET_COLOR_STORED, true)

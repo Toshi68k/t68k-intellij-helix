@@ -7,6 +7,7 @@ import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.EditorFactory
 import com.intellij.openapi.editor.EditorKind
 import com.intellij.openapi.editor.ex.EditorSettingsExternalizable
+import com.intellij.openapi.editor.textarea.TextComponentEditor
 import jp.titze.intellij.helix.settings.HelixSettings
 import jp.titze.intellij.helix.state.HelixStateManager
 import jp.titze.intellij.helix.ui.HelixStatusBarWidget
@@ -28,6 +29,7 @@ object HelixEditorEligibility {
         if (editor == null) return false
         val settings = HelixSettings.instance
         if (!settings.enabled) return false
+        if (editor is TextComponentEditor) return false
         if (editor.isOneLineMode || editor.isViewer || editor.isDisposed) return false
         if (hasAncestorClass(editor, TERMINAL_PREFIXES)) return false
         if (hasAncestorClass(editor, COMMIT_PREFIXES)) return settings.activateInCommitMessage
