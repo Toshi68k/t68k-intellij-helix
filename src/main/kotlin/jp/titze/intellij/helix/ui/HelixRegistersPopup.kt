@@ -18,7 +18,6 @@ import jp.titze.intellij.helix.action.HelixRegisterActions
 import jp.titze.intellij.helix.register.HelixRegisterItem
 import jp.titze.intellij.helix.register.HelixRegisterManager
 import java.awt.BorderLayout
-import java.awt.Color
 import java.awt.Component
 import java.awt.Cursor
 import java.awt.Dimension
@@ -184,7 +183,7 @@ object HelixRegistersPopup {
     private fun createSearchField(): JBTextField = JBTextField().apply {
         border = BorderFactory.createEmptyBorder()
         isOpaque = false
-        background = Color(0, 0, 0, 0)
+        background = HelixTheme.TRANSPARENT
         foreground = ITEM_TEXT_COLOR
         caretColor = ITEM_TEXT_COLOR
         emptyText.text = HelixBundle.message("popup.registers.placeholder")

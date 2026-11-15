@@ -5,6 +5,15 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Changed
+
+- **UI Color Modernization & IntelliJ DevKit Compliance**:
+  - Replaced direct `java.awt.Color` instantiations across the codebase with `com.intellij.ui.JBColor` to comply with IntelliJ platform DevKit inspections (`'java.awt.Color' used instead of 'JBColor'`) and ensure robust theme adaptation across Light, Dark, and High Contrast IDE themes.
+  - Centralized transparent background colors to `HelixTheme.TRANSPARENT` across modal popups (`HelixDirectoryFilePickerPopup`, `HelixJumplistPopup`, `HelixMacrosPopup`, `HelixRegistersPopup`), `HelixListUI`, and `HelixScrollBarUI`.
+  - Added integer RGB color helpers to `HelixTheme` (`color(lightRgb, darkRgb)`), streamlining palette definitions into clean hex literals and eliminating raw `Color(...)` calls.
+  - Promoted jump target badge colors in `HelixJumpToWord` to static `JBColor` constants, eliminating per-paint heap allocations on every keystroke during jump navigation.
+  - Precomputed scrollbar thumb colors (`SCROLLBAR_THUMB_DEFAULT`, `SCROLLBAR_THUMB_ROLLOVER`, `SCROLLBAR_THUMB_DRAGGING`) in `HelixTheme`, eliminating dynamic per-frame color allocations during scrolling and hover states in `HelixScrollBarUI`.
+
 ## [0.7.0]
 
 ### Added
