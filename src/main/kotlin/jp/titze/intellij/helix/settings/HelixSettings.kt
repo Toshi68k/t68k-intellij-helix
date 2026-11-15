@@ -52,6 +52,22 @@ enum class HelixLineNumberMode(val displayName: String) {
     OFF("Hidden: Do not show line numbers"),
 }
 
+enum class HelixCursorShape(val displayName: String, val tomlValue: String) {
+    BLOCK("Block", "block"),
+    BAR("Bar", "bar"),
+    UNDERLINE("Underline", "underline"),
+    HIDDEN("Hidden", "hidden"),
+    ;
+
+    companion object {
+        fun fromString(str: String): HelixCursorShape? = entries.firstOrNull {
+            it.name.equals(str.trim(), ignoreCase = true) ||
+                it.tomlValue.equals(str.trim(), ignoreCase = true) ||
+                it.displayName.equals(str.trim(), ignoreCase = true)
+        }
+    }
+}
+
 class HelixSettingsState {
     var searchUiMode: String = HelixSearchUiMode.STOCK_HELIX.name
     var lineNavigationMode: String = HelixLineNavigationMode.HELIX_STANDARD.name
@@ -62,6 +78,12 @@ class HelixSettingsState {
     var colorTheme: String = HelixColorTheme.SYNC.name
     var colorModes: Boolean = true
     var cursorTint: Boolean = true
+    var cursorShapeNormal: String = HelixCursorShape.BLOCK.name
+    var cursorShapeInsert: String = HelixCursorShape.BAR.name
+    var cursorShapeSelect: String = HelixCursorShape.BLOCK.name
+    var searchSmartCase: Boolean = true
+    var searchWrapAround: Boolean = true
+    var jumpLabelAlphabet: String = "jfkdlsaurieowpqnvmcxz"
     var resetToNormalOnTabSwitch: Boolean = true
     var syncClipboardWithDefaultRegister: Boolean = true
     var enableWhichKeyPopups: Boolean = true
@@ -182,6 +204,54 @@ class HelixSettings : PersistentStateComponent<HelixSettingsState> {
         get() = myState.cursorTint
         set(value) {
             myState.cursorTint = value
+        }
+
+    var cursorShapeNormal: HelixCursorShape
+        get() = try {
+            HelixCursorShape.valueOf(myState.cursorShapeNormal)
+        } catch (_: Exception) {
+            HelixCursorShape.BLOCK
+        }
+        set(value) {
+            myState.cursorShapeNormal = value.name
+        }
+
+    var cursorShapeInsert: HelixCursorShape
+        get() = try {
+            HelixCursorShape.valueOf(myState.cursorShapeInsert)
+        } catch (_: Exception) {
+            HelixCursorShape.BAR
+        }
+        set(value) {
+            myState.cursorShapeInsert = value.name
+        }
+
+    var cursorShapeSelect: HelixCursorShape
+        get() = try {
+            HelixCursorShape.valueOf(myState.cursorShapeSelect)
+        } catch (_: Exception) {
+            HelixCursorShape.BLOCK
+        }
+        set(value) {
+            myState.cursorShapeSelect = value.name
+        }
+
+    var searchSmartCase: Boolean
+        get() = myState.searchSmartCase
+        set(value) {
+            myState.searchSmartCase = value
+        }
+
+    var searchWrapAround: Boolean
+        get() = myState.searchWrapAround
+        set(value) {
+            myState.searchWrapAround = value
+        }
+
+    var jumpLabelAlphabet: String
+        get() = myState.jumpLabelAlphabet.ifEmpty { "jfkdlsaurieowpqnvmcxz" }
+        set(value) {
+            myState.jumpLabelAlphabet = value
         }
 
     var resetToNormalOnTabSwitch: Boolean

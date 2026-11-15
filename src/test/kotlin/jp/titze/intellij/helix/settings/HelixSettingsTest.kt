@@ -9,6 +9,8 @@ import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import jp.titze.intellij.helix.HelixBundle
+import jp.titze.intellij.helix.config.HelixOptionOverride
+import jp.titze.intellij.helix.config.OptionStatus
 import jp.titze.intellij.helix.jumplist.HelixJumpListService
 import jp.titze.intellij.helix.keymap.HelixKeyContext
 import jp.titze.intellij.helix.keymap.HelixKeyOwner
@@ -32,6 +34,13 @@ class HelixSettingsTest : BasePlatformTestCase() {
         settings.whichKeyColumnLayout = WhichKeyColumnLayout.AUTO
         settings.whichKeyMaxRows = 0
         settings.ctrlKeyOverrides = emptyMap()
+        settings.cursorShapeNormal = HelixCursorShape.BLOCK
+        settings.cursorShapeInsert = HelixCursorShape.BAR
+        settings.cursorShapeSelect = HelixCursorShape.BLOCK
+        settings.searchSmartCase = true
+        settings.searchWrapAround = true
+        settings.jumpLabelAlphabet = "jfkdlsaurieowpqnvmcxz"
+        HelixEffectiveSettings.clearAllOverrides()
         jp.titze.intellij.helix.ui.HelixPromptHistory.clear()
         super.tearDown()
     }
@@ -49,6 +58,12 @@ class HelixSettingsTest : BasePlatformTestCase() {
         settings.resetToNormalOnTabSwitch.shouldBeTrue()
         settings.whichKeyColumnLayout shouldBe WhichKeyColumnLayout.AUTO
         settings.whichKeyMaxRows shouldBe 0
+        settings.cursorShapeNormal shouldBe HelixCursorShape.BLOCK
+        settings.cursorShapeInsert shouldBe HelixCursorShape.BAR
+        settings.cursorShapeSelect shouldBe HelixCursorShape.BLOCK
+        settings.searchSmartCase.shouldBeTrue()
+        settings.searchWrapAround.shouldBeTrue()
+        settings.jumpLabelAlphabet shouldBe "jfkdlsaurieowpqnvmcxz"
     }
 
     fun testLineNumberModePersistence() {
@@ -411,5 +426,80 @@ class HelixSettingsTest : BasePlatformTestCase() {
         } finally {
             tempFile.delete()
         }
+    }
+
+    fun testCursorShapePersistence() {
+        val settings = HelixSettings.instance
+        settings.cursorShapeNormal = HelixCursorShape.UNDERLINE
+        settings.cursorShapeNormal shouldBe HelixCursorShape.UNDERLINE
+
+        settings.cursorShapeInsert = HelixCursorShape.HIDDEN
+        settings.cursorShapeInsert shouldBe HelixCursorShape.HIDDEN
+
+        settings.cursorShapeSelect = HelixCursorShape.BAR
+        settings.cursorShapeSelect shouldBe HelixCursorShape.BAR
+    }
+
+    fun testSearchAndJumpSettingsPersistence() {
+        val settings = HelixSettings.instance
+        settings.searchSmartCase = false
+        settings.searchSmartCase.shouldBeFalse()
+
+        settings.searchWrapAround = false
+        settings.searchWrapAround.shouldBeFalse()
+
+        settings.jumpLabelAlphabet = "asdf"
+        settings.jumpLabelAlphabet shouldBe "asdf"
+    }
+
+    fun testEffectiveSettingsOverriddenNoticeInPanels() {
+        val appearancePanel = HelixAppearancePanel()
+        val behaviorPanel = HelixBehaviorPanel()
+
+        // Initially no overrides
+        appearancePanel.lineNumberModeComboBox?.isEnabled?.shouldBeTrue()
+        appearancePanel.lineNumberNotice?.isVisible?.shouldBeFalse()
+        behaviorPanel.searchSmartCaseCheckBox?.isEnabled?.shouldBeTrue()
+        behaviorPanel.searchSmartCaseNotice?.isVisible?.shouldBeFalse()
+
+        // Apply overrides
+        val overrides = mapOf(
+            "line-number" to HelixOptionOverride(
+                key = "line-number",
+                value = HelixLineNumberMode.RELATIVE,
+                rawValueString = "relative",
+                sourceFile = java.io.File("/path/to/intellij.toml"),
+                lineNumber = 10,
+                status = OptionStatus.APPLIED,
+            ),
+            "search.smart-case" to HelixOptionOverride(
+                key = "search.smart-case",
+                value = false,
+                rawValueString = "false",
+                sourceFile = java.io.File("/path/to/intellij.toml"),
+                lineNumber = 15,
+                status = OptionStatus.APPLIED,
+            ),
+        )
+        HelixEffectiveSettings.applyTomlOverrides(overrides)
+
+        // Reset panels to update overridden UI states
+        appearancePanel.reset()
+        behaviorPanel.reset()
+
+        appearancePanel.lineNumberModeComboBox?.isEnabled?.shouldBeFalse()
+        appearancePanel.lineNumberNotice?.isVisible?.shouldBeTrue()
+        behaviorPanel.searchSmartCaseCheckBox?.isEnabled?.shouldBeFalse()
+        behaviorPanel.searchSmartCaseNotice?.isVisible?.shouldBeTrue()
+
+        // Clear overrides
+        HelixEffectiveSettings.clearTomlOverrides()
+        appearancePanel.reset()
+        behaviorPanel.reset()
+
+        appearancePanel.lineNumberModeComboBox?.isEnabled?.shouldBeTrue()
+        appearancePanel.lineNumberNotice?.isVisible?.shouldBeFalse()
+        behaviorPanel.searchSmartCaseCheckBox?.isEnabled?.shouldBeTrue()
+        behaviorPanel.searchSmartCaseNotice?.isVisible?.shouldBeFalse()
     }
 }

@@ -24,7 +24,7 @@ object HelixLineNumberManager {
     fun applyLineNumbers(editor: Editor, mode: HelixMode) {
         if (editor.isDisposed) return
 
-        val configMode = HelixSettings.instance.lineNumberMode
+        val configMode = jp.titze.intellij.helix.settings.HelixEffectiveSettings.lineNumberMode
         if (configMode == HelixLineNumberMode.IDE_DEFAULT) {
             restoreOriginalSettings(editor)
             return
@@ -67,7 +67,7 @@ object HelixLineNumberManager {
     }
 
     fun toggleRelative() {
-        val current = HelixSettings.instance.lineNumberMode
+        val current = jp.titze.intellij.helix.settings.HelixEffectiveSettings.lineNumberMode
         val nextMode = when (current) {
             HelixLineNumberMode.RELATIVE,
             HelixLineNumberMode.HYBRID,
@@ -76,6 +76,7 @@ object HelixLineNumberManager {
 
             else -> HelixLineNumberMode.SMART
         }
+        jp.titze.intellij.helix.settings.HelixEffectiveSettings.setSessionOption("line-number", nextMode)
         HelixSettings.instance.lineNumberMode = nextMode
         HelixEditorEligibility.refreshAllEditors()
     }

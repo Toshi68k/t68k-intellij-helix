@@ -130,15 +130,19 @@ object HelixJumpToWord {
         editor.scrollingModel.scrollToCaret(ScrollType.MAKE_VISIBLE)
     }
 
-    internal fun generateLabels(count: Int): List<String> {
+    internal fun generateLabels(
+        count: Int,
+        alphabet: String = jp.titze.intellij.helix.settings.HelixEffectiveSettings.jumpLabelAlphabet,
+    ): List<String> {
+        val activeAlphabet = alphabet.ifEmpty { ALPHABET }
         if (count <= 0) return emptyList()
-        if (count <= ALPHABET.length) {
-            return ALPHABET.take(count).map { it.toString() }
+        if (count <= activeAlphabet.length) {
+            return activeAlphabet.take(count).map { it.toString() }
         }
 
         val labels = ArrayList<String>(count)
-        for (c1 in ALPHABET) {
-            for (c2 in ALPHABET) {
+        for (c1 in activeAlphabet) {
+            for (c2 in activeAlphabet) {
                 labels.add("$c1$c2")
                 if (labels.size == count) return labels
             }
