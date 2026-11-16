@@ -46,6 +46,14 @@ class HelixBehaviorPanel {
 
     private var jumpListSpinner: JBIntSpinner? = null
 
+    private val overridesChangeListener: () -> Unit = {
+        reset()
+    }
+
+    init {
+        HelixEffectiveSettings.addChangeListener(overridesChangeListener)
+    }
+
     val panel: JComponent = createMainPanel()
 
     private fun createMainPanel(): JComponent {
@@ -329,5 +337,6 @@ class HelixBehaviorPanel {
         scratchInteractiveRadio = null
         scratchBufferRadio = null
         jumpListSpinner = null
+        HelixEffectiveSettings.removeChangeListener(overridesChangeListener)
     }
 }

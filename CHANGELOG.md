@@ -21,6 +21,11 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   - Aligned mode labels (`Normal (NOR):`, `Insert (INS):`, `Select (SEL):`) and dropdowns flush to the left, preventing horizontal overflow and awkward wrapping on narrow displays.
   - Positioned TOML configuration override notices directly beneath their respective mode dropdowns for contextual provenance visibility.
 
+### Fixed
+
+- **Live Settings UI Synchronization on TOML Reload & Fallback Mode Changes**:
+  - Added change listeners to `HelixEffectiveSettings` so that mutating TOML overrides (via VFS file watcher reload, "Reload" button, or changing CLI fallback policy in Configuration settings) immediately synchronizes the open **Appearance** and **Behavior** settings panels without requiring the Settings dialog to be closed and reopened.
+
 ## [0.7.1]
 
 ### Added
