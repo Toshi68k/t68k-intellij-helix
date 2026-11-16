@@ -5,6 +5,15 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.7.3]
+
+### Fixed
+
+- **Enter Key & EDT Exception in Injected Code Fragments**:
+  - Fixed an `Access is allowed from Event Dispatch Thread (EDT) only` exception triggered during background action updates.
+  - Fixed an issue where pressing `Enter` inside injected language fragments (e.g. strings, SQL, regex) failed to insert a newline in Insert mode.
+  - Injected editors now properly inherit the host editor's active modal state and safely dispatch cursor UI updates to the EDT.
+
 ## [0.7.2]
 
 ### Added

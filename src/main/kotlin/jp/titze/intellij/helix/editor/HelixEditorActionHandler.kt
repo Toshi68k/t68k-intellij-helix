@@ -17,7 +17,7 @@ import jp.titze.intellij.helix.state.HelixStateManager
 class HelixEditorActionHandler(private val actionId: String, private val originalHandler: EditorActionHandler?) :
     EditorActionHandler(false) {
 
-    override fun doExecute(editor: Editor, caret: Caret?, dataContext: DataContext) {
+    override fun doExecute(editor: Editor, caret: Caret?, dataContext: DataContext?) {
         if (!HelixEditorEligibility.isActive(editor)) {
             originalHandler?.execute(editor, caret, dataContext)
             return

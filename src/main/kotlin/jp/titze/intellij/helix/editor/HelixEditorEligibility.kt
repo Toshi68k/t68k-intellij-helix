@@ -3,6 +3,8 @@
 
 package jp.titze.intellij.helix.editor
 
+import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.EditorFactory
 import com.intellij.openapi.editor.EditorKind
@@ -33,6 +35,10 @@ object HelixEditorEligibility {
 
     fun isActive(editor: Editor?): Boolean {
         if (editor == null) return false
+        val target = HelixStateManager.resolveHostEditor(editor)
+        if (target !== editor) {
+            return isActive(target)
+        }
         val settings = HelixSettings.instance
         if (!settings.enabled) return false
         if (editor is TextComponentEditor) return false
@@ -71,13 +77,24 @@ object HelixEditorEligibility {
     }
 
     fun deactivate(editor: Editor) {
-        val state = HelixStateManager.get(editor) ?: return
+        val hostEditor = HelixStateManager.resolveHostEditor(editor)
+        val state = HelixStateManager.get(hostEditor) ?: return
         state.clearPendingSequence()
         state.clearCount()
         state.clearSelectedRegister()
-        editor.settings.isBlockCursor = EditorSettingsExternalizable.getInstance().isBlockCursor
-        editor.caretModel.allCarets.forEach { caret ->
-            caret.visualAttributes = com.intellij.openapi.editor.CaretVisualAttributes.getDefault()
+        val resetUi = {
+            if (!hostEditor.isDisposed) {
+                hostEditor.settings.isBlockCursor = EditorSettingsExternalizable.getInstance().isBlockCursor
+                hostEditor.caretModel.allCarets.forEach { caret ->
+                    caret.visualAttributes = com.intellij.openapi.editor.CaretVisualAttributes.getDefault()
+                }
+            }
+        }
+        val app = ApplicationManager.getApplication()
+        if (app != null && !app.isDispatchThread) {
+            app.invokeLater(resetUi, ModalityState.any())
+        } else {
+            resetUi()
         }
     }
 
