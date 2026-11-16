@@ -184,32 +184,53 @@ class HelixAppearancePanel {
                 gridx = 0
                 gridy = 0
                 anchor = GridBagConstraints.WEST
-                insets = JBUI.insets(2, 0, 2, 8)
+                fill = GridBagConstraints.NONE
+                weightx = 0.0
+                insets = JBUI.insets(2, 0, 2, 12)
             }
             add(JBLabel(HelixBundle.message("settings.cursorShape.normal")), gbc)
             gbc.gridx = 1
+            gbc.weightx = 1.0
+            gbc.insets = JBUI.insets(2, 0)
             add(normalCombo, gbc)
-            gbc.gridx = 2
-            gbc.insets = JBUI.insets(2, 16, 2, 8)
+
+            gbc.gridx = 0
+            gbc.gridy = 1
+            gbc.gridwidth = 2
+            gbc.weightx = 0.0
+            gbc.insets = JBUI.emptyInsets()
+            add(normalNotice, gbc)
+
+            gbc.gridy = 2
+            gbc.gridwidth = 1
+            gbc.insets = JBUI.insets(2, 0, 2, 12)
             add(JBLabel(HelixBundle.message("settings.cursorShape.insert")), gbc)
-            gbc.gridx = 3
-            gbc.insets = JBUI.insets(2, 0, 2, 8)
+            gbc.gridx = 1
+            gbc.weightx = 1.0
+            gbc.insets = JBUI.insets(2, 0)
             add(insertCombo, gbc)
-            gbc.gridx = 4
-            gbc.insets = JBUI.insets(2, 16, 2, 8)
+
+            gbc.gridx = 0
+            gbc.gridy = 3
+            gbc.gridwidth = 2
+            gbc.weightx = 0.0
+            gbc.insets = JBUI.emptyInsets()
+            add(insertNotice, gbc)
+
+            gbc.gridy = 4
+            gbc.gridwidth = 1
+            gbc.insets = JBUI.insets(2, 0, 2, 12)
             add(JBLabel(HelixBundle.message("settings.cursorShape.select")), gbc)
-            gbc.gridx = 5
+            gbc.gridx = 1
+            gbc.weightx = 1.0
             gbc.insets = JBUI.insets(2, 0)
             add(selectCombo, gbc)
 
             gbc.gridx = 0
-            gbc.gridy = 1
-            gbc.gridwidth = 6
-            gbc.insets = JBUI.insets(2, 0)
-            add(normalNotice, gbc)
-            gbc.gridy = 2
-            add(insertNotice, gbc)
-            gbc.gridy = 3
+            gbc.gridy = 5
+            gbc.gridwidth = 2
+            gbc.weightx = 0.0
+            gbc.insets = JBUI.emptyInsets()
             add(selectNotice, gbc)
         }
 

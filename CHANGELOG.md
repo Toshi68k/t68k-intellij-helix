@@ -14,6 +14,13 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
     - **Disabled**: Never auto-loads `config.toml`, restricting configuration discovery strictly to `intellij.toml` or custom paths.
   - Updated `HelixConfigLoader` and `HelixConfigWatcher` to honor the fallback policy during auto-discovery and live reload.
 
+### Changed
+
+- **Cursor Shape Settings Layout Alignment**:
+  - Restructured the Cursor Shape (`cursor-shape`) selectors in **Settings | Tools | Helix Keymap | Appearance** from a wide horizontal row into a clean, vertically stacked 2-column form layout.
+  - Aligned mode labels (`Normal (NOR):`, `Insert (INS):`, `Select (SEL):`) and dropdowns flush to the left, preventing horizontal overflow and awkward wrapping on narrow displays.
+  - Positioned TOML configuration override notices directly beneath their respective mode dropdowns for contextual provenance visibility.
+
 ## [0.7.1]
 
 ### Added
