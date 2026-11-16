@@ -22,9 +22,29 @@ object HelixEffectiveSettings {
     private var tomlOverrides: Map<String, HelixOptionOverride> = emptyMap()
 
     private val sessionOverrides = ConcurrentHashMap<String, Any?>()
+    private val changeListeners = java.util.concurrent.CopyOnWriteArrayList<() -> Unit>()
+
+    fun addChangeListener(listener: () -> Unit) {
+        changeListeners.add(listener)
+    }
+
+    fun removeChangeListener(listener: () -> Unit) {
+        changeListeners.remove(listener)
+    }
+
+    private fun notifyListeners() {
+        for (listener in changeListeners) {
+            try {
+                listener()
+            } catch (_: Throwable) {
+                // Ignore listener exceptions
+            }
+        }
+    }
 
     fun setTomlOverrides(overrides: Map<String, HelixOptionOverride>) {
         tomlOverrides = overrides
+        notifyListeners()
     }
 
     fun applyTomlOverrides(overrides: Map<String, HelixOptionOverride>) {
@@ -36,6 +56,7 @@ object HelixEffectiveSettings {
         val def = HelixEditorOptions.findDefinition(norm)
         val canonicalKey = def?.key ?: norm
         sessionOverrides[canonicalKey] = value
+        notifyListeners()
     }
 
     fun setSessionOverride(key: String, value: Any?) {
@@ -44,6 +65,7 @@ object HelixEffectiveSettings {
 
     fun clearSessionOverrides() {
         sessionOverrides.clear()
+        notifyListeners()
     }
 
     fun clearSessionOverride(key: String) {
@@ -51,10 +73,12 @@ object HelixEffectiveSettings {
         val def = HelixEditorOptions.findDefinition(norm)
         val canonicalKey = def?.key ?: norm
         sessionOverrides.remove(canonicalKey)
+        notifyListeners()
     }
 
     fun clearTomlOverrides() {
         tomlOverrides = emptyMap()
+        notifyListeners()
     }
 
     fun clearAllOverrides() {
@@ -179,13 +203,6 @@ object HelixEffectiveSettings {
         get() {
             sessionOverrides["indent-guides.render"]?.let { if (it is Boolean) return it }
             getOverride("indent-guides.render")?.value?.let { if (it is Boolean) return it }
-            return null
-        }
-
-    val bufferline: String?
-        get() {
-            sessionOverrides["bufferline"]?.let { if (it is String) return it }
-            getOverride("bufferline")?.value?.let { if (it is String) return it }
             return null
         }
 
