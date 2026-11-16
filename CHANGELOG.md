@@ -5,6 +5,15 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+
+- **CLI `config.toml` Fallback Policy**:
+  - Added `cliConfigFallbackMode` option (**Settings | Tools | Helix Keymap | Configuration (TOML)**) supporting a 3-way fallback policy when `intellij.toml` is not present:
+    - **Keymaps Only (Default)**: Automatically reads keybindings from `~/.config/helix/config.toml` without applying `[editor]` options, preventing CLI dotfiles from hijacking IntelliJ editor appearance or locking Settings UI controls.
+    - **Full**: Reads keybindings and applies `[editor]` options from `config.toml`.
+    - **Disabled**: Never auto-loads `config.toml`, restricting configuration discovery strictly to `intellij.toml` or custom paths.
+  - Updated `HelixConfigLoader` and `HelixConfigWatcher` to honor the fallback policy during auto-discovery and live reload.
+
 ## [0.7.1]
 
 ### Added

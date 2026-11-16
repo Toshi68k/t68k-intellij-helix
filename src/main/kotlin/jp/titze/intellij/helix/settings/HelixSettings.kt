@@ -68,6 +68,12 @@ enum class HelixCursorShape(val displayName: String, val tomlValue: String) {
     }
 }
 
+enum class HelixCliConfigFallbackMode(val displayName: String) {
+    KEYMAPS_ONLY("Keymaps Only (Inherit keybindings; keep IDE editor options)"),
+    FULL("Full (Inherit keybindings and [editor] options)"),
+    DISABLED("Disabled (Never auto-load config.toml; use intellij.toml or custom path)"),
+}
+
 class HelixSettingsState {
     var searchUiMode: String = HelixSearchUiMode.STOCK_HELIX.name
     var lineNavigationMode: String = HelixLineNavigationMode.HELIX_STANDARD.name
@@ -101,6 +107,7 @@ class HelixSettingsState {
     var activateInOtherEditors: Boolean = false
     var ctrlKeyOverrides: MutableMap<String, String> = mutableMapOf()
     var customConfigPath: String = ""
+    var cliConfigFallbackMode: String = HelixCliConfigFallbackMode.KEYMAPS_ONLY.name
 }
 
 @Service(Service.Level.APP)
@@ -351,6 +358,16 @@ class HelixSettings : PersistentStateComponent<HelixSettingsState> {
         get() = myState.customConfigPath
         set(value) {
             myState.customConfigPath = value
+        }
+
+    var cliConfigFallbackMode: HelixCliConfigFallbackMode
+        get() = try {
+            HelixCliConfigFallbackMode.valueOf(myState.cliConfigFallbackMode)
+        } catch (_: Exception) {
+            HelixCliConfigFallbackMode.KEYMAPS_ONLY
+        }
+        set(value) {
+            myState.cliConfigFallbackMode = value.name
         }
 
     companion object {

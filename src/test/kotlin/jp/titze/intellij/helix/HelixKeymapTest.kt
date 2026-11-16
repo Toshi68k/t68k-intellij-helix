@@ -23,6 +23,8 @@ import jp.titze.intellij.helix.keymap.HelixKeymapManager
 import jp.titze.intellij.helix.keymap.HelixKeymapResult
 import jp.titze.intellij.helix.keymap.HelixKeymapTrie
 import jp.titze.intellij.helix.register.HelixRegisterManager
+import jp.titze.intellij.helix.settings.HelixCliConfigFallbackMode
+import jp.titze.intellij.helix.settings.HelixLineNumberMode
 import jp.titze.intellij.helix.settings.HelixSettings
 import jp.titze.intellij.helix.state.HelixMode
 import jp.titze.intellij.helix.state.HelixStateManager
@@ -549,9 +551,66 @@ class HelixKeymapTest : BasePlatformTestCase() {
             val configPath = "$userHome/.config/helix/config.toml"
             val randomPath = "$userHome/.config/helix/other.toml"
 
-            HelixConfigWatcher.isMatchingConfigPath(intellijPath).shouldBeTrue()
-            HelixConfigWatcher.isMatchingConfigPath(configPath).shouldBeTrue()
-            HelixConfigWatcher.isMatchingConfigPath(randomPath).shouldBeFalse()
+            val settings = HelixSettings.instance
+            val origMode = settings.cliConfigFallbackMode
+            try {
+                settings.cliConfigFallbackMode = HelixCliConfigFallbackMode.KEYMAPS_ONLY
+                HelixConfigWatcher.isMatchingConfigPath(intellijPath).shouldBeTrue()
+                HelixConfigWatcher.isMatchingConfigPath(configPath).shouldBeTrue()
+                HelixConfigWatcher.isMatchingConfigPath(randomPath).shouldBeFalse()
+
+                settings.cliConfigFallbackMode = HelixCliConfigFallbackMode.DISABLED
+                HelixConfigWatcher.isMatchingConfigPath(intellijPath).shouldBeTrue()
+                HelixConfigWatcher.isMatchingConfigPath(configPath).shouldBeFalse()
+            } finally {
+                settings.cliConfigFallbackMode = origMode
+            }
+        }
+    }
+
+    fun testCliConfigFallbackModeLoadConfigBehavior() {
+        val tempDir = java.nio.file.Files.createTempDirectory("helix-cli-test").toFile()
+        val configFile = File(tempDir, "config.toml")
+        val settings = HelixSettings.instance
+        val origMode = settings.cliConfigFallbackMode
+        try {
+            configFile.writeText(
+                """
+                [editor]
+                line-number = "relative"
+                scrolloff = 8
+
+                [keys.normal]
+                "g" = { "x" = ":action Cut" }
+                """.trimIndent(),
+            )
+
+            // Mode 1: KEYMAPS_ONLY (default)
+            settings.cliConfigFallbackMode = HelixCliConfigFallbackMode.KEYMAPS_ONLY
+            val result1 = HelixConfigLoader.loadConfig(configFile)
+            result1.bindingCount shouldBe 1
+            jp.titze.intellij.helix.settings.HelixEffectiveSettings.getAllOverrides().isEmpty().shouldBeTrue()
+
+            // Mode 2: FULL
+            settings.cliConfigFallbackMode = HelixCliConfigFallbackMode.FULL
+            val result2 = HelixConfigLoader.loadConfig(configFile)
+            result2.bindingCount shouldBe 1
+            jp.titze.intellij.helix.settings.HelixEffectiveSettings.getAllOverrides().isNotEmpty().shouldBeTrue()
+            jp.titze.intellij.helix.settings.HelixEffectiveSettings.lineNumberMode shouldBe HelixLineNumberMode.RELATIVE
+            jp.titze.intellij.helix.settings.HelixEffectiveSettings.scrolloff shouldBe 8
+
+            // Mode 3: DISABLED
+            settings.cliConfigFallbackMode = HelixCliConfigFallbackMode.DISABLED
+            val userHome = System.getProperty("user.home")
+            if (!userHome.isNullOrEmpty()) {
+                HelixConfigWatcher.isMatchingConfigPath("$userHome/.config/helix/config.toml").shouldBeFalse()
+                HelixConfigWatcher.isMatchingConfigPath("$userHome/.config/helix/intellij.toml").shouldBeTrue()
+            }
+        } finally {
+            settings.cliConfigFallbackMode = origMode
+            jp.titze.intellij.helix.settings.HelixEffectiveSettings.clearTomlOverrides()
+            configFile.delete()
+            tempDir.delete()
         }
     }
 

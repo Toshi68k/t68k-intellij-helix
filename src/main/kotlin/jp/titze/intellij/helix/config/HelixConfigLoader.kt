@@ -7,6 +7,7 @@ import com.intellij.openapi.application.PathManager
 import jp.titze.intellij.helix.keymap.HelixCommandRegistry
 import jp.titze.intellij.helix.keymap.HelixKeymapConflictDetector
 import jp.titze.intellij.helix.keymap.HelixKeymapManager
+import jp.titze.intellij.helix.settings.HelixCliConfigFallbackMode
 import jp.titze.intellij.helix.settings.HelixSettings
 import java.io.File
 
@@ -19,7 +20,9 @@ object HelixConfigLoader {
 
     fun isCliConfigFile(file: File): Boolean = file.name.equals(CLI_CONFIG_FILE, ignoreCase = true)
 
-    fun findConfigFile(): File? {
+    fun findConfigFile(
+        fallbackMode: HelixCliConfigFallbackMode = HelixSettings.instance.cliConfigFallbackMode,
+    ): File? {
         val customPath = HelixSettings.instance.customConfigPath.trim()
         if (customPath.isNotEmpty()) {
             val customFile = File(customPath)
@@ -34,9 +37,11 @@ object HelixConfigLoader {
             if (intellijFile.exists() && intellijFile.isFile) {
                 return intellijFile
             }
-            val canonicalFile = File(userHome, ".config/helix/$CLI_CONFIG_FILE")
-            if (canonicalFile.exists() && canonicalFile.isFile) {
-                return canonicalFile
+            if (fallbackMode != HelixCliConfigFallbackMode.DISABLED) {
+                val canonicalFile = File(userHome, ".config/helix/$CLI_CONFIG_FILE")
+                if (canonicalFile.exists() && canonicalFile.isFile) {
+                    return canonicalFile
+                }
             }
         }
 
@@ -45,9 +50,11 @@ object HelixConfigLoader {
         if (ideIntellijFile.exists() && ideIntellijFile.isFile) {
             return ideIntellijFile
         }
-        val ideConfigFile = File(ideConfig, "helix/$CLI_CONFIG_FILE")
-        if (ideConfigFile.exists() && ideConfigFile.isFile) {
-            return ideConfigFile
+        if (fallbackMode != HelixCliConfigFallbackMode.DISABLED) {
+            val ideConfigFile = File(ideConfig, "helix/$CLI_CONFIG_FILE")
+            if (ideConfigFile.exists() && ideConfigFile.isFile) {
+                return ideConfigFile
+            }
         }
 
         return null
@@ -97,7 +104,7 @@ object HelixConfigLoader {
         return am.getAction(trimmed) != null
     }
 
-    fun validateConfig(content: String): HelixConfigResult {
+    fun validateConfig(content: String, allowEditorOptions: Boolean = true): HelixConfigResult {
         val parseResult = HelixTomlParser.parse(content)
         val diagnostics = mutableListOf<String>()
         diagnostics.addAll(parseResult.errors)
@@ -108,14 +115,16 @@ object HelixConfigLoader {
         for (conflict in conflicts) {
             diagnostics.add("Conflict: ${conflict.description}")
         }
-        val overrides = HelixEditorOptions.evaluateTomlOptions(parseResult.editorOptions, null)
-        for (override in overrides.values) {
-            if (override.status == OptionStatus.INVALID) {
-                val msg =
-                    override.diagnosticMessage ?: "Invalid value '${override.rawValueString}' for '${override.key}'"
-                diagnostics.add("Line ${override.lineNumber}: $msg")
-            } else if (override.status == OptionStatus.IGNORED) {
-                diagnostics.add("Line ${override.lineNumber}: Unknown [editor] option '${override.key}' (ignored)")
+        if (allowEditorOptions) {
+            val overrides = HelixEditorOptions.evaluateTomlOptions(parseResult.editorOptions, null)
+            for (override in overrides.values) {
+                if (override.status == OptionStatus.INVALID) {
+                    val msg =
+                        override.diagnosticMessage ?: "Invalid value '${override.rawValueString}' for '${override.key}'"
+                    diagnostics.add("Line ${override.lineNumber}: $msg")
+                } else if (override.status == OptionStatus.IGNORED) {
+                    diagnostics.add("Line ${override.lineNumber}: Unknown [editor] option '${override.key}' (ignored)")
+                }
             }
         }
         return HelixConfigResult(null, parseResult.bindings.size, diagnostics)
@@ -152,11 +161,17 @@ object HelixConfigLoader {
             return HelixConfigResult(file, 0, listOf("Failed to read file: ${ex.message}"))
         }
 
-        val validated = validateConfig(content)
+        val shouldApplyEditorOptions = !isCliConfigFile(file) ||
+            HelixSettings.instance.cliConfigFallbackMode == HelixCliConfigFallbackMode.FULL
+        val validated = validateConfig(content, allowEditorOptions = shouldApplyEditorOptions)
         HelixKeymapManager.resetToDefaults()
 
         val parseResult = HelixTomlParser.parse(content)
-        val overrides = HelixEditorOptions.evaluateTomlOptions(parseResult.editorOptions, file)
+        val overrides = if (shouldApplyEditorOptions) {
+            HelixEditorOptions.evaluateTomlOptions(parseResult.editorOptions, file)
+        } else {
+            emptyMap()
+        }
         jp.titze.intellij.helix.settings.HelixEffectiveSettings.setTomlOverrides(overrides)
         jp.titze.intellij.helix.settings.HelixEffectiveSettings.applyAllToAllEditors()
         jp.titze.intellij.helix.editor.HelixEditorEligibility.refreshAllEditors()
