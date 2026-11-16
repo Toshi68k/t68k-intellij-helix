@@ -3,6 +3,10 @@
 
 package jp.titze.intellij.helix.state
 
+import com.intellij.injected.editor.EditorWindow
+import com.intellij.openapi.Disposable
+import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.editor.CaretVisualAttributes
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.colors.EditorColors
@@ -25,34 +29,67 @@ object HelixStateManager {
     const val THICKNESS_UNDERLINE = 0.20f
     const val THICKNESS_HIDDEN = 0.0f
 
-    fun get(editor: Editor): HelixEditorState? = editor.getUserData(HELIX_STATE_KEY)
+    fun resolveHostEditor(editor: Editor): Editor {
+        var cur = editor
+        while (cur is EditorWindow) {
+            cur = cur.delegate
+        }
+        return cur
+    }
+
+    fun get(editor: Editor): HelixEditorState? = resolveHostEditor(editor).getUserData(HELIX_STATE_KEY)
 
     fun getOrCreate(editor: Editor): HelixEditorState {
-        var state = editor.getUserData(HELIX_STATE_KEY)
+        val hostEditor = resolveHostEditor(editor)
+        var state = hostEditor.getUserData(HELIX_STATE_KEY)
         if (state == null) {
-            state = HelixEditorState(editor)
-            editor.putUserData(HELIX_STATE_KEY, state)
-            state.addListener { updateCursor(editor, it.mode) }
-            editor.caretModel.addCaretListener(object : CaretListener {
-                override fun caretAdded(event: CaretEvent) {
-                    if (editor.isDisposed) return
-                    val s = get(editor) ?: return
-                    updateCursor(editor, s.mode)
+            synchronized(hostEditor) {
+                state = hostEditor.getUserData(HELIX_STATE_KEY)
+                if (state == null) {
+                    val newState = HelixEditorState(hostEditor)
+                    hostEditor.putUserData(HELIX_STATE_KEY, newState)
+                    newState.addListener { updateCursor(hostEditor, it.mode) }
+                    val listener = object : CaretListener {
+                        override fun caretAdded(event: CaretEvent) {
+                            if (hostEditor.isDisposed) return
+                            val s = get(hostEditor) ?: return
+                            updateCursor(hostEditor, s.mode)
+                        }
+                    }
+                    val disposable = hostEditor as? Disposable
+                    if (disposable != null) {
+                        hostEditor.caretModel.addCaretListener(listener, disposable)
+                    } else {
+                        hostEditor.caretModel.addCaretListener(listener)
+                    }
+                    updateCursor(hostEditor, newState.mode)
+                    state = newState
                 }
-            })
-            updateCursor(editor, state.mode)
+            }
         }
-        return state
+        return state!!
     }
 
     fun updateCursor(editor: Editor, mode: HelixMode) {
+        val hostEditor = resolveHostEditor(editor)
+        val app = ApplicationManager.getApplication()
+        if (app != null && !app.isDispatchThread) {
+            app.invokeLater({
+                if (!hostEditor.isDisposed) {
+                    updateCursor(hostEditor, mode)
+                }
+            }, ModalityState.any())
+            return
+        }
+
+        if (hostEditor.isDisposed) return
         val shape = when (mode) {
             HelixMode.NORMAL -> HelixEffectiveSettings.cursorShapeNormal
             HelixMode.INSERT -> HelixEffectiveSettings.cursorShapeInsert
             HelixMode.SELECT -> HelixEffectiveSettings.cursorShapeSelect
         }
 
-        editor.settings.isBlockCursor = (shape == HelixCursorShape.BLOCK)
+        hostEditor.settings.isBlockCursor = (shape == HelixCursorShape.BLOCK)
 
         val tintColor = if (HelixEffectiveSettings.cursorTint) {
             when (mode) {
@@ -84,14 +121,14 @@ object HelixStateManager {
             thickness,
         )
 
-        editor.caretModel.allCarets.forEach { caret ->
+        hostEditor.caretModel.allCarets.forEach { caret ->
             caret.visualAttributes = visualAttributes
         }
 
-        updateCursorColor(editor, mode)
-        HelixLineNumberManager.applyLineNumbers(editor, mode)
-        if (!editor.isDisposed) {
-            editor.contentComponent.repaint()
+        updateCursorColor(hostEditor, mode)
+        HelixLineNumberManager.applyLineNumbers(hostEditor, mode)
+        if (!hostEditor.isDisposed) {
+            hostEditor.contentComponent.repaint()
         }
     }
 

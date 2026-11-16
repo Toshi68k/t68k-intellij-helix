@@ -221,8 +221,8 @@ class HelixConfigPathPanel {
                 ?: HelixSettings.instance.cliConfigFallbackMode
             val file = if (target.isNotEmpty()) {
                 File(
-                target,
-            )
+                    target,
+                )
             } else {
                 HelixConfigLoader.findConfigFile(selectedMode) ?: return
             }

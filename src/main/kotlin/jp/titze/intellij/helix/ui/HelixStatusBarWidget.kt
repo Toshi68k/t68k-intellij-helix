@@ -3,6 +3,8 @@
 
 package jp.titze.intellij.helix.ui
 
+import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.event.CaretEvent
 import com.intellij.openapi.editor.event.CaretListener
@@ -317,12 +319,20 @@ class HelixStatusBarWidget(private val project: Project) : CustomStatusBarWidget
         }
 
         fun updateAllWidgets() {
-            ProjectManager.getInstance().openProjects.forEach { project ->
-                if (!project.isDisposed) {
-                    val statusBar = WindowManager.getInstance().getStatusBar(project)
-                    val widget = statusBar?.getWidget(WIDGET_ID) as? HelixStatusBarWidget
-                    widget?.updateComponent()
+            val update = {
+                ProjectManager.getInstance().openProjects.forEach { project ->
+                    if (!project.isDisposed) {
+                        val statusBar = WindowManager.getInstance().getStatusBar(project)
+                        val widget = statusBar?.getWidget(WIDGET_ID) as? HelixStatusBarWidget
+                        widget?.updateComponent()
+                    }
                 }
+            }
+            val app = ApplicationManager.getApplication()
+            if (app != null && !app.isDispatchThread) {
+                app.invokeLater(update, ModalityState.any())
+            } else {
+                update()
             }
         }
     }
