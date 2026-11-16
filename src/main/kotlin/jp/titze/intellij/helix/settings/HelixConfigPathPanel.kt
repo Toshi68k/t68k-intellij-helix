@@ -5,7 +5,9 @@ package jp.titze.intellij.helix.settings
 
 import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory
 import com.intellij.openapi.project.ProjectManager
+import com.intellij.openapi.ui.ComboBox
 import com.intellij.openapi.ui.TextFieldWithBrowseButton
+import com.intellij.ui.SimpleListCellRenderer
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBTextField
 import com.intellij.util.ui.JBUI
@@ -20,6 +22,7 @@ import java.io.File
 import javax.swing.Box
 import javax.swing.BoxLayout
 import javax.swing.JButton
+import javax.swing.JList
 import javax.swing.JPanel
 import javax.swing.table.DefaultTableModel
 
@@ -29,6 +32,20 @@ import javax.swing.table.DefaultTableModel
 class HelixConfigPathPanel {
 
     val pathField = TextFieldWithBrowseButton()
+    val fallbackModeComboBox = ComboBox(HelixCliConfigFallbackMode.entries.toTypedArray()).apply {
+        renderer = object : SimpleListCellRenderer<HelixCliConfigFallbackMode>() {
+            override fun customize(
+                list: JList<out HelixCliConfigFallbackMode>,
+                value: HelixCliConfigFallbackMode?,
+                index: Int,
+                selected: Boolean,
+                hasFocus: Boolean,
+            ) {
+                text = value?.displayName.orEmpty()
+            }
+        }
+        addActionListener { refreshStatus() }
+    }
     val statusLabel = JBLabel()
     val warningLabel = JBLabel()
     val panel: JPanel = JPanel(BorderLayout(0, 8))
@@ -130,6 +147,32 @@ class HelixConfigPathPanel {
         contentBox.layout = BoxLayout(contentBox, BoxLayout.Y_AXIS)
         contentBox.border = JBUI.Borders.emptyLeft(12)
 
+        fallbackModeComboBox.selectedItem = HelixSettings.instance.cliConfigFallbackMode
+
+        val fallbackPanel = JPanel().apply {
+            layout = BoxLayout(this, BoxLayout.Y_AXIS)
+            alignmentX = java.awt.Component.LEFT_ALIGNMENT
+        }
+        val fallbackLabel = JBLabel(HelixBundle.message("settings.config.fallback.label")).apply {
+            font = JBUI.Fonts.label().asBold()
+            alignmentX = java.awt.Component.LEFT_ALIGNMENT
+        }
+        fallbackModeComboBox.alignmentX = java.awt.Component.LEFT_ALIGNMENT
+        fallbackModeComboBox.maximumSize = Dimension(
+            Int.MAX_VALUE,
+            fallbackModeComboBox.preferredSize.height,
+        )
+        val fallbackHelp = JBLabel(HelixBundle.message("settings.config.fallback.help")).apply {
+            font = JBUI.Fonts.smallFont()
+            foreground = UIUtil.getContextHelpForeground()
+            alignmentX = java.awt.Component.LEFT_ALIGNMENT
+        }
+        fallbackPanel.add(fallbackLabel)
+        fallbackPanel.add(Box.createVerticalStrut(JBUI.scale(4)))
+        fallbackPanel.add(fallbackModeComboBox)
+        fallbackPanel.add(Box.createVerticalStrut(JBUI.scale(4)))
+        fallbackPanel.add(fallbackHelp)
+
         contentBox.add(pathField)
         contentBox.add(Box.createVerticalStrut(JBUI.scale(8)))
         contentBox.add(buttonPanel)
@@ -139,6 +182,8 @@ class HelixConfigPathPanel {
         contentBox.add(warningLabel)
         contentBox.add(Box.createVerticalStrut(JBUI.scale(8)))
         contentBox.add(helpLabel)
+        contentBox.add(Box.createVerticalStrut(JBUI.scale(16)))
+        contentBox.add(fallbackPanel)
         contentBox.add(Box.createVerticalStrut(JBUI.scale(16)))
         contentBox.add(overridesTitle)
         contentBox.add(Box.createVerticalStrut(JBUI.scale(8)))
@@ -172,7 +217,19 @@ class HelixConfigPathPanel {
         val row = overridesTable.selectedRow
         if (row != -1) {
             val target = pathField.text.trim()
-            val file = if (target.isNotEmpty()) File(target) else HelixConfigLoader.findConfigFile() ?: return
+            val selectedMode = fallbackModeComboBox.selectedItem as? HelixCliConfigFallbackMode
+                ?: HelixSettings.instance.cliConfigFallbackMode
+            val file = if (target.isNotEmpty()) {
+                File(
+                target,
+            )
+            } else {
+                HelixConfigLoader.findConfigFile(selectedMode) ?: return
+            }
+            val isCli = HelixConfigLoader.isCliConfigFile(file)
+            val shouldApplyEditor = !isCli || selectedMode == HelixCliConfigFallbackMode.FULL
+            if (!shouldApplyEditor) return
+
             val overrides = if (file.exists()) {
                 val parseResult = try {
                     jp.titze.intellij.helix.config.HelixTomlParser.parse(file.readText())
@@ -210,7 +267,9 @@ class HelixConfigPathPanel {
 
     fun refreshStatus() {
         val target = pathField.text.trim()
-        val file = if (target.isNotEmpty()) File(target) else HelixConfigLoader.findConfigFile()
+        val selectedMode = fallbackModeComboBox.selectedItem as? HelixCliConfigFallbackMode
+            ?: HelixSettings.instance.cliConfigFallbackMode
+        val file = if (target.isNotEmpty()) File(target) else HelixConfigLoader.findConfigFile(selectedMode)
         if (file == null || !file.exists()) {
             val defaultTarget = HelixConfigLoader.getTargetConfigFile().absolutePath
             statusLabel.text = HelixBundle.message("settings.config.status.default", defaultTarget)
@@ -220,15 +279,23 @@ class HelixConfigPathPanel {
             return
         }
 
-        if (HelixConfigLoader.isCliConfigFile(file)) {
-            warningLabel.text = HelixBundle.message("settings.config.warning.cliConfig", file.name)
+        val isCli = HelixConfigLoader.isCliConfigFile(file)
+        val shouldApplyEditor = !isCli || selectedMode == HelixCliConfigFallbackMode.FULL
+
+        if (isCli) {
+            val warningMsg = if (selectedMode == HelixCliConfigFallbackMode.KEYMAPS_ONLY) {
+                HelixBundle.message("settings.config.warning.cliConfigKeymapsOnly", file.name)
+            } else {
+                HelixBundle.message("settings.config.warning.cliConfig", file.name)
+            }
+            warningLabel.text = warningMsg
             warningLabel.isVisible = true
         } else {
             warningLabel.isVisible = false
         }
 
         val result = try {
-            HelixConfigLoader.validateConfig(file.readText())
+            HelixConfigLoader.validateConfig(file.readText(), allowEditorOptions = shouldApplyEditor)
         } catch (e: Exception) {
             statusLabel.text = HelixBundle.message("settings.config.status.error", e.message ?: "read error")
             statusLabel.foreground = com.intellij.util.ui.NamedColorUtil.getErrorForeground()
@@ -241,13 +308,17 @@ class HelixConfigPathPanel {
         } catch (_: Exception) {
             null
         }
-        val currentOverrides = if (parseResult != null) {
-            jp.titze.intellij.helix.config.HelixEditorOptions
-                .evaluateTomlOptions(parseResult.editorOptions, file)
-                .values
-                .toList()
+        val currentOverrides = if (shouldApplyEditor) {
+            if (parseResult != null) {
+                jp.titze.intellij.helix.config.HelixEditorOptions
+                    .evaluateTomlOptions(parseResult.editorOptions, file)
+                    .values
+                    .toList()
+            } else {
+                HelixEffectiveSettings.getAllOverrides()
+            }
         } else {
-            HelixEffectiveSettings.getAllOverrides()
+            emptyList()
         }
         overridesTableModel.rowCount = 0
         for (override in currentOverrides) {
@@ -275,13 +346,23 @@ class HelixConfigPathPanel {
         }
     }
 
-    fun isModified(settings: HelixSettings): Boolean = pathField.text.trim() != settings.customConfigPath.trim()
+    fun isModified(settings: HelixSettings): Boolean {
+        val pathModified = pathField.text.trim() != settings.customConfigPath.trim()
+        val modeModified = fallbackModeComboBox.selectedItem != settings.cliConfigFallbackMode
+        return pathModified || modeModified
+    }
 
     fun apply(settings: HelixSettings) {
         val newPath = pathField.text.trim()
-        val changed = newPath != settings.customConfigPath.trim()
+        val pathChanged = newPath != settings.customConfigPath.trim()
         settings.customConfigPath = newPath
-        if (changed) {
+
+        val newMode = fallbackModeComboBox.selectedItem as? HelixCliConfigFallbackMode
+            ?: HelixCliConfigFallbackMode.KEYMAPS_ONLY
+        val modeChanged = newMode != settings.cliConfigFallbackMode
+        settings.cliConfigFallbackMode = newMode
+
+        if (pathChanged || modeChanged) {
             val result = HelixConfigLoader.loadConfig()
             HelixConfigWatcher.notifyReloadResult(result)
         }
@@ -290,6 +371,7 @@ class HelixConfigPathPanel {
 
     fun reset(settings: HelixSettings) {
         pathField.text = settings.customConfigPath
+        fallbackModeComboBox.selectedItem = settings.cliConfigFallbackMode
         refreshStatus()
     }
 }

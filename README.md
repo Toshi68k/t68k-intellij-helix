@@ -820,6 +820,10 @@ Dedicated full-screen configurable under **Helix Keymap &rarr; Keybindings** fea
 ##### Sub-Page 2: Configuration (TOML)
 Dedicated configurable under **Helix Keymap &rarr; Configuration (TOML)**:
 - Configure custom file paths (`intellij.toml` / `config.toml`) with file chooser.
+- **CLI config.toml Fallback Policy**: Control how `~/.config/helix/config.toml` is handled when `intellij.toml` is absent:
+  - **Keymaps Only (Default)**: Inherits custom keybindings without applying `[editor]` options, preventing CLI dotfiles from overriding IntelliJ settings or locking GUI controls.
+  - **Full**: Inherits both keybindings and `[editor]` options from `config.toml`.
+  - **Disabled**: Completely disables auto-reading `config.toml` (only uses `intellij.toml` or custom path).
 - Inspect live diagnostics: active binding count, syntax error reporting, and CLI compatibility warnings.
 - **Active Editor Overrides**: Live table displaying all options overridden from TOML, active value, source file:line, and status (`Applied`, `Not applicable`, `Unsupported`, `Invalid`, or `Ignored`). Double-clicking any row navigates directly to that line in your config file.
 - Quick actions: **Open in Editor**, **Reload Keymap**, and **Reset to Default**.
@@ -831,7 +835,7 @@ Helix Keymap supports authentic Helix-style key rebinding with safe separation b
 - **Primary IDE Target (`~/.config/helix/intellij.toml`)**: Dedicated to IntelliJ Helix. It protects your CLI Helix setup
   from parse errors while allowing you to freely bind native IntelliJ actions via `:action <ActionId>`.
 - **CLI Fallback (`~/.config/helix/config.toml`)**: If `intellij.toml` does not exist, the plugin reads standard
-  keybindings from your terminal `config.toml`.
+  keybindings from your terminal `config.toml` according to your chosen **CLI config.toml Fallback Policy** (defaults to Keymaps Only).
 - **Custom Path**: Configurable under **Settings &rarr; Tools &rarr; Helix Keymap**. If pointed to `config.toml`,
   a safety warning alerts you that `:action` bindings may affect CLI Helix.
 

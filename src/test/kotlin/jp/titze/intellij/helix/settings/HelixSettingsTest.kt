@@ -40,6 +40,7 @@ class HelixSettingsTest : BasePlatformTestCase() {
         settings.searchSmartCase = true
         settings.searchWrapAround = true
         settings.jumpLabelAlphabet = "jfkdlsaurieowpqnvmcxz"
+        settings.cliConfigFallbackMode = HelixCliConfigFallbackMode.KEYMAPS_ONLY
         HelixEffectiveSettings.clearAllOverrides()
         jp.titze.intellij.helix.ui.HelixPromptHistory.clear()
         super.tearDown()
@@ -64,6 +65,7 @@ class HelixSettingsTest : BasePlatformTestCase() {
         settings.searchSmartCase.shouldBeTrue()
         settings.searchWrapAround.shouldBeTrue()
         settings.jumpLabelAlphabet shouldBe "jfkdlsaurieowpqnvmcxz"
+        settings.cliConfigFallbackMode shouldBe HelixCliConfigFallbackMode.KEYMAPS_ONLY
     }
 
     fun testLineNumberModePersistence() {
@@ -506,5 +508,35 @@ class HelixSettingsTest : BasePlatformTestCase() {
         appearancePanel.lineNumberNotice?.isVisible?.shouldBeFalse()
         behaviorPanel.searchSmartCaseCheckBox?.isEnabled?.shouldBeTrue()
         behaviorPanel.searchSmartCaseNotice?.isVisible?.shouldBeFalse()
+    }
+
+    fun testCliConfigFallbackModePersistence() {
+        val settings = HelixSettings.instance
+        settings.cliConfigFallbackMode = HelixCliConfigFallbackMode.FULL
+        settings.cliConfigFallbackMode shouldBe HelixCliConfigFallbackMode.FULL
+
+        settings.cliConfigFallbackMode = HelixCliConfigFallbackMode.DISABLED
+        settings.cliConfigFallbackMode shouldBe HelixCliConfigFallbackMode.DISABLED
+
+        settings.cliConfigFallbackMode = HelixCliConfigFallbackMode.KEYMAPS_ONLY
+        settings.cliConfigFallbackMode shouldBe HelixCliConfigFallbackMode.KEYMAPS_ONLY
+    }
+
+    fun testHelixConfigPathPanelFallbackMode() {
+        val panel = HelixConfigPathPanel()
+        val settings = HelixSettings.instance
+        panel.reset(settings)
+        panel.isModified(settings).shouldBeFalse()
+
+        panel.fallbackModeComboBox.selectedItem = HelixCliConfigFallbackMode.DISABLED
+        panel.isModified(settings).shouldBeTrue()
+
+        panel.apply(settings)
+        settings.cliConfigFallbackMode shouldBe HelixCliConfigFallbackMode.DISABLED
+        panel.isModified(settings).shouldBeFalse()
+
+        panel.fallbackModeComboBox.selectedItem = HelixCliConfigFallbackMode.KEYMAPS_ONLY
+        panel.apply(settings)
+        settings.cliConfigFallbackMode shouldBe HelixCliConfigFallbackMode.KEYMAPS_ONLY
     }
 }

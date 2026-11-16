@@ -10,6 +10,7 @@ import com.intellij.openapi.vfs.newvfs.BulkFileListener
 import com.intellij.openapi.vfs.newvfs.events.VFileEvent
 import com.intellij.openapi.wm.WindowManager
 import jp.titze.intellij.helix.HelixBundle
+import jp.titze.intellij.helix.settings.HelixCliConfigFallbackMode
 import jp.titze.intellij.helix.settings.HelixSettings
 import java.io.File
 
@@ -85,15 +86,21 @@ class HelixConfigWatcher : BulkFileListener {
             val userHome = System.getProperty("user.home")
             if (userHome.isNullOrEmpty()) return false
             val base = "$userHome/.config/helix"
-            return matchesFile(candidate, "$base/$INTELLIJ_CONFIG_FILE_NAME") ||
-                matchesFile(candidate, "$base/$CONFIG_FILE_NAME")
+            if (matchesFile(candidate, "$base/$INTELLIJ_CONFIG_FILE_NAME")) return true
+            if (HelixSettings.instance.cliConfigFallbackMode != HelixCliConfigFallbackMode.DISABLED) {
+                return matchesFile(candidate, "$base/$CONFIG_FILE_NAME")
+            }
+            return false
         }
 
         private fun matchesIdeConfig(candidate: File): Boolean {
             val ideConfig = PathManager.getConfigPath()
             val base = "$ideConfig/helix"
-            return matchesFile(candidate, "$base/$INTELLIJ_CONFIG_FILE_NAME") ||
-                matchesFile(candidate, "$base/$CONFIG_FILE_NAME")
+            if (matchesFile(candidate, "$base/$INTELLIJ_CONFIG_FILE_NAME")) return true
+            if (HelixSettings.instance.cliConfigFallbackMode != HelixCliConfigFallbackMode.DISABLED) {
+                return matchesFile(candidate, "$base/$CONFIG_FILE_NAME")
+            }
+            return false
         }
 
         private fun matchesFile(candidate: File, targetPath: String): Boolean {
