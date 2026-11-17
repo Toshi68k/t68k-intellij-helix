@@ -11,6 +11,10 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+  checks: write
+
 jobs:
   verify:
     name: Build, Test & Verify Plugin
@@ -45,5 +49,6 @@ jobs:
       - name: Publish test report
         uses: mikepenz/action-junit-report@a16be3a69023e9bd7e748ede768b3282ea7b30ce # v6 (6.7.1)
         if: always()
+        continue-on-error: true
         with:
           report_paths: '**/build/test-results/test/TEST-*.xml'
