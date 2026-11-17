@@ -1,6 +1,7 @@
 name: Build plugin and release to JetBrains Marketplace
 
-on: {}
+on:
+  workflow_dispatch:
 #  push:
 #    tags:
 #      - 'v*'
