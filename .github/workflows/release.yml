@@ -1,19 +1,20 @@
 name: Build plugin and release to JetBrains Marketplace
 
 on:
-  push:
-    tags:
-      - 'v*'
   workflow_dispatch:
-    inputs:
-      tag_name:
-        description: 'Release tag name (e.g. v0.1.0)'
-        required: false
-        type: string
-      hidden:
-        description: 'Publish as hidden release on JetBrains Marketplace'
-        type: boolean
-        default: true
+#  push:
+#    tags:
+#      - 'v*'
+#  workflow_dispatch:
+#    inputs:
+#      tag_name:
+#        description: 'Release tag name (e.g. v0.1.0)'
+#        required: false
+#        type: string
+#      hidden:
+#        description: 'Publish as hidden release on JetBrains Marketplace'
+#        type: boolean
+#        default: true
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
