@@ -6,8 +6,10 @@ package jp.titze.intellij.helix.toolwindow
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import com.intellij.ui.treeStructure.Tree
 import jp.titze.intellij.helix.settings.HelixSettings
+import java.awt.GraphicsEnvironment
 import javax.swing.JPanel
 import javax.swing.JTextField
+import javax.swing.SwingUtilities
 
 class HelixToolWindowGuardTest : BasePlatformTestCase() {
 
@@ -143,23 +145,50 @@ class HelixToolWindowGuardTest : BasePlatformTestCase() {
         settings.toolWindowNavigationEnabled = true
         settings.toolWindowEnabledTargets = setOf("Project")
 
-        val plainDialog = javax.swing.JDialog()
+        val plainDialogPanel = JPanel()
         val dialogTree = Tree()
-        plainDialog.contentPane.add(dialogTree)
-        assertNull(HelixToolWindowGuard.findEligibleTarget(dialogTree, settings))
-        plainDialog.dispose()
+        plainDialogPanel.add(dialogTree)
 
-        val floatingDialog = javax.swing.JDialog()
-        val twContainer = JPanel()
-        twContainer.putClientProperty("ToolWindow.id", "Project")
-        val floatingTree = Tree()
-        twContainer.add(floatingTree)
-        floatingDialog.contentPane.add(twContainer)
+        val originalDetector = HelixToolWindowGuard.isDialogAncestor
+        try {
+            HelixToolWindowGuard.isDialogAncestor = { comp ->
+                SwingUtilities.isDescendingFrom(comp, plainDialogPanel)
+            }
+            assertNull(HelixToolWindowGuard.findEligibleTarget(dialogTree, settings))
 
-        val target = HelixToolWindowGuard.findEligibleTarget(floatingTree, settings)
-        assertNotNull(target)
-        assertEquals(floatingTree, target?.first)
-        assertEquals("Project", target?.second)
-        floatingDialog.dispose()
+            val floatingDialogPanel = JPanel()
+            val twContainer = JPanel()
+            twContainer.putClientProperty("ToolWindow.id", "Project")
+            val floatingTree = Tree()
+            twContainer.add(floatingTree)
+            floatingDialogPanel.add(twContainer)
+
+            HelixToolWindowGuard.isDialogAncestor = { comp ->
+                SwingUtilities.isDescendingFrom(comp, floatingDialogPanel)
+            }
+            val target = HelixToolWindowGuard.findEligibleTarget(floatingTree, settings)
+            assertNotNull(target)
+            assertEquals(floatingTree, target?.first)
+            assertEquals("Project", target?.second)
+        } finally {
+            HelixToolWindowGuard.isDialogAncestor = originalDetector
+        }
+    }
+
+    fun testGuardedInsideRealDialogWhenHeadful() {
+        if (GraphicsEnvironment.isHeadless()) return
+
+        val settings = HelixSettings()
+        settings.toolWindowNavigationEnabled = true
+        settings.toolWindowEnabledTargets = setOf("Project")
+
+        val plainDialog = javax.swing.JDialog()
+        try {
+            val dialogTree = Tree()
+            plainDialog.contentPane.add(dialogTree)
+            assertNull(HelixToolWindowGuard.findEligibleTarget(dialogTree, settings))
+        } finally {
+            plainDialog.dispose()
+        }
     }
 }

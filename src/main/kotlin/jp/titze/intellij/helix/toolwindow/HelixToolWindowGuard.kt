@@ -164,10 +164,14 @@ object HelixToolWindowGuard {
         return null
     }
 
+    internal var isDialogAncestor: (Component) -> Boolean = { component ->
+        SwingUtilities.getWindowAncestor(component) is Dialog
+    }
+
     private fun isInsideDialogOrPopup(component: Component): Boolean {
-        val window = SwingUtilities.getWindowAncestor(component)
-        if (window is Dialog) {
-            val isFloatingToolWindow = window.javaClass.name.contains("FloatingDecorator") ||
+        if (isDialogAncestor(component)) {
+            val window = SwingUtilities.getWindowAncestor(component)
+            val isFloatingToolWindow = (window != null && window.javaClass.name.contains("FloatingDecorator")) ||
                 findToolWindowIdFromAncestors(component) != null
             if (!isFloatingToolWindow) return true
         }
