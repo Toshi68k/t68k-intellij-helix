@@ -105,6 +105,16 @@ class HelixSettingsState {
     var activateInCommitMessage: Boolean = false
     var activateInAiPrompt: Boolean = false
     var activateInOtherEditors: Boolean = false
+    var toolWindowNavigationEnabled: Boolean = false
+    var toolWindowEnabledTargets: MutableSet<String> = mutableSetOf(
+        "Project",
+        "Find",
+        "Version Control",
+        "Commit",
+        "Problems View",
+        "Structure",
+    )
+    var toolWindowOtherEnabled: Boolean = false
     var ctrlKeyOverrides: MutableMap<String, String> = mutableMapOf()
     var customConfigPath: String = ""
     var cliConfigFallbackMode: String = HelixCliConfigFallbackMode.KEYMAPS_ONLY.name
@@ -340,6 +350,24 @@ class HelixSettings : PersistentStateComponent<HelixSettingsState> {
         get() = myState.activateInOtherEditors
         set(value) {
             myState.activateInOtherEditors = value
+        }
+
+    var toolWindowNavigationEnabled: Boolean
+        get() = myState.toolWindowNavigationEnabled
+        set(value) {
+            myState.toolWindowNavigationEnabled = value
+        }
+
+    var toolWindowEnabledTargets: Set<String>
+        get() = myState.toolWindowEnabledTargets
+        set(value) {
+            myState.toolWindowEnabledTargets = value.toMutableSet()
+        }
+
+    var toolWindowOtherEnabled: Boolean
+        get() = myState.toolWindowOtherEnabled
+        set(value) {
+            myState.toolWindowOtherEnabled = value
         }
 
     var ctrlKeyOverrides: Map<String, String>

@@ -104,6 +104,7 @@
     <resource-bundle>messages.HelixBundle</resource-bundle>
 
     <extensions defaultExtensionNs="com.intellij">
+        <postStartupActivity implementation="jp.titze.intellij.helix.editor.HelixStartupActivity"/>
         <editorFactoryListener implementation="jp.titze.intellij.helix.editor.HelixEditorListener"/>
         <statusBarWidgetFactory implementation="jp.titze.intellij.helix.ui.HelixStatusBarWidgetFactory"
                                 id="jp.titze.intellij.helix.status"/>
