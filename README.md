@@ -17,14 +17,16 @@ combining the authentic Helix selection-first workflow with native IntelliJ IDEA
 - **Target IDE**: IntelliJ IDEA 2025.1+ (Community & Ultimate) and JetBrains IDEs
 
 > [!WARNING]
-> **Beta Notice**: I have been using this plugin daily for real work for several weeks; however, it is still considered **beta** software and might contain bugs or incorrect behavior. Feedback and issue reports are warmly welcomed on [GitHub Issues](https://github.com/Toshi68k/t68k-intellij-helix/issues), but please don't flood me with AI slop!
+> **Beta Notice**: I have been using this plugin daily for real work for several weeks; however, it is still considered
+> **beta** software and might contain bugs or incorrect behavior. Feedback and issue reports are warmly welcomed on 
+> [GitHub Issues](https://github.com/Toshi68k/t68k-intellij-helix/issues), but please don't flood me with AI slop!
 
 ---
 
 ## Key Features
 
 - **Selection-First Paradigm**: In Helix, motions first create active selections, and actions operate directly on those
-  selections.
+ selections.
 - **Native Multi-Caret**: All motions and actions natively operate across all active carets simultaneously using
   IntelliJ's `CaretModel` and `SelectionModel`.
 - **Deep IDE Intelligence**: No bespoke reimplementations—all code navigation, symbol search, hover documentation,
@@ -33,7 +35,8 @@ combining the authentic Helix selection-first workflow with native IntelliJ IDEA
     - **Normal** (`NOR`): Block cursor, selection motions, action triggers.
     - **Insert** (`INS`): Standard bar cursor, raw typing delegated to IntelliJ.
     - **Select** (`SEL`): Block cursor, motions extend selections from anchor.
-    - **Per-Mode Cursor Shapes**: Configurable caret shapes per mode (`block`, `bar`, `underline`, `hidden`) via Settings or `[editor.cursor-shape]`.
+    - **Per-Mode Cursor Shapes**: Configurable caret shapes per mode (`block`, `bar`, `underline`, `hidden`) via Settings
+      or `[editor.cursor-shape]`.
     - **Status Bar Widget**: Displays active mode in a color-coded pill (`NOR` in Indigo/Cyan, `INS` in Emerald
       Green, `SEL` in Purple/Magenta when `color-modes = true`), macro recording indicator (`[REC]`),
       multi-caret count (`3 sel`), active register (`reg: a`), and pending key chords (e.g., `NOR 3 sel reg: a 2 g-`).
@@ -48,7 +51,8 @@ combining the authentic Helix selection-first workflow with native IntelliJ IDEA
   `[editor]` configuration via `~/.config/helix/intellij.toml` (or fallback `~/.config/helix/config.toml` / custom path).
   Dedicated `intellij.toml` protects your CLI Helix setup while supporting direct IntelliJ actions (`:action <ActionId>`),
   multi-command macros, live editor option overrides (`scrolloff`, `cursorline`, `rulers`, `line-number`, `color-modes`,
-  `cursor-shape`, `search.smart-case`, `soft-wrap`, `whitespace`, etc.), and automatic live reload on save without restarting the IDE.
+  `cursor-shape`, `search.smart-case`, `soft-wrap`, `whitespace`, etc.), and automatic live reload on save without 
+  restarting the IDE.
 - **Dynamic Which-Key Menus**: Which-Key hints automatically adapt to user keybindings and chord overlays in real time.
 
 ---
@@ -72,7 +76,10 @@ combining the authentic Helix selection-first workflow with native IntelliJ IDEA
 
 ## Compatibility Note
 
-Helix operates as a complete modal editing environment. Running **IdeaVim** concurrently creates severe key interception conflicts. This plugin declares an incompatibility with IdeaVim (`<incompatible-with>IdeaVIM</incompatible-with>`). Please disable or uninstall IdeaVim prior to enabling Helix Keymap.
+Helix operates as a complete modal editing environment. Running **IdeaVim** concurrently creates severe key interception
+conflicts. This plugin declares an incompatibility with IdeaVim (`<incompatible-with>IdeaVIM</incompatible-with>`). 
+
+> **IMPORTANT**: Please disable or uninstall IdeaVim prior to enabling Helix Keymap.
 
 ---
 
@@ -87,7 +94,46 @@ By default, Helix is active in all primary code editors and diff viewers. To pre
 - **VCS Commit Message Editors**: Inactive by default (opt-in via settings).
 - **Other Editors**: Inactive by default (opt-in via settings).
 
-You can also toggle Helix globally on or off at any time by executing `:toggle-helix` in the Command Palette (`:`) or invoking the action `Helix: Toggle Helix Mode`. When Helix is toggled off, the status bar widget displays `OFF`.
+You can also toggle Helix globally on or off at any time by executing `:toggle-helix` in the Command Palette (`:`) or
+invoking the action `Helix: Toggle Helix Mode`. When Helix is toggled off, the status bar widget displays `OFF`.
+
+---
+
+## Tool Windows Navigation (Experimental)
+
+Helix Keymap provides modal keyboard navigation for trees, lists, and tables inside IntelliJ tool windows, eliminating
+the need to reach for arrow keys once you open the Project explorer, VCS log, or Find results.
+
+> [!NOTE]
+> **Disabled by default**: To preserve IntelliJ's traditional type-to-search muscle memory, this feature is marked
+> **Experimental** and must be explicitly enabled under 
+> **Settings &rarr; Tools &rarr; Helix Keymap &rarr; General & Scope**.
+
+### Key Translations
+
+| Helix Key           | Native Action     | Tree Behavior                            | List / Table Behavior                |
+|---------------------|-------------------|------------------------------------------|--------------------------------------|
+| `j` / `k`           | `↓` / `↑`         | Move down / up one row                   | Move down / up one row               |
+| `h`                 | `←`               | Collapse node or jump to parent          | Swallow (pass-through)               |
+| `l`                 | `→`               | Expand node or jump to first child       | Swallow (pass-through)               |
+| `gg`                | `Home`            | Jump to first row                        | Jump to first row                    |
+| `ge`                | `End`             | Jump to last row                         | Jump to last row                     |
+| `Ctrl-d` / `Ctrl-u` | Page half down/up | Scroll half page down / up               | Scroll half page down / up           |
+| `Ctrl-f` / `Ctrl-b` | PageDown / PageUp | Scroll full page down / up               | Scroll full page down / up           |
+| `o` / `Enter`       | `Enter`           | Open or execute default action           | Open or execute default action       |
+| `[count]`           | Repeat            | Multiplies navigation (e.g. `5j`, `12k`) | Multiplies navigation                |
+| `/`                 | Speed Search      | Opens native IntelliJ speed search       | Opens native IntelliJ speed search   |
+| `n` / `N`           | Next / Prev match | Jump to next / previous search match     | Jump to next / previous search match |
+| `Esc`               | Native Esc        | Returns focus to the active editor       | Returns focus to the active editor   |
+
+### Safety Guards & Fail-Open Design
+- **Text Inputs & Inline Editing**: Text fields (such as VCS filter inputs, Find query bars, and inline file renames)
+  automatically bypass modal navigation and accept raw typing.
+- **Speed Search Active**: While speed search is open, all keystrokes pass through natively for query typing and match 
+  selection.
+- **Dialogs & Popups**: General dialogs and popups pass through natively.
+- **Configurable Targets**: Enable or disable per target window (Project, Find/Usages, VCS, Problems, Structure, 
+  Services/Run, Debugger, Other).
 
 ---
 
@@ -97,9 +143,12 @@ Helix relies on several `Ctrl` chords for navigation (`Ctrl-d`, `Ctrl-u`, `Ctrl-
 
 - **macOS**: All `Ctrl` chords default to **Helix** in both Normal and Insert modes.
 - **Windows & Linux**:
-  - **Normal Mode**: `Ctrl-c` (toggle line comment), `Ctrl-s` (save jump to jumplist), and standard Helix motions (`Ctrl-d`, `Ctrl-u`, `Ctrl-f`, `Ctrl-b`, `Ctrl-o`, `Ctrl-i`, `Ctrl-w`) are routed to **Helix**.
-  - **Insert Mode**: Shortcuts default to the **IDE** so typing in Insert mode preserves native conventions (such as `Ctrl-c` copy, `Ctrl-v` paste, `Ctrl-s` save file, `Ctrl-a` select all).
-- **Customizable**: You can customize ownership for every single `Ctrl` key individually in both Normal and Insert modes under **Settings &rarr; Tools &rarr; Helix Keymap &rarr; Ctrl Key Handling**.
+  - **Normal Mode**: `Ctrl-c` (toggle line comment), `Ctrl-s` (save jump to jumplist), and standard Helix motions 
+    (`Ctrl-d`, `Ctrl-u`, `Ctrl-f`, `Ctrl-b`, `Ctrl-o`, `Ctrl-i`, `Ctrl-w`) are routed to **Helix**.
+  - **Insert Mode**: Shortcuts default to the **IDE** so typing in Insert mode preserves native conventions (such as 
+    `Ctrl-c` copy, `Ctrl-v` paste, `Ctrl-s` save file, `Ctrl-a` select all).
+- **Customizable**: You can customize ownership for every single `Ctrl` key individually in both Normal and Insert modes 
+  under **Settings &rarr; Tools &rarr; Helix Keymap &rarr; Ctrl Key Handling**.
 
 ---
 
@@ -153,7 +202,9 @@ Helix relies on several `Ctrl` chords for navigation (`Ctrl-d`, `Ctrl-u`, `Ctrl-
 
 #### Numeric Count Prefixes (`[count]`)
 
-Helix supports prefixing motions, selections, and editing commands with numbers (`1`–`9` followed by digits) to repeat them $N$ times. Active pending counts are shown in the status bar widget (e.g. `NOR 5`) and can be cancelled with <kbd>Esc</kbd>.
+Helix supports prefixing motions, selections, and editing commands with numbers (`1`–`9` followed by digits) to repeat
+them $N$ times. Active pending counts are shown in the status bar widget (e.g. `NOR 5`) and can be cancelled with 
+<kbd>Esc</kbd>.
 
 | Key / Sequence        | Target Command                                | Description                                                    |
 |-----------------------|-----------------------------------------------|----------------------------------------------------------------|
@@ -787,32 +838,49 @@ Organized into 3 dedicated tabs for core editor preferences:
 
 - **Tab 1: General & Scope**:
   - **Master Enable**: Toggle Helix modal editing across the IDE.
-  - **Editor Environments**: Configure active scopes for Main text editors, Diff viewers, Consoles, Commit messages, and Other editors.
+  - **Editor Environments**: Configure active scopes for Main text editors, Diff viewers, Consoles, Commit messages, and
+    Other editors.
   - **System Clipboard**: Toggle synchronization of system clipboard with the default `"` register.
-  - **Reset to Normal Mode on Tab Switch** *(default: enabled)*: Ensures each tab starts in Normal mode with a block cursor.
+  - **Reset to Normal Mode on Tab Switch** *(default: enabled)*: Ensures each tab starts in Normal mode with a block 
+    cursor.
 
 - **Tab 2: Appearance & UI**:
-  - **Color Theme & Mode Colors**: Choose between Sync with IDE, Dark, or Light themes for all Helix overlays. Independently toggle mode-colored status pills (`color-modes = true`) and mode cursor tinting (`cursor-tint = true`).
-  - **Per-Mode Cursor Shapes (`cursor-shape`)**: Configure caret shapes individually for Normal, Insert, and Select modes (**Block**, **Bar**, **Underline**, **Hidden**). Mode changes dynamically update caret visual attributes across single and multi-caret selections.
-  - **Gutter Line Numbers (`line-number`)**: Choose between **Use IDE Default**, **Absolute**, **Relative** (distance from cursor line), **Hybrid** (absolute on current line, relative on others), and **Smart** (relative in Normal/Select mode, automatic absolute fallback in Insert mode). Also toggled via `:toggle-relative-line-numbers` or `:set line-number relative|smart|hybrid|absolute|off`.
-  - **Which-Key Chord Menus**: Enable or disable Which-Key chord popups, choose hint display style (Helix command names vs IntelliJ Action IDs), and configure column layout (3 columns compact vs 2 columns classic).
-  - **Settings Lock & Provenance Notices**: Any setting overridden by active TOML configuration is locked (disabled) with an inline explanation badge (`Set by intellij.toml: <key> = <val> · Open file`) linking directly to the line in your TOML file.
+  - **Color Theme & Mode Colors**: Choose between Sync with IDE, Dark, or Light themes for all Helix overlays. 
+    Independently toggle mode-colored status pills (`color-modes = true`) and mode cursor tinting (`cursor-tint = true`).
+  - **Per-Mode Cursor Shapes (`cursor-shape`)**: Configure caret shapes individually for Normal, Insert, and Select modes
+    (**Block**, **Bar**, **Underline**, **Hidden**). Mode changes dynamically update caret visual attributes across 
+    single and multi-caret selections.
+  - **Gutter Line Numbers (`line-number`)**: Choose between **Use IDE Default**, **Absolute**, **Relative** (distance 
+    from cursor line), **Hybrid** (absolute on current line, relative on others), and **Smart** (relative in 
+    Normal/Select mode, automatic absolute fallback in Insert mode). Also toggled via `:toggle-relative-line-numbers`
+    or `:set line-number relative|smart|hybrid|absolute|off`.
+  - **Which-Key Chord Menus**: Enable or disable Which-Key chord popups, choose hint display style (Helix command names
+    vs IntelliJ Action IDs), and configure column layout (3 columns compact vs 2 columns classic).
+  - **Settings Lock & Provenance Notices**: Any setting overridden by active TOML configuration is locked (disabled) with
+    an inline explanation badge (`Set by intellij.toml: <key> = <val> · Open file`) linking directly to the line in your 
+    TOML file.
 
 - **Tab 3: Behavior & Navigation**:
-  - **Line Navigation (Vertical Movement)** *(default: Stock Helix)*: Toggle between **Stock Helix** (`j`/`k` move visual screen lines, `gj`/`gk` jump physical document lines) and **Vim Standard** (`j`/`k` move physical lines, `gj`/`gk` move visual lines). Also toggled via `:toggle-line-nav`.
+  - **Line Navigation (Vertical Movement)** *(default: Stock Helix)*: Toggle between **Stock Helix** (`j`/`k` move
+    visual screen lines, `gj`/`gk` jump physical document lines) and **Vim Standard** (`j`/`k` move physical lines,
+    `gj`/`gk` move visual lines). Also toggled via `:toggle-line-nav`.
   - **Search & Selection Prompt UI**: Toggle between Stock Helix inline bottom bar and Popup dialog.
-  - **Search Options (`search.smart-case`, `search.wrap-around`)**: Configure case sensitivity (Smart-Case compiles case-insensitively when lowercase, strictly when uppercase) and search wrap-around boundary behavior.
+  - **Search Options (`search.smart-case`, `search.wrap-around`)**: Configure case sensitivity (Smart-Case compiles 
+    case-insensitively when lowercase, strictly when uppercase) and search wrap-around boundary behavior.
   - **Prompt History Capacity**: Set maximum remembered prompt history entries per category (10–500, default: 100).
-  - **Scratch Window Splits** *(default: Interactive)*: Configure whether `<C-w>ns` / `<C-w>nv` prompts for file language (`NewScratchFile`) or opens an instant plain-text buffer (`NewScratchBuffer`).
+  - **Scratch Window Splits** *(default: Interactive)*: Configure whether `<C-w>ns` / `<C-w>nv` prompts for file
+    language (`NewScratchFile`) or opens an instant plain-text buffer (`NewScratchBuffer`).
   - **Jump List Capacity**: Set maximum recorded jump entries (10–1000).
 
 ##### Sub-Page 1: Keybindings (Visual Keymap Explorer & Editor)
 Dedicated full-screen configurable under **Helix Keymap &rarr; Keybindings** featuring two tabs:
 1. **Keymap Browser**:
    - **Visual Editing Actions**: Add, edit, reset, or disable shortcuts via dialogs with non-destructive TOML persistence.
-   - **Mode Selector & Prefix Filter**: Filter table to Normal/Select/Insert modes and specific chord families (`Space`, `Goto`, `View`, `Match`, `Window`, `Bracket`, or `Single Keys`).
+   - **Mode Selector & Prefix Filter**: Filter table to Normal/Select/Insert modes and specific chord families (`Space`,
+     `Goto`, `View`, `Match`, `Window`, `Bracket`, or `Single Keys`).
    - **Live Search & Find by Keystroke**: Real-time filtering and physical keystroke recorder button.
-   - **Trie Conflict & Shadowing Warnings**: Automatic trie analysis flags shadowed chords with `⚠` and diagnostic warnings.
+   - **Trie Conflict & Shadowing Warnings**: Automatic trie analysis flags shadowed chords with `⚠` and diagnostic
+     warnings.
    - **Provenance Badges**: Displays whether each binding is stock `[Default]`, custom, or disabled `[no_op]`.
 2. **Ctrl Keys**:
    - Manage OS-level keystroke ownership for all 26 control keys (`Ctrl+A` through `Ctrl+Z`) in Normal and Insert modes.
@@ -820,12 +888,16 @@ Dedicated full-screen configurable under **Helix Keymap &rarr; Keybindings** fea
 ##### Sub-Page 2: Configuration (TOML)
 Dedicated configurable under **Helix Keymap &rarr; Configuration (TOML)**:
 - Configure custom file paths (`intellij.toml` / `config.toml`) with file chooser.
-- **CLI config.toml Fallback Policy**: Control how `~/.config/helix/config.toml` is handled when `intellij.toml` is absent:
-  - **Keymaps Only (Default)**: Inherits custom keybindings without applying `[editor]` options, preventing CLI dotfiles from overriding IntelliJ settings or locking GUI controls.
+- **CLI config.toml Fallback Policy**: Control how `~/.config/helix/config.toml` is handled when `intellij.toml` is 
+  absent:
+  - **Keymaps Only (Default)**: Inherits custom keybindings without applying `[editor]` options, preventing CLI dotfiles
+    from overriding IntelliJ settings or locking GUI controls.
   - **Full**: Inherits both keybindings and `[editor]` options from `config.toml`.
   - **Disabled**: Completely disables auto-reading `config.toml` (only uses `intellij.toml` or custom path).
 - Inspect live diagnostics: active binding count, syntax error reporting, and CLI compatibility warnings.
-- **Active Editor Overrides**: Live table displaying all options overridden from TOML, active value, source file:line, and status (`Applied`, `Not applicable`, `Unsupported`, `Invalid`, or `Ignored`). Double-clicking any row navigates directly to that line in your config file.
+- **Active Editor Overrides**: Live table displaying all options overridden from TOML, active value, source file:line, 
+  and status (`Applied`, `Not applicable`, `Unsupported`, `Invalid`, or `Ignored`). Double-clicking any row navigates 
+  directly to that line in your config file.
 - Quick actions: **Open in Editor**, **Reload Keymap**, and **Reset to Default**.
 
 #### Keymap Customization (`intellij.toml` / `config.toml`)
@@ -835,13 +907,14 @@ Helix Keymap supports authentic Helix-style key rebinding with safe separation b
 - **Primary IDE Target (`~/.config/helix/intellij.toml`)**: Dedicated to IntelliJ Helix. It protects your CLI Helix setup
   from parse errors while allowing you to freely bind native IntelliJ actions via `:action <ActionId>`.
 - **CLI Fallback (`~/.config/helix/config.toml`)**: If `intellij.toml` does not exist, the plugin reads standard
-  keybindings from your terminal `config.toml` according to your chosen **CLI config.toml Fallback Policy** (defaults to Keymaps Only).
+  keybindings from your terminal `config.toml` according to your chosen **CLI config.toml Fallback Policy** (defaults 
+  to Keymaps Only).
 - **Custom Path**: Configurable under **Settings &rarr; Tools &rarr; Helix Keymap**. If pointed to `config.toml`,
   a safety warning alerts you that `:action` bindings may affect CLI Helix.
 
 Run `:config-open` in the Command Palette (`:`) to immediately open or initialize your `intellij.toml` configuration file.
-Any changes saved to the active config file (inside IntelliJ or externally) are **automatically reloaded live** by the built-in
-VFS file watcher (you can also force a reload at any time via `:config-reload`):
+Any changes saved to the active config file (inside IntelliJ or externally) are **automatically reloaded live** by the 
+built-in VFS file watcher (you can also force a reload at any time via `:config-reload`):
 
 ```toml
 # ~/.config/helix/intellij.toml
@@ -883,18 +956,21 @@ D = "goto_type_definition"
   `file_picker`, `wclose`, `goto_prev_diag`, `surround_add`, `delete_char_backward`, etc.).
 - **Inline Keystroke Macros (`@...`)**: Replay arbitrary sequences of normal-mode keystrokes and text objects using
   standard Helix macro playback syntax (e.g. `"\"" = "@f\"lmi\""` or `C-x = "@miw<A-o>"`). Supports angle-bracket
-  special keys such as `<ret>`, `<esc>`, `<space>`, `<tab>`, `<backspace>`, `<lt>`, `<gt>`, arrow keys, and modifier chords.
+  special keys such as `<ret>`, `<esc>`, `<space>`, `<tab>`, `<backspace>`, `<lt>`, `<gt>`, arrow keys, and modifier 
+  chords.
 - **Deep Sub-Keymaps**: Define multi-level sub-keymaps such as `[keys.normal.m.n]` or `[keys.normal.m.p]` to
   seamlessly extend chord trees (e.g. jumping to and selecting the inner contents of surrounding delimiters).
 - **Macro Lists**: Bind arrays of commands that execute in order (e.g., `["half_page_down", "align_view_center"]`).
 - **Direct IntelliJ Actions**: Execute native JetBrains actions using the `:action <ActionId>` syntax.
 - **Unbinding / No-op**: Map keys to `"no_op"` to disable unwanted default keybindings.
-- **Config Diagnostics**: Live validation in settings alerts you to unrecognized commands, missing files, or syntax issues.
+- **Config Diagnostics**: Live validation in settings alerts you to unrecognized commands, missing files, or syntax 
+  issues.
 - **Dynamic Which-Key**: Custom bindings and chord overlays automatically reflect in Which-Key hint menus.
 
 #### Editor Configuration (`[editor]`)
 
-Helix Keymap supports authentic `[editor]` configuration tables in `intellij.toml` and fallback `config.toml`. Options defined in `[editor]` apply directly to IntelliJ editor windows and Helix runtime settings:
+Helix Keymap supports authentic `[editor]` configuration tables in `intellij.toml` and fallback `config.toml`. Options
+defined in `[editor]` apply directly to IntelliJ editor windows and Helix runtime settings:
 
 ```toml
 # ~/.config/helix/intellij.toml
@@ -958,11 +1034,13 @@ Settings follow a layered, non-destructive precedence model:
 ```
 
 1. **Session Options (`:set-option <key> <val>`)**: Active for the current IDE session only. Wins over TOML configuration.
-2. **TOML Configuration (`[editor]`)**: Sits cleanly on top of Settings UI values without altering persisted XML configuration. Removing an option from TOML restores the saved Settings UI value on the next reload.
+2. **TOML Configuration (`[editor]`)**: Sits cleanly on top of Settings UI values without altering persisted XML 
+  configuration. Removing an option from TOML restores the saved Settings UI value on the next reload.
 3. **Settings UI**: Persisted values configured in IDE Preferences / Settings.
 4. **Built-in Defaults**: Fallback defaults if no overrides are present.
 
-When a setting is overridden by TOML, the corresponding Settings UI control is disabled with an explanatory notice badge (`Set by intellij.toml: <key> = <val> · Open file`) linking directly to the line in your configuration file.
+When a setting is overridden by TOML, the corresponding Settings UI control is disabled with an explanatory notice badge 
+(`Set by intellij.toml: <key> = <val> · Open file`) linking directly to the line in your configuration file.
 
 ---
 

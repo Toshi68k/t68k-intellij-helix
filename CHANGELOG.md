@@ -18,6 +18,16 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- **Tool Windows Navigation (Experimental)**:
+  - Added basic Helix-style keyboard navigation (`j`/`k`, `h`/`l`, `gg`/`ge`, `Ctrl-d`/`Ctrl-u`, `Ctrl-f`/`Ctrl-b`, `o`/`Enter`, count prefixes) to tool window trees, lists, and tables.
+  - Supported targets (configurable in **Settings → Tools → Helix Keymap → General & Scope**): Project / file explorer, Find / Usages, Version Control (Log, Changes, Commit), Problems View, Structure, Services/Run, Debugger (opt-in), and third-party tool windows.
+  - Disabled by default and marked as **Experimental** to protect user muscle memory for IntelliJ's traditional type-to-search.
+  - Native Speed Search integration: press `/` to trigger the tool window's native speed search; remembers the last search query per tool window; `n` and `N` jump to next/previous matches.
+
+## [0.7.2]
+
+### Added
+
 - **CLI `config.toml` Fallback Policy**:
   - Added `cliConfigFallbackMode` option (**Settings | Tools | Helix Keymap | Configuration (TOML)**) supporting a 3-way fallback policy when `intellij.toml` is not present:
     - **Keymaps Only (Default)**: Automatically reads keybindings from `~/.config/helix/config.toml` without applying `[editor]` options, preventing CLI dotfiles from hijacking IntelliJ editor appearance or locking Settings UI controls.

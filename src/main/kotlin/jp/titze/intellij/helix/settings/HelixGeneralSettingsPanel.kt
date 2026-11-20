@@ -25,6 +25,7 @@ class HelixGeneralSettingsPanel {
     private var syncClipboardCheckBox: JBCheckBox? = null
 
     val activationPanel = HelixActivationPanel()
+    val toolWindowSettingsPanel = HelixToolWindowSettingsPanel()
     val panel: JComponent = createMainPanel()
 
     private fun createMainPanel(): JComponent {
@@ -33,6 +34,8 @@ class HelixGeneralSettingsPanel {
         contentBox.border = JBUI.Borders.empty(16)
 
         contentBox.add(createActivationAndScopeGroup())
+        contentBox.add(Box.createVerticalStrut(JBUI.scale(20)))
+        contentBox.add(createToolWindowGroup())
         contentBox.add(Box.createVerticalStrut(JBUI.scale(20)))
         contentBox.add(createEditorBehaviorGroup())
 
@@ -48,6 +51,18 @@ class HelixGeneralSettingsPanel {
         val inner = JPanel(BorderLayout())
         inner.border = JBUI.Borders.emptyLeft(8)
         inner.add(activationPanel.panel, BorderLayout.CENTER)
+
+        group.add(inner, BorderLayout.CENTER)
+        return group
+    }
+
+    private fun createToolWindowGroup(): JPanel {
+        val group = JPanel(BorderLayout(0, 10))
+        group.add(TitledSeparator(HelixBundle.message("settings.toolwindow.title")), BorderLayout.NORTH)
+
+        val inner = JPanel(BorderLayout())
+        inner.border = JBUI.Borders.emptyLeft(8)
+        inner.add(toolWindowSettingsPanel.panel, BorderLayout.CENTER)
 
         group.add(inner, BorderLayout.CENTER)
         return group
@@ -120,13 +135,15 @@ class HelixGeneralSettingsPanel {
 
     fun isModified(settings: HelixSettings): Boolean {
         val activationModified = activationPanel.isModified(settings)
+        val toolWindowModified = toolWindowSettingsPanel.isModified(settings)
         val behaviorModified = resetToNormalCheckBox?.isSelected != settings.resetToNormalOnTabSwitch ||
             syncClipboardCheckBox?.isSelected != settings.syncClipboardWithDefaultRegister
-        return activationModified || behaviorModified
+        return activationModified || toolWindowModified || behaviorModified
     }
 
     fun apply(settings: HelixSettings) {
         activationPanel.apply(settings)
+        toolWindowSettingsPanel.apply(settings)
         resetToNormalCheckBox?.let { settings.resetToNormalOnTabSwitch = it.isSelected }
         syncClipboardCheckBox?.let { settings.syncClipboardWithDefaultRegister = it.isSelected }
         HelixEditorEligibility.refreshAllEditors()
@@ -134,6 +151,7 @@ class HelixGeneralSettingsPanel {
 
     fun reset(settings: HelixSettings) {
         activationPanel.reset(settings)
+        toolWindowSettingsPanel.reset(settings)
         resetToNormalCheckBox?.isSelected = settings.resetToNormalOnTabSwitch
         syncClipboardCheckBox?.isSelected = settings.syncClipboardWithDefaultRegister
     }

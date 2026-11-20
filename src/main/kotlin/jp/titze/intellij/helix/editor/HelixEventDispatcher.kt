@@ -20,6 +20,9 @@ import jp.titze.intellij.helix.keymap.HelixWindowKeymap
 import jp.titze.intellij.helix.motion.HelixMotions
 import jp.titze.intellij.helix.state.HelixEditorState
 import jp.titze.intellij.helix.state.HelixStateManager
+import jp.titze.intellij.helix.toolwindow.HelixToolWindowGuard
+import jp.titze.intellij.helix.toolwindow.HelixToolWindowNavigator
+import jp.titze.intellij.helix.toolwindow.HelixToolWindowState
 import jp.titze.intellij.helix.ui.HelixPromptBar
 import jp.titze.intellij.helix.ui.HelixSearchManager
 import jp.titze.intellij.helix.ui.HelixSearchPopup
@@ -34,14 +37,33 @@ class HelixEventDispatcher : IdeEventQueue.EventDispatcher {
 
     override fun dispatch(e: AWTEvent): Boolean {
         if (e !is KeyEvent) return false
-        if (handleWhichKeyPopupEvent(e)) return true
-        if (handleSearchPopupEvent(e)) return true
+        if (handleWhichKeyPopupEvent(e) || handleSearchPopupEvent(e)) return true
+
+        val preHandled = handlePreDispatch(e)
+        if (preHandled != null) return preHandled
+
+        val eligibleToolWindow = HelixToolWindowGuard.findEligibleTarget(e.component)
+        if (eligibleToolWindow != null) {
+            return HelixToolWindowNavigator.dispatch(e, eligibleToolWindow)
+        }
+
+        val editor = findFocusedEditor(e)
+        return if (editor != null && HelixEditorEligibility.isActive(editor)) {
+            dispatchToEditor(e, editor)
+        } else {
+            false
+        }
+    }
+
+    private fun handlePreDispatch(e: KeyEvent): Boolean? {
+        if (HelixToolWindowState.isDispatchingSynthetic) return false
+        if (e.id == KeyEvent.KEY_TYPED) {
+            val consumed = HelixToolWindowState.consumeInterceptedKey(e.keyChar)
+            if (consumed) e.consume()
+            return consumed
+        }
         if (e.id != KeyEvent.KEY_PRESSED) return false
-
-        val editor = findFocusedEditor(e) ?: return false
-        if (!HelixEditorEligibility.isActive(editor)) return false
-
-        return dispatchToEditor(e, editor)
+        return null
     }
 
     private fun dispatchToEditor(e: KeyEvent, editor: Editor): Boolean {
@@ -180,11 +202,7 @@ class HelixEventDispatcher : IdeEventQueue.EventDispatcher {
         return true
     }
 
-    private fun handleCtrlInsertShortcut(
-        e: KeyEvent,
-        editor: Editor,
-        state: jp.titze.intellij.helix.state.HelixEditorState,
-    ): Boolean {
+    private fun handleCtrlInsertShortcut(e: KeyEvent, editor: Editor, state: HelixEditorState): Boolean {
         if (!jp.titze.intellij.helix.keymap.HelixShortcutPolicy.isHelixOwned(
                 e.keyCode,
                 jp.titze.intellij.helix.keymap.HelixKeyContext.INSERT,
@@ -272,11 +290,7 @@ class HelixEventDispatcher : IdeEventQueue.EventDispatcher {
 
     private fun isAltD(e: KeyEvent): Boolean = !e.isShiftDown && (e.keyCode == KeyEvent.VK_D || e.keyChar == 'd')
 
-    private fun handleCtrlShortcut(
-        e: KeyEvent,
-        editor: Editor,
-        state: jp.titze.intellij.helix.state.HelixEditorState,
-    ): Boolean {
+    private fun handleCtrlShortcut(e: KeyEvent, editor: Editor, state: HelixEditorState): Boolean {
         if (state.pendingSequence == "C-w n") {
             state.clearPendingSequence()
             HelixWhichKeyPopup.hide()
@@ -385,11 +399,7 @@ class HelixEventDispatcher : IdeEventQueue.EventDispatcher {
         }
     }
 
-    private fun handleNoModifiersShortcut(
-        e: KeyEvent,
-        editor: Editor,
-        state: jp.titze.intellij.helix.state.HelixEditorState,
-    ): Boolean {
+    private fun handleNoModifiersShortcut(e: KeyEvent, editor: Editor, state: HelixEditorState): Boolean {
         if (state.pendingSequence == "C-w n") {
             state.clearPendingSequence()
             HelixWhichKeyPopup.hide()
@@ -462,11 +472,7 @@ class HelixEventDispatcher : IdeEventQueue.EventDispatcher {
         }
     }
 
-    private fun handleAltShortcut(
-        e: KeyEvent,
-        editor: Editor,
-        state: jp.titze.intellij.helix.state.HelixEditorState,
-    ): Boolean {
+    private fun handleAltShortcut(e: KeyEvent, editor: Editor, state: HelixEditorState): Boolean {
         if (handleAltShellShortcut(e, editor)) return true
         if (handleAltAstShortcut(e, editor)) return true
         if (handleAltSelectionShortcut(e, editor, state)) return true
@@ -479,13 +485,13 @@ class HelixEventDispatcher : IdeEventQueue.EventDispatcher {
 
             !e.isShiftDown && (e.keyCode == KeyEvent.VK_U || e.keyChar == 'u') -> {
                 val count = state.takeCount() ?: 1
-                repeat(count) { HelixActionDelegate.executeAction("\$Undo", editor) }
+                repeat(count) { HelixActionDelegate.executeAction($$"$Undo", editor) }
                 true
             }
 
             (e.isShiftDown && e.keyCode == KeyEvent.VK_U) || e.keyChar == 'U' -> {
                 val count = state.takeCount() ?: 1
-                repeat(count) { HelixActionDelegate.executeAction("\$Redo", editor) }
+                repeat(count) { HelixActionDelegate.executeAction($$"$Redo", editor) }
                 true
             }
 
@@ -529,11 +535,7 @@ class HelixEventDispatcher : IdeEventQueue.EventDispatcher {
         }
     }
 
-    private fun handleAltSelectionShortcut(
-        e: KeyEvent,
-        editor: Editor,
-        state: jp.titze.intellij.helix.state.HelixEditorState,
-    ): Boolean = when {
+    private fun handleAltSelectionShortcut(e: KeyEvent, editor: Editor, state: HelixEditorState): Boolean = when {
         e.keyChar == ':' || (e.isShiftDown && e.keyCode == KeyEvent.VK_SEMICOLON) -> {
             HelixActions.ensureSelectionsForward(editor)
             true
