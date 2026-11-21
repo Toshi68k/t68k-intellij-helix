@@ -26,6 +26,7 @@ class HelixSelectionGroomingTest : BasePlatformTestCase() {
     override fun tearDown() {
         HelixPromptBar.lastShownType = null
         HelixSelectRegexPopup.lastShownMode = null
+        HelixSelectRegexPopup.cancelActive()
         super.tearDown()
     }
 
@@ -315,7 +316,7 @@ class HelixSelectionGroomingTest : BasePlatformTestCase() {
         caretsRev[1].selectedText shouldBe "two"
         caretsRev[2].selectedText shouldBe "one"
 
-        jp.titze.intellij.helix.command.HelixCommands.execute("reverse-selection-contents", editor)
+        HelixCommands.execute("reverse-selection-contents", editor)
         editor.document.text shouldBe "one ... two ... three"
         val caretsRestored = editor.caretModel.allCarets.sortedBy { it.selectionStart }
         caretsRestored[0].selectedText shouldBe "one"
@@ -416,6 +417,7 @@ class HelixSelectionGroomingTest : BasePlatformTestCase() {
             HelixKeyHandler.handleKey('K', editor)
             HelixSelectRegexPopup.lastShownMode shouldBe HelixSelectRegexPopup.Mode.KEEP
         } finally {
+            HelixSelectRegexPopup.cancelActive()
             HelixSettings.instance.searchUiMode = prevMode
         }
     }

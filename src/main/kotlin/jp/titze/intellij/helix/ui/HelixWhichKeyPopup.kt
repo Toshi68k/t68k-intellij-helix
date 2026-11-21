@@ -35,6 +35,7 @@ import javax.swing.SwingUtilities
 object HelixWhichKeyPopup {
     private var activePopup: JBPopup? = null
     private var currentPrefix: String? = null
+    private var activeEditor: Editor? = null
     private var onToggleHintAction: (() -> Unit)? = null
 
     fun toggleHintMode(): Boolean {
@@ -56,10 +57,48 @@ object HelixWhichKeyPopup {
     private val ITEM_DESC_COLOR get() = HelixTheme.ITEM_DESC_COLOR
     private val HOVER_BG get() = HelixTheme.HOVER_BG
 
+    @Volatile
+    internal var isShowingInTest: Boolean = false
+
+    @Volatile
+    internal var isHandlingSelection: Boolean = false
+
     fun isShowing(prefix: String? = null): Boolean {
+        if (isShowingInTest) {
+            return prefix == null || currentPrefix == prefix
+        }
         val popup = activePopup ?: return false
         if (popup.isDisposed || !popup.isVisible) return false
         return prefix == null || currentPrefix == prefix
+    }
+
+    fun cancelActive(): Boolean {
+        if (isShowingInTest) {
+            val ed = activeEditor
+            isShowingInTest = false
+            currentPrefix = null
+            activeEditor = null
+            if (ed != null && !ed.isDisposed) {
+                val state = HelixStateManager.getOrCreate(ed)
+                state.clearPendingSequence()
+                state.clearCount()
+            }
+            return true
+        }
+        val popup = activePopup
+        val editor = activeEditor
+        if (popup != null && !popup.isDisposed) {
+            popup.cancel()
+            hide()
+            if (editor != null && !editor.isDisposed) {
+                val state = HelixStateManager.getOrCreate(editor)
+                state.clearPendingSequence()
+                state.clearCount()
+                editor.contentComponent.requestFocusInWindow()
+            }
+            return true
+        }
+        return false
     }
 
     fun hide() {
@@ -69,7 +108,9 @@ object HelixWhichKeyPopup {
             return
         }
 
+        isShowingInTest = false
         currentPrefix = null
+        activeEditor = null
         onToggleHintAction = null
         val popup = activePopup
         activePopup = null
@@ -77,13 +118,16 @@ object HelixWhichKeyPopup {
     }
 
     fun show(editor: Editor, prefix: String) {
-        val app = ApplicationManager.getApplication()
-        if (app != null && (app.isUnitTestMode || app.isHeadlessEnvironment)) {
+        val settings = HelixSettings.instance
+        if (!settings.enableWhichKeyPopups || HelixMacroExecutor.isExecutingMacro) {
             return
         }
 
-        val settings = HelixSettings.instance
-        if (!settings.enableWhichKeyPopups || HelixMacroExecutor.isExecutingMacro) {
+        val app = ApplicationManager.getApplication()
+        if (app != null && (app.isUnitTestMode || app.isHeadlessEnvironment)) {
+            isShowingInTest = true
+            currentPrefix = prefix
+            activeEditor = editor
             return
         }
 
@@ -98,6 +142,7 @@ object HelixWhichKeyPopup {
 
         hide()
         currentPrefix = prefix
+        activeEditor = editor
 
         val mode = HelixStateManager.getOrCreate(editor).mode
         val (title, items) = HelixWhichKeyMenus.getMenu(prefix, mode) ?: return
@@ -115,7 +160,7 @@ object HelixWhichKeyPopup {
             .setRequestFocus(true)
             .setFocusable(true)
             .setCancelOnClickOutside(true)
-            .setCancelKeyEnabled(false)
+            .setCancelKeyEnabled(true)
             .setShowBorder(false)
             .setShowShadow(true)
             .createPopup()
@@ -127,10 +172,11 @@ object HelixWhichKeyPopup {
                 if (activePopup === popup) {
                     activePopup = null
                     currentPrefix = null
+                    activeEditor = null
                     onToggleHintAction = null
                 }
-                val state = HelixStateManager.getOrCreate(editor)
-                if (state.pendingSequence == "Z") {
+                if (!isHandlingSelection) {
+                    val state = HelixStateManager.getOrCreate(editor)
                     state.clearPendingSequence()
                     state.clearCount()
                 }
@@ -314,14 +360,19 @@ object HelixWhichKeyPopup {
             override fun keyTyped(e: KeyEvent) {
                 val ch = e.keyChar
                 if (ch != KeyEvent.CHAR_UNDEFINED && ch != '\u001B' && ch != '\t') {
-                    val state = HelixStateManager.getOrCreate(editor)
-                    val inStickyView = state.pendingSequence == "Z"
-                    if (!inStickyView) {
-                        hide()
-                    }
-                    val handled = HelixKeyHandler.handleKey(ch, editor)
-                    if (inStickyView && (!handled || state.pendingSequence != "Z")) {
-                        hide()
+                    isHandlingSelection = true
+                    try {
+                        val state = HelixStateManager.getOrCreate(editor)
+                        val inStickyView = state.pendingSequence == "Z"
+                        if (!inStickyView) {
+                            hide()
+                        }
+                        val handled = HelixKeyHandler.handleKey(ch, editor)
+                        if (inStickyView && (!handled || state.pendingSequence != "Z")) {
+                            hide()
+                        }
+                    } finally {
+                        isHandlingSelection = false
                     }
                     e.consume()
                 }
@@ -398,15 +449,20 @@ object HelixWhichKeyPopup {
     ): JPanel {
         fun createRow(item: WhichKeyItem): JPanel {
             val row = WhichKeyRow(item, activeHintMode) {
-                val state = HelixStateManager.getOrCreate(editor)
-                val inStickyView = state.pendingSequence == "Z"
-                if (!inStickyView) {
-                    hide()
-                }
-                val triggerChar = if (item.key.equals("Space", ignoreCase = true)) ' ' else item.key[0]
-                val handled = HelixKeyHandler.handleKey(triggerChar, editor)
-                if (inStickyView && (!handled || state.pendingSequence != "Z")) {
-                    hide()
+                isHandlingSelection = true
+                try {
+                    val state = HelixStateManager.getOrCreate(editor)
+                    val inStickyView = state.pendingSequence == "Z"
+                    if (!inStickyView) {
+                        hide()
+                    }
+                    val triggerChar = if (item.key.equals("Space", ignoreCase = true)) ' ' else item.key[0]
+                    val handled = HelixKeyHandler.handleKey(triggerChar, editor)
+                    if (inStickyView && (!handled || state.pendingSequence != "Z")) {
+                        hide()
+                    }
+                } finally {
+                    isHandlingSelection = false
                 }
             }
             allRows.add(row)
@@ -524,8 +580,13 @@ object HelixWhichKeyPopup {
             else -> null
         }
         if (ch != null) {
-            hide()
-            HelixKeyHandler.handleKey(ch, editor)
+            isHandlingSelection = true
+            try {
+                hide()
+                HelixKeyHandler.handleKey(ch, editor)
+            } finally {
+                isHandlingSelection = false
+            }
             e.consume()
         }
     }

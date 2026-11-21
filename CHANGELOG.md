@@ -5,6 +5,21 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+
+- **Tool Windows Navigation (Experimental)**:
+  - Added basic Helix-style keyboard navigation (`j`/`k`, `h`/`l`, `gg`/`ge`, `Ctrl-d`/`Ctrl-u`, `Ctrl-f`/`Ctrl-b`, `o`/`Enter`, count prefixes) to tool window trees, lists, and tables.
+  - Supported targets (configurable in **Settings → Tools → Helix Keymap → General & Scope**): Project / file explorer, Find / Usages, Version Control (Log, Changes, Commit), Problems View, Structure, Services/Run, Debugger (opt-in), and third-party tool windows.
+  - Disabled by default and marked as **Experimental** to protect user muscle memory for IntelliJ's traditional type-to-search.
+  - Native Speed Search integration: press `/` to trigger the tool window's native speed search; remembers the last search query per tool window; `n` and `N` jump to next/previous matches.
+
+### Fixed
+
+- **Which-Key and Search Popup Escape Key Dismissal & Focus Restoration**:
+  - Fixed an issue where pressing `Escape` to dismiss Which-Key, search, or regex selection popups could leave pending sequence state in `HelixEditorState`, requiring an extra `Escape` press before returning to Normal mode or collapsing selections.
+  - Enabled native `.setCancelKeyEnabled(true)` and pre-dispatch event routing (`Escape`, `Ctrl-c`, `Ctrl-[`) on `HelixWhichKeyPopup` to ensure popups dismiss reliably even if child focus shifts.
+  - Introduced `isHandlingSelection` execution scope in `HelixWhichKeyPopup` to prevent popup teardown callbacks from prematurely wiping the active pending sequence (`" "`, `"g"`, `"m"`, etc.) when executing chords (e.g. `Space e` for file explorer).
+
 ## [0.7.3]
 
 ### Fixed
@@ -13,16 +28,6 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   - Fixed an `Access is allowed from Event Dispatch Thread (EDT) only` exception triggered during background action updates.
   - Fixed an issue where pressing `Enter` inside injected language fragments (e.g. strings, SQL, regex) failed to insert a newline in Insert mode.
   - Injected editors now properly inherit the host editor's active modal state and safely dispatch cursor UI updates to the EDT.
-
-## [0.7.2]
-
-### Added
-
-- **Tool Windows Navigation (Experimental)**:
-  - Added basic Helix-style keyboard navigation (`j`/`k`, `h`/`l`, `gg`/`ge`, `Ctrl-d`/`Ctrl-u`, `Ctrl-f`/`Ctrl-b`, `o`/`Enter`, count prefixes) to tool window trees, lists, and tables.
-  - Supported targets (configurable in **Settings → Tools → Helix Keymap → General & Scope**): Project / file explorer, Find / Usages, Version Control (Log, Changes, Commit), Problems View, Structure, Services/Run, Debugger (opt-in), and third-party tool windows.
-  - Disabled by default and marked as **Experimental** to protect user muscle memory for IntelliJ's traditional type-to-search.
-  - Native Speed Search integration: press `/` to trigger the tool window's native speed search; remembers the last search query per tool window; `n` and `N` jump to next/previous matches.
 
 ## [0.7.2]
 

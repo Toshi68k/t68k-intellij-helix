@@ -136,10 +136,19 @@ class HelixEventDispatcher : IdeEventQueue.EventDispatcher {
 
     private fun handleWhichKeyPopupEvent(e: KeyEvent): Boolean {
         if (!HelixWhichKeyPopup.isShowing()) return false
-        if (e.id == KeyEvent.KEY_PRESSED && e.keyCode == KeyEvent.VK_TAB) {
-            HelixWhichKeyPopup.toggleHintMode()
-            e.consume()
-            return true
+        if (e.id == KeyEvent.KEY_PRESSED) {
+            if (e.keyCode == KeyEvent.VK_TAB) {
+                HelixWhichKeyPopup.toggleHintMode()
+                e.consume()
+                return true
+            }
+            if (isPromptCancelKey(e)) {
+                val cancelled = HelixWhichKeyPopup.cancelActive()
+                if (cancelled) {
+                    e.consume()
+                    return true
+                }
+            }
         }
         if (e.id == KeyEvent.KEY_TYPED && e.keyChar == '\t') {
             e.consume()

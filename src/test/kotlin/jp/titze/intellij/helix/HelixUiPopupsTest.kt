@@ -23,6 +23,7 @@ import jp.titze.intellij.helix.command.HelixCommands
 import jp.titze.intellij.helix.editor.HelixEditorEligibility
 import jp.titze.intellij.helix.editor.HelixEventDispatcher
 import jp.titze.intellij.helix.editor.HelixInsertTracker
+import jp.titze.intellij.helix.keymap.HelixCommandRegistry
 import jp.titze.intellij.helix.keymap.HelixDebugKeymap
 import jp.titze.intellij.helix.keymap.HelixKeyHandler
 import jp.titze.intellij.helix.keymap.HelixKeymapManager
@@ -58,9 +59,15 @@ class HelixUiPopupsTest : BasePlatformTestCase() {
         HelixMotionHistory.lastMotion = null
         HelixInsertTracker.reset()
         HelixKeymapManager.resetToDefaults()
+        HelixWhichKeyPopup.hide()
+        HelixSearchPopup.cancelActive()
+        HelixSelectRegexPopup.cancelActive()
     }
 
     override fun tearDown() {
+        HelixWhichKeyPopup.hide()
+        HelixSearchPopup.cancelActive()
+        HelixSelectRegexPopup.cancelActive()
         HelixRegisterManager.clear()
         HelixMotionHistory.lastMotion = null
         HelixInsertTracker.reset()
@@ -621,6 +628,146 @@ class HelixUiPopupsTest : BasePlatformTestCase() {
         // Calling toggleHintMode invokes the registered action
         HelixWhichKeyPopup.toggleHintMode().shouldBeTrue()
         HelixWhichKeyPopup.toggleHintMode().shouldBeTrue()
+    }
+
+    fun testWhichKeyCancellationViaEscapeAndStateCleanup() {
+        myFixture.configureByText("test.txt", "line 1\nline 2\n")
+        val editor = myFixture.editor
+        val state = HelixStateManager.getOrCreate(editor)
+
+        // Show Which-Key popup with " " prefix
+        state.setPendingSequence(" ")
+        HelixWhichKeyPopup.show(editor, " ")
+        HelixWhichKeyPopup.isShowing(" ").shouldBeTrue()
+        state.pendingSequence shouldBe " "
+
+        // Dispatch Escape event via HelixEventDispatcher
+        val dispatcher = HelixEventDispatcher()
+        val escEvent = KeyEvent(
+            editor.contentComponent,
+            KeyEvent.KEY_PRESSED,
+            System.currentTimeMillis(),
+            0,
+            KeyEvent.VK_ESCAPE,
+            KeyEvent.CHAR_UNDEFINED,
+        )
+        val handled = dispatcher.dispatch(escEvent)
+        handled.shouldBeTrue()
+        escEvent.isConsumed.shouldBeTrue()
+        HelixWhichKeyPopup.isShowing().shouldBeFalse()
+        state.pendingSequence shouldBe ""
+    }
+
+    fun testWhichKeyDismissalAllowsSingleEscapeModeExit() {
+        myFixture.configureByText("test.txt", "hello world")
+        val editor = myFixture.editor
+        val state = HelixStateManager.getOrCreate(editor)
+
+        // Enter INSERT mode
+        state.setMode(HelixMode.INSERT)
+        state.mode shouldBe HelixMode.INSERT
+
+        // Show WhichKey popup (e.g. C-r register insertion)
+        state.setPendingSequence("C-r")
+        HelixWhichKeyPopup.show(editor, "C-r")
+        HelixWhichKeyPopup.isShowing("C-r").shouldBeTrue()
+
+        // Cancel WhichKey popup via Escape
+        val dispatcher = HelixEventDispatcher()
+        val escEvent1 = KeyEvent(
+            editor.contentComponent,
+            KeyEvent.KEY_PRESSED,
+            System.currentTimeMillis(),
+            0,
+            KeyEvent.VK_ESCAPE,
+            KeyEvent.CHAR_UNDEFINED,
+        )
+        dispatcher.dispatch(escEvent1).shouldBeTrue()
+        HelixWhichKeyPopup.isShowing().shouldBeFalse()
+        state.pendingSequence shouldBe ""
+        state.mode shouldBe HelixMode.INSERT
+
+        // Next Escape in editor should IMMEDIATELY return to NORMAL mode on 1st press
+        val escEvent2 = KeyEvent(
+            editor.contentComponent,
+            KeyEvent.KEY_PRESSED,
+            System.currentTimeMillis(),
+            0,
+            KeyEvent.VK_ESCAPE,
+            KeyEvent.CHAR_UNDEFINED,
+        )
+        dispatcher.dispatch(escEvent2).shouldBeTrue()
+        state.mode shouldBe HelixMode.NORMAL
+    }
+
+    fun testWhichKeySubmenuCancellationViaCtrlC() {
+        myFixture.configureByText("test.txt", "hello world")
+        val editor = myFixture.editor
+        val state = HelixStateManager.getOrCreate(editor)
+
+        // Show Refactor submenu " m"
+        state.setPendingSequence(" m")
+        HelixWhichKeyPopup.show(editor, " m")
+        HelixWhichKeyPopup.isShowing(" m").shouldBeTrue()
+
+        // Cancel via Ctrl-C
+        val dispatcher = HelixEventDispatcher()
+        val ctrlC = KeyEvent(
+            editor.contentComponent,
+            KeyEvent.KEY_PRESSED,
+            System.currentTimeMillis(),
+            InputEvent.CTRL_DOWN_MASK,
+            KeyEvent.VK_C,
+            'c',
+        )
+        dispatcher.dispatch(ctrlC).shouldBeTrue()
+        ctrlC.isConsumed.shouldBeTrue()
+        HelixWhichKeyPopup.isShowing().shouldBeFalse()
+        state.pendingSequence shouldBe ""
+    }
+
+    fun testWhichKeyKeyTypedPreservesPendingSequenceForExecution() {
+        myFixture.configureByText("test.txt", "word1 word2 word3\n")
+        val editor = myFixture.editor
+        val state = HelixStateManager.getOrCreate(editor)
+        editor.caretModel.moveToOffset(0)
+
+        val originalCmd = HelixCommandRegistry.get("file_explorer")!!
+        var spaceEExecuted = false
+        HelixCommandRegistry.register("file_explorer", "File explorer") { _, _ ->
+            spaceEExecuted = true
+            true
+        }
+
+        try {
+            state.setPendingSequence(" ")
+            val (title, items) = HelixWhichKeyMenus.getMenu(" ", HelixMode.NORMAL)!!
+            val panel = HelixWhichKeyPopup.createWhichKeyPanel(title, items, editor)
+            val keyListener = panel.keyListeners.first()
+
+            val keyEvent = KeyEvent(
+                panel,
+                KeyEvent.KEY_TYPED,
+                System.currentTimeMillis(),
+                0,
+                KeyEvent.VK_UNDEFINED,
+                'e',
+            )
+            keyListener.keyTyped(keyEvent)
+
+            // If pending sequence had been wiped, 'e' would have moved the caret (move_next_word_end).
+            // With the fix, 'space e' (file_explorer) must execute, caret must NOT move as 'e'.
+            spaceEExecuted.shouldBeTrue()
+            editor.caretModel.offset shouldBe 0
+            state.pendingSequence shouldBe ""
+        } finally {
+            HelixCommandRegistry.register(
+                originalCmd.id,
+                originalCmd.description,
+                originalCmd.intelliJAction,
+                originalCmd.action,
+            )
+        }
     }
 
     fun testWhichKeyColumnLayoutSettingAndPanelDimensions() {
@@ -2538,22 +2685,22 @@ class HelixUiPopupsTest : BasePlatformTestCase() {
         }
 
         try {
-            jp.titze.intellij.helix.keymap.HelixCommandRegistry.execute("toggle_soft_wrap", editor)
+            HelixCommandRegistry.execute("toggle_soft_wrap", editor)
             executedActions.last() shouldBe "EditorToggleUseSoftWraps"
 
-            jp.titze.intellij.helix.keymap.HelixCommandRegistry.execute("toggle_inlay_hints", editor)
+            HelixCommandRegistry.execute("toggle_inlay_hints", editor)
             executedActions.last() shouldBe "ToggleInlayHintsGloballyAction"
 
-            jp.titze.intellij.helix.keymap.HelixCommandRegistry.execute("toggle_sticky_context", editor)
+            HelixCommandRegistry.execute("toggle_sticky_context", editor)
             executedActions.last() shouldBe "EditorGutterToggleGlobalStickyLines"
 
-            jp.titze.intellij.helix.keymap.HelixCommandRegistry.execute("toggle_line_numbers", editor)
+            HelixCommandRegistry.execute("toggle_line_numbers", editor)
             executedActions.last() shouldBe "EditorToggleShowLineNumbers"
 
-            jp.titze.intellij.helix.keymap.HelixCommandRegistry.execute("toggle_whitespace", editor)
+            HelixCommandRegistry.execute("toggle_whitespace", editor)
             executedActions.last() shouldBe "EditorToggleShowWhitespaces"
 
-            jp.titze.intellij.helix.keymap.HelixCommandRegistry.execute("toggle_breadcrumbs", editor)
+            HelixCommandRegistry.execute("toggle_breadcrumbs", editor)
             executedActions.last() shouldBe "EditorToggleShowBreadcrumbs"
         } finally {
             HelixActionDelegate.actionExecutor = null
@@ -2611,22 +2758,22 @@ class HelixUiPopupsTest : BasePlatformTestCase() {
         }
 
         try {
-            jp.titze.intellij.helix.keymap.HelixCommandRegistry.execute("reopen_closed_tab", editor)
+            HelixCommandRegistry.execute("reopen_closed_tab", editor)
             executedActions.last() shouldBe "ReopenClosedTab"
 
-            jp.titze.intellij.helix.keymap.HelixCommandRegistry.execute("copy_path", editor)
+            HelixCommandRegistry.execute("copy_path", editor)
             executedActions.last() shouldBe "CopyAbsolutePath"
 
-            jp.titze.intellij.helix.keymap.HelixCommandRegistry.execute("copy_relative_path", editor)
+            HelixCommandRegistry.execute("copy_relative_path", editor)
             executedActions.last() shouldBe "CopyContentRootPath"
 
-            jp.titze.intellij.helix.keymap.HelixCommandRegistry.execute("copy_reference", editor)
+            HelixCommandRegistry.execute("copy_reference", editor)
             executedActions.last() shouldBe "CopyReferencePopup"
 
-            jp.titze.intellij.helix.keymap.HelixCommandRegistry.execute("branches", editor)
+            HelixCommandRegistry.execute("branches", editor)
             executedActions.last() shouldBe "Git.Branches"
 
-            jp.titze.intellij.helix.keymap.HelixCommandRegistry.execute("log_open", editor)
+            HelixCommandRegistry.execute("log_open", editor)
             executedActions.last() shouldBe "ShowLog"
         } finally {
             HelixActionDelegate.actionExecutor = null
@@ -2681,22 +2828,22 @@ class HelixUiPopupsTest : BasePlatformTestCase() {
         }
 
         try {
-            jp.titze.intellij.helix.keymap.HelixCommandRegistry.execute("recent_locations", editor)
+            HelixCommandRegistry.execute("recent_locations", editor)
             executedActions.last() shouldBe "RecentLocations"
 
-            jp.titze.intellij.helix.keymap.HelixCommandRegistry.execute("show_usages", editor)
+            HelixCommandRegistry.execute("show_usages", editor)
             executedActions.last() shouldBe "ShowUsages"
 
-            jp.titze.intellij.helix.keymap.HelixCommandRegistry.execute("maximize_view", editor)
+            HelixCommandRegistry.execute("maximize_view", editor)
             executedActions.last() shouldBe "MaximizeEditorInSplit"
 
-            jp.titze.intellij.helix.keymap.HelixCommandRegistry.execute("wmaximize", editor)
+            HelixCommandRegistry.execute("wmaximize", editor)
             executedActions.last() shouldBe "MaximizeEditorInSplit"
 
-            jp.titze.intellij.helix.keymap.HelixCommandRegistry.execute("close_to_right", editor)
+            HelixCommandRegistry.execute("close_to_right", editor)
             executedActions.last() shouldBe "CloseAllToTheRight"
 
-            jp.titze.intellij.helix.keymap.HelixCommandRegistry.execute("close_unmodified", editor)
+            HelixCommandRegistry.execute("close_unmodified", editor)
             executedActions.last() shouldBe "CloseAllUnmodifiedEditors"
         } finally {
             HelixActionDelegate.actionExecutor = null

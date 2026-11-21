@@ -21,7 +21,9 @@ object HelixEscapeHandler {
 
         val state = HelixStateManager.getOrCreate(editor)
 
-        HelixWhichKeyPopup.hide()
+        if (HelixWhichKeyPopup.cancelActive()) {
+            return true
+        }
         if (HelixPromptBar.cancelActivePrompt(editor)) {
             return true
         }

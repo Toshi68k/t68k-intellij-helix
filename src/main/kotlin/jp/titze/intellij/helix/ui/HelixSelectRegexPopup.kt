@@ -51,9 +51,15 @@ object HelixSelectRegexPopup {
 
     fun cancelActive(): Boolean {
         val popup = activePopup ?: return false
+        activePopup = null
         if (!popup.isDisposed) {
-            popup.cancel()
-            activePopup = null
+            val app = ApplicationManager.getApplication()
+            val isHeadless = app != null && (app.isUnitTestMode || app.isHeadlessEnvironment)
+            if (isHeadless) {
+                com.intellij.openapi.util.Disposer.dispose(popup)
+            } else {
+                popup.cancel()
+            }
             return true
         }
         return false
@@ -197,7 +203,7 @@ object HelixSelectRegexPopup {
         }
 
         val cardPanel = RoundedCardPanel(cornerRadius = 12)
-        cardPanel.border = JBUI.Borders.empty(10, 14, 10, 14)
+        cardPanel.border = JBUI.Borders.empty(10, 14)
         cardPanel.preferredSize = Dimension(JBUI.scale(460), JBUI.scale(136))
 
         val headerRow = createHeaderRow(mode)
