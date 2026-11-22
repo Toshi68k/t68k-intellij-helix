@@ -705,7 +705,8 @@ to execute):
 - `:set-option <key> <value>` / `:set <key> <value>` (or `:set <key>=<value>`) &rarr; Set runtime or editor option
   (`soft-wrap.enable`, `inlay-hints.enable`, `whitespace.render`, `line-number`, `sticky-context`, `breadcrumbs.enable`,
   `search-ui`, `line-nav`, `scratch-mode`, `color-modes`, `cursor-tint`)
-- `:toggle-option <key>` / `:toggle <key>` &rarr; Toggle runtime or editor option on/off
+- `:toggle-option <key> [val1 val2 ...]` / `:toggle <key> [val1 val2 ...]` &rarr; Toggle runtime or editor option on/off,
+  or cycle through space-separated values (e.g. `:toggle line-number relative absolute`, `:toggle whitespace.render all none`)
 - `:toggle-color-modes` / `:color-modes` &rarr; Toggle mode-colored status pill (`color-modes = true|false`)
 - `:toggle-cursor-tint` / `:cursor-tint` &rarr; Toggle editor cursor tint matching mode color (`cursor-tint = true|false`)
 - `:toggle-soft-wrap` / `:soft-wrap` / `:wrap` &rarr; Toggle visual soft-wrapping in active editor
@@ -856,10 +857,10 @@ Organized into 3 dedicated tabs for core editor preferences:
   - **Per-Mode Cursor Shapes (`cursor-shape`)**: Configure caret shapes individually for Normal, Insert, and Select modes
     (**Block**, **Bar**, **Underline**, **Hidden**). Mode changes dynamically update caret visual attributes across 
     single and multi-caret selections.
-  - **Gutter Line Numbers (`line-number`)**: Choose between **Use IDE Default**, **Absolute**, **Relative** (distance 
-    from cursor line), **Hybrid** (absolute on current line, relative on others), and **Smart** (relative in 
-    Normal/Select mode, automatic absolute fallback in Insert mode). Also toggled via `:toggle-relative-line-numbers`
-    or `:set line-number relative|smart|hybrid|absolute|off`.
+  - **Gutter Line Numbers (`line-number`)**: Choose between **Use IDE Default**, **Absolute**, **Relative** (Helix default:
+    actual line number on cursor line, relative distance on others), **Hybrid**, **Pure Relative** (0 on cursor line),
+    and **Smart** (relative in Normal/Select mode, automatic absolute fallback in Insert mode). Also toggled via
+    `:toggle-relative-line-numbers` (`:rnu`), `:toggle-option line-number relative absolute`, or `:set line-number ...`.
   - **Which-Key Chord Menus**: Enable or disable Which-Key chord popups, choose hint display style (Helix command names
     vs IntelliJ Action IDs), and configure column layout (3 columns compact vs 2 columns classic).
   - **Settings Lock & Provenance Notices**: Any setting overridden by active TOML configuration is locked (disabled) with
@@ -982,7 +983,7 @@ defined in `[editor]` apply directly to IntelliJ editor windows and Helix runtim
 # ~/.config/helix/intellij.toml
 
 [editor]
-line-number = "relative"             # "absolute", "relative", "hybrid", "smart", "off"
+line-number = "relative"             # "absolute", "relative", "hybrid", "pure-relative", "smart", "off"
 scrolloff = 8                        # Vertical scroll offset lines
 cursorline = true                    # Highlight current caret row
 color-modes = true                   # Color-code status bar pill by mode
@@ -1014,7 +1015,7 @@ render = true
 
 | Helix `[editor]` key | Target in IntelliJ / plugin | Description |
 |---|---|---|
-| `line-number` | `HelixLineNumberMode` | Gutter numbering: `"absolute"`, `"relative"`, `"hybrid"`, `"smart"`, `"off"` |
+| `line-number` | `HelixLineNumberMode` | Gutter numbering: `"absolute"`, `"relative"` (hybrid), `"hybrid"`, `"pure-relative"`, `"smart"`, `"off"` |
 | `scrolloff` | `EditorSettings.verticalScrollOffset` | Minimal number of visible lines above and below cursor |
 | `cursorline` | `EditorSettings.isCaretRowShown` | Highlight current line |
 | `rulers` | `EditorSettings.setSoftMargins` | List of soft margin column rulers (e.g. `[80, 120]`) |

@@ -30,6 +30,7 @@ import jp.titze.intellij.helix.keymap.HelixKeymapManager
 import jp.titze.intellij.helix.keymap.HelixWindowKeymap
 import jp.titze.intellij.helix.motion.HelixMotionHistory
 import jp.titze.intellij.helix.register.HelixRegisterManager
+import jp.titze.intellij.helix.settings.HelixEffectiveSettings
 import jp.titze.intellij.helix.settings.HelixLineNavigationMode
 import jp.titze.intellij.helix.settings.HelixLineNumberMode
 import jp.titze.intellij.helix.settings.HelixScratchSplitMode
@@ -1212,13 +1213,13 @@ class HelixUiPopupsTest : BasePlatformTestCase() {
         val state = HelixStateManager.getOrCreate(editor)
         val origLineNumberMode = HelixSettings.instance.lineNumberMode
         try {
-            // 1. SMART mode in Normal mode -> RELATIVE
+            // 1. SMART mode in Normal mode -> HYBRID (actual line at cursor)
             HelixSettings.instance.lineNumberMode = HelixLineNumberMode.SMART
             state.setMode(HelixMode.NORMAL)
             HelixStateManager.updateCursor(editor, HelixMode.NORMAL)
             editor.settings.isLineNumbersShown.shouldBeTrue()
             editor.settings.lineNumerationType shouldBe
-                com.intellij.openapi.editor.EditorSettings.LineNumerationType.RELATIVE
+                com.intellij.openapi.editor.EditorSettings.LineNumerationType.HYBRID
 
             // 2. Transition to INSERT mode -> falls back to ABSOLUTE
             state.setMode(HelixMode.INSERT)
@@ -1227,18 +1228,28 @@ class HelixUiPopupsTest : BasePlatformTestCase() {
             editor.settings.lineNumerationType shouldBe
                 com.intellij.openapi.editor.EditorSettings.LineNumerationType.ABSOLUTE
 
-            // 3. Return to NORMAL mode -> back to RELATIVE
+            // 3. Return to NORMAL mode -> back to HYBRID
             state.setMode(HelixMode.NORMAL)
             HelixStateManager.updateCursor(editor, HelixMode.NORMAL)
             editor.settings.isLineNumbersShown.shouldBeTrue()
             editor.settings.lineNumerationType shouldBe
-                com.intellij.openapi.editor.EditorSettings.LineNumerationType.RELATIVE
+                com.intellij.openapi.editor.EditorSettings.LineNumerationType.HYBRID
 
             // 4. Set option via HelixVisualToggleActions
             HelixVisualToggleActions.handleSetOption("line-number", "hybrid", editor)
             HelixSettings.instance.lineNumberMode shouldBe HelixLineNumberMode.HYBRID
             editor.settings.lineNumerationType shouldBe
                 com.intellij.openapi.editor.EditorSettings.LineNumerationType.HYBRID
+
+            HelixVisualToggleActions.handleSetOption("line-number", "relative", editor)
+            HelixSettings.instance.lineNumberMode shouldBe HelixLineNumberMode.RELATIVE
+            editor.settings.lineNumerationType shouldBe
+                com.intellij.openapi.editor.EditorSettings.LineNumerationType.HYBRID
+
+            HelixVisualToggleActions.handleSetOption("line-number", "pure-relative", editor)
+            HelixSettings.instance.lineNumberMode shouldBe HelixLineNumberMode.PURE_RELATIVE
+            editor.settings.lineNumerationType shouldBe
+                com.intellij.openapi.editor.EditorSettings.LineNumerationType.RELATIVE
 
             HelixVisualToggleActions.handleSetOption("line-number", "absolute", editor)
             HelixSettings.instance.lineNumberMode shouldBe HelixLineNumberMode.ABSOLUTE
@@ -1257,6 +1268,68 @@ class HelixUiPopupsTest : BasePlatformTestCase() {
             HelixSettings.instance.lineNumberMode shouldBe HelixLineNumberMode.ABSOLUTE
         } finally {
             HelixSettings.instance.lineNumberMode = origLineNumberMode
+            HelixEditorEligibility.refreshAllEditors()
+        }
+    }
+
+    fun testToggleOptionCycleValues() {
+        myFixture.configureByText("test.txt", "line 1\nline 2\nline 3\n")
+        val editor = myFixture.editor
+        val origLineNumberMode = HelixSettings.instance.lineNumberMode
+        try {
+            // Start at absolute
+            HelixCommands.execute("set-option line-number absolute", editor)
+            HelixEffectiveSettings.lineNumberMode shouldBe HelixLineNumberMode.ABSOLUTE
+            editor.settings.lineNumerationType shouldBe
+                com.intellij.openapi.editor.EditorSettings.LineNumerationType.ABSOLUTE
+
+            // 1. Cycle line-number between relative and absolute using canonical toggle-option
+            HelixCommands.execute("toggle-option line-number relative absolute", editor)
+            HelixEffectiveSettings.lineNumberMode shouldBe HelixLineNumberMode.RELATIVE
+            editor.settings.lineNumerationType shouldBe
+                com.intellij.openapi.editor.EditorSettings.LineNumerationType.HYBRID
+
+            HelixCommands.execute("toggle-option line-number relative absolute", editor)
+            HelixEffectiveSettings.lineNumberMode shouldBe HelixLineNumberMode.ABSOLUTE
+            editor.settings.lineNumerationType shouldBe
+                com.intellij.openapi.editor.EditorSettings.LineNumerationType.ABSOLUTE
+
+            // 2. Cycle using toggle shorthand alias
+            HelixCommands.execute("toggle line-number relative absolute", editor)
+            HelixEffectiveSettings.lineNumberMode shouldBe HelixLineNumberMode.RELATIVE
+            editor.settings.lineNumerationType shouldBe
+                com.intellij.openapi.editor.EditorSettings.LineNumerationType.HYBRID
+
+            // 3. Multi-value cycle across three options
+            HelixCommands.execute("toggle-option line-number relative absolute off", editor)
+            HelixEffectiveSettings.lineNumberMode shouldBe HelixLineNumberMode.ABSOLUTE
+
+            HelixCommands.execute("toggle-option line-number relative absolute off", editor)
+            HelixEffectiveSettings.lineNumberMode shouldBe HelixLineNumberMode.OFF
+            editor.settings.isLineNumbersShown.shouldBeFalse()
+
+            HelixCommands.execute("toggle-option line-number relative absolute off", editor)
+            HelixEffectiveSettings.lineNumberMode shouldBe HelixLineNumberMode.RELATIVE
+            editor.settings.isLineNumbersShown.shouldBeTrue()
+            editor.settings.lineNumerationType shouldBe
+                com.intellij.openapi.editor.EditorSettings.LineNumerationType.HYBRID
+
+            // 4. Cycle whitespace rendering values (all / none)
+            HelixCommands.execute("toggle-option whitespace.render all none", editor)
+            editor.settings.isWhitespacesShown.shouldBeTrue()
+
+            HelixCommands.execute("toggle-option whitespace.render all none", editor)
+            editor.settings.isWhitespacesShown.shouldBeFalse()
+
+            // 5. Cycle boolean soft-wrap
+            HelixCommands.execute("toggle-option soft-wrap.enable true false", editor)
+            editor.settings.isUseSoftWraps.shouldBeTrue()
+
+            HelixCommands.execute("toggle-option soft-wrap.enable true false", editor)
+            editor.settings.isUseSoftWraps.shouldBeFalse()
+        } finally {
+            HelixSettings.instance.lineNumberMode = origLineNumberMode
+            HelixEffectiveSettings.clearAllOverrides()
             HelixEditorEligibility.refreshAllEditors()
         }
     }

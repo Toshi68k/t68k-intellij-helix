@@ -98,6 +98,32 @@ object HelixEffectiveSettings {
 
     fun getAllOverrides(): List<HelixOptionOverride> = tomlOverrides.values.toList()
 
+    fun getEffectiveValue(key: String): Any? {
+        val norm = HelixEditorOptions.normalizeKey(key)
+        val def = HelixEditorOptions.findDefinition(norm)
+        val canonicalKey = def?.key ?: norm
+        sessionOverrides[canonicalKey]?.let { return it }
+        getOverride(canonicalKey)?.value?.let { return it }
+        return when (canonicalKey) {
+            "line-number" -> lineNumberMode
+            "color-modes" -> colorModes
+            "cursor-tint" -> cursorTint
+            "cursor-shape.normal" -> cursorShapeNormal
+            "cursor-shape.insert" -> cursorShapeInsert
+            "cursor-shape.select" -> cursorShapeSelect
+            "search.smart-case" -> searchSmartCase
+            "search.wrap-around" -> searchWrapAround
+            "jump-label-alphabet" -> jumpLabelAlphabet
+            "scrolloff" -> scrolloff
+            "cursorline" -> cursorline
+            "rulers" -> rulers
+            "soft-wrap.enable" -> softWrap
+            "whitespace.render" -> whitespaceRender
+            "indent-guides.render" -> indentGuides
+            else -> null
+        }
+    }
+
     // Effective settings properties
 
     val lineNumberMode: HelixLineNumberMode

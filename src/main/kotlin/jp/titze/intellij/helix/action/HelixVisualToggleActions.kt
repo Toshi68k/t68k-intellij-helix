@@ -185,6 +185,7 @@ object HelixVisualToggleActions {
         "relative" -> HelixLineNumberMode.RELATIVE
         "smart", "smart-relative" -> HelixLineNumberMode.SMART
         "hybrid" -> HelixLineNumberMode.HYBRID
+        "pure-relative", "relative-zero", "zero-relative" -> HelixLineNumberMode.PURE_RELATIVE
         "absolute" -> HelixLineNumberMode.ABSOLUTE
         "default", "ide", "ide-default" -> HelixLineNumberMode.IDE_DEFAULT
         "off", "none" -> HelixLineNumberMode.OFF

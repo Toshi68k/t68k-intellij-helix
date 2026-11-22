@@ -5,16 +5,20 @@ package jp.titze.intellij.helix.command
 
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.editor.Editor
+import com.intellij.openapi.editor.ex.EditorSettingsExternalizable
 import com.intellij.openapi.fileEditor.OpenFileDescriptor
 import com.intellij.openapi.vfs.LocalFileSystem
 import jp.titze.intellij.helix.action.HelixActionDelegate
 import jp.titze.intellij.helix.action.HelixActions
 import jp.titze.intellij.helix.action.HelixShellActions
 import jp.titze.intellij.helix.action.HelixVisualToggleActions
+import jp.titze.intellij.helix.config.HelixEditorOptions
 import jp.titze.intellij.helix.jumplist.HelixJumpListService
 import jp.titze.intellij.helix.motion.HelixMotions
 import jp.titze.intellij.helix.register.HelixRegisterManager
+import jp.titze.intellij.helix.settings.HelixEffectiveSettings
 import jp.titze.intellij.helix.settings.HelixLineNavigationMode
+import jp.titze.intellij.helix.settings.HelixLineNumberMode
 import jp.titze.intellij.helix.settings.HelixScratchSplitMode
 import jp.titze.intellij.helix.settings.HelixSearchUiMode
 import jp.titze.intellij.helix.settings.HelixSettings
@@ -459,6 +463,10 @@ object HelixCommands {
 
     private fun executeSetOption(arg: String, editor: Editor): Boolean {
         val (key, value) = parseOptionKeyValue(arg) ?: return false
+        return setOptionValue(key, value, editor)
+    }
+
+    private fun setOptionValue(key: String, value: String, editor: Editor): Boolean {
         if (HelixVisualToggleActions.handleSetOption(key, value, editor)) {
             return true
         }
@@ -466,11 +474,93 @@ object HelixCommands {
     }
 
     private fun executeToggleOption(arg: String, editor: Editor): Boolean {
-        val key = arg.trim()
+        val trimmed = arg.trim()
+        if (trimmed.isEmpty()) return false
+        val tokens = trimmed.split(Regex("\\s+"))
+        val key = tokens[0]
+        val values = tokens.drop(1)
+        if (values.isNotEmpty()) {
+            return cycleOptionValues(key, values, editor)
+        }
         if (HelixVisualToggleActions.handleToggleOption(key, editor)) {
             return true
         }
         return executeSettingToggle(key)
+    }
+
+    private fun cycleOptionValues(key: String, values: List<String>, editor: Editor): Boolean {
+        val currentIndex = findCurrentOptionValueIndex(key, values, editor)
+        val nextIndex = if (currentIndex >= 0) (currentIndex + 1) % values.size else 0
+        val nextVal = values[nextIndex]
+        return setOptionValue(key, nextVal, editor)
+    }
+
+    private fun findCurrentOptionValueIndex(key: String, values: List<String>, editor: Editor): Int {
+        val normKey = HelixEditorOptions.normalizeKey(key)
+        val def = HelixEditorOptions.findDefinition(normKey)
+        if (def != null) {
+            val effectiveVal = HelixEffectiveSettings.getEffectiveValue(def.key)
+                ?: getEditorFallbackValue(def.key, editor)
+            for (i in values.indices) {
+                val parsed = def.parse(values[i])
+                if (parsed != null && isOptionValueMatch(parsed, effectiveVal)) {
+                    return i
+                }
+            }
+        }
+        for (i in values.indices) {
+            if (isAdHocSettingMatch(normKey, values[i])) {
+                return i
+            }
+        }
+        return -1
+    }
+
+    private fun isOptionValueMatch(parsed: Any?, currentVal: Any?): Boolean {
+        if (currentVal == null) return false
+        if (parsed == currentVal) return true
+        if (parsed is HelixLineNumberMode && currentVal is HelixLineNumberMode) {
+            val parsedHybrid = parsed == HelixLineNumberMode.RELATIVE || parsed == HelixLineNumberMode.HYBRID
+            val currentHybrid = currentVal == HelixLineNumberMode.RELATIVE || currentVal == HelixLineNumberMode.HYBRID
+            return parsedHybrid && currentHybrid
+        }
+        return false
+    }
+
+    private fun getEditorFallbackValue(canonicalKey: String, editor: Editor): Any? = when (canonicalKey) {
+        "soft-wrap.enable" -> editor.settings.isUseSoftWraps
+        "whitespace.render" -> editor.settings.isWhitespacesShown
+        "breadcrumbs.enable" -> EditorSettingsExternalizable.getInstance().isBreadcrumbsShown
+        else -> null
+    }
+
+    private fun isAdHocSettingMatch(normKey: String, candidate: String): Boolean = when (normKey) {
+        "search-ui", "search-ui.mode", "search.ui" -> {
+            val mode = HelixSettings.instance.searchUiMode
+            (mode == HelixSearchUiMode.STOCK_HELIX && candidate.lowercase() in listOf("inline", "stock")) ||
+                (mode == HelixSearchUiMode.POPUP && candidate.equals("popup", ignoreCase = true))
+        }
+
+        "line-nav", "line-navigation", "line-navigation.mode" -> {
+            val mode = HelixSettings.instance.lineNavigationMode
+            (mode == HelixLineNavigationMode.HELIX_STANDARD && candidate.lowercase() in listOf("helix", "stock")) ||
+                (mode == HelixLineNavigationMode.VIM_STANDARD && candidate.lowercase() in listOf("vim", "physical"))
+        }
+
+        "scratch-mode", "scratch.mode" -> {
+            val mode = HelixSettings.instance.scratchSplitMode
+            (mode == HelixScratchSplitMode.INTERACTIVE && candidate.lowercase() in listOf("interactive", "file")) ||
+                (
+                    mode == HelixScratchSplitMode.EMPTY_BUFFER && candidate.lowercase() in listOf(
+                        "buffer",
+                        "plain",
+                        "helix",
+                        "empty",
+                    )
+                    )
+        }
+
+        else -> false
     }
 
     private fun parseOptionKeyValue(rawArg: String): Pair<String, String>? {
