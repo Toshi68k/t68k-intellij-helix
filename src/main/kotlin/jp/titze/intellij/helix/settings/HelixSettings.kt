@@ -46,8 +46,9 @@ enum class HelixScratchSplitMode(val displayName: String) {
 enum class HelixLineNumberMode(val displayName: String) {
     IDE_DEFAULT("Use IDE Default"),
     ABSOLUTE("Absolute: Standard line numbers (1, 2, 3...)"),
-    RELATIVE("Relative: Distance from cursor line (0, 1, 2...)"),
+    RELATIVE("Relative: Current line is absolute, others relative (Helix default)"),
     HYBRID("Hybrid: Current line is absolute, others relative"),
+    PURE_RELATIVE("Pure Relative: Distance from cursor line (0, 1, 2...)"),
     SMART("Smart: Relative in Normal/Select, Absolute in Insert"),
     OFF("Hidden: Do not show line numbers"),
 }

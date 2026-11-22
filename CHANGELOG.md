@@ -12,6 +12,18 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   - Formats snippets with single-line whitespace normalization (`\n` &rarr; `⏎`), multi-line truncation (`…` at 36 chars), linewise tags (`[L]`), and multi-caret piece-wise selection counts (`[N sel]`).
   - Dynamically discovers and renders active delete history registers (`1`–`9`) and populated named registers (`a`–`z`), omitting empty letter slots to keep Which-Key compact and noise-free.
   - Monospace snippet styling matching the `:reg` palette, with custom tooltips previewing full register contents.
+    
+- **Helix Option Value Cycling (`:toggle-option` & `:toggle`)**:
+  - Enhanced `:toggle-option <key> [val1 val2 ...]` (alias `:toggle`) to support cycling through multiple space-separated option values (e.g. `:toggle line-number relative absolute` or `:toggle whitespace.render all none`).
+  - When no target values are provided, it performs canonical boolean or default state toggling.
+    
+- **Pure Relative Gutter Line Numbers (`pure-relative`)**:
+  - Added an explicit `pure-relative` option (with aliases `relative-zero` and `zero-relative`) for users who specifically prefer IntelliJ's 0-based distance display on the cursor line instead of the hybrid Helix default.
+
+### Changed
+
+- **Helix-Aligned Relative Line Numbers (`line-number = "relative"`)**:
+  - Aligned `line-number = "relative"` and `HelixLineNumberMode.SMART` (Normal and Select modes) with stock Helix by default, displaying the actual line number on the active cursor line and relative distances on all other lines (using IntelliJ's native `LineNumerationType.HYBRID`).
 
 ## [0.8.0]
 

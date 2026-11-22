@@ -45,19 +45,21 @@ object HelixLineNumberManager {
                 updateNumeration(editor, true, EditorSettings.LineNumerationType.ABSOLUTE)
             }
 
-            HelixLineNumberMode.RELATIVE -> {
-                updateNumeration(editor, true, EditorSettings.LineNumerationType.RELATIVE)
+            HelixLineNumberMode.RELATIVE,
+            HelixLineNumberMode.HYBRID,
+            -> {
+                updateNumeration(editor, true, EditorSettings.LineNumerationType.HYBRID)
             }
 
-            HelixLineNumberMode.HYBRID -> {
-                updateNumeration(editor, true, EditorSettings.LineNumerationType.HYBRID)
+            HelixLineNumberMode.PURE_RELATIVE -> {
+                updateNumeration(editor, true, EditorSettings.LineNumerationType.RELATIVE)
             }
 
             HelixLineNumberMode.SMART -> {
                 val targetNumeration = if (mode == HelixMode.INSERT) {
                     EditorSettings.LineNumerationType.ABSOLUTE
                 } else {
-                    EditorSettings.LineNumerationType.RELATIVE
+                    EditorSettings.LineNumerationType.HYBRID
                 }
                 updateNumeration(editor, true, targetNumeration)
             }
@@ -71,6 +73,7 @@ object HelixLineNumberManager {
         val nextMode = when (current) {
             HelixLineNumberMode.RELATIVE,
             HelixLineNumberMode.HYBRID,
+            HelixLineNumberMode.PURE_RELATIVE,
             HelixLineNumberMode.SMART,
             -> HelixLineNumberMode.ABSOLUTE
 

@@ -81,6 +81,9 @@ class HelixSettingsTest : BasePlatformTestCase() {
         settings.lineNumberMode = HelixLineNumberMode.HYBRID
         settings.lineNumberMode shouldBe HelixLineNumberMode.HYBRID
 
+        settings.lineNumberMode = HelixLineNumberMode.PURE_RELATIVE
+        settings.lineNumberMode shouldBe HelixLineNumberMode.PURE_RELATIVE
+
         settings.lineNumberMode = HelixLineNumberMode.ABSOLUTE
         settings.lineNumberMode shouldBe HelixLineNumberMode.ABSOLUTE
 
