@@ -30,5 +30,23 @@ data class HelixRegisterItem(val register: Char, val description: String, val en
 
     companion object {
         private const val MAX_MATCH_CHARS = 1000
+        private const val DEFAULT_SNIPPET_MAX_CHARS = 36
+
+        fun formatSnippet(entry: HelixRegisterEntry?, maxChars: Int = DEFAULT_SNIPPET_MAX_CHARS): String {
+            if (entry == null || entry.text.isEmpty()) return "(empty)"
+            val clean = entry.text.trim().replace("\r\n", " ").replace("\n", "⏎ ")
+            if (clean.isEmpty()) return "(whitespace)"
+            val tag = when {
+                entry.pieces.size > 1 -> "[${entry.pieces.size} sel] "
+                entry.isLinewise -> "[L] "
+                else -> ""
+            }
+            val combined = "$tag$clean"
+            return if (combined.length > maxChars) {
+                combined.take(maxChars - 1).trimEnd() + "…"
+            } else {
+                combined
+            }
+        }
     }
 }

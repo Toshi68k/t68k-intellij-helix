@@ -328,6 +328,9 @@ Helix Keymap provides a full modal register subsystem with authentic multi-caret
 | `#`       | `"#`        | Dynamic selection index register (`0`, `1`, `2`, ... across multi-carets)      |
 | `.`       | `".`        | Last inserted text register (inserted during last insert sequence)             |
 
+- **Live Register Preview in Which-Key**: Pressing `"` in Normal/Select mode or `Ctrl+r` in Insert mode pops up
+  a live Which-Key overlay showing real-time snippets (`[L]`, `[N sel]`, single-line flattened text up to 36 chars)
+  for all populated registers, eliminating guesswork before striking a key.
 - **Piece-wise Multi-Caret Pasting**: When yanking $N$ selections (e.g. across 3 carets), Helix records each selection
   as an individual piece. When pasting into $N$ carets (`p`, `P`, `R`), each caret in document order receives its
   corresponding piece (`pieces[i]`). If caret counts differ, it cleanly falls back to pasting the full concatenated
@@ -424,11 +427,14 @@ and [Helix Textobjects](https://docs.helix-editor.com/textobjects.html):
 
 #### Interactive Which-Key Floating Menu
 
-Whenever a chord prefix key (<kbd>Space</kbd>, `Ctrl+w`, `g`, `m`, `[`, or `]`) is pressed in Normal mode, an
+Whenever a chord prefix key (<kbd>Space</kbd>, `Ctrl+w`, `"`, `g`, `m`, `[`, `]`, or Insert `Ctrl+r`) is pressed, an
 interactive, non-intrusive **Which-Key popup** appears in authentic Helix cyan:
 
 - **Zero latency**: Muscle memory stays instant—typing the follow-up key immediately executes the command without
   waiting.
+- **Live Register Previews**: Pressing `"` or `Ctrl+r` displays live text snippets for every populated register
+  (`default`, `last yank`, `numbered delete history`, `named a–z`, `clipboard`, `search pattern`, `buffer name`,
+  `last insert`).
 - **Visual discoverability**: Pausing on any chord reveals all available pickers and actions in authentic Helix
   `snake_case`.
 - **Interactive hint toggle**: Pressing <kbd>Tab</kbd> or clicking the header badge dynamically toggles between Helix
