@@ -5,6 +5,14 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+
+- **Live Preview for Registers (`"`) and Insert Registers (`Ctrl-r`) in Which-Key**:
+  - Pressing `"` in Normal or Select mode (or `Ctrl-r` in Insert mode) now displays a live preview overlay populated with actual text snippets from active registers instead of generic category rows.
+  - Formats snippets with single-line whitespace normalization (`\n` &rarr; `⏎`), multi-line truncation (`…` at 36 chars), linewise tags (`[L]`), and multi-caret piece-wise selection counts (`[N sel]`).
+  - Dynamically discovers and renders active delete history registers (`1`–`9`) and populated named registers (`a`–`z`), omitting empty letter slots to keep Which-Key compact and noise-free.
+  - Monospace snippet styling matching the `:reg` palette, with custom tooltips previewing full register contents.
+
 ## [0.8.0]
 
 ### Added

@@ -3,11 +3,17 @@
 
 package jp.titze.intellij.helix.ui
 
+import com.intellij.openapi.editor.Editor
 import jp.titze.intellij.helix.HelixBundle
+import jp.titze.intellij.helix.action.HelixSearchActions
+import jp.titze.intellij.helix.editor.HelixInsertTracker
 import jp.titze.intellij.helix.keymap.HelixCommandRegistry
 import jp.titze.intellij.helix.keymap.HelixKeyStroke
 import jp.titze.intellij.helix.keymap.HelixKeymapManager
 import jp.titze.intellij.helix.keymap.HelixKeymapNode
+import jp.titze.intellij.helix.register.HelixRegisterEntry
+import jp.titze.intellij.helix.register.HelixRegisterItem
+import jp.titze.intellij.helix.register.HelixRegisterManager
 import jp.titze.intellij.helix.settings.HelixLineNavigationMode
 import jp.titze.intellij.helix.settings.HelixSettings
 import jp.titze.intellij.helix.state.HelixMode
@@ -17,6 +23,7 @@ data class WhichKeyItem(
     val label: String,
     val helixCommand: String = "",
     val intelliJAction: String = "",
+    val snippet: String? = null,
 ) {
     val description: String get() = helixCommand
 }
@@ -189,18 +196,163 @@ object HelixWhichKeyMenus {
         WhichKeyItem("m", "Maximize active split", "wmaximize", "MaximizeEditorInSplit"),
     )
 
-    val registerItems = listOf(
-        WhichKeyItem("_", "Black hole", "black_hole"),
-        WhichKeyItem("\"", "Default register", "default_register"),
-        WhichKeyItem("+", "System clipboard", "system_clipboard"),
-        WhichKeyItem("*", "Primary selection", "primary_selection"),
-        WhichKeyItem("0-9", "Numbered registers", "numbered_registers"),
-        WhichKeyItem("a-z", "Named registers", "named_registers"),
-        WhichKeyItem("/", "Search register", "search_register"),
-        WhichKeyItem("%", "Buffer name", "buffer_name_register"),
-        WhichKeyItem("#", "Selection index", "selection_index_register"),
-        WhichKeyItem(".", "Last inserted text", "last_insert_register"),
-    )
+    fun getRegisterItems(editor: Editor? = null): List<WhichKeyItem> {
+        val items = mutableListOf<WhichKeyItem>()
+        addStandardRegisterItems(items, editor)
+        addDeleteRegisterItems(items, editor)
+        addNamedRegisterItems(items, editor)
+        addSpecialRegisterItems(items, editor)
+        return items
+    }
+
+    private fun addStandardRegisterItems(items: MutableList<WhichKeyItem>, editor: Editor?) {
+        val defaultEntry = HelixRegisterManager.get('"', editor)
+        items.add(
+            WhichKeyItem(
+                key = "\"",
+                label = "Default register",
+                helixCommand = "default_register",
+                snippet = HelixRegisterItem.formatSnippet(defaultEntry),
+            ),
+        )
+
+        val yankEntry = HelixRegisterManager.get('0', editor)
+        items.add(
+            WhichKeyItem(
+                key = "0",
+                label = "Last yank",
+                helixCommand = "yank_register",
+                snippet = HelixRegisterItem.formatSnippet(yankEntry),
+            ),
+        )
+    }
+
+    private fun addDeleteRegisterItems(items: MutableList<WhichKeyItem>, editor: Editor?) {
+        var hasDeleteRegs = false
+        for (i in 1..9) {
+            val entry = HelixRegisterManager.get(('0'.code + i).toChar(), editor)
+            if (entry != null) {
+                hasDeleteRegs = true
+                items.add(
+                    WhichKeyItem(
+                        key = i.toString(),
+                        label = "Delete $i",
+                        helixCommand = "delete_register_$i",
+                        snippet = HelixRegisterItem.formatSnippet(entry),
+                    ),
+                )
+            }
+        }
+        if (!hasDeleteRegs) {
+            items.add(
+                WhichKeyItem(
+                    key = "1-9",
+                    label = "Numbered registers",
+                    helixCommand = "numbered_registers",
+                    snippet = "(empty)",
+                ),
+            )
+        }
+    }
+
+    private fun addNamedRegisterItems(items: MutableList<WhichKeyItem>, editor: Editor?) {
+        var hasNamedRegs = false
+        for (c in 'a'..'z') {
+            val entry = HelixRegisterManager.get(c, editor)
+            if (entry != null) {
+                hasNamedRegs = true
+                items.add(
+                    WhichKeyItem(
+                        key = c.toString(),
+                        label = "Named '$c'",
+                        helixCommand = "named_register_$c",
+                        snippet = HelixRegisterItem.formatSnippet(entry),
+                    ),
+                )
+            }
+        }
+        if (!hasNamedRegs) {
+            items.add(
+                WhichKeyItem(
+                    key = "a-z",
+                    label = "Named registers",
+                    helixCommand = "named_registers",
+                    snippet = "(empty)",
+                ),
+            )
+        }
+    }
+
+    private fun addSpecialRegisterItems(items: MutableList<WhichKeyItem>, editor: Editor?) {
+        val clipEntry = HelixRegisterManager.getFromClipboard()
+        items.add(
+            WhichKeyItem(
+                key = "+",
+                label = "System clipboard",
+                helixCommand = "system_clipboard",
+                snippet = HelixRegisterItem.formatSnippet(clipEntry),
+            ),
+        )
+        items.add(
+            WhichKeyItem(
+                key = "*",
+                label = "Primary selection",
+                helixCommand = "primary_selection",
+                snippet = HelixRegisterItem.formatSnippet(clipEntry),
+            ),
+        )
+
+        val searchPattern = HelixSearchActions.lastSearchPattern
+        val searchEntry = searchPattern?.let { HelixRegisterEntry(text = it) }
+        items.add(
+            WhichKeyItem(
+                key = "/",
+                label = "Search register",
+                helixCommand = "search_register",
+                snippet = HelixRegisterItem.formatSnippet(searchEntry),
+            ),
+        )
+
+        val bufName = editor?.virtualFile?.name
+        items.add(
+            WhichKeyItem(
+                key = "%",
+                label = "Buffer name",
+                helixCommand = "buffer_name_register",
+                snippet = bufName ?: "(none)",
+            ),
+        )
+
+        val lastInsert = HelixInsertTracker.lastInsertedText
+        val insertEntry = lastInsert?.let { HelixRegisterEntry(text = it) }
+        items.add(
+            WhichKeyItem(
+                key = ".",
+                label = "Last inserted text",
+                helixCommand = "last_insert_register",
+                snippet = HelixRegisterItem.formatSnippet(insertEntry),
+            ),
+        )
+
+        val caretCount = editor?.caretModel?.caretCount ?: 1
+        items.add(
+            WhichKeyItem(
+                key = "#",
+                label = "Selection index",
+                helixCommand = "selection_index_register",
+                snippet = "$caretCount sel",
+            ),
+        )
+
+        items.add(
+            WhichKeyItem(
+                key = "_",
+                label = "Black hole",
+                helixCommand = "black_hole",
+                snippet = "(discard)",
+            ),
+        )
+    }
 
     val textObjectItems = listOf(
         WhichKeyItem("w", "Word", "word_textobject"),
@@ -280,10 +432,11 @@ object HelixWhichKeyMenus {
         WhichKeyItem("?", "VCS operations popup", "vcs_menu", "Vcs.QuickListPopupAction"),
     )
 
-    fun getMenu(prefix: String): Pair<String, List<WhichKeyItem>>? = getMenu(prefix, HelixMode.NORMAL)
+    fun getMenu(prefix: String, editor: Editor? = null): Pair<String, List<WhichKeyItem>>? =
+        getMenu(prefix, HelixMode.NORMAL, editor)
 
-    fun getMenu(prefix: String, mode: HelixMode): Pair<String, List<WhichKeyItem>>? {
-        val base = getBaseMenu(prefix)
+    fun getMenu(prefix: String, mode: HelixMode, editor: Editor? = null): Pair<String, List<WhichKeyItem>>? {
+        val base = getBaseMenu(prefix, editor)
         val branchChildren = HelixKeymapManager.getBranchChildren(mode, prefix)
 
         if (base == null && branchChildren == null) {
@@ -300,7 +453,7 @@ object HelixWhichKeyMenus {
         return title to mergeMenuItems(baseItems, branchChildren)
     }
 
-    private fun getBaseMenu(prefix: String): Pair<String, List<WhichKeyItem>>? = when (prefix) {
+    private fun getBaseMenu(prefix: String, editor: Editor? = null): Pair<String, List<WhichKeyItem>>? = when (prefix) {
         " " -> HelixBundle.message("whichKey.menu.space") to spaceItems
         " G", "space G", "G", "dap" -> HelixBundle.message("whichKey.menu.debug") to debugItems
         " m", "space m", "refactor" -> HelixBundle.message("whichKey.menu.refactor") to refactorItems
@@ -315,8 +468,8 @@ object HelixWhichKeyMenus {
         "z" -> HelixBundle.message("whichKey.menu.view") to viewItems
         "Z" -> HelixBundle.message("whichKey.menu.stickyView") to viewItems
         "C-w", "Ctrl+w", "\u0017", " w", "space w" -> HelixBundle.message("whichKey.menu.window") to windowItems
-        "\"" -> HelixBundle.message("whichKey.menu.registers") to registerItems
-        "C-r", "Ctrl+r", "\u0012" -> HelixBundle.message("whichKey.menu.insertRegister") to registerItems
+        "\"" -> HelixBundle.message("whichKey.menu.registers") to getRegisterItems(editor)
+        "C-r", "Ctrl+r", "\u0012" -> HelixBundle.message("whichKey.menu.insertRegister") to getRegisterItems(editor)
         else -> null
     }
 

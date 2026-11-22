@@ -145,7 +145,7 @@ object HelixWhichKeyPopup {
         activeEditor = editor
 
         val mode = HelixStateManager.getOrCreate(editor).mode
-        val (title, items) = HelixWhichKeyMenus.getMenu(prefix, mode) ?: return
+        val (title, items) = HelixWhichKeyMenus.getMenu(prefix, mode, editor) ?: return
 
         val component = editor.component
         val visibleRect = component.visibleRect
@@ -449,6 +449,7 @@ object HelixWhichKeyPopup {
     ): JPanel {
         fun createRow(item: WhichKeyItem): JPanel {
             val row = WhichKeyRow(item, activeHintMode) {
+                if (item.key.contains("-")) return@WhichKeyRow
                 isHandlingSelection = true
                 try {
                     val state = HelixStateManager.getOrCreate(editor)
@@ -649,8 +650,20 @@ object HelixWhichKeyPopup {
         JPanel(BorderLayout(JBUI.scale(8), 0)) {
         private var isHovered = false
         private val descLabel = JBLabel().apply {
-            font = JBUI.Fonts.smallFont()
-            foreground = ITEM_DESC_COLOR
+            font = if (item.snippet != null) {
+                Font(Font.MONOSPACED, Font.PLAIN, JBUI.scaleFontSize(11f))
+            } else {
+                JBUI.Fonts.smallFont()
+            }
+            foreground = if (item.snippet != null) {
+                if (item.snippet.startsWith("(") && item.snippet.endsWith(")")) {
+                    CANCEL_COLOR
+                } else {
+                    HelixTheme.ITEM_SNIPPET_COLOR
+                }
+            } else {
+                ITEM_DESC_COLOR
+            }
             border = JBUI.Borders.emptyLeft(6)
         }
 
@@ -692,14 +705,24 @@ object HelixWhichKeyPopup {
         }
 
         fun updateHintMode(mode: WhichKeyHintMode) {
-            val text = when (mode) {
-                WhichKeyHintMode.HELIX_COMMAND -> item.helixCommand
-                WhichKeyHintMode.INTELLIJ_ACTION -> item.intelliJAction.ifEmpty { item.helixCommand }
+            val text = when {
+                item.snippet != null -> item.snippet
+                mode == WhichKeyHintMode.HELIX_COMMAND -> item.helixCommand
+                else -> item.intelliJAction.ifEmpty { item.helixCommand }
             }
             descLabel.text = text
             descLabel.isVisible = text.isNotEmpty() && text != item.label
+            if (item.snippet != null) {
+                descLabel.font = Font(Font.MONOSPACED, Font.PLAIN, JBUI.scaleFontSize(11f))
+                descLabel.foreground = if (item.snippet.startsWith("(") && item.snippet.endsWith(")")) {
+                    CANCEL_COLOR
+                } else {
+                    HelixTheme.ITEM_SNIPPET_COLOR
+                }
+            }
 
             toolTipText = when {
+                item.snippet != null -> "${item.label}: ${item.snippet}"
                 item.intelliJAction.isNotEmpty() -> "IntelliJ Action: ${item.intelliJAction} (${item.helixCommand})"
                 item.helixCommand.isNotEmpty() -> "Helix Command: ${item.helixCommand}"
                 else -> item.label

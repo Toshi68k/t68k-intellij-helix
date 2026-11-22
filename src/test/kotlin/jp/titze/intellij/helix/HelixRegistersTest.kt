@@ -12,6 +12,7 @@ import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
 import jp.titze.intellij.helix.action.HelixSearchActions
 import jp.titze.intellij.helix.editor.HelixEscapeHandler
+import jp.titze.intellij.helix.editor.HelixInsertTracker
 import jp.titze.intellij.helix.keymap.HelixKeyHandler
 import jp.titze.intellij.helix.register.HelixRegisterManager
 import jp.titze.intellij.helix.state.HelixMode
@@ -26,11 +27,15 @@ class HelixRegistersTest : BasePlatformTestCase() {
         super.setUp()
         HelixRegisterManager.clear()
         HelixVisualFeedback.clearAll()
+        HelixSearchActions.lastSearchPattern = null
+        HelixInsertTracker.reset()
     }
 
     override fun tearDown() {
         HelixRegisterManager.clear()
         HelixVisualFeedback.clearAll()
+        HelixSearchActions.lastSearchPattern = null
+        HelixInsertTracker.reset()
         super.tearDown()
     }
 
@@ -513,10 +518,10 @@ class HelixRegistersTest : BasePlatformTestCase() {
         myFixture.configureByText("insert.txt", "")
         val editor = myFixture.editor
 
-        jp.titze.intellij.helix.editor.HelixInsertTracker.reset()
-        jp.titze.intellij.helix.editor.HelixInsertTracker.startInsert()
-        jp.titze.intellij.helix.editor.HelixInsertTracker.recordText("inserted_value")
-        jp.titze.intellij.helix.editor.HelixInsertTracker.finishInsert()
+        HelixInsertTracker.reset()
+        HelixInsertTracker.startInsert()
+        HelixInsertTracker.recordText("inserted_value")
+        HelixInsertTracker.finishInsert()
 
         val dotEntry = HelixRegisterManager.get('.')
         dotEntry?.text shouldBe "inserted_value"
@@ -682,5 +687,105 @@ class HelixRegistersTest : BasePlatformTestCase() {
         // Command without argument: :clear-register clears all
         jp.titze.intellij.helix.command.HelixCommands.execute("clear-register", editor)
         HelixRegisterManager.get('y').shouldBeNull()
+    }
+
+    fun testWhichKeyLivePreviewShowsPopulatedRegistersAndSnippets() {
+        myFixture.configureByText("test.kt", "fun example() {\n    val name = 123\n}")
+        val editor = myFixture.editor
+
+        HelixRegisterManager.recordYank("val x = 1\n", isLinewise = true, pieces = listOf("val x = 1\n"))
+        HelixRegisterManager.set('a', jp.titze.intellij.helix.register.HelixRegisterEntry("customNamedA"))
+        HelixRegisterManager.recordDelete("deleted_line\n", isLinewise = true, pieces = listOf("deleted_line\n"))
+        HelixSearchActions.lastSearchPattern = "findMe"
+        HelixInsertTracker.startInsert()
+        HelixInsertTracker.recordText("insertedVal")
+        HelixInsertTracker.finishInsert()
+
+        val menu = jp.titze.intellij.helix.ui.HelixWhichKeyMenus.getMenu("\"", HelixMode.NORMAL, editor)
+        menu?.first shouldBe "REGISTERS"
+        val items = menu?.second ?: emptyList()
+
+        val defaultItem = items.firstOrNull { it.key == "\"" }
+        defaultItem?.snippet shouldBe "[L] deleted_line"
+
+        val yankItem = items.firstOrNull { it.key == "0" }
+        yankItem?.snippet shouldBe "[L] val x = 1"
+
+        val delItem = items.firstOrNull { it.key == "1" }
+        delItem?.snippet shouldBe "[L] deleted_line"
+
+        val namedItem = items.firstOrNull { it.key == "a" }
+        namedItem?.label shouldBe "Named 'a'"
+        namedItem?.snippet shouldBe "customNamedA"
+
+        val searchItem = items.firstOrNull { it.key == "/" }
+        searchItem?.snippet shouldBe "findMe"
+
+        val bufferItem = items.firstOrNull { it.key == "%" }
+        bufferItem?.snippet shouldBe "test.kt"
+
+        val insertItem = items.firstOrNull { it.key == "." }
+        insertItem?.snippet shouldBe "insertedVal"
+
+        val hashItem = items.firstOrNull { it.key == "#" }
+        hashItem?.snippet shouldBe "1 sel"
+
+        val blackHoleItem = items.firstOrNull { it.key == "_" }
+        blackHoleItem?.snippet shouldBe "(discard)"
+
+        // Range placeholder "a-z" should not be shown when named register 'a' is populated
+        items.any { it.key == "a-z" }.shouldBeFalse()
+    }
+
+    fun testWhichKeyLivePreviewSnippetTruncationAndMultiSelection() {
+        myFixture.configureByText("test.txt", "content")
+        val editor = myFixture.editor
+
+        val longText = "this is an extremely long string that definitely exceeds thirty-six characters\n"
+        HelixRegisterManager.recordYank(longText, isLinewise = true, pieces = listOf(longText))
+        HelixRegisterManager.set(
+            'm',
+            jp.titze.intellij.helix.register.HelixRegisterEntry(
+                text = "first\nsecond\nthird",
+                isLinewise = false,
+                pieces = listOf("first", "second", "third"),
+            ),
+        )
+        HelixRegisterManager.set('w', jp.titze.intellij.helix.register.HelixRegisterEntry("   \n   "))
+
+        val menu = jp.titze.intellij.helix.ui.HelixWhichKeyMenus.getMenu("\"", HelixMode.NORMAL, editor)
+        val items = menu?.second ?: emptyList()
+
+        val yankItem = items.first { it.key == "0" }
+        yankItem.snippet?.endsWith("…")?.shouldBeTrue()
+        yankItem.snippet?.startsWith("[L] ")?.shouldBeTrue()
+
+        val multiItem = items.first { it.key == "m" }
+        multiItem.snippet?.startsWith("[3 sel] ")?.shouldBeTrue()
+
+        val whitespaceItem = items.first { it.key == "w" }
+        whitespaceItem.snippet shouldBe "(whitespace)"
+    }
+
+    fun testWhichKeyLivePreviewInsertModeRegisterChord() {
+        myFixture.configureByText("buffer.txt", "hello")
+        val editor = myFixture.editor
+
+        HelixRegisterManager.set('k', jp.titze.intellij.helix.register.HelixRegisterEntry("keepMe"))
+        val menu = jp.titze.intellij.helix.ui.HelixWhichKeyMenus.getMenu("C-r", HelixMode.INSERT, editor)
+        menu?.first shouldBe "INSERT REGISTER"
+        val items = menu?.second ?: emptyList()
+        items.firstOrNull { it.key == "k" }?.snippet shouldBe "keepMe"
+    }
+
+    fun testWhichKeyEmptyStatePlaceholders() {
+        myFixture.configureByText("empty.txt", "abc")
+        val editor = myFixture.editor
+
+        val menu = jp.titze.intellij.helix.ui.HelixWhichKeyMenus.getMenu("\"", HelixMode.NORMAL, editor)
+        val items = menu?.second ?: emptyList()
+
+        items.firstOrNull { it.key == "1-9" }?.snippet shouldBe "(empty)"
+        items.firstOrNull { it.key == "a-z" }?.snippet shouldBe "(empty)"
     }
 }
