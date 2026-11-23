@@ -97,6 +97,7 @@ class HelixSettingsState {
     var whichKeyHintMode: String = WhichKeyHintMode.HELIX_COMMAND.name
     var whichKeyColumnLayout: String = WhichKeyColumnLayout.AUTO.name
     var whichKeyMaxRows: Int = 0
+    var whichKeySnippetMaxLength: Int = HelixSettings.DEFAULT_WHICH_KEY_SNIPPET_MAX_LENGTH
     var searchHistory: MutableList<String> = mutableListOf()
     var regexHistory: MutableList<String> = mutableListOf()
     var shellHistory: MutableList<String> = mutableListOf()
@@ -399,7 +400,14 @@ class HelixSettings : PersistentStateComponent<HelixSettingsState> {
             myState.cliConfigFallbackMode = value.name
         }
 
+    var whichKeySnippetMaxLength: Int
+        get() = myState.whichKeySnippetMaxLength.coerceIn(0, 100)
+        set(value) {
+            myState.whichKeySnippetMaxLength = value.coerceIn(0, 100)
+        }
+
     companion object {
+        const val DEFAULT_WHICH_KEY_SNIPPET_MAX_LENGTH = 32
         const val DEFAULT_JUMP_LIST_MAX_ENTRIES = 100
         const val MIN_JUMP_LIST_ENTRIES = 10
         const val MAX_JUMP_LIST_ENTRIES = 1000

@@ -6,6 +6,7 @@ package jp.titze.intellij.helix.keymap
 import com.intellij.openapi.editor.Editor
 import jp.titze.intellij.helix.action.HelixActionDelegate
 import jp.titze.intellij.helix.action.HelixActions
+import jp.titze.intellij.helix.harpoon.HelixHarpoonService
 import jp.titze.intellij.helix.state.HelixMode
 import jp.titze.intellij.helix.state.HelixStateManager
 import jp.titze.intellij.helix.ui.HelixDirectoryFilePickerPopup
@@ -132,36 +133,54 @@ internal object HelixSpaceKeymap {
                 true
             }
 
-            'y' -> {
-                HelixActions.yankSelection(editor, register = '+')
-                true
-            }
-
-            'Y' -> {
-                HelixActions.yankMainSelection(editor, register = '+')
-                true
-            }
-
-            'p' -> {
-                HelixActions.paste(editor, after = true, register = '+')
-                true
-            }
-
-            'P' -> {
-                HelixActions.paste(editor, after = false, register = '+')
-                true
-            }
-
-            'R' -> {
-                HelixActions.replaceWithClipboard(editor, register = '+')
-                true
-            }
+            'y', 'Y', 'p', 'P', 'R' -> handleClipboard(ch, editor)
 
             'k' -> HelixActionDelegate.executeAction("QuickJavaDoc", editor)
 
             '?' -> HelixActionDelegate.executeAction("GotoAction", editor)
 
+            in '1'..'5' -> {
+                val project = editor.project ?: return false
+                HelixHarpoonService.getInstance(project).jumpToSlot(ch - '1', editor)
+            }
+
+            'H' -> {
+                val state = HelixStateManager.getOrCreate(editor)
+                state.setPendingSequence(" H")
+                jp.titze.intellij.helix.ui.HelixWhichKeyPopup.show(editor, " H")
+                true
+            }
+
             else -> false
         }
+    }
+
+    private fun handleClipboard(ch: Char, editor: Editor): Boolean = when (ch) {
+        'y' -> {
+            HelixActions.yankSelection(editor, register = '+')
+            true
+        }
+
+        'Y' -> {
+            HelixActions.yankMainSelection(editor, register = '+')
+            true
+        }
+
+        'p' -> {
+            HelixActions.paste(editor, after = true, register = '+')
+            true
+        }
+
+        'P' -> {
+            HelixActions.paste(editor, after = false, register = '+')
+            true
+        }
+
+        'R' -> {
+            HelixActions.replaceWithClipboard(editor, register = '+')
+            true
+        }
+
+        else -> false
     }
 }

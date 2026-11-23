@@ -7,6 +7,7 @@ import com.intellij.openapi.editor.Editor
 import jp.titze.intellij.helix.HelixBundle
 import jp.titze.intellij.helix.action.HelixSearchActions
 import jp.titze.intellij.helix.editor.HelixInsertTracker
+import jp.titze.intellij.helix.harpoon.HelixHarpoonService
 import jp.titze.intellij.helix.keymap.HelixCommandRegistry
 import jp.titze.intellij.helix.keymap.HelixKeyStroke
 import jp.titze.intellij.helix.keymap.HelixKeymapManager
@@ -67,6 +68,8 @@ object HelixWhichKeyMenus {
         WhichKeyItem("R", "Replace with clipboard", "replace_clipboard"),
         WhichKeyItem("k", "Hover / Documentation", "hover", "QuickJavaDoc"),
         WhichKeyItem("G", "Debug (DAP) menu", "dap"),
+        WhichKeyItem("1-5", "Quick slots 1–5", "harpoon_quick_jump"),
+        WhichKeyItem("H", "Harpoon / Quick slots", "harpoon_menu"),
         WhichKeyItem("?", "Command palette", "command_palette", "GotoAction"),
     )
 
@@ -459,6 +462,9 @@ object HelixWhichKeyMenus {
         " m", "space m", "refactor" -> HelixBundle.message("whichKey.menu.refactor") to refactorItems
         " t", "space t", "test" -> HelixBundle.message("whichKey.menu.test") to testItems
         " v", "space v", "vcs" -> HelixBundle.message("whichKey.menu.vcs") to vcsItems
+        " H", "space H", "harpoon" -> HelixBundle.message("whichKey.menu.harpoon") to getHarpoonItems(editor)
+        " H s", "space H s" -> HelixBundle.message("whichKey.menu.harpoonSet") to getHarpoonSetItems()
+        " H d", "space H d" -> HelixBundle.message("whichKey.menu.harpoonDelete") to getHarpoonDeleteItems()
         "g" -> HelixBundle.message("whichKey.menu.goto") to gotoItems
         "m" -> HelixBundle.message("whichKey.menu.match") to matchItems
         "ma" -> HelixBundle.message("whichKey.menu.selectAround") to textObjectItems
@@ -471,6 +477,53 @@ object HelixWhichKeyMenus {
         "\"" -> HelixBundle.message("whichKey.menu.registers") to getRegisterItems(editor)
         "C-r", "Ctrl+r", "\u0012" -> HelixBundle.message("whichKey.menu.insertRegister") to getRegisterItems(editor)
         else -> null
+    }
+
+    fun getHarpoonItems(editor: Editor? = null): List<WhichKeyItem> {
+        val project = editor?.project
+        val service = project?.let { HelixHarpoonService.getInstance(it) }
+        val slots = service?.getSlots() ?: emptyList()
+        val items = mutableListOf<WhichKeyItem>()
+        val maxSnippetLen = HelixSettings.instance.whichKeySnippetMaxLength
+        for (i in 1..HelixHarpoonService.SLOT_COUNT) {
+            val entry = if (i - 1 < slots.size) slots[i - 1] else null
+            val label = if (entry != null && entry.isValid) {
+                "${entry.virtualFile.name}:${entry.line}"
+            } else {
+                "(empty)"
+            }
+            val snippet = if (maxSnippetLen > 0 && entry != null && entry.previewText.isNotEmpty()) {
+                val clean = entry.previewText.trim().replace("\r\n", " ").replace("\n", " ")
+                if (clean.length > maxSnippetLen) {
+                    clean.take(maxSnippetLen - 1).trimEnd() + "…"
+                } else {
+                    clean
+                }
+            } else {
+                null
+            }
+            items.add(
+                WhichKeyItem(
+                    key = i.toString(),
+                    label = label,
+                    helixCommand = "harpoon_jump_$i",
+                    snippet = snippet,
+                ),
+            )
+        }
+        items.add(WhichKeyItem("a", "Pin current file", "harpoon_pin"))
+        items.add(WhichKeyItem("s", "Set slot (1-5)", "harpoon_set_slot"))
+        items.add(WhichKeyItem("d", "Delete slot (1-5)", "harpoon_delete_slot"))
+        items.add(WhichKeyItem("H", "Open Harpoon card UI", "harpoon_popup"))
+        return items
+    }
+
+    fun getHarpoonSetItems(): List<WhichKeyItem> = (1..HelixHarpoonService.SLOT_COUNT).map { i ->
+        WhichKeyItem(i.toString(), "Set slot $i", "harpoon_set_$i")
+    }
+
+    fun getHarpoonDeleteItems(): List<WhichKeyItem> = (1..HelixHarpoonService.SLOT_COUNT).map { i ->
+        WhichKeyItem(i.toString(), "Delete slot $i", "harpoon_delete_$i")
     }
 
     private fun mergeMenuItems(

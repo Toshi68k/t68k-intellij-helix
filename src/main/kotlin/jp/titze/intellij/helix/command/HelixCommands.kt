@@ -51,8 +51,6 @@ data class HelixCommandItem(
         return false
     }
 
-    fun matchScore(query: String): Int = matchScoreNormalized(query.lowercase())
-
     internal fun matchScoreNormalized(q: String): Int {
         if (q.isEmpty()) return 0
         return scoreExactOrPrefix(q)
@@ -174,6 +172,7 @@ object HelixCommands {
             repeat(count) { HelixActionDelegate.executeAction("PreviousTab", editor) }
             return
         }
+        if (executeHarpoonCommand(baseCmd, arg, editor)) return
 
         val matched = COMMANDS.firstOrNull {
             it.name.equals(cleanCmd, ignoreCase = true) || it.aliases.any { a -> a.equals(cleanCmd, ignoreCase = true) }
@@ -730,5 +729,40 @@ object HelixCommands {
         }
 
         else -> false
+    }
+
+    private fun executeHarpoonCommand(baseCmd: String, arg: String, editor: Editor): Boolean {
+        if (baseCmd in listOf("harpoon", "pins", "quick-slots")) {
+            val slotNum = arg.toIntOrNull()
+            if (slotNum != null && slotNum in 1..jp.titze.intellij.helix.harpoon.HelixHarpoonService.SLOT_COUNT) {
+                editor.project?.let {
+                    jp.titze.intellij.helix.harpoon.HelixHarpoonService.getInstance(it).jumpToSlot(slotNum - 1, editor)
+                }
+            } else {
+                jp.titze.intellij.helix.ui.HelixHarpoonPopup.show(editor)
+            }
+            return true
+        }
+        if (baseCmd in listOf("pin", "harpoon-add")) {
+            val project = editor.project ?: return true
+            val service = jp.titze.intellij.helix.harpoon.HelixHarpoonService.getInstance(project)
+            val slotNum = arg.toIntOrNull()
+            if (slotNum != null && slotNum in 1..jp.titze.intellij.helix.harpoon.HelixHarpoonService.SLOT_COUNT) {
+                service.setSlot(slotNum - 1, editor)
+            } else {
+                service.pinCurrent(editor)
+            }
+            return true
+        }
+        if (baseCmd in listOf("unpin", "harpoon-delete")) {
+            val project = editor.project ?: return true
+            val service = jp.titze.intellij.helix.harpoon.HelixHarpoonService.getInstance(project)
+            val slotNum = arg.toIntOrNull()
+            if (slotNum != null && slotNum in 1..jp.titze.intellij.helix.harpoon.HelixHarpoonService.SLOT_COUNT) {
+                service.clearSlot(slotNum - 1)
+            }
+            return true
+        }
+        return false
     }
 }

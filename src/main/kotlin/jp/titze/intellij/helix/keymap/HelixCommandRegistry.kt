@@ -102,6 +102,7 @@ object HelixCommandRegistry {
         registerSelectAndHistory()
         registerPickersAndLeader()
         registerViewAndWindow()
+        registerHarpoonAndBookmarks()
         HelixExtendedCommands.registerAll()
     }
 
@@ -692,6 +693,44 @@ object HelixCommandRegistry {
         register("goto_file", "Goto file at caret") { ed, _ ->
             HelixKeyHandler.recordJump(ed)
             HelixFileNavigation.gotoFileAtCaret(ed)
+        }
+    }
+
+    private fun registerHarpoonAndBookmarks() {
+        register("harpoon_popup", "Open Harpoon quick slots popup") { ed, _ ->
+            jp.titze.intellij.helix.ui.HelixHarpoonPopup.show(ed)
+            true
+        }
+        register("harpoon_pin", "Pin current file to Harpoon quick slot") { ed, _ ->
+            ed.project?.let {
+                jp.titze.intellij.helix.harpoon.HelixHarpoonService.getInstance(it).pinCurrent(ed) != null
+            } ?: false
+        }
+        for (i in 1..jp.titze.intellij.helix.harpoon.HelixHarpoonService.SLOT_COUNT) {
+            register("harpoon_jump_$i", "Jump to Harpoon slot $i") { ed, _ ->
+                ed.project?.let {
+                    jp.titze.intellij.helix.harpoon.HelixHarpoonService.getInstance(it).jumpToSlot(i - 1, ed)
+                } ?: false
+            }
+            register("harpoon_set_$i", "Set Harpoon slot $i") { ed, _ ->
+                ed.project?.let {
+                    jp.titze.intellij.helix.harpoon.HelixHarpoonService.getInstance(it).setSlot(i - 1, ed)
+                } ?: false
+            }
+            register("harpoon_delete_$i", "Delete Harpoon slot $i") { ed, _ ->
+                ed.project?.let {
+                    jp.titze.intellij.helix.harpoon.HelixHarpoonService.getInstance(it).clearSlot(i - 1)
+                } ?: false
+            }
+        }
+        register("show_bookmarks", "Show Bookmarks", "ShowBookmarks") { ed, _ ->
+            HelixActionDelegate.executeAction("ShowBookmarks", ed)
+        }
+        register("toggle_bookmark", "Toggle Bookmark", "ToggleBookmark") { ed, _ ->
+            HelixActionDelegate.executeAction("ToggleBookmark", ed)
+        }
+        register("toggle_bookmark_mnemonic", "Toggle Bookmark with Mnemonic", "ToggleBookmarkWithMnemonic") { ed, _ ->
+            HelixActionDelegate.executeAction("ToggleBookmarkWithMnemonic", ed)
         }
     }
 }

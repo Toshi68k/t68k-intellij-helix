@@ -809,9 +809,10 @@ class HelixUiPopupsTest : BasePlatformTestCase() {
             val panelMaxRows8 = HelixWhichKeyPopup.createWhichKeyPanel(spaceTitle, spaceItems, editor)
             panelMaxRows8.preferredSize.width shouldBe panel4Cols.preferredSize.width
 
-            settings.whichKeyMaxRows = 16
-            val panelMaxRows16 = HelixWhichKeyPopup.createWhichKeyPanel(spaceTitle, spaceItems, editor)
-            panelMaxRows16.preferredSize.width shouldBe panel2Cols.preferredSize.width
+            val targetRows2Cols = kotlin.math.ceil(spaceItems.size / 2.0).toInt()
+            settings.whichKeyMaxRows = targetRows2Cols
+            val panelMaxRows2Cols = HelixWhichKeyPopup.createWhichKeyPanel(spaceTitle, spaceItems, editor)
+            panelMaxRows2Cols.preferredSize.width shouldBe panel2Cols.preferredSize.width
 
             // Test responsive width clamping: narrow maxWidth restricts column allocation
             val clampedPanel = HelixWhichKeyPopup.createWhichKeyPanel(

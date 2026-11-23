@@ -78,7 +78,9 @@ object HelixKeyHandler {
         }
     }
 
-    private val PARAMETRIC_PREFIXES = setOf("r", "f", "t", "F", "T", "\"", "C-r")
+    private val PARAMETRIC_PREFIXES = setOf(
+        "r", "f", "t", "F", "T", "\"", "C-r", " H", " H s", " H m", " H d",
+    )
     private val MATCH_PARAMETRIC_PREFIXES = setOf("ms", "md", "mr", "ma", "mi")
 
     private fun isParametricPrefix(prefix: String): Boolean =
@@ -109,12 +111,6 @@ object HelixKeyHandler {
                 state.clearSelectedRegister()
                 state.appendKey(charTyped)
                 HelixWhichKeyPopup.show(editor, charTyped.toString())
-                true
-            }
-
-            '\u0017' -> {
-                state.clearSelectedRegister()
-                startWindowChord(editor)
                 true
             }
 
@@ -199,6 +195,14 @@ object HelixKeyHandler {
                 HelixVcsKeymap.handle(ch, editor)
             }
 
+            " H" -> {
+                HelixHarpoonKeymap.handle(ch, editor, state)
+            }
+
+            " H s", " H m", " H d" -> {
+                HelixHarpoonKeymap.handleSubmenu(prefix, ch, editor, state)
+            }
+
             "[" -> {
                 state.clearPendingSequence()
                 jp.titze.intellij.helix.motion.HelixMotionHistory.recordBracket(isOpen = true, targetChar = ch)
@@ -274,6 +278,18 @@ object HelixKeyHandler {
         't' -> {
             state.setPendingSequence(" t")
             HelixWhichKeyPopup.show(editor, " t")
+            true
+        }
+
+        'v' -> {
+            state.setPendingSequence(" v")
+            HelixWhichKeyPopup.show(editor, " v")
+            true
+        }
+
+        'H' -> {
+            state.setPendingSequence(" H")
+            HelixWhichKeyPopup.show(editor, " H")
             true
         }
 
@@ -423,9 +439,9 @@ object HelixKeyHandler {
             // Mode & History & IDE
             'v' -> HelixActions.toggleSelectMode(editor)
 
-            'u' -> repeat(count) { HelixActionDelegate.executeAction("\$Undo", editor) }
+            'u' -> repeat(count) { HelixActionDelegate.executeAction($$"$Undo", editor) }
 
-            'U' -> repeat(count) { HelixActionDelegate.executeAction("\$Redo", editor) }
+            'U' -> repeat(count) { HelixActionDelegate.executeAction($$"$Redo", editor) }
 
             'Q' -> {
                 HelixActionDelegate.executeAction("StartStopMacroRecording", editor)
