@@ -2963,4 +2963,20 @@ class HelixUiPopupsTest : BasePlatformTestCase() {
         list.ui.shouldBeInstanceOf<HelixListUI>()
         list.selectionBackground.alpha shouldBe 0
     }
+
+    fun testRegisteredPickerActionsExecute() {
+        myFixture.configureByText("popup_test.txt", "sample text")
+
+        // Test Directory File Picker Action
+        HelixDirectoryFilePickerPopup.isShowing = false
+        myFixture.testAction(jp.titze.intellij.helix.editor.HelixDirectoryFilePickerAction())
+        HelixDirectoryFilePickerPopup.isShowing.shouldBeTrue()
+        HelixDirectoryFilePickerPopup.isShowing = false
+
+        // Test Harpoon Picker Action
+        myFixture.testAction(jp.titze.intellij.helix.editor.HelixHarpoonPickerAction())
+
+        // Test Command Palette Action
+        myFixture.testAction(jp.titze.intellij.helix.editor.HelixCommandPaletteAction())
+    }
 }
