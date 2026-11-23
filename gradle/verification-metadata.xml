@@ -3,6 +3,10 @@
    <configuration>
       <verify-metadata>true</verify-metadata>
       <verify-signatures>false</verify-signatures>
+      <trusted-artifacts>
+         <trust group="idea" name="ideaIC" regex="false"/>
+         <trust group="com.jetbrains.intellij.idea" name="ideaIC" regex="false"/>
+      </trusted-artifacts>
    </configuration>
    <components>
       <component group="bundledModule" name="intellij-platform-test-runtime" version="IC-251.28293.22">
