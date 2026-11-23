@@ -730,10 +730,10 @@ internal object HelixBuiltinCommands {
             HelixActionDelegate.executeAction("CloseAllUnmodifiedEditors", editor)
         },
         HelixCommandItem("buffer-next", listOf("bn"), "Switch to next editor tab") { editor ->
-            HelixActionDelegate.executeAction("NextTab", editor)
+            HelixFileNavigation.gotoNextBuffer(editor)
         },
         HelixCommandItem("buffer-previous", listOf("bp"), "Switch to previous editor tab") { editor ->
-            HelixActionDelegate.executeAction("PreviousTab", editor)
+            HelixFileNavigation.gotoPreviousBuffer(editor)
         },
         HelixCommandItem("new", listOf("n"), "Create new scratch file / buffer") { editor ->
             HelixActionDelegate.executeAction("NewScratchFile", editor)

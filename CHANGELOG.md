@@ -33,6 +33,13 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **Helix-Aligned Relative Line Numbers (`line-number = "relative"`)**:
   - Aligned `line-number = "relative"` and `HelixLineNumberMode.SMART` (Normal and Select modes) with stock Helix by default, displaying the actual line number on the active cursor line and relative distances on all other lines (using IntelliJ's native `LineNumerationType.HYBRID`).
 
+### Fixed
+
+- **Next & Previous Buffer Navigation (`g n` / `g p` / `] b` / `[ b` / `:bn` / `:bp`)**:
+  - Fixed an issue where `g n` (next buffer/tab) and `g p` (previous buffer/tab) were silently dropped because the Which-Key popup briefly captured focus, causing IntelliJ's native `NextTabAction` / `PreviousTabAction` focus check (`ToolWindowManager.isEditorComponentActive()`) to evaluate to `false` and reject execution.
+  - Implemented direct buffer navigation via `HelixFileNavigation.gotoNextBuffer` and `gotoPreviousBuffer` that inspects the current editor split's buffer list (falling back to open project files when tabs are hidden or single-tab splits are active) and activates the target buffer directly with circular modulo wrapping.
+  - Supports numeric count prefixes (e.g. `2 g n` to jump forward 2 buffers).
+
 ## [0.8.0] - 2026-11-21
 
 ### Added

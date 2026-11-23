@@ -670,13 +670,11 @@ object HelixCommandRegistry {
         }
         register("goto_next_buffer", "Next buffer / tab", "NextTab") { ed, cnt ->
             HelixKeyHandler.recordJump(ed)
-            repeat(cnt) { HelixActionDelegate.executeAction("NextTab", ed) }
-            true
+            HelixFileNavigation.gotoNextBuffer(ed, cnt)
         }
         register("goto_previous_buffer", "Previous buffer / tab", "PreviousTab") { ed, cnt ->
             HelixKeyHandler.recordJump(ed)
-            repeat(cnt) { HelixActionDelegate.executeAction("PreviousTab", ed) }
-            true
+            HelixFileNavigation.gotoPreviousBuffer(ed, cnt)
         }
         register("goto_last_change", "Jump to last change", "JumpToLastChange") { ed, _ ->
             HelixKeyHandler.recordJump(ed)

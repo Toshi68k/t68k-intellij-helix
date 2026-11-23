@@ -72,12 +72,12 @@ internal object HelixGotoKeymap {
 
         'n' -> {
             HelixKeyHandler.recordJump(editor)
-            repeat(count ?: 1) { HelixActionDelegate.executeAction("NextTab", editor) }.let { true }
+            HelixFileNavigation.gotoNextBuffer(editor, count ?: 1)
         }
 
         'p' -> {
             HelixKeyHandler.recordJump(editor)
-            repeat(count ?: 1) { HelixActionDelegate.executeAction("PreviousTab", editor) }.let { true }
+            HelixFileNavigation.gotoPreviousBuffer(editor, count ?: 1)
         }
 
         '.' -> {
