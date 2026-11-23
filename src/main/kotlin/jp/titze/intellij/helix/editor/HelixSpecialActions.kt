@@ -7,11 +7,14 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.CommonDataKeys
 import jp.titze.intellij.helix.action.HelixActionDelegate
 import jp.titze.intellij.helix.action.HelixActions
+import jp.titze.intellij.helix.command.HelixCommandPopup
 import jp.titze.intellij.helix.jumplist.HelixJumpListService
 import jp.titze.intellij.helix.keymap.HelixKeyHandler
 import jp.titze.intellij.helix.motion.HelixMotions
 import jp.titze.intellij.helix.state.HelixMode
 import jp.titze.intellij.helix.state.HelixStateManager
+import jp.titze.intellij.helix.ui.HelixDirectoryFilePickerPopup
+import jp.titze.intellij.helix.ui.HelixHarpoonPopup
 import jp.titze.intellij.helix.ui.HelixJumplistPopup
 import jp.titze.intellij.helix.ui.HelixMacrosPopup
 import jp.titze.intellij.helix.ui.HelixRegistersPopup
@@ -270,6 +273,27 @@ class HelixMacrosPickerAction : HelixEditorAction() {
     override fun actionPerformed(e: AnActionEvent) {
         val editor = e.getData(CommonDataKeys.EDITOR) ?: return
         HelixMacrosPopup.show(editor)
+    }
+}
+
+class HelixHarpoonPickerAction : HelixEditorAction() {
+    override fun actionPerformed(e: AnActionEvent) {
+        val editor = e.getData(CommonDataKeys.EDITOR) ?: return
+        HelixHarpoonPopup.show(editor)
+    }
+}
+
+class HelixDirectoryFilePickerAction : HelixEditorAction() {
+    override fun actionPerformed(e: AnActionEvent) {
+        val editor = e.getData(CommonDataKeys.EDITOR) ?: return
+        HelixDirectoryFilePickerPopup.show(editor)
+    }
+}
+
+class HelixCommandPaletteAction : HelixEditorAction() {
+    override fun actionPerformed(e: AnActionEvent) {
+        val editor = e.getData(CommonDataKeys.EDITOR) ?: return
+        HelixCommandPopup.show(editor)
     }
 }
 
