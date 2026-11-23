@@ -7,6 +7,7 @@ import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileEditor.OpenFileDescriptor
+import com.intellij.openapi.fileEditor.ex.FileEditorManagerEx
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.wm.WindowManager
@@ -140,6 +141,59 @@ object HelixFileNavigation {
         val descriptor = OpenFileDescriptor(project, virtualFile)
         descriptor.navigate(true)
         return true
+    }
+
+    fun gotoNextBuffer(editor: Editor, count: Int = 1): Boolean {
+        if (HelixActionDelegate.actionExecutor != null) {
+            val repeatCount = count.coerceAtLeast(1)
+            repeat(repeatCount) { HelixActionDelegate.executeAction("NextTab", editor) }
+            return true
+        }
+        return navigateBuffer(editor, count.coerceAtLeast(1))
+    }
+
+    fun gotoPreviousBuffer(editor: Editor, count: Int = 1): Boolean {
+        if (HelixActionDelegate.actionExecutor != null) {
+            val repeatCount = count.coerceAtLeast(1)
+            repeat(repeatCount) { HelixActionDelegate.executeAction("PreviousTab", editor) }
+            return true
+        }
+        return navigateBuffer(editor, -count.coerceAtLeast(1))
+    }
+
+    private fun navigateBuffer(editor: Editor, delta: Int): Boolean {
+        val project = editor.project ?: return false
+        val bufferList = resolveBufferList(project)
+        if (bufferList.size < 2) {
+            val action = if (delta >= 0) "NextTab" else "PreviousTab"
+            return HelixActionDelegate.executeAction(action, editor)
+        }
+
+        val currentDoc = editor.document
+        val currentFile = FileDocumentManager.getInstance().getFile(currentDoc)
+            ?: FileEditorManager.getInstance(project).selectedFiles.firstOrNull()
+
+        val currentIndex = if (currentFile != null) bufferList.indexOf(currentFile) else -1
+        val baseIndex = if (currentIndex >= 0) currentIndex else 0
+        val targetIndex = Math.floorMod(baseIndex + delta, bufferList.size)
+        val targetFile = bufferList[targetIndex]
+
+        return openFile(project, targetFile)
+    }
+
+    private fun resolveBufferList(project: Project): List<VirtualFile> {
+        val femEx = try {
+            FileEditorManagerEx.getInstanceEx(project)
+        } catch (_: Throwable) {
+            null
+        }
+        val window = femEx?.currentWindow ?: femEx?.windows?.firstOrNull()
+        val windowFiles = window?.fileList?.filter { it.isValid } ?: emptyList()
+        if (windowFiles.size > 1) {
+            return windowFiles
+        }
+        val openFiles = FileEditorManager.getInstance(project).openFiles.filter { it.isValid }
+        return openFiles.ifEmpty { windowFiles }
     }
 
     private fun showStatus(project: Project, message: String) {

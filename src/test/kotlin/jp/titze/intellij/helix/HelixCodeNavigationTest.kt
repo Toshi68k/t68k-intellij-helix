@@ -383,14 +383,78 @@ class HelixCodeNavigationTest : BasePlatformTestCase() {
     }
 
     fun testGotoNextAndPreviousBuffer() {
-        myFixture.configureByText("test.txt", "test")
+        val fileA = myFixture.addFileToProject("FileA.txt", "content A")
+        val fileB = myFixture.addFileToProject("FileB.txt", "content B")
+        val fileC = myFixture.addFileToProject("FileC.txt", "content C")
+
+        myFixture.openFileInEditor(fileA.virtualFile)
+        myFixture.openFileInEditor(fileB.virtualFile)
+        myFixture.openFileInEditor(fileC.virtualFile)
+
+        val fem = com.intellij.openapi.fileEditor.FileEditorManager.getInstance(project)
+        fem.selectedFiles.first().name shouldBe "FileC.txt"
+
+        val bufferOrder = fem.openFiles.map { it.name }
+        (bufferOrder.size >= 3).shouldBeTrue()
+        val indexC = bufferOrder.indexOf("FileC.txt")
+        val expectedNext1 = bufferOrder[(indexC + 1) % bufferOrder.size]
+        val expectedNext2 = bufferOrder[(indexC + 2) % bufferOrder.size]
+        val expectedPrev1 = bufferOrder[Math.floorMod(indexC - 1, bufferOrder.size)]
+
+        // gn advances to expectedNext1
+        val editorC = fem.selectedTextEditor ?: myFixture.editor
+        HelixKeyHandler.handleKey('g', editorC).shouldBeTrue()
+        HelixKeyHandler.handleKey('n', editorC).shouldBeTrue()
+        fem.selectedFiles.first().name shouldBe expectedNext1
+
+        // gn advances to expectedNext2
+        val editorNext1 = fem.selectedTextEditor ?: myFixture.editor
+        HelixKeyHandler.handleKey('g', editorNext1).shouldBeTrue()
+        HelixKeyHandler.handleKey('n', editorNext1).shouldBeTrue()
+        fem.selectedFiles.first().name shouldBe expectedNext2
+
+        // gp goes backwards to expectedNext1
+        val editorNext2 = fem.selectedTextEditor ?: myFixture.editor
+        HelixKeyHandler.handleKey('g', editorNext2).shouldBeTrue()
+        HelixKeyHandler.handleKey('p', editorNext2).shouldBeTrue()
+        fem.selectedFiles.first().name shouldBe expectedNext1
+
+        // ]b advances forward to expectedNext2
+        val editorNext1Again = fem.selectedTextEditor ?: myFixture.editor
+        HelixKeyHandler.handleKey(']', editorNext1Again).shouldBeTrue()
+        HelixKeyHandler.handleKey('b', editorNext1Again).shouldBeTrue()
+        fem.selectedFiles.first().name shouldBe expectedNext2
+
+        // [b goes backwards to expectedNext1
+        val editorNext2Again = fem.selectedTextEditor ?: myFixture.editor
+        HelixKeyHandler.handleKey('[', editorNext2Again).shouldBeTrue()
+        HelixKeyHandler.handleKey('b', editorNext2Again).shouldBeTrue()
+        fem.selectedFiles.first().name shouldBe expectedNext1
+
+        // Count prefix: 2gn jumps 2 positions forward
+        val currentIndex = bufferOrder.indexOf(fem.selectedFiles.first().name)
+        val expectedAfter2 = bufferOrder[(currentIndex + 2) % bufferOrder.size]
+        val currentEditor = fem.selectedTextEditor ?: myFixture.editor
+        HelixKeyHandler.handleKey('2', currentEditor).shouldBeTrue()
+        HelixKeyHandler.handleKey('g', currentEditor).shouldBeTrue()
+        HelixKeyHandler.handleKey('n', currentEditor).shouldBeTrue()
+        fem.selectedFiles.first().name shouldBe expectedAfter2
+    }
+
+    fun testGotoNextAndPreviousBufferSingleFile() {
+        myFixture.configureByText("OnlyFile.txt", "content")
         val editor = myFixture.editor
 
+        // With only 1 open buffer, gn/gp return without error and the file remains active
         HelixKeyHandler.handleKey('g', editor).shouldBeTrue()
         HelixKeyHandler.handleKey('n', editor).shouldBeTrue()
+        com.intellij.openapi.fileEditor.FileEditorManager.getInstance(project).selectedFiles.first().name shouldBe
+            "OnlyFile.txt"
 
         HelixKeyHandler.handleKey('g', editor).shouldBeTrue()
         HelixKeyHandler.handleKey('p', editor).shouldBeTrue()
+        com.intellij.openapi.fileEditor.FileEditorManager.getInstance(project).selectedFiles.first().name shouldBe
+            "OnlyFile.txt"
     }
 
     fun testGotoLastEditLocation() {

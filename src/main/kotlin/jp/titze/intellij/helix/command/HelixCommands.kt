@@ -14,6 +14,7 @@ import jp.titze.intellij.helix.action.HelixShellActions
 import jp.titze.intellij.helix.action.HelixVisualToggleActions
 import jp.titze.intellij.helix.config.HelixEditorOptions
 import jp.titze.intellij.helix.jumplist.HelixJumpListService
+import jp.titze.intellij.helix.motion.HelixFileNavigation
 import jp.titze.intellij.helix.motion.HelixMotions
 import jp.titze.intellij.helix.register.HelixRegisterManager
 import jp.titze.intellij.helix.settings.HelixEffectiveSettings
@@ -164,12 +165,12 @@ object HelixCommands {
         }
         if (baseCmd == "bn" || baseCmd == "buffer-next") {
             val count = arg.toIntOrNull() ?: 1
-            repeat(count) { HelixActionDelegate.executeAction("NextTab", editor) }
+            HelixFileNavigation.gotoNextBuffer(editor, count)
             return
         }
         if (baseCmd == "bp" || baseCmd == "buffer-previous") {
             val count = arg.toIntOrNull() ?: 1
-            repeat(count) { HelixActionDelegate.executeAction("PreviousTab", editor) }
+            HelixFileNavigation.gotoPreviousBuffer(editor, count)
             return
         }
         if (executeHarpoonCommand(baseCmd, arg, editor)) return
@@ -267,9 +268,9 @@ object HelixCommands {
 
             "bca", "bcloseall", "buffer-close-all" -> HelixActionDelegate.executeAction("CloseAllEditors", editor)
 
-            "bn", "buffer-next" -> HelixActionDelegate.executeAction("NextTab", editor)
+            "bn", "buffer-next" -> HelixFileNavigation.gotoNextBuffer(editor)
 
-            "bp", "buffer-previous" -> HelixActionDelegate.executeAction("PreviousTab", editor)
+            "bp", "buffer-previous" -> HelixFileNavigation.gotoPreviousBuffer(editor)
 
             "n", "new" -> HelixActionDelegate.executeAction("NewScratchFile", editor)
 

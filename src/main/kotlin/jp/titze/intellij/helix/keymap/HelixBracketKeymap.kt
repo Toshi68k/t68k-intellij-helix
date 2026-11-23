@@ -5,6 +5,7 @@ package jp.titze.intellij.helix.keymap
 
 import com.intellij.openapi.editor.Editor
 import jp.titze.intellij.helix.action.HelixActionDelegate
+import jp.titze.intellij.helix.motion.HelixFileNavigation
 import jp.titze.intellij.helix.motion.HelixMotions
 
 internal object HelixBracketKeymap {
@@ -22,7 +23,7 @@ internal object HelixBracketKeymap {
 
         'b' -> {
             HelixKeyHandler.recordJump(editor)
-            repeat(count) { HelixActionDelegate.executeAction("PreviousTab", editor) }.let { true }
+            HelixFileNavigation.gotoPreviousBuffer(editor, count)
         }
 
         'f' -> {
@@ -99,7 +100,7 @@ internal object HelixBracketKeymap {
 
         'b' -> {
             HelixKeyHandler.recordJump(editor)
-            repeat(count) { HelixActionDelegate.executeAction("NextTab", editor) }.let { true }
+            HelixFileNavigation.gotoNextBuffer(editor, count)
         }
 
         'f' -> {
