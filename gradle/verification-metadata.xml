@@ -5,7 +5,7 @@
       <verify-signatures>false</verify-signatures>
       <trusted-artifacts>
          <trust group="com.jetbrains.intellij.idea" name="ideaIC"/>
-         <trust group="idea" name="ideaIC"/>
+         <trust group="idea"/>
          <trust file=".*-javadoc\.jar" regex="true"/>
          <trust file=".*-sources\.jar" regex="true"/>
          <trust file=".*-src\.zip" regex="true"/>
