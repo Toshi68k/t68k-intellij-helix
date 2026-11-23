@@ -521,8 +521,21 @@ pressed. Code folding is available via `:fold`, `:unfold`, `:fold-all`, and `:un
 | `space + R`               | `replace_selections_with_clipboard`        | —                                  | Replace current selections with system clipboard       |
 | `space + k`               | `hover`                                    | `QuickJavaDoc`                     | Hover documentation popup                              |
 | `space + G`               | `dap`                                      | —                                  | Open interactive Debug (DAP) submenu                   |
+| `space + 1..5`            | `harpoon_jump_1..5`                        | —                                  | Jump directly to Harpoon quick slot 1–5                |
+| `space + H`               | `harpoon_menu`                             | —                                  | Open interactive Harpoon / Quick slots submenu         |
 | `space + '`               | `last_picker`                              | —                                  | Re-open last active space picker                       |
 | `space + ?`               | `command_palette`                          | `GotoAction`                       | Action / command palette picker                        |
+
+#### Harpoon & Quick Slots (`space + H` / `space + 1..5`)
+
+| Key                | Helix Command        | Description                                                  |
+|--------------------|----------------------|--------------------------------------------------------------|
+| `space + 1..5`     | `harpoon_jump_1..5`  | Jump directly to quick slot 1–5 in constant time             |
+| `space + H 1..5`   | `harpoon_jump_1..5`  | Jump to slot 1–5 with Which-Key file & line preview          |
+| `space + H a`      | `harpoon_pin`        | Pin current file & cursor to first available slot            |
+| `space + H s 1..5` | `harpoon_set_1..5`   | Pin current file & cursor to specific slot 1–5               |
+| `space + H d 1..5` | `harpoon_delete_1..5`| Clear quick slot 1–5                                         |
+| `space + H H`      | `harpoon_popup`      | Open floating card UI (reorder `J`/`K`, delete `d`, jump 1-5)|
 
 #### Debugging & DAP (`space + G`)
 
@@ -814,6 +827,12 @@ to execute):
 - `:change-signature` &rarr; Refactor change method signature (`ChangeSignature`)
 - `:generate` / `:gen` &rarr; Generate code (constructors, getters, setters) (`Generate`)
 - `:replace-in-path` / `:replace-in-files` &rarr; Find and replace in project files (`ReplaceInPath`)
+- `:harpoon` / `:pins` / `:quick-slots` &rarr; Open Harpoon quick slots floating card UI (`space + H H`)
+- `:pin [1-5]` / `:harpoon-add` &rarr; Pin current file to Harpoon slot N or next available (`space + H a`)
+- `:unpin [1-5]` / `:harpoon-delete` &rarr; Clear Harpoon quick slot N (`space + H d 1..5`)
+- `:bookmarks` / `:show-bookmarks` &rarr; Open IntelliJ Bookmarks list (`ShowBookmarks`)
+- `:bookmark-toggle` &rarr; Toggle IntelliJ bookmark on current line (`ToggleBookmark`)
+- `:bookmark-mnemonic` &rarr; Toggle IntelliJ bookmark with mnemonic (`ToggleBookmarkWithMnemonic`)
 - `:config-reload` / `:reload-config` &rarr; Reload keymap bindings from `intellij.toml` or `config.toml`
 - `:config-open` &rarr; Open active `intellij.toml` (or custom config) in editor (creates starter template if missing)
 - `:log-open` / `:show-log` &rarr; Open IDE log file in editor (`ShowLog`)

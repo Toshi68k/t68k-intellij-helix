@@ -7,6 +7,14 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- **Harpoon-Style Quick Slots & IntelliJ Bookmarks Integration**:
+  - **Deterministic Muscle-Memory Jumps (`space + 1..5`)**: Fast-path jump to pinned working slots 1 through 5 in constant time (2 keystrokes).
+  - **Dynamic Shift-Tracking (`RangeMarker`)**: Pinned slots use IntelliJ `RangeMarker` pointers that automatically adjust their line numbers when text is added or deleted above them.
+  - **Interactive Harpoon Card Popup (`space + H H` / `:harpoon`)**: Floating card UI displaying all 5 quick slots with keycap badges (`[1]`–`[5]`), filename, relative path, line number, and code snippet preview. Supports direct jumping (`1`–`5`), pinning current file (`a`), unpinning (`d`/`x`), and live slot swapping / reordering (`J`/`K` with Shift).
+  - **Harpoon Submenu (`space + H`)**: Dedicated Which-Key submenu with live preview of pinned files (`space + H 1..5`), auto-pin (`space + H a`), explicit slot assignment (`space + H s 1..5`), and slot deletion (`space + H d 1..5`).
+  - **Clean Space Which-Key Hierarchy**: Root `<Space>` menu avoids numeric clutter by presenting a single compact `1-5: Quick slots 1–5` summary row and `H: Harpoon / Quick slots`.
+  - **Command Palette (`:commands`) & Native Bookmarks Bridge**: Added `:harpoon` / `:pins`, `:pin [1-5]`, `:unpin [1-5]`, `:bookmarks` (`ShowBookmarks`), `:bookmark-toggle` (`ToggleBookmark`), and `:bookmark-mnemonic` (`ToggleBookmarkWithMnemonic`).
+
 - **Live Preview for Registers (`"`) and Insert Registers (`Ctrl-r`) in Which-Key**:
   - Pressing `"` in Normal or Select mode (or `Ctrl-r` in Insert mode) now displays a live preview overlay populated with actual text snippets from active registers instead of generic category rows.
   - Formats snippets with single-line whitespace normalization (`\n` &rarr; `⏎`), multi-line truncation (`…` at 36 chars), linewise tags (`[L]`), and multi-caret piece-wise selection counts (`[N sel]`).

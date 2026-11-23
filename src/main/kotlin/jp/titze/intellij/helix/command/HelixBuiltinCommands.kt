@@ -328,6 +328,26 @@ internal object HelixBuiltinCommands {
         HelixCommandItem("macros", listOf("macro", "macro-picker"), "Open macros picker popup") { editor ->
             HelixMacrosPopup.show(editor)
         },
+        HelixCommandItem("harpoon", listOf("pins", "quick-slots"), "Open Harpoon / Quick slots picker") { editor ->
+            jp.titze.intellij.helix.ui.HelixHarpoonPopup.show(editor)
+        },
+        HelixCommandItem("pin", listOf("harpoon-add"), "Pin current file to Harpoon quick slot") { editor ->
+            val project = editor.project ?: return@HelixCommandItem
+            jp.titze.intellij.helix.harpoon.HelixHarpoonService.getInstance(project).pinCurrent(editor)
+        },
+        HelixCommandItem("bookmarks", listOf("show-bookmarks"), "Open IntelliJ Bookmarks list (ShowBookmarks)") { ed ->
+            HelixActionDelegate.executeAction("ShowBookmarks", ed)
+        },
+        HelixCommandItem("bookmark-toggle", emptyList(), "Toggle bookmark on current line (ToggleBookmark)") { ed ->
+            HelixActionDelegate.executeAction("ToggleBookmark", ed)
+        },
+        HelixCommandItem(
+            "bookmark-mnemonic",
+            listOf("bookmark-with-mnemonic"),
+            "Toggle bookmark with mnemonic (ToggleBookmarkWithMnemonic)",
+        ) { ed ->
+            HelixActionDelegate.executeAction("ToggleBookmarkWithMnemonic", ed)
+        },
         HelixCommandItem("switch-case", listOf("switch_case"), "Switch case of selected text (~)") { editor ->
             HelixActions.toggleCase(editor)
         },
