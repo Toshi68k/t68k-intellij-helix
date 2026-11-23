@@ -33,7 +33,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **Helix-Aligned Relative Line Numbers (`line-number = "relative"`)**:
   - Aligned `line-number = "relative"` and `HelixLineNumberMode.SMART` (Normal and Select modes) with stock Helix by default, displaying the actual line number on the active cursor line and relative distances on all other lines (using IntelliJ's native `LineNumerationType.HYBRID`).
 
-## [0.8.0]
+## [0.8.0] - 2026-11-21
 
 ### Added
 
@@ -50,7 +50,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   - Enabled native `.setCancelKeyEnabled(true)` and pre-dispatch event routing (`Escape`, `Ctrl-c`, `Ctrl-[`) on `HelixWhichKeyPopup` to ensure popups dismiss reliably even if child focus shifts.
   - Introduced `isHandlingSelection` execution scope in `HelixWhichKeyPopup` to prevent popup teardown callbacks from prematurely wiping the active pending sequence (`" "`, `"g"`, `"m"`, etc.) when executing chords (e.g. `Space e` for file explorer).
 
-## [0.7.3]
+## [0.7.3] - 2026-11-17
 
 ### Fixed
 
@@ -59,7 +59,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   - Fixed an issue where pressing `Enter` inside injected language fragments (e.g. strings, SQL, regex) failed to insert a newline in Insert mode.
   - Injected editors now properly inherit the host editor's active modal state and safely dispatch cursor UI updates to the EDT.
 
-## [0.7.2]
+## [0.7.2] - 2026-11-16
 
 ### Added
 
@@ -82,7 +82,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **Live Settings UI Synchronization on TOML Reload & Fallback Mode Changes**:
   - Added change listeners to `HelixEffectiveSettings` so that mutating TOML overrides (via VFS file watcher reload, "Reload" button, or changing CLI fallback policy in Configuration settings) immediately synchronizes the open **Appearance** and **Behavior** settings panels without requiring the Settings dialog to be closed and reopened.
 
-## [0.7.1]
+## [0.7.1] - 2026-11-15
 
 ### Added
 
@@ -118,7 +118,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   - Promoted jump target badge colors in `HelixJumpToWord` to static `JBColor` constants, eliminating per-paint heap allocations on every keystroke during jump navigation.
   - Precomputed scrollbar thumb colors (`SCROLLBAR_THUMB_DEFAULT`, `SCROLLBAR_THUMB_ROLLOVER`, `SCROLLBAR_THUMB_DRAGGING`) in `HelixTheme`, eliminating dynamic per-frame color allocations during scrolling and hover states in `HelixScrollBarUI`.
 
-## [0.7.0]
+## [0.7.0] - 2026-11-15
 
 ### Added
 
@@ -190,7 +190,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **Command Palette & Modal Picker Selection Corner Artifacts**:
   - Eliminated four white/light corner dots visible around selected rows in `:` Command Palette, File Picker, Jumplist, Registers, and Macros popups.
 
-## [0.6.1]
+## [0.6.1] - 2026-11-11
 
 ### Changed
 
@@ -232,7 +232,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   - Replaced scheduled-for-removal `SimpleListCellRenderer.create(...)` in the Appearance settings panel with a direct `SimpleListCellRenderer` subclass implementation to ensure clean compatibility with IntelliJ 2026.x and beyond.
   - Replaced standard Swing `JScrollPane` usages in `HelixActionPickerDialog` and `HelixKeymapBrowserPanel` with `com.intellij.ui.components.JBScrollPane` to follow IntelliJ UI conventions and eliminate IDE warnings.
 
-## [0.6.0]
+## [0.6.0] - 2026-11-10
 
 ### Added
 
@@ -295,7 +295,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **Configuration Documentation Alignment**:
   - Updated example TOML keymap snippet in `README.md` and `HelixKeymapTest` from `"X" = "extend_line_up"` to `"X" = "extend_line"` to align with registered commands.
 
-## [0.5.0]
+## [0.5.0] - 2026-11-07
 
 ### Added
 
@@ -348,7 +348,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **Which-Key Menu Branch Labeling**:
   - Fixed an issue in `HelixWhichKeyMenus.mergeMenuItems` where non-leaf branch nodes with null actions could overwrite existing visual Which-Key labels with empty strings (resolving the empty `m` badge in the `SPACE MENU`).
 
-## [0.4.0]
+## [0.4.0] - 2026-11-02
 
 ### Added
 
@@ -384,7 +384,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **Macro Recording Trailing `Q` Fix**: Fixed an issue where stopping macro recording with `Q` recorded the trailing `Q` into the macro, causing macro playback (`q`) to unintentionally restart recording.
 - **Command Palette Match Relevance Ranking**: Added relevance scoring to the command palette (`:`) so exact command names and aliases (such as `:reg`, `:w`, `:q`) rank first instead of being shadowed by partial substring matches.
 
-## [0.3.2]
+## [0.3.2] - 2026-10-24
 
 ### Fixed
 
@@ -398,7 +398,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   - Registered DAP canonical commands (`dap_toggle_breakpoint`, `dap_continue`, `dap_step_in`, `dap_next`, `dap_step_out`, `dap_pause`, `dap_restart`, etc.) and window view swapping commands (`swap_view_left`, `swap_view_down`, etc.).
   - Enhanced `HelixKeyHandler` with parametric submode bypass so that multi-step textobject and surround sequences (`mi`, `ma`, `ms`) delegate directly to `HelixMatchKeymap`.
 
-## [0.3.1]
+## [0.3.1] - 2026-10-24
 
 ### Added
 
@@ -423,7 +423,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
     - Automated prefix trie analysis detecting shadowed bindings where a single key has an action assigned but is masked by child chords (e.g. binding `g` or `space` directly when child chords `gd`, `gh`, `space f` exist).
     - Integrated into `HelixConfigLoader.validateConfig()`: TOML files containing shadowed shortcuts are automatically flagged with conflict diagnostics and child chord lists.
 
-## [0.3.0]
+## [0.3.0] - 2026-10-21
 
 ### Added
 
@@ -455,7 +455,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   - Quick action controls: **Open in Editor**, **Reload Keymap**, and **Reset to Default**.
   - Live status indicator showing active configuration file path, loaded binding counts, or syntax and validation diagnostics.
 
-## [0.2.2]
+## [0.2.2] - 2026-10-14
 
 ### Fixed
 
@@ -463,7 +463,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   - Explicitly declared `require-restart="true"` in `plugin.xml` so the IntelliJ Plugin Manager prompts the user to restart the IDE upon installation or update, ensuring global typed action handlers, editor listeners, and caret states are reliably initialized across all open editors.
   - Updated installation instructions in `README.md` to instruct restarting the IDE after installation.
 
-## [0.2.1]
+## [0.2.1] - 2026-10-13
 
 ### Added
 
@@ -530,7 +530,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   - Configured `HelixEditorActionHandler` with `runForEachCaret = false` and guarded per-caret invocations during
     Enter handling to avoid nested caret iterations.
 
-## [0.1.0]
+## [0.1.0] - 2026-10-07
 
 ### Added
 

@@ -12,7 +12,7 @@ plugins {
     id("org.jetbrains.intellij.platform") version "2.20.1"
     id("org.jetbrains.changelog") version "2.5.0"
     id("dev.detekt") version "2.0.0-alpha.6"
-    id("com.diffplug.spotless") version "8.10.4"
+    id("com.diffplug.spotless") version "8.12.0"
 }
 
 group = "jp.titze.intellij"
@@ -37,7 +37,7 @@ dependencies {
     testImplementation("org.opentest4j:opentest4j:1.3.0")
     testImplementation("org.junit.jupiter:junit-jupiter:6.1.3")
     testImplementation("org.junit.vintage:junit-vintage-engine:6.1.3")
-    testImplementation("io.kotest:kotest-assertions-core:6.2.4") {
+    testImplementation("io.kotest:kotest-assertions-core:6.2.7") {
         exclude(group = "org.jetbrains.kotlinx", module = "kotlinx-coroutines-core")
         exclude(group = "org.jetbrains.kotlinx", module = "kotlinx-coroutines-jdk8")
         exclude(group = "org.jetbrains.kotlinx", module = "kotlinx-coroutines-test")
