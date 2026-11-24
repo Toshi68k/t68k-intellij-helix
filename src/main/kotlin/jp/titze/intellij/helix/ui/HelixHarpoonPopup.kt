@@ -11,6 +11,7 @@ import com.intellij.ui.CollectionListModel
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBList
 import com.intellij.util.ui.JBUI
+import jp.titze.intellij.helix.harpoon.HarpoonSlotState
 import jp.titze.intellij.helix.harpoon.HelixHarpoonEntry
 import jp.titze.intellij.helix.harpoon.HelixHarpoonService
 import java.awt.BorderLayout
@@ -32,7 +33,7 @@ import javax.swing.JPanel
 import javax.swing.ListCellRenderer
 import javax.swing.ListSelectionModel
 
-data class HarpoonListItem(val slotIndex: Int, val entry: HelixHarpoonEntry?)
+data class HarpoonListItem(val slotIndex: Int, val entry: HelixHarpoonEntry?, val dormant: HarpoonSlotState? = null)
 
 object HelixHarpoonPopup {
 
@@ -101,7 +102,8 @@ object HelixHarpoonPopup {
         val service = HelixHarpoonService.getInstance(project)
 
         val items = (0 until HelixHarpoonService.SLOT_COUNT).map { i ->
-            HarpoonListItem(i, service.getSlot(i))
+            val entry = service.getSlot(i)
+            HarpoonListItem(i, entry, if (entry == null) service.getDormantSlot(i) else null)
         }
         val listModel = CollectionListModel(items)
         val list = JBList(listModel).apply {
@@ -156,7 +158,8 @@ object HelixHarpoonPopup {
         fun refreshList() {
             val selected = list.selectedIndex
             val updated = (0 until HelixHarpoonService.SLOT_COUNT).map { i ->
-                HarpoonListItem(i, service.getSlot(i))
+                val entry = service.getSlot(i)
+                HarpoonListItem(i, entry, if (entry == null) service.getDormantSlot(i) else null)
             }
             listModel.replaceAll(updated)
             list.selectedIndex = selected.coerceIn(0, HelixHarpoonService.SLOT_COUNT - 1)
@@ -282,8 +285,8 @@ object HelixHarpoonPopup {
         return entry.virtualFile.parent?.name ?: ""
     }
 
-    private fun formatSnippet(entry: HelixHarpoonEntry): String {
-        val preview = entry.previewText.trim().replace("\r\n", " ").replace("\n", " ")
+    private fun formatSnippet(previewText: String): String {
+        val preview = previewText.trim().replace("\r\n", " ").replace("\n", " ")
         if (preview.isEmpty()) return ""
         val maxLen = jp.titze.intellij.helix.settings.HelixSettings.instance.whichKeySnippetMaxLength.coerceIn(16, 36)
         return if (preview.length > maxLen) {
@@ -355,36 +358,62 @@ object HelixHarpoonPopup {
                 if (value == null) return cellPanel
 
                 val entry = value.entry
-                badge.updateBadge((value.slotIndex + 1).toString(), entry != null)
+                val dormant = value.dormant
+                badge.updateBadge((value.slotIndex + 1).toString(), entry != null || dormant != null)
 
-                if (entry == null) {
-                    nameLabel.text = "(empty slot ${value.slotIndex + 1})"
-                    nameLabel.font = nameLabel.font.deriveFont(Font.ITALIC, JBUI.scaleFontSize(11f).toFloat())
-                    nameLabel.foreground = CANCEL_COLOR
-                    dirLabel.text = ""
-                    dirLabel.isVisible = false
-                    snippetLabel.text = ""
-                    snippetLabel.isVisible = false
-                    cellPanel.toolTipText = null
-                } else {
-                    val fileName = entry.virtualFile.name
-                    val displayName = if (fileName.length > 36) fileName.take(35) + "…" else fileName
-                    nameLabel.text = "$displayName:${entry.line}"
-                    nameLabel.font = JBUI.Fonts.label().deriveFont(Font.BOLD, JBUI.scaleFontSize(12f).toFloat())
-                    nameLabel.foreground = ITEM_TEXT_COLOR
-
-                    val dir = formatDirectory(entry, project)
-                    dirLabel.text = dir
-                    dirLabel.isVisible = dir.isNotEmpty()
-
-                    val snippet = formatSnippet(entry)
-                    snippetLabel.text = snippet
-                    snippetLabel.isVisible = snippet.isNotEmpty()
-
-                    cellPanel.toolTipText = "${entry.virtualFile.path}:${entry.line}\n${entry.previewText}"
+                when {
+                    entry != null -> renderActiveEntry(entry)
+                    dormant != null -> renderDormantEntry(dormant)
+                    else -> renderEmptySlot(value.slotIndex)
                 }
 
                 return cellPanel
+            }
+
+            private fun renderActiveEntry(entry: HelixHarpoonEntry) {
+                val fileName = entry.virtualFile.name
+                val displayName = if (fileName.length > 36) fileName.take(35) + "…" else fileName
+                nameLabel.text = "$displayName:${entry.line}"
+                nameLabel.font = JBUI.Fonts.label().deriveFont(Font.BOLD, JBUI.scaleFontSize(12f).toFloat())
+                nameLabel.foreground = ITEM_TEXT_COLOR
+
+                val dir = formatDirectory(entry, project)
+                dirLabel.text = dir
+                dirLabel.isVisible = dir.isNotEmpty()
+
+                val snippet = formatSnippet(entry.previewText)
+                snippetLabel.text = snippet
+                snippetLabel.isVisible = snippet.isNotEmpty()
+
+                cellPanel.toolTipText = "${entry.virtualFile.path}:${entry.line}\n${entry.previewText}"
+            }
+
+            private fun renderDormantEntry(dormant: HarpoonSlotState) {
+                val fileName = dormant.fileUrl.substringAfterLast('/')
+                val displayName = if (fileName.length > 36) fileName.take(35) + "…" else fileName
+                nameLabel.text = "$displayName:${dormant.line}"
+                nameLabel.font = JBUI.Fonts.label().deriveFont(Font.BOLD, JBUI.scaleFontSize(12f).toFloat())
+                nameLabel.foreground = ITEM_PATH_COLOR
+
+                dirLabel.text = "[other branch]"
+                dirLabel.isVisible = true
+
+                val snippet = formatSnippet(dormant.previewText)
+                snippetLabel.text = snippet
+                snippetLabel.isVisible = snippet.isNotEmpty()
+
+                cellPanel.toolTipText = "${dormant.fileUrl}:${dormant.line}\n(File not found on current branch)"
+            }
+
+            private fun renderEmptySlot(slotIndex: Int) {
+                nameLabel.text = "(empty slot ${slotIndex + 1})"
+                nameLabel.font = nameLabel.font.deriveFont(Font.ITALIC, JBUI.scaleFontSize(11f).toFloat())
+                nameLabel.foreground = CANCEL_COLOR
+                dirLabel.text = ""
+                dirLabel.isVisible = false
+                snippetLabel.text = ""
+                snippetLabel.isVisible = false
+                cellPanel.toolTipText = null
             }
         }
 }

@@ -9,7 +9,9 @@ import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import jp.titze.intellij.helix.command.HelixCommands
+import jp.titze.intellij.helix.harpoon.HarpoonSlotState
 import jp.titze.intellij.helix.harpoon.HelixHarpoonService
+import jp.titze.intellij.helix.harpoon.HelixHarpoonState
 import jp.titze.intellij.helix.keymap.HelixKeyHandler
 import jp.titze.intellij.helix.keymap.HelixKeymapManager
 import jp.titze.intellij.helix.ui.HelixWhichKeyMenus
@@ -187,5 +189,145 @@ class HelixHarpoonTest : BasePlatformTestCase() {
         slot1Item.snippet.shouldNotBeNull()
         (slot1Item.snippet.length <= 32).shouldBeTrue()
         slot1Item.snippet.endsWith("…").shouldBeTrue()
+    }
+
+    fun testHarpoonPersistenceRoundtrip() {
+        myFixture.configureByText("PersistA.kt", "fun a() = 1")
+        val editorA = myFixture.editor
+        val service = HelixHarpoonService.getInstance(myFixture.project)
+        service.setSlot(0, editorA).shouldBeTrue()
+
+        myFixture.configureByText("PersistB.kt", "fun b() = 2\nfun c() = 3")
+        val editorB = myFixture.editor
+        service.setSlot(2, editorB).shouldBeTrue()
+
+        val state = service.getState()
+        state.slots.size shouldBe 2
+        state.slots.any { it.slotIndex == 0 && it.fileUrl.contains("PersistA.kt") }.shouldBeTrue()
+        state.slots.any { it.slotIndex == 2 && it.fileUrl.contains("PersistB.kt") }.shouldBeTrue()
+
+        service.clearAll()
+        service.getSlot(0) shouldBe null
+        service.getSlot(2) shouldBe null
+
+        service.loadState(state)
+        val slot0 = service.getSlot(0).shouldNotBeNull()
+        slot0.virtualFile.name shouldBe "PersistA.kt"
+        slot0.line shouldBe 1
+
+        val slot2 = service.getSlot(2).shouldNotBeNull()
+        slot2.virtualFile.name shouldBe "PersistB.kt"
+        slot2.line shouldBe 1
+
+        service.getSlot(1) shouldBe null
+    }
+
+    fun testHarpoonPersistentStateShiftTrackingPostRehydrate() {
+        myFixture.configureByText("RehydrateShift.kt", "line 1\nline 2\ntarget line\nline 4")
+        val editor = myFixture.editor
+        val service = HelixHarpoonService.getInstance(myFixture.project)
+
+        editor.caretModel.moveToOffset(editor.document.getLineStartOffset(2))
+        service.setSlot(0, editor).shouldBeTrue()
+
+        val state = service.getState()
+        service.clearAll()
+        service.loadState(state)
+
+        val slotBefore = service.getSlot(0).shouldNotBeNull()
+        slotBefore.line shouldBe 3
+
+        WriteCommandAction.runWriteCommandAction(project) {
+            editor.document.insertString(0, "prepended line 1\nprepended line 2\n")
+        }
+
+        val slotAfter = service.getSlot(0).shouldNotBeNull()
+        slotAfter.line shouldBe 5
+    }
+
+    fun testHarpoonBranchSwitchMissingFilePreservation() {
+        myFixture.configureByText("LocalFile.kt", "fun local() = true")
+        val editor = myFixture.editor
+        val service = HelixHarpoonService.getInstance(myFixture.project)
+
+        val state = HelixHarpoonState().apply {
+            slots.add(
+                HarpoonSlotState().apply {
+                    slotIndex = 0
+                    fileUrl = "file:///non/existent/branch/feature/OtherBranch.kt"
+                    line = 42
+                    column = 5
+                    previewText = "fun other() = 99"
+                },
+            )
+        }
+
+        service.loadState(state)
+        service.getSlot(0) shouldBe null
+        val dormant = service.getDormantSlot(0).shouldNotBeNull()
+        dormant.fileUrl shouldBe "file:///non/existent/branch/feature/OtherBranch.kt"
+        dormant.line shouldBe 42
+
+        val saved = service.getState()
+        saved.slots.size shouldBe 1
+        saved.slots.first().fileUrl shouldBe "file:///non/existent/branch/feature/OtherBranch.kt"
+
+        val pinnedSlot = service.pinCurrent(editor)
+        pinnedSlot shouldBe 2 // Slot 2 (index 1), keeping dormant slot 0 safe!
+        service.getSlot(1)?.virtualFile?.name shouldBe "LocalFile.kt"
+        service.getDormantSlot(0).shouldNotBeNull()
+    }
+
+    fun testWhichKeyMenusContainDormantSlots() {
+        myFixture.configureByText("MenuDormant.kt", "code")
+        val editor = myFixture.editor
+        val service = HelixHarpoonService.getInstance(myFixture.project)
+        val state = HelixHarpoonState().apply {
+            slots.add(
+                HarpoonSlotState().apply {
+                    slotIndex = 0
+                    fileUrl = "file:///virtual/branch/Feature.kt"
+                    line = 10
+                    column = 1
+                    previewText = "class Feature"
+                },
+            )
+        }
+        service.loadState(state)
+
+        val items = HelixWhichKeyMenus.getHarpoonItems(editor)
+        val item1 = items.first { it.key == "1" }
+        item1.label shouldBe "Feature.kt:10 [?]"
+        item1.snippet shouldBe "class Feature"
+    }
+
+    fun testHarpoonLiveFileDeletionPreservation() {
+        val file = myFixture.addFileToProject("ToBeDeleted.kt", "fun willDelete() = true")
+        myFixture.openFileInEditor(file.virtualFile)
+        val editor = myFixture.editor
+        val service = HelixHarpoonService.getInstance(myFixture.project)
+
+        service.setSlot(0, editor).shouldBeTrue()
+        service.getSlot(0)?.virtualFile?.name shouldBe "ToBeDeleted.kt"
+
+        // Delete the file from the project / VFS
+        WriteCommandAction.runWriteCommandAction(project) {
+            file.virtualFile.delete(this)
+        }
+
+        // Active slot should safely evaluate to null without exceptions
+        service.getSlot(0) shouldBe null
+
+        // jumpToSlot should safely fail without throwing
+        service.jumpToSlot(0, editor) shouldBe false
+
+        // Slot state should be converted to dormant state preserving metadata
+        val dormant = service.getDormantSlot(0).shouldNotBeNull()
+        dormant.fileUrl.contains("ToBeDeleted.kt").shouldBeTrue()
+        dormant.line shouldBe 1
+
+        // State serialization should preserve the dormant slot
+        val saved = service.getState()
+        saved.slots.any { it.slotIndex == 0 && it.fileUrl.contains("ToBeDeleted.kt") }.shouldBeTrue()
     }
 }

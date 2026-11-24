@@ -487,13 +487,15 @@ object HelixWhichKeyMenus {
         val maxSnippetLen = HelixSettings.instance.whichKeySnippetMaxLength
         for (i in 1..HelixHarpoonService.SLOT_COUNT) {
             val entry = if (i - 1 < slots.size) slots[i - 1] else null
-            val label = if (entry != null && entry.isValid) {
-                "${entry.virtualFile.name}:${entry.line}"
-            } else {
-                "(empty)"
+            val dormant = if (entry == null && service != null) service.getDormantSlot(i - 1) else null
+            val label = when {
+                entry != null && entry.isValid -> "${entry.virtualFile.name}:${entry.line}"
+                dormant != null -> "${dormant.fileUrl.substringAfterLast('/')}:${dormant.line} [?]"
+                else -> "(empty)"
             }
-            val snippet = if (maxSnippetLen > 0 && entry != null && entry.previewText.isNotEmpty()) {
-                val clean = entry.previewText.trim().replace("\r\n", " ").replace("\n", " ")
+            val preview = entry?.previewText ?: dormant?.previewText.orEmpty()
+            val snippet = if (maxSnippetLen > 0 && preview.isNotEmpty()) {
+                val clean = preview.trim().replace("\r\n", " ").replace("\n", " ")
                 if (clean.length > maxSnippetLen) {
                     clean.take(maxSnippetLen - 1).trimEnd() + "…"
                 } else {
