@@ -4,6 +4,7 @@
 package jp.titze.intellij.helix.config
 
 import com.intellij.openapi.vfs.LocalFileSystem
+import jp.titze.intellij.helix.action.HelixWriteIntentAction
 import jp.titze.intellij.helix.state.HelixMode
 import java.io.File
 import java.io.IOException
@@ -42,13 +43,26 @@ object HelixConfigModifier {
     private fun ensureConfigFileExists(file: File) {
         if (!file.exists()) {
             file.parentFile?.mkdirs()
-            file.writeText(HelixConfigLoader.getStarterConfigTemplate())
+            if (file.name == HelixConfigLoader.INTELLIJ_CONFIG_FILE &&
+                file.parentFile?.name == HelixConfigLoader.PROJECT_CONFIG_DIR
+            ) {
+                file.writeText(HelixConfigLoader.getStarterProjectConfigTemplate())
+            } else {
+                file.writeText(HelixConfigLoader.getStarterConfigTemplate())
+            }
         }
     }
 
     private fun refreshAndReload(file: File) {
-        LocalFileSystem.getInstance().refreshAndFindFileByIoFile(file)
-        HelixConfigLoader.loadConfig(file)
+        HelixWriteIntentAction.run {
+            LocalFileSystem.getInstance().refreshAndFindFileByIoFile(file)
+            val project = HelixConfigWatcher.findProjectForConfigPath(file)
+            if (project != null) {
+                HelixConfigLoader.loadProjectConfig(project, file)
+            } else {
+                HelixConfigLoader.loadConfig(file)
+            }
+        }
     }
 
     fun updateBindingInContent(content: String, mode: HelixMode, sequence: String, action: Any): String {

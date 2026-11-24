@@ -838,8 +838,9 @@ to execute):
 - `:bookmarks` / `:show-bookmarks` &rarr; Open IntelliJ Bookmarks list (`ShowBookmarks`)
 - `:bookmark-toggle` &rarr; Toggle IntelliJ bookmark on current line (`ToggleBookmark`)
 - `:bookmark-mnemonic` &rarr; Toggle IntelliJ bookmark with mnemonic (`ToggleBookmarkWithMnemonic`)
-- `:config-reload` / `:reload-config` &rarr; Reload keymap bindings from `intellij.toml` or `config.toml`
+- `:config-reload` / `:reload-config` &rarr; Reload keymap bindings from `intellij.toml` or `config.toml` (both global and project-local)
 - `:config-open` &rarr; Open active `intellij.toml` (or custom config) in editor (creates starter template if missing)
+- `:config-open-project` / `:config-open-workspace` &rarr; Open or create project-local `.helix/intellij.toml` in editor
 - `:log-open` / `:show-log` &rarr; Open IDE log file in editor (`ShowLog`)
 
 #### Search & Selection UI Modes
@@ -935,6 +936,9 @@ Dedicated configurable under **Helix Keymap &rarr; Configuration (TOML)**:
 
 Helix Keymap supports authentic Helix-style key rebinding with safe separation between IntelliJ and terminal Helix:
 
+- **Project-Local Overrides (`<projectRoot>/.helix/intellij.toml`)**: Automatically loads and overlays on top of global
+  configuration for the active project. Bind repository-specific Gradle/Maven tasks, project `:action` targets, or custom
+  `rulers` and `soft-wrap` settings without polluting your global config. Isolated per project window.
 - **Primary IDE Target (`~/.config/helix/intellij.toml`)**: Dedicated to IntelliJ Helix. It protects your CLI Helix setup
   from parse errors while allowing you to freely bind native IntelliJ actions via `:action <ActionId>`.
 - **CLI Fallback (`~/.config/helix/config.toml`)**: If `intellij.toml` does not exist, the plugin reads standard
@@ -943,8 +947,8 @@ Helix Keymap supports authentic Helix-style key rebinding with safe separation b
 - **Custom Path**: Configurable under **Settings &rarr; Tools &rarr; Helix Keymap**. If pointed to `config.toml`,
   a safety warning alerts you that `:action` bindings may affect CLI Helix.
 
-Run `:config-open` in the Command Palette (`:`) to immediately open or initialize your `intellij.toml` configuration file.
-Any changes saved to the active config file (inside IntelliJ or externally) are **automatically reloaded live** by the 
+Run `:config-open` to open/initialize your global configuration, or `:config-open-project` (`:config-open-workspace`) to open/initialize `<projectRoot>/.helix/intellij.toml`.
+Any changes saved to global or project-local config files (inside IntelliJ or externally) are **automatically reloaded live** by the 
 built-in VFS file watcher (you can also force a reload at any time via `:config-reload`):
 
 ```toml

@@ -76,8 +76,29 @@ class HelixConfigWatcher : BulkFileListener {
             if (matchesFile(candidate, custom)) return true
 
             if (matchesUserHomeConfig(candidate)) return true
-            return matchesIdeConfig(candidate)
+            if (matchesIdeConfig(candidate)) return true
+            return matchesAnyProjectConfig(candidate)
         }
+
+        private fun matchesProjectConfigFile(candidate: File, project: com.intellij.openapi.project.Project): Boolean {
+            val basePath = project.basePath ?: return false
+            val helixDir = File(basePath, HelixConfigLoader.PROJECT_CONFIG_DIR)
+            val intellijTarget = File(helixDir, HelixConfigLoader.INTELLIJ_CONFIG_FILE)
+            if (matchesFile(candidate, intellijTarget.path)) return true
+            if (HelixSettings.instance.cliConfigFallbackMode != HelixCliConfigFallbackMode.DISABLED) {
+                val configTarget = File(helixDir, HelixConfigLoader.CLI_CONFIG_FILE)
+                return matchesFile(candidate, configTarget.path)
+            }
+            return false
+        }
+
+        private fun matchesAnyProjectConfig(candidate: File): Boolean =
+            ProjectManager.getInstance().openProjects.any { !it.isDisposed && matchesProjectConfigFile(candidate, it) }
+
+        fun findProjectForConfigPath(candidate: File): com.intellij.openapi.project.Project? =
+            ProjectManager.getInstance().openProjects.firstOrNull {
+                !it.isDisposed && matchesProjectConfigFile(candidate, it)
+            }
 
         private fun isTomlConfigPath(path: String): Boolean =
             path.endsWith(CONFIG_FILE_NAME) || path.endsWith(INTELLIJ_CONFIG_FILE_NAME)

@@ -37,10 +37,10 @@ object HelixKeymapConflictDetector {
     /**
      * Checks all active runtime tries across Normal, Select, and Insert modes.
      */
-    fun detectAllActiveConflicts(): List<KeymapConflict> {
+    fun detectAllActiveConflicts(project: com.intellij.openapi.project.Project? = null): List<KeymapConflict> {
         val result = mutableListOf<KeymapConflict>()
         for (mode in arrayOf(HelixMode.NORMAL, HelixMode.SELECT, HelixMode.INSERT)) {
-            val trie = HelixKeymapManager.getActiveTrie(mode)
+            val trie = HelixKeymapManager.getActiveTrie(mode, project)
             result.addAll(detectConflicts(mode, trie))
         }
         return result

@@ -113,6 +113,24 @@ class HelixKeymapBrowserTest : BasePlatformTestCase() {
         disabledRow.description shouldBe "(Disabled)"
     }
 
+    fun testCustomProjectBindingDetection() {
+        HelixKeymapManager.initProjectKeymap(project)
+        HelixKeymapManager.bind(HelixMode.NORMAL, "space t t", ":action Gradle.ExecuteTask", project = project)
+
+        val projectRows = HelixKeymapExtractor.extractRows(HelixMode.NORMAL, project)
+        val projectRow = projectRows.firstOrNull { it.rawSequence == "space t t" }
+        projectRow.shouldNotBeNull()
+        projectRow.source shouldBe BindingSource.CUSTOM_PROJECT
+
+        // Global extraction without project does not have CUSTOM_PROJECT
+        val globalRows = HelixKeymapExtractor.extractRows(HelixMode.NORMAL)
+        val globalRow = globalRows.firstOrNull { it.rawSequence == "space t t" }
+        globalRow.shouldNotBeNull()
+        globalRow.source shouldBe BindingSource.DEFAULT
+
+        HelixKeymapManager.clearProject(project)
+    }
+
     fun testKeymapBrowserPanelFiltering() {
         val panel = HelixKeymapBrowserPanel()
         val table = panel.table

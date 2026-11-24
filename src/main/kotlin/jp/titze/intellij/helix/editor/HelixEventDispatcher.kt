@@ -123,7 +123,7 @@ class HelixEventDispatcher : IdeEventQueue.EventDispatcher {
     private fun handleMacroShortcut(e: KeyEvent, editor: Editor, state: HelixEditorState): Boolean {
         if (state.pendingSequence.isNotEmpty()) return false
         val stroke = HelixKeyStroke.fromKeyEvent(e)
-        val step = HelixKeymapManager.resolveStep(state.mode, "", stroke)
+        val step = HelixKeymapManager.resolveStep(state.mode, "", stroke, editor.project)
         if (step is HelixKeymapResult.Leaf && step.command == "record_macro") {
             state.takeCount()
             lastConsumedMacroChar = stroke.keyChar ?: 'Q'

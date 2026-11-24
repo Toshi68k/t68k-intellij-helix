@@ -117,7 +117,7 @@ object HelixMacroExecutor {
         }
 
         val state = HelixStateManager.getOrCreate(editor)
-        val trieResult = HelixKeymapManager.resolve(state.mode, listOf(stroke))
+        val trieResult = HelixKeymapManager.resolve(state.mode, listOf(stroke), editor.project)
         if (trieResult is HelixKeymapResult.Leaf) {
             HelixCommandRegistry.execute(trieResult.command, editor, 1)
             return

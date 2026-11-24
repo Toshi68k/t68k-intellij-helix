@@ -76,6 +76,25 @@ object HelixEditorEligibility {
         HelixStatusBarWidget.updateAllWidgets()
     }
 
+    /**
+     * Re-evaluates editors belonging to the given project after project settings change.
+     */
+    fun refreshProjectEditors(project: com.intellij.openapi.project.Project) {
+        if (project.isDisposed) return
+        EditorFactory.getInstance().allEditors.forEach { editor ->
+            if (editor.project == project) {
+                if (isActive(editor)) {
+                    val state = HelixStateManager.getOrCreate(editor)
+                    HelixStateManager.updateCursor(editor, state.mode)
+                    state.notifyListeners()
+                } else {
+                    deactivate(editor)
+                }
+            }
+        }
+        HelixStatusBarWidget.updateAllWidgets()
+    }
+
     fun deactivate(editor: Editor) {
         val hostEditor = HelixStateManager.resolveHostEditor(editor)
         val state = HelixStateManager.get(hostEditor) ?: return

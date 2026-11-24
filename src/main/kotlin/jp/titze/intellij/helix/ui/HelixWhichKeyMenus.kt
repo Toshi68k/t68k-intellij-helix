@@ -440,7 +440,7 @@ object HelixWhichKeyMenus {
 
     fun getMenu(prefix: String, mode: HelixMode, editor: Editor? = null): Pair<String, List<WhichKeyItem>>? {
         val base = getBaseMenu(prefix, editor)
-        val branchChildren = HelixKeymapManager.getBranchChildren(mode, prefix)
+        val branchChildren = HelixKeymapManager.getBranchChildren(mode, prefix, editor?.project)
 
         if (base == null && branchChildren == null) {
             return null

@@ -321,4 +321,68 @@ class HelixEditorOptionsTest : BasePlatformTestCase() {
         val invalid = HelixEditorOptions.setOption("scrolloff", "not_a_number", editor)
         invalid.shouldBeFalse()
     }
+
+    fun testProjectLocalEditorOptionsPrecedence() {
+        myFixture.configureByText("test.txt", "sample code line")
+        val editor = myFixture.editor
+
+        val basePath = project.basePath ?: error("Project basePath missing")
+        val helixDir = File(basePath, ".helix")
+        helixDir.mkdirs()
+        val projectToml = File(helixDir, "intellij.toml")
+        projectToml.writeText(
+            """
+            [editor]
+            rulers = [80]
+            soft-wrap.enable = true
+            """.trimIndent(),
+        )
+
+        val tempGlobal = File.createTempFile("helix-global-options-", ".toml")
+        tempGlobal.writeText(
+            """
+            [editor]
+            rulers = [120]
+            scrolloff = 5
+            """.trimIndent(),
+        )
+
+        try {
+            HelixConfigLoader.loadConfig(tempGlobal)
+            HelixConfigLoader.loadProjectConfig(project, projectToml)
+
+            // Project overrides global rulers [120] -> [80]
+            HelixEffectiveSettings.getEffectiveRulers(project) shouldBe listOf(80)
+
+            // Global rulers remain [120]
+            HelixEffectiveSettings.getEffectiveRulers(null) shouldBe listOf(120)
+
+            // Project inherits scrolloff 5 from global
+            HelixEffectiveSettings.getEffectiveScrolloff(project) shouldBe 5
+
+            // Project defines soft-wrap
+            HelixEffectiveSettings.getEffectiveSoftWrap(project) shouldBe true
+            HelixEffectiveSettings.getEffectiveSoftWrap(null).shouldBeNull()
+
+            // Session override (:set-option) beats project TOML
+            HelixEffectiveSettings.setSessionOption("rulers", listOf(100))
+            HelixEffectiveSettings.getEffectiveRulers(project) shouldBe listOf(100)
+
+            // Clear session override -> project TOML restored
+            HelixEffectiveSettings.clearSessionOverride("rulers")
+            HelixEffectiveSettings.getEffectiveRulers(project) shouldBe listOf(80)
+
+            // Apply all to editor verifies editor settings
+            HelixEffectiveSettings.applyAllToEditor(editor)
+            editor.settings.softMargins shouldBe listOf(80)
+            editor.settings.isUseSoftWraps.shouldBeTrue()
+            editor.settings.verticalScrollOffset shouldBe 5
+        } finally {
+            projectToml.delete()
+            helixDir.delete()
+            tempGlobal.delete()
+            HelixConfigLoader.unloadProjectConfig(project)
+            HelixEffectiveSettings.clearAllOverrides()
+        }
+    }
 }

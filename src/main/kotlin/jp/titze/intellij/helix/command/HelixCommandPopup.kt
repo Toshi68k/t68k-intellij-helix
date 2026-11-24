@@ -13,6 +13,7 @@ import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.components.JBTextField
 import com.intellij.util.ui.JBUI
 import jp.titze.intellij.helix.HelixBundle
+import jp.titze.intellij.helix.action.HelixWriteIntentAction
 import jp.titze.intellij.helix.ui.HelixListUI
 import jp.titze.intellij.helix.ui.HelixTheme
 import java.awt.BorderLayout
@@ -221,10 +222,12 @@ object HelixCommandPopup {
             val query = textField.text.trim().removePrefix(":")
             popup.cancel()
             val selected = list.selectedValue
-            if (!shouldExecuteDirectly(query) && selected != null && selected.matches(query)) {
-                selected.action(editor)
-            } else if (query.isNotEmpty()) {
-                executeCommand(query, editor)
+            HelixWriteIntentAction.run {
+                if (!shouldExecuteDirectly(query) && selected != null && selected.matches(query)) {
+                    selected.action(editor)
+                } else if (query.isNotEmpty()) {
+                    executeCommand(query, editor)
+                }
             }
         }
 
@@ -345,7 +348,9 @@ object HelixCommandPopup {
             override fun mouseClicked(e: MouseEvent) {
                 if (e.clickCount >= 1 && list.selectedValue != null) {
                     popup.cancel()
-                    list.selectedValue.action(editor)
+                    HelixWriteIntentAction.run {
+                        list.selectedValue.action(editor)
+                    }
                 }
             }
         })

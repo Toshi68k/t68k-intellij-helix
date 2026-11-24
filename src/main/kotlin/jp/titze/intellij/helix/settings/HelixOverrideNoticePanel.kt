@@ -11,6 +11,7 @@ import com.intellij.ui.components.JBLabel
 import com.intellij.util.ui.JBUI
 import com.intellij.util.ui.UIUtil
 import jp.titze.intellij.helix.HelixBundle
+import jp.titze.intellij.helix.action.HelixWriteIntentAction
 import java.awt.FlowLayout
 import javax.swing.Box
 import javax.swing.JPanel
@@ -32,14 +33,16 @@ class HelixOverrideNoticePanel(val optionKey: String) : JPanel(FlowLayout(FlowLa
     }
 
     val openLink = ActionLink(HelixBundle.message("settings.override.openFile")) {
-        val override = HelixEffectiveSettings.getOverride(optionKey)
-        val file = override?.sourceFile
-        if (file != null && file.exists()) {
+        HelixWriteIntentAction.run {
             val project = ProjectManager.getInstance().openProjects.firstOrNull { !it.isDisposed }
-            val vf = LocalFileSystem.getInstance().refreshAndFindFileByIoFile(file)
-            if (vf != null && project != null) {
-                val line = maxOf(0, override.lineNumber - 1)
-                OpenFileDescriptor(project, vf, line, 0).navigate(true)
+            val override = HelixEffectiveSettings.getOverride(optionKey, project)
+            val file = override?.sourceFile
+            if (file != null && file.exists()) {
+                val vf = LocalFileSystem.getInstance().refreshAndFindFileByIoFile(file)
+                if (vf != null && project != null) {
+                    val line = maxOf(0, override.lineNumber - 1)
+                    OpenFileDescriptor(project, vf, line, 0).navigate(true)
+                }
             }
         }
     }.apply {
@@ -59,9 +62,16 @@ class HelixOverrideNoticePanel(val optionKey: String) : JPanel(FlowLayout(FlowLa
     }
 
     fun update(): Boolean {
-        val override = HelixEffectiveSettings.getOverride(optionKey)
+        val project = ProjectManager.getInstance().openProjects.firstOrNull { !it.isDisposed }
+        val override = HelixEffectiveSettings.getOverride(optionKey, project)
         return if (override != null) {
-            val fileName = override.sourceFile?.name ?: "config.toml"
+            val fileName = override.sourceFile?.let {
+                if (it.parentFile?.name == jp.titze.intellij.helix.config.HelixConfigLoader.PROJECT_CONFIG_DIR) {
+                    "${jp.titze.intellij.helix.config.HelixConfigLoader.PROJECT_CONFIG_DIR}/${it.name}"
+                } else {
+                    it.name
+                }
+            } ?: "config.toml"
             noticeLabel.text = HelixBundle.message(
                 "settings.override.notice",
                 fileName,

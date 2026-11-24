@@ -56,5 +56,6 @@ class HelixFileEditorListener : FileEditorManagerListener {
 
         val state = HelixStateManager.getOrCreate(editor)
         HelixStateManager.updateCursor(editor, state.mode)
+        jp.titze.intellij.helix.settings.HelixEffectiveSettings.applyAllToEditor(editor)
     }
 }

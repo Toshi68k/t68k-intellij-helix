@@ -12,6 +12,7 @@ import jp.titze.intellij.helix.action.HelixActionDelegate
 import jp.titze.intellij.helix.action.HelixActions
 import jp.titze.intellij.helix.action.HelixShellActions
 import jp.titze.intellij.helix.action.HelixVisualToggleActions
+import jp.titze.intellij.helix.action.HelixWriteIntentAction
 import jp.titze.intellij.helix.config.HelixEditorOptions
 import jp.titze.intellij.helix.jumplist.HelixJumpListService
 import jp.titze.intellij.helix.motion.HelixFileNavigation
@@ -421,9 +422,11 @@ object HelixCommands {
                 // Ignore creation failure and let virtual file system handle
             }
         }
-        val virtualFile = LocalFileSystem.getInstance().refreshAndFindFileByIoFile(targetFile)
-        if (virtualFile != null) {
-            OpenFileDescriptor(project, virtualFile).navigate(true)
+        HelixWriteIntentAction.run {
+            val virtualFile = LocalFileSystem.getInstance().refreshAndFindFileByIoFile(targetFile)
+            if (virtualFile != null) {
+                OpenFileDescriptor(project, virtualFile).navigate(true)
+            }
         }
     }
 
