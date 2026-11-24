@@ -5,6 +5,14 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+
+- **Harpoon Persistence Across Restarts & Branch Switches**:
+  - Pinned Harpoon slots (`space + 1..5`) now survive IDE restarts, project reopenings, and branch switches via a project-level `PersistentStateComponent` saved to `.idea/workspace.xml` (zero Git pollution).
+  - **Lazy RangeMarker Rehydration**: Restores file URLs, line numbers, and preview snippets on project load, creating active `RangeMarker` tracking on demand without blocking startup.
+  - **Dynamic Line Tracking**: Pinned line numbers are dynamically derived from active `RangeMarker`s, keeping line numbers accurate as code shifts.
+  - **Non-Destructive Branch Switching**: Preserves slot definitions for files temporarily absent on the current Git branch, labeling them `[other branch]` in the Harpoon card UI and Which-Key rather than discarding them.
+
 ## [0.9.0] - 2026-11-24
 
 ### Added

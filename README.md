@@ -537,6 +537,11 @@ pressed. Code folding is available via `:fold`, `:unfold`, `:fold-all`, and `:un
 | `space + H d 1..5` | `harpoon_delete_1..5`| Clear quick slot 1–5                                         |
 | `space + H H`      | `harpoon_popup`      | Open floating card UI (reorder `J`/`K`, delete `d`, jump 1-5)|
 
+> **Persistence & Dynamic Shift Tracking**: Pinned slots are automatically saved to `.idea/workspace.xml` across IDE
+> restarts and Git branch switches (zero Git pollution). Pinned lines use dynamic `RangeMarker` pointers that adjust 
+> line numbers automatically as code is modified. If a file is absent or on another Git branch, the slot is 
+> non-destructively preserved with an `[other branch]` badge in the card UI and Which-Key.
+
 #### Debugging & DAP (`space + G`)
 
 | Key           | Helix Command           | IntelliJ Action           | Description                         |
