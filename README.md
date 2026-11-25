@@ -188,7 +188,7 @@ Helix relies on several `Ctrl` chords for navigation (`Ctrl-d`, `Ctrl-u`, `Ctrl-
 | `gh`                                     | Move to line start (actual first character)                                                                |
 | `gs`                                     | Move to first non-whitespace character of line                                                             |
 | `gl`                                     | Move to line end                                                                                           |
-| `gw`                                     | Jump to visible word with 2-letter badge overlays (`goto_word`)                                            |
+| `gw`                                     | Jump to visible word with 2-letter badge overlays (`goto_word`; mode-aware selection)                       |
 | `gg`                                     | Move to the top of the buffer                                                                              |
 | `ge` *(in `g` menu)*                     | Move to the end of the buffer                                                                              |
 | `gt`                                     | Move to top line of visible window viewport (`goto_window_top`)                                            |
@@ -417,7 +417,7 @@ and [Helix Textobjects](https://docs.helix-editor.com/textobjects.html):
 - `gb` &rarr; `goto_window_bottom` (Bottom visible line in viewport)
 - `gf` &rarr; `goto_file` (Goto file at caret)
 - `g|` &rarr; `goto_column <count>` (Goto column within line)
-- `gw` &rarr; `goto_word` (Jump to word on screen with overlay badges)
+- `gw` &rarr; `goto_word` (Jump to word on screen with overlay badges; mode-aware selection)
 - `ge` &rarr; `goto_last_line` (Goto end of buffer)
 - `gg` &rarr; `goto_line_start_file` (Goto start of buffer)
 - `ga` &rarr; `goto_last_accessed_file` (Last accessed file / alternate buffer)

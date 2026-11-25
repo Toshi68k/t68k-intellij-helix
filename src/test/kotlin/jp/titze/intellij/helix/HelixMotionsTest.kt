@@ -509,6 +509,32 @@ class HelixMotionsTest : BasePlatformTestCase() {
 
         caret.offset shouldBe 7
         caret.selectedText shouldBe "anana cherry"
+
+        // Test F in Normal mode starting ON a character (index 18 'y') without selection
+        caret.removeSelection()
+        caret.moveToOffset(18)
+        HelixKeyHandler.handleKey('F', editor)
+        HelixKeyHandler.handleKey('b', editor)
+        caret.offset shouldBe 6
+        caret.selectedText shouldBe "banana cherry"
+
+        // Test T in Normal mode starting ON a character (index 18 'y') without selection
+        caret.removeSelection()
+        caret.moveToOffset(18)
+        HelixKeyHandler.handleKey('T', editor)
+        HelixKeyHandler.handleKey('b', editor)
+        caret.offset shouldBe 7
+        caret.selectedText shouldBe "anana cherry"
+
+        // Test F in Select mode starting ON 'y'
+        caret.removeSelection()
+        caret.moveToOffset(18)
+        HelixActions.toggleSelectMode(editor)
+        HelixKeyHandler.handleKey('F', editor)
+        HelixKeyHandler.handleKey('b', editor)
+        caret.offset shouldBe 6
+        caret.selectedText shouldBe "banana cherry"
+        HelixActions.toggleSelectMode(editor)
     }
 
     fun testFindCharCountPrefix() {
