@@ -12,6 +12,7 @@ import com.intellij.openapi.util.Disposer
 import jp.titze.intellij.helix.action.HelixActionDelegate
 import jp.titze.intellij.helix.action.HelixActions
 import jp.titze.intellij.helix.jumplist.HelixJumpListService
+import jp.titze.intellij.helix.keymap.HelixCommandRegistry
 import jp.titze.intellij.helix.keymap.HelixKeyHandler
 import jp.titze.intellij.helix.keymap.HelixKeyStroke
 import jp.titze.intellij.helix.keymap.HelixKeymapManager
@@ -77,6 +78,11 @@ class HelixEventDispatcher : IdeEventQueue.EventDispatcher {
         if (handleEscapeEvent(e, editor, isNoModifiers, isCtrl)) return true
 
         val state = HelixStateManager.getOrCreate(editor)
+        if (handleFunctionKey(e, editor, state)) {
+            e.consume()
+            return true
+        }
+
         val handled = if (state.mode.isInsertable) {
             handleInsertShortcut(e, editor, state, isCtrl, isAlt)
         } else {
@@ -89,6 +95,38 @@ class HelixEventDispatcher : IdeEventQueue.EventDispatcher {
         }
 
         return false
+    }
+
+    private fun handleFunctionKey(e: KeyEvent, editor: Editor, state: HelixEditorState): Boolean {
+        if (!HelixKeyStroke.isFunctionKey(e.keyCode)) return false
+        val stroke = HelixKeyStroke.fromKeyEvent(e)
+        return when (val step = HelixKeymapManager.resolveStep(state.mode, state.pendingSequence, stroke)) {
+            is HelixKeymapResult.Leaf -> {
+                val count = state.takeCount() ?: 1
+                state.clearPendingSequence()
+                HelixWhichKeyPopup.hide()
+                HelixCommandRegistry.execute(step.command, editor, count)
+            }
+
+            is HelixKeymapResult.Branch -> {
+                val nextPrefix = if (state.pendingSequence.isEmpty()) {
+                    stroke.toDisplayString()
+                } else {
+                    "${state.pendingSequence} ${stroke.toDisplayString()}"
+                }
+                state.setPendingSequence(nextPrefix)
+                HelixWhichKeyPopup.show(editor, nextPrefix)
+                true
+            }
+
+            HelixKeymapResult.None -> {
+                if (state.pendingSequence.isNotEmpty()) {
+                    state.clearPendingSequence()
+                    HelixWhichKeyPopup.hide()
+                }
+                false
+            }
+        }
     }
 
     private fun handleInsertShortcut(

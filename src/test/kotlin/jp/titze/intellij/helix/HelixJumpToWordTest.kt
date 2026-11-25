@@ -11,6 +11,7 @@ import jp.titze.intellij.helix.editor.HelixEscapeHandler
 import jp.titze.intellij.helix.jumplist.HelixJumpListService
 import jp.titze.intellij.helix.keymap.HelixKeyHandler
 import jp.titze.intellij.helix.motion.HelixJumpToWord
+import jp.titze.intellij.helix.motion.HelixMotions
 import jp.titze.intellij.helix.state.HelixMode
 import jp.titze.intellij.helix.state.HelixStateManager
 
@@ -122,9 +123,97 @@ class HelixJumpToWordTest : BasePlatformTestCase() {
         HelixKeyHandler.handleKey('j', editor).shouldBeTrue()
         HelixJumpToWord.isActive(editor).shouldBeFalse()
 
+        // Cursor was at threeEnd (space after "three", index 13).
+        // Since anchor was at index 13 with no prior selection,
+        // inclusive selection includes index 13 -> selectionEnd is 14
+        caret.selectionStart shouldBe 0
+        caret.selectionEnd shouldBe threeEnd + 1
+        caret.selectedText shouldBe "one two three "
+    }
+
+    fun testJumpToWordInSelectModeBackwardPreservesAnchor() {
+        val text = "one two three four five\n"
+        myFixture.configureByText("test.txt", text)
+        val editor = myFixture.editor
+        val caret = editor.caretModel.primaryCaret
+        val state = HelixStateManager.getOrCreate(editor)
+
+        // Select "three" forward ([8, 13)), cursor at 13
+        val threeStart = text.indexOf("three")
+        val threeEnd = threeStart + "three".length
+        caret.moveToOffset(threeEnd)
+        caret.setSelection(threeStart, threeEnd)
+        state.setMode(HelixMode.SELECT)
+
+        // Flip selection so head is at 8, anchor at 13
+        HelixMotions.flipSelection(editor)
+        caret.offset shouldBe threeStart
+
+        HelixKeyHandler.handleKey('g', editor).shouldBeTrue()
+        HelixKeyHandler.handleKey('w', editor).shouldBeTrue()
+        HelixJumpToWord.isActive(editor).shouldBeTrue()
+
+        // Jump to 1st word ("one") -> label 'j'
+        HelixKeyHandler.handleKey('j', editor).shouldBeTrue()
+        HelixJumpToWord.isActive(editor).shouldBeFalse()
+
         caret.selectionStart shouldBe 0
         caret.selectionEnd shouldBe threeEnd
         caret.selectedText shouldBe "one two three"
+    }
+
+    fun testJumpToWordInSelectModeBackwardAcrossWordBoundary() {
+        val text = "one two three four five\n"
+        myFixture.configureByText("test.txt", text)
+        val editor = myFixture.editor
+        val caret = editor.caretModel.primaryCaret
+        val state = HelixStateManager.getOrCreate(editor)
+
+        // Position on 'r' (index 11) in "three" with NO selection
+        val threeStart = text.indexOf("three")
+        caret.moveToOffset(threeStart + 3) // on 'e' / 'r'
+        caret.removeSelection()
+        state.setMode(HelixMode.SELECT)
+
+        HelixKeyHandler.handleKey('g', editor).shouldBeTrue()
+        HelixKeyHandler.handleKey('w', editor).shouldBeTrue()
+        HelixJumpToWord.isActive(editor).shouldBeTrue()
+
+        // Jump backward to 1st word ("one") -> label 'j'
+        HelixKeyHandler.handleKey('j', editor).shouldBeTrue()
+        HelixJumpToWord.isActive(editor).shouldBeFalse()
+
+        // Selection should start at 0 ('o') and end at index 11 + 1 = 12 (inclusive of starting char)
+        caret.selectionStart shouldBe 0
+        caret.selectionEnd shouldBe threeStart + 4
+        caret.selectedText shouldBe "one two thre"
+    }
+
+    fun testJumpToWordInSelectModeCurrentWord() {
+        val text = "one two three four five\n"
+        myFixture.configureByText("test.txt", text)
+        val editor = myFixture.editor
+        val caret = editor.caretModel.primaryCaret
+        val state = HelixStateManager.getOrCreate(editor)
+
+        // Position on 't' (index 8) of "three" with NO selection
+        val threeStart = text.indexOf("three")
+        caret.moveToOffset(threeStart)
+        caret.removeSelection()
+        state.setMode(HelixMode.SELECT)
+
+        HelixKeyHandler.handleKey('g', editor).shouldBeTrue()
+        HelixKeyHandler.handleKey('w', editor).shouldBeTrue()
+        HelixJumpToWord.isActive(editor).shouldBeTrue()
+
+        // Jump to 3rd word ("three") -> label 'k'
+        HelixKeyHandler.handleKey('k', editor).shouldBeTrue()
+        HelixJumpToWord.isActive(editor).shouldBeFalse()
+
+        // Selects the word from target.offset to target.endOffset
+        caret.selectionStart shouldBe threeStart
+        caret.selectionEnd shouldBe threeStart + "three".length
+        caret.selectedText shouldBe "three"
     }
 
     fun testJumpToWordRecordsJumpList() {

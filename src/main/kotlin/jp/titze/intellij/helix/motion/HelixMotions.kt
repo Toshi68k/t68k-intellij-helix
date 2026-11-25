@@ -111,7 +111,7 @@ object HelixMotions {
         val state = HelixStateManager.getOrCreate(editor)
         val isSelect = state.mode == HelixMode.SELECT
         runForEachCaret(editor) { caret ->
-            val anchor = if (isSelect && caret.hasSelection()) caret.leadSelectionOffset else caret.offset
+            val anchor = if (isSelect) HelixMotionUtils.getHelixAnchor(caret) else caret.offset
             val target = (caret.offset - count).coerceAtLeast(0)
             applyMotion(caret, anchor, target, isSelect)
         }
@@ -126,7 +126,7 @@ object HelixMotions {
         val isSelect = state.mode == HelixMode.SELECT
         val maxOffset = editor.document.textLength
         runForEachCaret(editor) { caret ->
-            val anchor = if (isSelect && caret.hasSelection()) caret.leadSelectionOffset else caret.offset
+            val anchor = if (isSelect) HelixMotionUtils.getHelixAnchor(caret) else caret.offset
             val target = (caret.offset + count).coerceAtMost(maxOffset)
             applyMotion(caret, anchor, target, isSelect)
         }
@@ -144,7 +144,7 @@ object HelixMotions {
         val isSelect = state.mode == HelixMode.SELECT
         val doc = editor.document
         runForEachCaret(editor) { caret ->
-            val anchor = if (isSelect && caret.hasSelection()) caret.leadSelectionOffset else caret.offset
+            val anchor = if (isSelect) HelixMotionUtils.getHelixAnchor(caret) else caret.offset
             val line = doc.getLineNumber(caret.offset)
             val currentCol = caret.offset - doc.getLineStartOffset(line)
             val sticky = caret.getUserData(stickyColKey)
@@ -172,7 +172,7 @@ object HelixMotions {
         val doc = editor.document
         val lineCount = doc.lineCount
         runForEachCaret(editor) { caret ->
-            val anchor = if (isSelect && caret.hasSelection()) caret.leadSelectionOffset else caret.offset
+            val anchor = if (isSelect) HelixMotionUtils.getHelixAnchor(caret) else caret.offset
             val line = doc.getLineNumber(caret.offset)
             val currentCol = caret.offset - doc.getLineStartOffset(line)
             val sticky = caret.getUserData(stickyColKey)
@@ -199,7 +199,7 @@ object HelixMotions {
         val isSelect = state.mode == HelixMode.SELECT
         val doc = editor.document
         runForEachCaret(editor) { caret ->
-            val anchor = if (isSelect && caret.hasSelection()) caret.leadSelectionOffset else caret.offset
+            val anchor = if (isSelect) HelixMotionUtils.getHelixAnchor(caret) else caret.offset
             val line = doc.getLineNumber(caret.offset)
             val lineStart = doc.getLineStartOffset(line)
             applyMotion(caret, anchor, lineStart, isSelect)
@@ -216,7 +216,7 @@ object HelixMotions {
         val doc = editor.document
         val text = doc.charsSequence
         runForEachCaret(editor) { caret ->
-            val anchor = if (isSelect && caret.hasSelection()) caret.leadSelectionOffset else caret.offset
+            val anchor = if (isSelect) HelixMotionUtils.getHelixAnchor(caret) else caret.offset
             val line = doc.getLineNumber(caret.offset)
             val lineStart = doc.getLineStartOffset(line)
             val lineEnd = doc.getLineEndOffset(line)
@@ -237,7 +237,7 @@ object HelixMotions {
         val isSelect = state.mode == HelixMode.SELECT
         val doc = editor.document
         runForEachCaret(editor) { caret ->
-            val anchor = if (isSelect && caret.hasSelection()) caret.leadSelectionOffset else caret.offset
+            val anchor = if (isSelect) HelixMotionUtils.getHelixAnchor(caret) else caret.offset
             val line = doc.getLineNumber(caret.offset)
             val lineEnd = doc.getLineEndOffset(line)
             applyMotion(caret, anchor, lineEnd, isSelect)
@@ -263,7 +263,7 @@ object HelixMotions {
         }
 
         runForEachCaret(editor) { caret ->
-            val anchor = if (isSelect && caret.hasSelection()) caret.leadSelectionOffset else caret.offset
+            val anchor = if (isSelect) HelixMotionUtils.getHelixAnchor(caret) else caret.offset
             applyMotion(caret, anchor, targetOffset, isSelect)
         }
 
@@ -278,7 +278,7 @@ object HelixMotions {
         val isSelect = state.mode == HelixMode.SELECT
         val textLen = editor.document.textLength
         runForEachCaret(editor) { caret ->
-            val anchor = if (isSelect && caret.hasSelection()) caret.leadSelectionOffset else caret.offset
+            val anchor = if (isSelect) HelixMotionUtils.getHelixAnchor(caret) else caret.offset
             applyMotion(caret, anchor, textLen, isSelect)
         }
 
@@ -294,7 +294,7 @@ object HelixMotions {
         val doc = editor.document
         val col = ((count ?: 1) - 1).coerceAtLeast(0)
         runForEachCaret(editor) { caret ->
-            val anchor = if (isSelect && caret.hasSelection()) caret.leadSelectionOffset else caret.offset
+            val anchor = if (isSelect) HelixMotionUtils.getHelixAnchor(caret) else caret.offset
             val line = doc.getLineNumber(caret.offset)
             val lineStart = doc.getLineStartOffset(line)
             val lineEnd = doc.getLineEndOffset(line)

@@ -23,16 +23,31 @@ object HelixSelectionMotions {
         editor.scrollingModel.scrollToCaret(ScrollType.MAKE_VISIBLE)
     }
 
+    private val wasExclusiveKey = com.intellij.openapi.util.Key.create<Boolean>("HELIX_WAS_EXCLUSIVE_SELECTION")
+
     /**
      * Alt+;: Flip selection anchor and cursor
      */
     fun flipSelection(editor: Editor) {
         HelixMotionUtils.runForEachCaret(editor) { caret ->
             if (caret.hasSelection()) {
-                val anchor = caret.leadSelectionOffset
+                val start = caret.selectionStart
+                val end = caret.selectionEnd
                 val cursor = caret.offset
-                caret.moveToOffset(anchor)
-                caret.setSelection(cursor, anchor)
+                if (cursor == start) {
+                    val wasExclusive = caret.getUserData(wasExclusiveKey) == true
+                    val newCursor = if (wasExclusive) end else (end - 1).coerceAtLeast(start)
+                    caret.setSelection(start, end)
+                    caret.moveToOffset(newCursor)
+                } else {
+                    if (cursor == end) {
+                        caret.putUserData(wasExclusiveKey, true)
+                    } else {
+                        caret.putUserData(wasExclusiveKey, null)
+                    }
+                    caret.setSelection(end, start)
+                    caret.moveToOffset(start)
+                }
             }
         }
         editor.scrollingModel.scrollToCaret(ScrollType.MAKE_VISIBLE)
@@ -237,12 +252,12 @@ object HelixSelectionMotions {
             primary.removeSelection()
         }
 
-        for (item in distinct.drop(1)) {
-            val newCaret = editor.caretModel.addCaret(editor.offsetToVisualPosition(item.second), false)
+        for ((first1, second, third) in distinct.drop(1)) {
+            val newCaret = editor.caretModel.addCaret(editor.offsetToVisualPosition(second), false)
             if (newCaret != null) {
-                newCaret.moveToOffset(item.second)
-                if (item.third) {
-                    newCaret.setSelection(item.first, item.second)
+                newCaret.moveToOffset(second)
+                if (third) {
+                    newCaret.setSelection(first1, second)
                 } else {
                     newCaret.removeSelection()
                 }

@@ -188,7 +188,7 @@ Helix relies on several `Ctrl` chords for navigation (`Ctrl-d`, `Ctrl-u`, `Ctrl-
 | `gh`                                     | Move to line start (actual first character)                                                                |
 | `gs`                                     | Move to first non-whitespace character of line                                                             |
 | `gl`                                     | Move to line end                                                                                           |
-| `gw`                                     | Jump to visible word with 2-letter badge overlays (`goto_word`)                                            |
+| `gw`                                     | Jump to visible word with 2-letter badge overlays (`goto_word`; mode-aware selection)                       |
 | `gg`                                     | Move to the top of the buffer                                                                              |
 | `ge` *(in `g` menu)*                     | Move to the end of the buffer                                                                              |
 | `gt`                                     | Move to top line of visible window viewport (`goto_window_top`)                                            |
@@ -417,7 +417,7 @@ and [Helix Textobjects](https://docs.helix-editor.com/textobjects.html):
 - `gb` &rarr; `goto_window_bottom` (Bottom visible line in viewport)
 - `gf` &rarr; `goto_file` (Goto file at caret)
 - `g|` &rarr; `goto_column <count>` (Goto column within line)
-- `gw` &rarr; `goto_word` (Jump to word on screen with overlay badges)
+- `gw` &rarr; `goto_word` (Jump to word on screen with overlay badges; mode-aware selection)
 - `ge` &rarr; `goto_last_line` (Goto end of buffer)
 - `gg` &rarr; `goto_line_start_file` (Goto start of buffer)
 - `ga` &rarr; `goto_last_accessed_file` (Last accessed file / alternate buffer)
@@ -959,6 +959,8 @@ built-in VFS file watcher (you can also force a reload at any time via `:config-
 "X" = "extend_line"
 "C-d" = ["half_page_down", "align_view_center"]
 "backspace" = "no_op"
+F13 = "jump_view_left"
+S-F13 = "jump_view_right"
 
 # Chords and nested prefixes (table, dotted key, or shorthand section syntax)
 [keys.space] # shorthand for [keys.normal.space]
@@ -997,6 +999,8 @@ D = "goto_type_definition"
   seamlessly extend chord trees (e.g. jumping to and selecting the inner contents of surrounding delimiters).
 - **Macro Lists**: Bind arrays of commands that execute in order (e.g., `["half_page_down", "align_view_center"]`).
 - **Direct IntelliJ Actions**: Execute native JetBrains actions using the `:action <ActionId>` syntax.
+- **Functional Keys (`F1`–`F24`) & Modifiers**: Bind standalone function keys and modifier chords (`F1`–`F24`,
+  `S-F13`, `C-F13`, `A-F12`, `C-S-F13`) in Normal, Select, and Insert modes without blocking native unmapped IDE shortcuts.
 - **Unbinding / No-op**: Map keys to `"no_op"` to disable unwanted default keybindings.
 - **Config Diagnostics**: Live validation in settings alerts you to unrecognized commands, missing files, or syntax 
   issues.

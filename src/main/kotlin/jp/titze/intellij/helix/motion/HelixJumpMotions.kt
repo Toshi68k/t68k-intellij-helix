@@ -36,7 +36,7 @@ object HelixJumpMotions {
         val isSelect = state.mode == HelixMode.SELECT
 
         HelixMotionUtils.runForEachCaret(editor) { caret ->
-            val anchor = if (isSelect && caret.hasSelection()) caret.leadSelectionOffset else caret.offset
+            val anchor = if (isSelect) HelixMotionUtils.getHelixAnchor(caret) else caret.offset
             var curLine = doc.getLineNumber(caret.offset)
             val lineCount = doc.lineCount
 
@@ -485,10 +485,9 @@ object HelixJumpMotions {
 
             if (targetRange != null) {
                 if (isSelect) {
-                    val anchor = if (caret.hasSelection()) caret.leadSelectionOffset else curOffset
+                    val anchor = HelixMotionUtils.getHelixAnchor(caret)
                     val targetOffset = if (forward) targetRange.endOffset else targetRange.startOffset
-                    caret.moveToOffset(targetOffset)
-                    caret.setSelection(anchor, targetOffset)
+                    HelixMotionUtils.applyMotion(caret, anchor, targetOffset, isSelect = true)
                 } else {
                     caret.moveToOffset(targetRange.startOffset)
                     caret.setSelection(targetRange.startOffset, targetRange.endOffset)
@@ -618,7 +617,7 @@ object HelixJumpMotions {
         if (tagOffsets.isEmpty()) return
 
         HelixMotionUtils.runForEachCaret(editor) { caret ->
-            val anchor = if (isSelect && caret.hasSelection()) caret.leadSelectionOffset else caret.offset
+            val anchor = if (isSelect) HelixMotionUtils.getHelixAnchor(caret) else caret.offset
             val curOffset = caret.offset
             val targetOffset = if (forward) {
                 val candidates = tagOffsets.filter { it > curOffset }

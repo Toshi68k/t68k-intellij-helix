@@ -1287,4 +1287,107 @@ class HelixSelectionTest : BasePlatformTestCase() {
         jp.titze.intellij.helix.command.HelixCommands.execute("select-all-occurrences", editor)
         caretModel.caretCount shouldBe 3
     }
+
+    fun testInclusiveSelectionWordEndAndFlipAndSelectMode() {
+        val text = "public String toString()"
+        myFixture.configureByText("test.txt", text)
+        val editor = myFixture.editor
+        val caret = editor.caretModel.primaryCaret
+
+        caret.moveToOffset(0) // On 'p'
+
+        // 'e' moves to end of word "public", landing on 'c' (index 5)
+        HelixKeyHandler.handleKey('e', editor)
+        caret.offset shouldBe 5
+        caret.selectedText shouldBe "public"
+
+        // Alt+; flips selection so head is at 'p' (index 0) and anchor is at 'c'
+        HelixMotions.flipSelection(editor)
+        caret.offset shouldBe 0
+        caret.selectedText shouldBe "public"
+
+        // 'v' toggles select mode
+        HelixActions.toggleSelectMode(editor)
+        HelixStateManager.getOrCreate(editor).mode shouldBe HelixMode.SELECT
+
+        // 'l' moves right to 'u' (index 1), shrinking selection from head while keeping 'c'
+        HelixKeyHandler.handleKey('l', editor)
+        caret.offset shouldBe 1
+        caret.selectedText shouldBe "ublic"
+
+        // 'l' moves right again to 'b' (index 2)
+        HelixKeyHandler.handleKey('l', editor)
+        caret.offset shouldBe 2
+        caret.selectedText shouldBe "blic"
+    }
+
+    fun testInclusiveSelectionSelectModeWordBackward() {
+        val text = "public String toString()"
+        myFixture.configureByText("test.txt", text)
+        val editor = myFixture.editor
+        val caret = editor.caretModel.primaryCaret
+
+        // Move to 'c' (index 5) in "public" without selection
+        caret.moveToOffset(5)
+        HelixMotions.collapseSelection(editor)
+        caret.hasSelection().shouldBeFalse()
+
+        // 'v' toggles select mode
+        HelixActions.toggleSelectMode(editor)
+        HelixStateManager.getOrCreate(editor).mode shouldBe HelixMode.SELECT
+
+        // 'b' moves backward to start of "public" ('p', index 0)
+        // Inclusive selection must include both 'p' and starting char 'c'
+        HelixKeyHandler.handleKey('b', editor)
+        caret.offset shouldBe 0
+        caret.hasSelection().shouldBeTrue()
+        caret.selectedText shouldBe "public"
+
+        // Alt+; flips selection: head is at 'c' (index 5), anchor is at 'p' (index 0)
+        HelixMotions.flipSelection(editor)
+        caret.offset shouldBe 5
+        caret.selectedText shouldBe "public"
+
+        // 'h' moves left to 'i' (index 4), shrinking selection from head while keeping 'p'
+        HelixKeyHandler.handleKey('h', editor)
+        caret.offset shouldBe 4
+        caret.selectedText shouldBe "publi"
+
+        // Exit select mode and collapse
+        HelixActions.toggleSelectMode(editor)
+        HelixMotions.collapseSelection(editor)
+
+        // Test backward word motion from middle of word "String" on 'r' (index 9)
+        caret.moveToOffset(9)
+        HelixMotions.collapseSelection(editor)
+        HelixActions.toggleSelectMode(editor)
+
+        // 'b' moves backward to 'S' (index 7), selecting "Str" inclusively
+        HelixKeyHandler.handleKey('b', editor)
+        caret.offset shouldBe 7
+        caret.selectedText shouldBe "Str"
+    }
+
+    fun testInclusiveSelectionSelectModeBigWordBackward() {
+        val text = "foo.bar(\"arg\") baz.qux()"
+        myFixture.configureByText("test.txt", text)
+        val editor = myFixture.editor
+        val caret = editor.caretModel.primaryCaret
+
+        // Move to ')' (index 13) in "foo.bar(\"arg\")" without selection
+        caret.moveToOffset(13)
+        HelixMotions.collapseSelection(editor)
+        caret.hasSelection().shouldBeFalse()
+
+        // 'v' toggles select mode
+        HelixActions.toggleSelectMode(editor)
+        HelixStateManager.getOrCreate(editor).mode shouldBe HelixMode.SELECT
+
+        // 'B' moves backward to start of WORD ('f', index 0)
+        // Inclusive selection must include 'f' through ')'
+        HelixKeyHandler.handleKey('B', editor)
+        caret.offset shouldBe 0
+        caret.hasSelection().shouldBeTrue()
+        caret.selectedText shouldBe "foo.bar(\"arg\")"
+    }
 }
