@@ -184,13 +184,15 @@ object HelixConfigLoader {
         }
         if (allowEditorOptions) {
             val overrides = HelixEditorOptions.evaluateTomlOptions(parseResult.editorOptions, null)
-            for ((key, _, rawValueString, _, lineNumber, status, diagnosticMessage) in overrides.values) {
-                if (status == OptionStatus.INVALID) {
-                    val msg = diagnosticMessage
-                        ?: "Invalid value '$rawValueString' for '$key'"
-                    diagnostics.add("Line $lineNumber: $msg")
-                } else if (status == OptionStatus.IGNORED) {
-                    diagnostics.add("Line $lineNumber: Unknown [editor] option '$key' (ignored)")
+            for (override in overrides.values) {
+                if (override.status == OptionStatus.INVALID) {
+                    val msg = override.diagnosticMessage
+                        ?: "Invalid value '${override.rawValueString}' for '${override.key}'"
+                    diagnostics.add("Line ${override.lineNumber}: $msg")
+                } else if (override.status == OptionStatus.IGNORED) {
+                    diagnostics.add(
+                        "Line ${override.lineNumber}: Unknown [editor] option '${override.key}' (ignored)",
+                    )
                 }
             }
         }
@@ -263,10 +265,7 @@ object HelixConfigLoader {
         true
     }
 
-    fun loadProjectConfig(
-        project: Project,
-        explicitFile: File? = null,
-    ): HelixConfigResult {
+    fun loadProjectConfig(project: Project, explicitFile: File? = null): HelixConfigResult {
         if (project.isDisposed || !isProjectTrusted(project)) {
             unloadProjectConfig(project)
             return HelixConfigResult(null, 0, emptyList())
