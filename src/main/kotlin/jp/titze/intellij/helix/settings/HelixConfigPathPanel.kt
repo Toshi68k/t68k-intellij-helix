@@ -3,6 +3,7 @@
 
 package jp.titze.intellij.helix.settings
 
+import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory
 import com.intellij.openapi.project.ProjectManager
 import com.intellij.openapi.ui.ComboBox
@@ -15,6 +16,7 @@ import com.intellij.util.ui.UIUtil
 import jp.titze.intellij.helix.HelixBundle
 import jp.titze.intellij.helix.config.HelixConfigLoader
 import jp.titze.intellij.helix.config.HelixConfigWatcher
+import jp.titze.intellij.helix.config.HelixOptionOverride
 import java.awt.BorderLayout
 import java.awt.Dimension
 import java.awt.FlowLayout
@@ -215,54 +217,41 @@ class HelixConfigPathPanel {
 
     private fun openSelectedOverride() {
         val row = overridesTable.selectedRow
-        if (row != -1) {
-            val target = pathField.text.trim()
-            val selectedMode = fallbackModeComboBox.selectedItem as? HelixCliConfigFallbackMode
-                ?: HelixSettings.instance.cliConfigFallbackMode
-            val file = if (target.isNotEmpty()) {
-                File(
-                    target,
-                )
-            } else {
-                HelixConfigLoader.findConfigFile(selectedMode) ?: return
-            }
-            val isCli = HelixConfigLoader.isCliConfigFile(file)
-            val shouldApplyEditor = !isCli || selectedMode == HelixCliConfigFallbackMode.FULL
-            if (!shouldApplyEditor) return
+        if (row == -1) return
+        val overrides = resolveCurrentOverrides()
+        if (row < overrides.size) {
+            navigateToFile(overrides[row])
+        }
+    }
 
-            val overrides = if (file.exists()) {
+    private fun resolveCurrentOverrides(): List<HelixOptionOverride> {
+        val target = pathField.text.trim()
+        val activeProject = ProjectManager.getInstance().openProjects.firstOrNull { !it.isDisposed }
+        if (target.isNotEmpty()) {
+            val file = File(target)
+            if (file.exists()) {
                 val parseResult = try {
                     jp.titze.intellij.helix.config.HelixTomlParser.parse(file.readText())
                 } catch (_: Exception) {
                     null
                 }
                 if (parseResult != null) {
-                    jp.titze.intellij.helix.config.HelixEditorOptions
+                    return jp.titze.intellij.helix.config.HelixEditorOptions
                         .evaluateTomlOptions(parseResult.editorOptions, file)
                         .values
                         .toList()
-                } else {
-                    HelixEffectiveSettings.getAllOverrides()
-                }
-            } else {
-                HelixEffectiveSettings.getAllOverrides()
-            }
-
-            if (row < overrides.size) {
-                val override = overrides[row]
-                val sourceFile = override.sourceFile ?: file
-                if (sourceFile.exists()) {
-                    val project = ProjectManager.getInstance().openProjects.firstOrNull { !it.isDisposed }
-                    val vf = com.intellij.openapi.vfs.LocalFileSystem.getInstance().refreshAndFindFileByIoFile(
-                        sourceFile,
-                    )
-                    if (vf != null && project != null) {
-                        val line = maxOf(0, override.lineNumber - 1)
-                        com.intellij.openapi.fileEditor.OpenFileDescriptor(project, vf, line, 0).navigate(true)
-                    }
                 }
             }
         }
+        return HelixEffectiveSettings.getAllOverrides(activeProject)
+    }
+
+    private fun navigateToFile(override: HelixOptionOverride) {
+        val sourceFile = override.sourceFile ?: return
+        if (!sourceFile.exists()) return
+        val project = ProjectManager.getInstance().openProjects.firstOrNull { !it.isDisposed } ?: return
+        val line = maxOf(0, override.lineNumber - 1)
+        HelixConfigLoader.openIoFileInEditor(project, sourceFile, line, ModalityState.stateForComponent(panel))
     }
 
     fun refreshStatus() {
@@ -270,12 +259,13 @@ class HelixConfigPathPanel {
         val selectedMode = fallbackModeComboBox.selectedItem as? HelixCliConfigFallbackMode
             ?: HelixSettings.instance.cliConfigFallbackMode
         val file = if (target.isNotEmpty()) File(target) else HelixConfigLoader.findConfigFile(selectedMode)
+        populateOverridesTable()
+
         if (file == null || !file.exists()) {
             val defaultTarget = HelixConfigLoader.getTargetConfigFile().absolutePath
             statusLabel.text = HelixBundle.message("settings.config.status.default", defaultTarget)
             statusLabel.foreground = UIUtil.getContextHelpForeground()
             warningLabel.isVisible = false
-            overridesTableModel.rowCount = 0
             return
         }
 
@@ -299,38 +289,7 @@ class HelixConfigPathPanel {
         } catch (e: Exception) {
             statusLabel.text = HelixBundle.message("settings.config.status.error", e.message ?: "read error")
             statusLabel.foreground = com.intellij.util.ui.NamedColorUtil.getErrorForeground()
-            overridesTableModel.rowCount = 0
             return
-        }
-
-        val parseResult = try {
-            jp.titze.intellij.helix.config.HelixTomlParser.parse(file.readText())
-        } catch (_: Exception) {
-            null
-        }
-        val currentOverrides = if (shouldApplyEditor) {
-            if (parseResult != null) {
-                jp.titze.intellij.helix.config.HelixEditorOptions
-                    .evaluateTomlOptions(parseResult.editorOptions, file)
-                    .values
-                    .toList()
-            } else {
-                HelixEffectiveSettings.getAllOverrides()
-            }
-        } else {
-            emptyList()
-        }
-        overridesTableModel.rowCount = 0
-        for (override in currentOverrides) {
-            val src = "${override.sourceFile?.name ?: file.name}:${override.lineNumber}"
-            overridesTableModel.addRow(
-                arrayOf(
-                    override.key,
-                    override.rawValueString,
-                    src,
-                    override.status.displayName,
-                ),
-            )
         }
 
         if (result.errors.isNotEmpty()) {
@@ -343,6 +302,29 @@ class HelixConfigPathPanel {
                 file.name,
             )
             statusLabel.foreground = UIUtil.getContextHelpForeground()
+        }
+    }
+
+    private fun populateOverridesTable() {
+        val currentOverrides = resolveCurrentOverrides()
+        overridesTableModel.rowCount = 0
+        for (override in currentOverrides) {
+            val fileName = override.sourceFile?.let {
+                if (it.parentFile?.name == HelixConfigLoader.PROJECT_CONFIG_DIR) {
+                    "${HelixConfigLoader.PROJECT_CONFIG_DIR}/${it.name}"
+                } else {
+                    it.name
+                }
+            } ?: "config.toml"
+            val src = "$fileName:${override.lineNumber}"
+            overridesTableModel.addRow(
+                arrayOf(
+                    override.key,
+                    override.rawValueString,
+                    src,
+                    override.status.displayName,
+                ),
+            )
         }
     }
 

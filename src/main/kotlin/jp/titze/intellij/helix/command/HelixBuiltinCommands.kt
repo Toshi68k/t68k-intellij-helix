@@ -43,6 +43,13 @@ internal object HelixBuiltinCommands {
             HelixConfigLoader.openOrCreateConfigFile(editor.project)
         },
         HelixCommandItem(
+            "config-open-project",
+            listOf("config-open-workspace", "project-config-open", "workspace-config-open"),
+            "Open or create project-local .helix/intellij.toml in editor",
+        ) { editor ->
+            HelixConfigLoader.openOrCreateProjectConfigFile(editor.project)
+        },
+        HelixCommandItem(
             "log-open",
             listOf("log_open", "show-log", "show_log", "open-log"),
             "Open IDE log file in editor (ShowLog)",

@@ -5,6 +5,18 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+
+- **Project-Local Configuration (`.helix/intellij.toml` & `.helix/config.toml`)**:
+  - Automatically discovers, loads, and merges repository-specific configuration from `<projectRoot>/.helix/intellij.toml` (falling back to `<projectRoot>/.helix/config.toml`) on top of global `~/.config/helix/intellij.toml`.
+  - **Multi-Project Isolation**: Maintains project-isolated keymap tries and editor option caches keyed by project path. Multiple simultaneously open project windows never leak custom keybindings or editor overrides to each other or global state.
+  - **Strict Layered Precedence Hierarchy**: Enforces `:set-option (session)` &rsaquo; `Project TOML (.helix/)` &rsaquo; `Global TOML (~/.config/helix/)` &rsaquo; `Settings UI (persisted XML)` &rsaquo; `Built-in Defaults`.
+  - **Project Lifecycle & Safe Disposal**: Hooks into `HelixStartupActivity` on project open, refreshes active project editors on focus switch, and cleans up project tries upon project close via IntelliJ `Disposer`.
+  - **Project Trust Guard**: Respects IntelliJ's project trust state (`TrustedProjects.isTrusted`), preventing untrusted repositories from executing unauthorized project action macros.
+  - **Live VFS File Watcher**: `HelixConfigWatcher` monitors `.helix/` config files across open projects and triggers debounced live reloads upon saving.
+  - **Keymap Browser & Settings Provenance**: Displays a distinct `[Custom: Project]` badge in the Keymap Browser for project-bound shortcuts; disabled Settings UI controls and Active Overrides tables highlight `.helix/` provenance (even when no global `intellij.toml` exists) with direct line navigation.
+  - **Command Palette (`:config-open-project`)**: Added `:config-open-project` (aliases `:config-open-workspace`, `:project-config-open`, `:workspace-config-open`) to scaffold `.helix/intellij.toml` from a starter template and open it in the editor.
+    
 ## [0.9.1] - 2026-11-25
 
 ### Added

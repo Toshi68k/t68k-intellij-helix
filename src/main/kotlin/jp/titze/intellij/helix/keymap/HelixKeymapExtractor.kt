@@ -3,14 +3,16 @@
 
 package jp.titze.intellij.helix.keymap
 
+import com.intellij.openapi.project.Project
 import jp.titze.intellij.helix.config.HelixConfigLoader
 import jp.titze.intellij.helix.state.HelixMode
 
 enum class BindingSource(val displayName: String) {
     DEFAULT("Default"),
-    CUSTOM_INTELLIJ("custom: intellij"),
-    CUSTOM_CONFIG("custom: config"),
-    NO_OP("no_op"),
+    CUSTOM_PROJECT("Custom: Project"),
+    CUSTOM_INTELLIJ("Custom: intellij.toml"),
+    CUSTOM_CONFIG("Custom: config.toml"),
+    NO_OP("Disabled"),
 }
 
 enum class KeymapPrefixGroup(val displayName: String) {
@@ -56,11 +58,12 @@ object HelixKeymapExtractor {
 
     fun extractRows(
         mode: HelixMode,
-        activeTrie: HelixKeymapTrie = HelixKeymapManager.getActiveTrie(mode),
+        project: Project? = null,
+        activeTrie: HelixKeymapTrie = HelixKeymapManager.getActiveTrie(mode, project),
     ): List<HelixKeybindingRow> {
         val rows = mutableListOf<HelixKeybindingRow>()
         val defaultTrie = HelixDefaultKeymap.buildDefaultTrie(mode)
-        traverse(activeTrie.root, mutableListOf(), mode, defaultTrie, rows)
+        traverse(activeTrie.root, mutableListOf(), mode, defaultTrie, rows, project)
         return rows.sortedWith(compareBy({ it.prefixGroup.ordinal }, { it.displayShortcut }))
     }
 
@@ -70,12 +73,13 @@ object HelixKeymapExtractor {
         mode: HelixMode,
         defaultTrie: HelixKeymapTrie,
         outRows: MutableList<HelixKeybindingRow>,
+        project: Project? = null,
     ) {
         val action = node.action
         if (action != null && currentPath.isNotEmpty()) {
             val rawSequence = formatRawSequence(currentPath)
             val displayShortcut = formatDisplayShortcut(currentPath)
-            val source = determineSource(currentPath, action, mode, defaultTrie)
+            val source = determineSource(currentPath, action, mode, defaultTrie, project)
             val prefixGroup = determinePrefixGroup(rawSequence)
             val description = resolveDescription(node, action)
             val isShadowed = node.children.isNotEmpty()
@@ -102,7 +106,7 @@ object HelixKeymapExtractor {
 
         for ((stroke, child) in node.children) {
             currentPath.add(stroke)
-            traverse(child, currentPath, mode, defaultTrie, outRows)
+            traverse(child, currentPath, mode, defaultTrie, outRows, project)
             currentPath.removeAt(currentPath.size - 1)
         }
     }
@@ -117,6 +121,7 @@ object HelixKeymapExtractor {
         command: String,
         mode: HelixMode,
         defaultTrie: HelixKeymapTrie? = null,
+        project: Project? = null,
     ): BindingSource {
         if (command == "no_op") return BindingSource.NO_OP
 
@@ -124,6 +129,11 @@ object HelixKeymapExtractor {
         val defaultResult = trie.resolve(strokes)
         if (defaultResult is HelixKeymapResult.Leaf && defaultResult.command == command) {
             return BindingSource.DEFAULT
+        }
+
+        val rawSequence = formatRawSequence(strokes)
+        if (project != null && HelixKeymapManager.isProjectBinding(mode, rawSequence, project)) {
+            return BindingSource.CUSTOM_PROJECT
         }
 
         val configFile = HelixConfigLoader.findConfigFile()

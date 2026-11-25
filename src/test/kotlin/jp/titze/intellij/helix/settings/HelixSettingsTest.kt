@@ -9,6 +9,7 @@ import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import jp.titze.intellij.helix.HelixBundle
+import jp.titze.intellij.helix.config.HelixConfigLoader
 import jp.titze.intellij.helix.config.HelixOptionOverride
 import jp.titze.intellij.helix.config.OptionStatus
 import jp.titze.intellij.helix.jumplist.HelixJumpListService
@@ -437,6 +438,43 @@ class HelixSettingsTest : BasePlatformTestCase() {
             panel.statusLabel.text.shouldContain("1 custom bindings loaded")
         } finally {
             tempFile.delete()
+        }
+    }
+
+    fun testHelixConfigPathPanelShowsProjectOverrides() {
+        val basePath = project.basePath ?: error("Project basePath missing")
+        val helixDir = java.io.File(basePath, ".helix")
+        helixDir.mkdirs()
+        val projectToml = java.io.File(helixDir, "intellij.toml")
+        projectToml.writeText(
+            """
+            [editor]
+            rulers = [80, 120]
+            line-number = "relative"
+            """.trimIndent(),
+        )
+
+        try {
+            HelixConfigLoader.loadProjectConfig(project)
+            val panel = HelixConfigPathPanel()
+            panel.pathField.text = ""
+            panel.refreshStatus()
+
+            panel.overridesTableModel.rowCount shouldBe 2
+            val keys = (0 until panel.overridesTableModel.rowCount).map {
+                panel.overridesTableModel.getValueAt(it, 0) as String
+            }
+            keys.contains("rulers").shouldBeTrue()
+            keys.contains("line-number").shouldBeTrue()
+
+            val sources = (0 until panel.overridesTableModel.rowCount).map {
+                panel.overridesTableModel.getValueAt(it, 2) as String
+            }
+            sources.all { it.startsWith(".helix/") }.shouldBeTrue()
+        } finally {
+            projectToml.delete()
+            helixDir.delete()
+            HelixConfigLoader.unloadProjectConfig(project)
         }
     }
 

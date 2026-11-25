@@ -3,6 +3,8 @@
 
 package jp.titze.intellij.helix.config
 
+import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.vfs.LocalFileSystem
 import jp.titze.intellij.helix.state.HelixMode
 import java.io.File
@@ -42,13 +44,31 @@ object HelixConfigModifier {
     private fun ensureConfigFileExists(file: File) {
         if (!file.exists()) {
             file.parentFile?.mkdirs()
-            file.writeText(HelixConfigLoader.getStarterConfigTemplate())
+            if (file.name == HelixConfigLoader.INTELLIJ_CONFIG_FILE &&
+                file.parentFile?.name == HelixConfigLoader.PROJECT_CONFIG_DIR
+            ) {
+                file.writeText(HelixConfigLoader.getStarterProjectConfigTemplate())
+            } else {
+                file.writeText(HelixConfigLoader.getStarterConfigTemplate())
+            }
         }
     }
 
     private fun refreshAndReload(file: File) {
-        LocalFileSystem.getInstance().refreshAndFindFileByIoFile(file)
-        HelixConfigLoader.loadConfig(file)
+        val app = ApplicationManager.getApplication()
+        if (app != null) {
+            app.invokeLater({
+                if (file.exists()) {
+                    LocalFileSystem.getInstance().refreshAndFindFileByIoFile(file)
+                }
+            }, ModalityState.defaultModalityState())
+        }
+        val project = HelixConfigWatcher.findProjectForConfigPath(file)
+        if (project != null) {
+            HelixConfigLoader.loadProjectConfig(project, file)
+        } else {
+            HelixConfigLoader.loadConfig(file)
+        }
     }
 
     fun updateBindingInContent(content: String, mode: HelixMode, sequence: String, action: Any): String {

@@ -169,9 +169,9 @@ class HelixKeymapBrowserPanel {
         col2.minWidth = JBUI.scale(140)
 
         val col3 = table.columnModel.getColumn(3)
-        col3.preferredWidth = JBUI.scale(75)
-        col3.minWidth = JBUI.scale(60)
-        col3.maxWidth = JBUI.scale(95)
+        col3.preferredWidth = JBUI.scale(150)
+        col3.minWidth = JBUI.scale(90)
+        col3.maxWidth = JBUI.scale(190)
         col3.cellRenderer = SourceCellRenderer()
 
         table.selectionModel.addListSelectionListener {
@@ -434,7 +434,10 @@ class HelixKeymapBrowserPanel {
         lastQuery = null
         lastPrefix = null
         val mode = modeComboBox.selectedItem as? HelixMode ?: HelixMode.NORMAL
-        allRowsForCurrentMode = HelixKeymapExtractor.extractRows(mode)
+        val project = ProjectManager.getInstance().openProjects.firstOrNull {
+            !it.isDisposed
+        }
+        allRowsForCurrentMode = HelixKeymapExtractor.extractRows(mode, project)
         applyFilter()
     }
 
@@ -537,6 +540,13 @@ class HelixKeymapBrowserPanel {
             when (source) {
                 BindingSource.DEFAULT -> {
                     foreground = UIUtil.getContextHelpForeground()
+                }
+
+                BindingSource.CUSTOM_PROJECT -> {
+                    foreground = JBColor.namedColor(
+                        "ColorPalette.Green",
+                        JBColor(0x2E7D32, 0x81C784),
+                    )
                 }
 
                 BindingSource.CUSTOM_INTELLIJ -> {

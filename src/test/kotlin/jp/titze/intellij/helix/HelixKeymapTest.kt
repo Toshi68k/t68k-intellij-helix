@@ -1068,4 +1068,135 @@ class HelixKeymapTest : BasePlatformTestCase() {
         dispatcher.dispatch(eventF12).shouldBeTrue()
         editor.caretModel.offset shouldBe 3
     }
+
+    fun testProjectLocalConfigDiscoveryAndLoading() {
+        val basePath = project.basePath ?: error("Project basePath missing")
+        val helixDir = File(basePath, ".helix")
+        helixDir.mkdirs()
+        val projectToml = File(helixDir, "intellij.toml")
+        projectToml.writeText(
+            """
+            [keys.normal]
+            "C-s" = ":action SaveAll"
+
+            [keys.space.t]
+            t = ":action Gradle.ExecuteTask"
+            """.trimIndent(),
+        )
+
+        try {
+            val found = HelixConfigLoader.findProjectConfigFile(project)
+            found.shouldNotBeNull()
+            found.name shouldBe "intellij.toml"
+
+            val result = HelixConfigLoader.loadProjectConfig(project)
+            result.errors.isEmpty().shouldBeTrue()
+            result.bindingCount shouldBe 2
+
+            // Project-scoped key resolution
+            val strokeCs = HelixKeyStroke.fromString("C-s")
+            val resProject = HelixKeymapManager.resolve(HelixMode.NORMAL, listOf(strokeCs), project)
+            resProject.shouldBeInstanceOf<HelixKeymapResult.Leaf>()
+            resProject.command shouldBe ":action SaveAll"
+
+            // Global trie remains default
+            val resGlobal = HelixKeymapManager.resolve(HelixMode.NORMAL, listOf(strokeCs))
+            if (resGlobal is HelixKeymapResult.Leaf) {
+                resGlobal.command shouldBe "save_selection" // default C-s
+            }
+
+            // Project leader chord
+            val space = HelixKeyStroke.fromString("space")
+            val t = HelixKeyStroke('t')
+            val resSpaceTt = HelixKeymapManager.resolve(HelixMode.NORMAL, listOf(space, t, t), project)
+            resSpaceTt.shouldBeInstanceOf<HelixKeymapResult.Leaf>()
+            resSpaceTt.command shouldBe ":action Gradle.ExecuteTask"
+
+            // Unload project config
+            HelixConfigLoader.unloadProjectConfig(project)
+            val resAfterUnload = HelixKeymapManager.resolve(HelixMode.NORMAL, listOf(strokeCs), project)
+            if (resAfterUnload is HelixKeymapResult.Leaf) {
+                resAfterUnload.command shouldBe "save_selection"
+            }
+        } finally {
+            projectToml.delete()
+            helixDir.delete()
+            HelixConfigLoader.unloadProjectConfig(project)
+        }
+    }
+
+    fun testProjectLocalConfigTakesPrecedenceOverGlobalConfig() {
+        val basePath = project.basePath ?: error("Project basePath missing")
+        val helixDir = File(basePath, ".helix")
+        helixDir.mkdirs()
+        val projectToml = File(helixDir, "intellij.toml")
+        projectToml.writeText(
+            """
+            [keys.normal]
+            "C-s" = ":action SaveAll"
+            """.trimIndent(),
+        )
+
+        val tempGlobal = File.createTempFile("helix-global-", ".toml")
+        tempGlobal.writeText(
+            """
+            [keys.normal]
+            "C-s" = ":w"
+            "C-/" = "toggle_comments"
+            """.trimIndent(),
+        )
+
+        try {
+            HelixConfigLoader.loadConfig(tempGlobal)
+            HelixConfigLoader.loadProjectConfig(project, projectToml)
+
+            val strokeCs = HelixKeyStroke.fromString("C-s")
+            val strokeSlash = HelixKeyStroke.fromString("C-/")
+
+            // Project has :action SaveAll for C-s
+            val resProjectCs = HelixKeymapManager.resolve(HelixMode.NORMAL, listOf(strokeCs), project)
+            resProjectCs.shouldBeInstanceOf<HelixKeymapResult.Leaf>()
+            resProjectCs.command shouldBe ":action SaveAll"
+
+            // Project inherits toggle_comments for C-/ from global config
+            val resProjectSlash = HelixKeymapManager.resolve(HelixMode.NORMAL, listOf(strokeSlash), project)
+            resProjectSlash.shouldBeInstanceOf<HelixKeymapResult.Leaf>()
+            resProjectSlash.command shouldBe "toggle_comments"
+
+            // Global trie retains :w for C-s
+            val resGlobalCs = HelixKeymapManager.resolve(HelixMode.NORMAL, listOf(strokeCs))
+            resGlobalCs.shouldBeInstanceOf<HelixKeymapResult.Leaf>()
+            resGlobalCs.command shouldBe ":w"
+        } finally {
+            projectToml.delete()
+            helixDir.delete()
+            tempGlobal.delete()
+            HelixConfigLoader.unloadProjectConfig(project)
+            HelixConfigLoader.loadConfig()
+        }
+    }
+
+    fun testOpenOrCreateProjectConfigFileUnderWriteIntent() {
+        val basePath = project.basePath ?: error("Project basePath missing")
+        val helixDir = File(basePath, ".helix")
+        val projectToml = File(helixDir, "intellij.toml")
+        if (projectToml.exists()) projectToml.delete()
+        if (helixDir.exists()) helixDir.delete()
+
+        try {
+            val opened = HelixConfigLoader.openOrCreateProjectConfigFile(project)
+            opened.shouldBeTrue()
+            projectToml.exists().shouldBeTrue()
+            val text = projectToml.readText()
+            text.contains("# Project-local Helix Keymap Configuration").shouldBeTrue()
+
+            val found = HelixConfigLoader.findProjectConfigFile(project)
+            found.shouldNotBeNull()
+            found.absolutePath shouldBe projectToml.absolutePath
+        } finally {
+            projectToml.delete()
+            helixDir.delete()
+            HelixConfigLoader.unloadProjectConfig(project)
+        }
+    }
 }

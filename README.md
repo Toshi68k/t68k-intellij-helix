@@ -838,8 +838,9 @@ to execute):
 - `:bookmarks` / `:show-bookmarks` &rarr; Open IntelliJ Bookmarks list (`ShowBookmarks`)
 - `:bookmark-toggle` &rarr; Toggle IntelliJ bookmark on current line (`ToggleBookmark`)
 - `:bookmark-mnemonic` &rarr; Toggle IntelliJ bookmark with mnemonic (`ToggleBookmarkWithMnemonic`)
-- `:config-reload` / `:reload-config` &rarr; Reload keymap bindings from `intellij.toml` or `config.toml`
+- `:config-reload` / `:reload-config` &rarr; Reload keymap bindings from `intellij.toml` or `config.toml` (both global and project-local)
 - `:config-open` &rarr; Open active `intellij.toml` (or custom config) in editor (creates starter template if missing)
+- `:config-open-project` / `:config-open-workspace` &rarr; Open or create project-local `.helix/intellij.toml` in editor
 - `:log-open` / `:show-log` &rarr; Open IDE log file in editor (`ShowLog`)
 
 #### Search & Selection UI Modes
@@ -912,7 +913,7 @@ Dedicated full-screen configurable under **Helix Keymap &rarr; Keybindings** fea
    - **Live Search & Find by Keystroke**: Real-time filtering and physical keystroke recorder button.
    - **Trie Conflict & Shadowing Warnings**: Automatic trie analysis flags shadowed chords with `⚠` and diagnostic
      warnings.
-   - **Provenance Badges**: Displays whether each binding is stock `[Default]`, custom, or disabled `[no_op]`.
+   - **Provenance Badges**: Displays each binding's source (`[Default]`, `[Custom: Project]`, `[Custom: intellij.toml]`, `[Custom: config.toml]`, or `[Disabled]`).
 2. **Ctrl Keys**:
    - Manage OS-level keystroke ownership for all 26 control keys (`Ctrl+A` through `Ctrl+Z`) in Normal and Insert modes.
 
@@ -935,6 +936,9 @@ Dedicated configurable under **Helix Keymap &rarr; Configuration (TOML)**:
 
 Helix Keymap supports authentic Helix-style key rebinding with safe separation between IntelliJ and terminal Helix:
 
+- **Project-Local Overrides (`<projectRoot>/.helix/intellij.toml`)**: Automatically loads and overlays on top of global
+  configuration for the active project. Bind repository-specific Gradle/Maven tasks, project `:action` targets, or custom
+  `rulers` and `soft-wrap` settings without polluting your global config. Isolated per project window.
 - **Primary IDE Target (`~/.config/helix/intellij.toml`)**: Dedicated to IntelliJ Helix. It protects your CLI Helix setup
   from parse errors while allowing you to freely bind native IntelliJ actions via `:action <ActionId>`.
 - **CLI Fallback (`~/.config/helix/config.toml`)**: If `intellij.toml` does not exist, the plugin reads standard
@@ -943,8 +947,8 @@ Helix Keymap supports authentic Helix-style key rebinding with safe separation b
 - **Custom Path**: Configurable under **Settings &rarr; Tools &rarr; Helix Keymap**. If pointed to `config.toml`,
   a safety warning alerts you that `:action` bindings may affect CLI Helix.
 
-Run `:config-open` in the Command Palette (`:`) to immediately open or initialize your `intellij.toml` configuration file.
-Any changes saved to the active config file (inside IntelliJ or externally) are **automatically reloaded live** by the 
+Run `:config-open` to open/initialize your global configuration, or `:config-open-project` (`:config-open-workspace`) to open/initialize `<projectRoot>/.helix/intellij.toml`.
+Any changes saved to global or project-local config files (inside IntelliJ or externally) are **automatically reloaded live** by the 
 built-in VFS file watcher (you can also force a reload at any time via `:config-reload`):
 
 ```toml
@@ -1065,14 +1069,15 @@ render = true
 Settings follow a layered, non-destructive precedence model:
 
 ```
-:set-option (session only)  ›  TOML [editor]  ›  Settings UI (persisted)  ›  built-in default
+:set-option (session only)  ›  Project TOML (.helix/)  ›  Global TOML  ›  Settings UI (persisted)  ›  built-in default
 ```
 
 1. **Session Options (`:set-option <key> <val>`)**: Active for the current IDE session only. Wins over TOML configuration.
-2. **TOML Configuration (`[editor]`)**: Sits cleanly on top of Settings UI values without altering persisted XML 
-  configuration. Removing an option from TOML restores the saved Settings UI value on the next reload.
-3. **Settings UI**: Persisted values configured in IDE Preferences / Settings.
-4. **Built-in Defaults**: Fallback defaults if no overrides are present.
+2. **Project TOML Configuration (`<projectRoot>/.helix/intellij.toml`)**: Repository-scoped `[editor]` overrides on top of global TOML without leaking to other open projects.
+3. **Global TOML Configuration (`~/.config/helix/intellij.toml`)**: Sits cleanly on top of Settings UI values without altering persisted XML 
+   configuration. Removing an option from TOML restores the saved Settings UI value on the next reload.
+4. **Settings UI**: Persisted values configured in IDE Preferences / Settings.
+5. **Built-in Defaults**: Fallback defaults if no overrides are present.
 
 When a setting is overridden by TOML, the corresponding Settings UI control is disabled with an explanatory notice badge 
 (`Set by intellij.toml: <key> = <val> · Open file`) linking directly to the line in your configuration file.

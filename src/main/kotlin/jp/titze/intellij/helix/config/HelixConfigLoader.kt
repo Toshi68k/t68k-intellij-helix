@@ -3,7 +3,12 @@
 
 package jp.titze.intellij.helix.config
 
+import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.application.PathManager
+import com.intellij.openapi.fileEditor.OpenFileDescriptor
+import com.intellij.openapi.project.Project
+import com.intellij.openapi.vfs.LocalFileSystem
 import jp.titze.intellij.helix.keymap.HelixCommandRegistry
 import jp.titze.intellij.helix.keymap.HelixKeymapConflictDetector
 import jp.titze.intellij.helix.keymap.HelixKeymapManager
@@ -17,8 +22,74 @@ object HelixConfigLoader {
 
     const val INTELLIJ_CONFIG_FILE = "intellij.toml"
     const val CLI_CONFIG_FILE = "config.toml"
+    const val PROJECT_CONFIG_DIR = ".helix"
 
     fun isCliConfigFile(file: File): Boolean = file.name.equals(CLI_CONFIG_FILE, ignoreCase = true)
+
+    fun findProjectConfigFile(
+        project: Project?,
+        fallbackMode: HelixCliConfigFallbackMode = HelixSettings.instance.cliConfigFallbackMode,
+    ): File? {
+        if (project == null || project.isDisposed) return null
+        val basePath = project.basePath ?: return null
+        val helixDir = File(basePath, PROJECT_CONFIG_DIR)
+        val intellijFile = File(helixDir, INTELLIJ_CONFIG_FILE)
+        if (intellijFile.exists() && intellijFile.isFile) {
+            return intellijFile
+        }
+        if (fallbackMode != HelixCliConfigFallbackMode.DISABLED) {
+            val canonicalFile = File(helixDir, CLI_CONFIG_FILE)
+            if (canonicalFile.exists() && canonicalFile.isFile) {
+                return canonicalFile
+            }
+        }
+        return null
+    }
+
+    fun getTargetProjectConfigFile(project: Project): File? {
+        val basePath = project.basePath ?: return null
+        return File(File(basePath, PROJECT_CONFIG_DIR), INTELLIJ_CONFIG_FILE)
+    }
+
+    fun openIoFileInEditor(
+        project: Project,
+        file: File,
+        line: Int = -1,
+        modalityState: ModalityState = ModalityState.defaultModalityState(),
+    ) {
+        val openTask = Runnable {
+            if (project.isDisposed || !file.exists()) return@Runnable
+            val vf = LocalFileSystem.getInstance().refreshAndFindFileByIoFile(file) ?: return@Runnable
+            val descriptor = if (line >= 0) {
+                OpenFileDescriptor(project, vf, line, 0)
+            } else {
+                OpenFileDescriptor(project, vf)
+            }
+            descriptor.navigate(true)
+        }
+        val app = ApplicationManager.getApplication()
+        if (app != null) {
+            app.invokeLater(openTask, modalityState)
+        } else {
+            openTask.run()
+        }
+    }
+
+    fun openOrCreateProjectConfigFile(project: Project?): Boolean {
+        if (project == null || project.isDisposed) return false
+        val fileToOpen = getTargetProjectConfigFile(project) ?: return false
+        try {
+            fileToOpen.parentFile?.mkdirs()
+            if (!fileToOpen.exists()) {
+                fileToOpen.writeText(getStarterProjectConfigTemplate())
+            }
+        } catch (_: java.io.IOException) {
+            // Ignore creation failure
+        }
+        if (!fileToOpen.exists()) return false
+        openIoFileInEditor(project, fileToOpen)
+        return true
+    }
 
     fun findConfigFile(
         fallbackMode: HelixCliConfigFallbackMode = HelixSettings.instance.cliConfigFallbackMode,
@@ -74,7 +145,7 @@ object HelixConfigLoader {
         }
     }
 
-    fun openOrCreateConfigFile(project: com.intellij.openapi.project.Project?): Boolean {
+    fun openOrCreateConfigFile(project: Project?): Boolean {
         val fileToOpen = getTargetConfigFile()
         try {
             fileToOpen.parentFile?.mkdirs()
@@ -84,13 +155,9 @@ object HelixConfigLoader {
         } catch (_: java.io.IOException) {
             // Ignore creation failure
         }
-        val vf = com.intellij.openapi.vfs.LocalFileSystem.getInstance().refreshAndFindFileByIoFile(fileToOpen)
-            ?: return false
-        if (project != null && !project.isDisposed) {
-            com.intellij.openapi.fileEditor.OpenFileDescriptor(project, vf).navigate(true)
-            return true
-        }
-        return false
+        if (!fileToOpen.exists() || project == null || project.isDisposed) return false
+        openIoFileInEditor(project, fileToOpen)
+        return true
     }
 
     fun isValidActionName(actionName: String): Boolean {
@@ -99,7 +166,7 @@ object HelixConfigLoader {
         if (trimmed.startsWith("@")) return true
         if (trimmed.startsWith(":action ") || trimmed.startsWith(":")) return true
         if (HelixCommandRegistry.get(trimmed) != null) return true
-        val app = com.intellij.openapi.application.ApplicationManager.getApplication() ?: return true
+        val app = ApplicationManager.getApplication() ?: return true
         val am = app.getServiceIfCreated(com.intellij.openapi.actionSystem.ActionManager::class.java) ?: return true
         return am.getAction(trimmed) != null
     }
@@ -119,11 +186,13 @@ object HelixConfigLoader {
             val overrides = HelixEditorOptions.evaluateTomlOptions(parseResult.editorOptions, null)
             for (override in overrides.values) {
                 if (override.status == OptionStatus.INVALID) {
-                    val msg =
-                        override.diagnosticMessage ?: "Invalid value '${override.rawValueString}' for '${override.key}'"
+                    val msg = override.diagnosticMessage
+                        ?: "Invalid value '${override.rawValueString}' for '${override.key}'"
                     diagnostics.add("Line ${override.lineNumber}: $msg")
                 } else if (override.status == OptionStatus.IGNORED) {
-                    diagnostics.add("Line ${override.lineNumber}: Unknown [editor] option '${override.key}' (ignored)")
+                    diagnostics.add(
+                        "Line ${override.lineNumber}: Unknown [editor] option '${override.key}' (ignored)",
+                    )
                 }
             }
         }
@@ -150,6 +219,7 @@ object HelixConfigLoader {
         if (file == null || !file.exists()) {
             jp.titze.intellij.helix.settings.HelixEffectiveSettings.clearTomlOverrides()
             HelixKeymapManager.resetToDefaults()
+            loadAllProjectConfigs()
             jp.titze.intellij.helix.settings.HelixEffectiveSettings.applyAllToAllEditors()
             jp.titze.intellij.helix.editor.HelixEditorEligibility.refreshAllEditors()
             return HelixConfigResult(null, 0, emptyList())
@@ -173,8 +243,6 @@ object HelixConfigLoader {
             emptyMap()
         }
         jp.titze.intellij.helix.settings.HelixEffectiveSettings.setTomlOverrides(overrides)
-        jp.titze.intellij.helix.settings.HelixEffectiveSettings.applyAllToAllEditors()
-        jp.titze.intellij.helix.editor.HelixEditorEligibility.refreshAllEditors()
 
         var boundCount = 0
         for (binding in parseResult.bindings) {
@@ -182,22 +250,113 @@ object HelixConfigLoader {
             boundCount++
         }
 
+        loadAllProjectConfigs()
+        jp.titze.intellij.helix.settings.HelixEffectiveSettings.applyAllToAllEditors()
+        jp.titze.intellij.helix.editor.HelixEditorEligibility.refreshAllEditors()
+
         return HelixConfigResult(file, boundCount, validated.errors)
     }
 
-    private fun applyBinding(binding: HelixParsedBinding) {
-        val action = binding.action
-        if (action is String) {
-            HelixKeymapManager.bind(binding.mode, binding.sequence, action)
-        } else if (action is List<*>) {
-            val actionList = action.filterIsInstance<String>()
-            val macroId = "macro:${binding.sequence}"
-            HelixCommandRegistry.register(macroId, "Macro (${binding.sequence})") { ed, cnt ->
-                HelixCommandRegistry.executeList(actionList, ed, cnt)
+    fun isProjectTrusted(project: Project): Boolean = try {
+        val clazz = Class.forName("com.intellij.ide.impl.TrustedProjects")
+        val method = clazz.getMethod("isTrusted", Project::class.java)
+        method.invoke(null, project) as? Boolean ?: true
+    } catch (_: Throwable) {
+        true
+    }
+
+    fun loadProjectConfig(project: Project, explicitFile: File? = null): HelixConfigResult {
+        if (project.isDisposed || !isProjectTrusted(project)) {
+            unloadProjectConfig(project)
+            return HelixConfigResult(null, 0, emptyList())
+        }
+
+        val file = explicitFile ?: findProjectConfigFile(project)
+        if (file == null || !file.exists()) {
+            unloadProjectConfig(project)
+            jp.titze.intellij.helix.settings.HelixEffectiveSettings.applyAllToProjectEditors(project)
+            jp.titze.intellij.helix.editor.HelixEditorEligibility.refreshProjectEditors(project)
+            return HelixConfigResult(null, 0, emptyList())
+        }
+
+        val content = try {
+            file.readText()
+        } catch (ex: java.io.IOException) {
+            return HelixConfigResult(file, 0, listOf("Failed to read file: ${ex.message}"))
+        }
+
+        val shouldApplyEditorOptions = !isCliConfigFile(file) ||
+            HelixSettings.instance.cliConfigFallbackMode == HelixCliConfigFallbackMode.FULL
+        val validated = validateConfig(content, allowEditorOptions = shouldApplyEditorOptions)
+
+        HelixKeymapManager.initProjectKeymap(project)
+
+        val parseResult = HelixTomlParser.parse(content)
+        val overrides = if (shouldApplyEditorOptions) {
+            HelixEditorOptions.evaluateTomlOptions(parseResult.editorOptions, file)
+        } else {
+            emptyMap()
+        }
+        jp.titze.intellij.helix.settings.HelixEffectiveSettings.setProjectTomlOverrides(project, overrides)
+
+        var boundCount = 0
+        for (binding in parseResult.bindings) {
+            applyBinding(binding, project)
+            boundCount++
+        }
+
+        jp.titze.intellij.helix.settings.HelixEffectiveSettings.applyAllToProjectEditors(project)
+        jp.titze.intellij.helix.editor.HelixEditorEligibility.refreshProjectEditors(project)
+
+        return HelixConfigResult(file, boundCount, validated.errors)
+    }
+
+    fun unloadProjectConfig(project: Project) {
+        HelixKeymapManager.clearProject(project)
+        jp.titze.intellij.helix.settings.HelixEffectiveSettings.clearProjectOverrides(project)
+    }
+
+    fun loadAllProjectConfigs() {
+        val projects = com.intellij.openapi.project.ProjectManager.getInstance().openProjects
+        for (project in projects) {
+            if (!project.isDisposed) {
+                loadProjectConfig(project)
             }
-            HelixKeymapManager.bind(binding.mode, binding.sequence, macroId)
         }
     }
+
+    private fun applyBinding(binding: HelixParsedBinding, project: Project? = null) {
+        val action = binding.action
+        if (action is String) {
+            HelixKeymapManager.bind(binding.mode, binding.sequence, action, project = project)
+        } else if (action is List<*>) {
+            val actionList = action.filterIsInstance<String>()
+            val projectPrefix = if (project != null) "${project.name}:" else ""
+            val macroId = "macro:$projectPrefix${binding.sequence}"
+            HelixCommandRegistry.register(macroId, "Macro ($projectPrefix${binding.sequence})") { ed, cnt ->
+                HelixCommandRegistry.executeList(actionList, ed, cnt)
+            }
+            HelixKeymapManager.bind(binding.mode, binding.sequence, macroId, project = project)
+        }
+    }
+
+    fun getStarterProjectConfigTemplate(): String = """
+        # Project-local Helix Keymap Configuration
+        # Location: .helix/intellij.toml
+        #
+        # Dedicated to IntelliJ Helix and scoped to this repository.
+        # Overrides global configuration (~/.config/helix/intellij.toml).
+
+        # [editor]
+        # rulers = [80]
+        # soft-wrap.enable = true
+
+        # [keys.normal]
+        # "C-s" = ":action SaveAll"
+
+        # [keys.space.t]
+        # t = ":action Gradle.ExecuteTask"
+    """.trimIndent()
 
     fun getStarterConfigTemplate(): String = """
         # IntelliJ Helix Keymap Configuration

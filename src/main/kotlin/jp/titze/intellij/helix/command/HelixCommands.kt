@@ -6,12 +6,11 @@ package jp.titze.intellij.helix.command
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.ex.EditorSettingsExternalizable
-import com.intellij.openapi.fileEditor.OpenFileDescriptor
-import com.intellij.openapi.vfs.LocalFileSystem
 import jp.titze.intellij.helix.action.HelixActionDelegate
 import jp.titze.intellij.helix.action.HelixActions
 import jp.titze.intellij.helix.action.HelixShellActions
 import jp.titze.intellij.helix.action.HelixVisualToggleActions
+import jp.titze.intellij.helix.config.HelixConfigLoader
 import jp.titze.intellij.helix.config.HelixEditorOptions
 import jp.titze.intellij.helix.jumplist.HelixJumpListService
 import jp.titze.intellij.helix.motion.HelixFileNavigation
@@ -421,10 +420,7 @@ object HelixCommands {
                 // Ignore creation failure and let virtual file system handle
             }
         }
-        val virtualFile = LocalFileSystem.getInstance().refreshAndFindFileByIoFile(targetFile)
-        if (virtualFile != null) {
-            OpenFileDescriptor(project, virtualFile).navigate(true)
-        }
+        HelixConfigLoader.openIoFileInEditor(project, targetFile)
     }
 
     private fun executeSpecialCommand(cleanCmd: String, baseCmd: String, arg: String, editor: Editor): Boolean {

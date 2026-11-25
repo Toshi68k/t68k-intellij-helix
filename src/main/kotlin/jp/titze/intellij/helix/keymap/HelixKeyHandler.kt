@@ -97,7 +97,7 @@ object HelixKeyHandler {
         }
 
         val stroke = HelixKeyStroke.fromChar(charTyped)
-        val trieStep = HelixKeymapManager.resolveStep(state.mode, "", stroke)
+        val trieStep = HelixKeymapManager.resolveStep(state.mode, "", stroke, editor.project)
         if (trieStep is HelixKeymapResult.Branch) {
             state.clearSelectedRegister()
             state.appendKey(charTyped)
@@ -135,7 +135,7 @@ object HelixKeyHandler {
     private fun handlePendingSequence(prefix: String, ch: Char, editor: Editor, state: HelixEditorState): Boolean {
         if (!isParametricPrefix(prefix)) {
             val stroke = HelixKeyStroke.fromChar(ch)
-            val trieStep = HelixKeymapManager.resolveStep(state.mode, prefix, stroke)
+            val trieStep = HelixKeymapManager.resolveStep(state.mode, prefix, stroke, editor.project)
             if (trieStep is HelixKeymapResult.Leaf) {
                 state.clearPendingSequence()
                 if (prefix != "Z") {
@@ -398,7 +398,7 @@ object HelixKeyHandler {
         val count = rawCount ?: 1
 
         val stroke = HelixKeyStroke.fromChar(ch)
-        val trieStep = HelixKeymapManager.resolveStep(state.mode, "", stroke)
+        val trieStep = HelixKeymapManager.resolveStep(state.mode, "", stroke, editor.project)
         if (trieStep is HelixKeymapResult.Leaf && ch != 'G') {
             return HelixCommandRegistry.execute(trieStep.command, editor, count)
         }
