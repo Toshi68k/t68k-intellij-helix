@@ -147,7 +147,7 @@ object HelixViewMotions {
         val logicalPos = editor.visualToLogicalPosition(com.intellij.openapi.editor.VisualPosition(visualLine, 0))
         val targetOffset = editor.logicalPositionToOffset(logicalPos)
         HelixMotionUtils.runForEachCaret(editor) { caret ->
-            val anchor = if (isSelect && caret.hasSelection()) caret.leadSelectionOffset else caret.offset
+            val anchor = if (isSelect) HelixMotionUtils.getHelixAnchor(caret) else caret.offset
             HelixMotionUtils.applyMotion(caret, anchor, targetOffset, isSelect)
         }
         editor.scrollingModel.scrollToCaret(ScrollType.MAKE_VISIBLE)

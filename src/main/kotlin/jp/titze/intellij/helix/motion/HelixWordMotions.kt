@@ -127,17 +127,18 @@ internal object HelixWordMotions {
 
         HelixMotionUtils.runForEachCaret(editor) { caret ->
             val startOffset = caret.offset
-            var anchor = if (isSelect && caret.hasSelection()) caret.leadSelectionOffset else startOffset
+            var anchor = if (isSelect) HelixMotionUtils.getHelixAnchor(caret) else startOffset
             var offset = startOffset
 
             repeat(count) {
                 if (offset < textLen) {
-                    val wasWhitespace = text[offset].isWhitespace()
+                    var passedWhitespace = text[offset].isWhitespace()
                     offset++
                     while (offset < textLen && text[offset].isWhitespace()) {
                         offset++
+                        passedWhitespace = true
                     }
-                    if (!isSelect && wasWhitespace) {
+                    if (!isSelect && passedWhitespace) {
                         anchor = offset
                     }
                     if (offset < textLen) {
@@ -145,13 +146,12 @@ internal object HelixWordMotions {
                         while (offset + 1 < textLen && getCharType(text[offset + 1]) == targetType) {
                             offset++
                         }
-                        if (offset < textLen) offset++
                     }
                 }
             }
 
             offset = offset.coerceIn(0, textLen)
-            HelixMotionUtils.applySelectingMotion(caret, anchor, offset)
+            HelixMotionUtils.applySelectingMotion(caret, anchor, offset, isInclusive = true)
         }
         editor.scrollingModel.scrollToCaret(ScrollType.MAKE_VISIBLE)
     }
@@ -255,30 +255,30 @@ internal object HelixWordMotions {
 
         HelixMotionUtils.runForEachCaret(editor) { caret ->
             val startOffset = caret.offset
-            var anchor = if (isSelect && caret.hasSelection()) caret.leadSelectionOffset else startOffset
+            var anchor = if (isSelect) HelixMotionUtils.getHelixAnchor(caret) else startOffset
             var offset = startOffset
 
             repeat(count) {
                 if (offset < textLen) {
-                    val wasWhitespace = text[offset].isWhitespace()
+                    var passedWhitespace = text[offset].isWhitespace()
                     offset++
                     while (offset < textLen && text[offset].isWhitespace()) {
                         offset++
+                        passedWhitespace = true
                     }
-                    if (!isSelect && wasWhitespace) {
+                    if (!isSelect && passedWhitespace) {
                         anchor = offset
                     }
                     if (offset < textLen) {
                         while (offset + 1 < textLen && !text[offset + 1].isWhitespace()) {
                             offset++
                         }
-                        if (offset < textLen) offset++
                     }
                 }
             }
 
             offset = offset.coerceIn(0, textLen)
-            HelixMotionUtils.applySelectingMotion(caret, anchor, offset)
+            HelixMotionUtils.applySelectingMotion(caret, anchor, offset, isInclusive = true)
         }
         editor.scrollingModel.scrollToCaret(ScrollType.MAKE_VISIBLE)
     }

@@ -13,21 +13,58 @@ internal object HelixMotionUtils {
         editor.caretModel.runForEachCaret(action)
     }
 
-    fun applyMotion(caret: Caret, anchor: Int, targetOffset: Int, isSelect: Boolean) {
-        caret.moveToOffset(targetOffset)
-        if (isSelect) {
-            caret.setSelection(anchor, targetOffset)
+    fun getHelixAnchor(caret: Caret): Int {
+        if (!caret.hasSelection()) return caret.offset
+        return if (caret.offset <= caret.selectionStart) {
+            caret.selectionEnd
         } else {
+            caret.selectionStart
+        }
+    }
+
+    fun setInclusiveSelection(caret: Caret, anchor: Int, head: Int) {
+        val docLen = caret.editor.document.textLength
+        if (docLen == 0) {
+            caret.moveToOffset(0)
+            caret.removeSelection()
+            return
+        }
+        val clampedHead = head.coerceIn(0, docLen)
+        val clampedAnchor = anchor.coerceIn(0, docLen)
+        val hadSelection = caret.hasSelection()
+        caret.moveToOffset(clampedHead)
+        if (clampedHead >= clampedAnchor) {
+            val endOffset = if (clampedHead < docLen) clampedHead + 1 else docLen
+            caret.setSelection(clampedAnchor, endOffset)
+        } else {
+            val effectiveAnchor = if (!hadSelection && clampedAnchor < docLen) {
+                clampedAnchor + 1
+            } else {
+                clampedAnchor
+            }
+            caret.setSelection(effectiveAnchor, clampedHead)
+        }
+    }
+
+    fun applyMotion(caret: Caret, anchor: Int, targetOffset: Int, isSelect: Boolean) {
+        if (isSelect) {
+            setInclusiveSelection(caret, anchor, targetOffset)
+        } else {
+            caret.moveToOffset(targetOffset)
             caret.removeSelection()
         }
     }
 
-    fun applySelectingMotion(caret: Caret, anchor: Int, targetOffset: Int) {
-        caret.moveToOffset(targetOffset)
-        if (anchor != targetOffset) {
-            caret.setSelection(anchor, targetOffset)
+    fun applySelectingMotion(caret: Caret, anchor: Int, targetOffset: Int, isInclusive: Boolean = false) {
+        if (isInclusive) {
+            setInclusiveSelection(caret, anchor, targetOffset)
         } else {
-            caret.removeSelection()
+            caret.moveToOffset(targetOffset)
+            if (anchor != targetOffset) {
+                caret.setSelection(anchor, targetOffset)
+            } else {
+                caret.removeSelection()
+            }
         }
     }
 

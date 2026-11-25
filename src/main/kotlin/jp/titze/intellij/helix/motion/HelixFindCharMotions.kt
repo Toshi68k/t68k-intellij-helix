@@ -29,7 +29,7 @@ object HelixFindCharMotions {
 
         HelixMotionUtils.runForEachCaret(editor) { caret ->
             val curOffset = caret.offset
-            val anchor = if (isSelect && caret.hasSelection()) caret.leadSelectionOffset else curOffset
+            val anchor = if (isSelect && caret.hasSelection()) HelixMotionUtils.getHelixAnchor(caret) else curOffset
             val targetOffset = findTargetOffset(text, textLen, curOffset, motion, targetChar, count)
 
             if (targetOffset != null) {
