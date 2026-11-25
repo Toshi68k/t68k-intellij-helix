@@ -955,6 +955,8 @@ built-in VFS file watcher (you can also force a reload at any time via `:config-
 "X" = "extend_line"
 "C-d" = ["half_page_down", "align_view_center"]
 "backspace" = "no_op"
+F13 = "jump_view_left"
+S-F13 = "jump_view_right"
 
 # Chords and nested prefixes (table, dotted key, or shorthand section syntax)
 [keys.space] # shorthand for [keys.normal.space]
@@ -993,6 +995,8 @@ D = "goto_type_definition"
   seamlessly extend chord trees (e.g. jumping to and selecting the inner contents of surrounding delimiters).
 - **Macro Lists**: Bind arrays of commands that execute in order (e.g., `["half_page_down", "align_view_center"]`).
 - **Direct IntelliJ Actions**: Execute native JetBrains actions using the `:action <ActionId>` syntax.
+- **Functional Keys (`F1`–`F24`) & Modifiers**: Bind standalone function keys and modifier chords (`F1`–`F24`,
+  `S-F13`, `C-F13`, `A-F12`, `C-S-F13`) in Normal, Select, and Insert modes without blocking native unmapped IDE shortcuts.
 - **Unbinding / No-op**: Map keys to `"no_op"` to disable unwanted default keybindings.
 - **Config Diagnostics**: Live validation in settings alerts you to unrecognized commands, missing files, or syntax 
   issues.
