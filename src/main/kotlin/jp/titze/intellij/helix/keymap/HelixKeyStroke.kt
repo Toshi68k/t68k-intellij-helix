@@ -200,7 +200,29 @@ data class HelixKeyStroke(
             return parseKeyComponent(remainder, isCtrl, isAlt, isShift, isMeta)
         }
 
+        fun isFunctionKey(keyCode: Int): Boolean =
+            (keyCode in KeyEvent.VK_F1..KeyEvent.VK_F12) || (keyCode in KeyEvent.VK_F13..KeyEvent.VK_F24)
+
+        private const val F_KEY_MIN = 1
+        private const val F_KEY_STD_MAX = 12
+        private const val F_KEY_EXT_MAX = 24
+
+        private fun parseFunctionKey(lower: String): Int? {
+            if (lower.startsWith("f") && lower.length in 2..3) {
+                val num = lower.substring(1).toIntOrNull() ?: return null
+                return when (num) {
+                    in F_KEY_MIN..F_KEY_STD_MAX -> KeyEvent.VK_F1 + (num - F_KEY_MIN)
+                    in (F_KEY_STD_MAX + 1)..F_KEY_EXT_MAX -> KeyEvent.VK_F13 + (num - (F_KEY_STD_MAX + 1))
+                    else -> null
+                }
+            }
+            return null
+        }
+
         private fun normalizeKeyChar(rawChar: Char, isCtrl: Boolean, keyCode: Int): Char? {
+            if (isFunctionKey(keyCode)) {
+                return null
+            }
             val code = rawChar.code
             if (isCtrl && code in ASCII_CTRL_MIN..ASCII_CTRL_MAX) {
                 return (code + ASCII_CTRL_OFFSET).toChar()
@@ -219,6 +241,10 @@ data class HelixKeyStroke(
             isMeta: Boolean,
         ): HelixKeyStroke {
             val lower = keyPart.lowercase()
+            val functionKeyCode = parseFunctionKey(lower)
+            if (functionKeyCode != null) {
+                return HelixKeyStroke(null, functionKeyCode, isCtrl, isAlt, isShift, isMeta)
+            }
             return when (lower) {
                 "space" -> HelixKeyStroke(' ', KeyEvent.VK_SPACE, isCtrl, isAlt, isShift, isMeta)
 
@@ -259,6 +285,10 @@ data class HelixKeyStroke(
         }
 
         private fun specialKeyToString(keyCode: Int, keyChar: Char?): String = when (keyCode) {
+            in KeyEvent.VK_F1..KeyEvent.VK_F12 -> "F${keyCode - KeyEvent.VK_F1 + 1}"
+
+            in KeyEvent.VK_F13..KeyEvent.VK_F24 -> "F${keyCode - KeyEvent.VK_F13 + 13}"
+
             KeyEvent.VK_SPACE -> "space"
 
             KeyEvent.VK_ENTER -> "ret"

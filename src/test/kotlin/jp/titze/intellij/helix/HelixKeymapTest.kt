@@ -15,6 +15,7 @@ import jp.titze.intellij.helix.config.HelixConfigModifier
 import jp.titze.intellij.helix.config.HelixConfigResult
 import jp.titze.intellij.helix.config.HelixConfigWatcher
 import jp.titze.intellij.helix.config.HelixTomlParser
+import jp.titze.intellij.helix.editor.HelixEventDispatcher
 import jp.titze.intellij.helix.keymap.HelixCommandRegistry
 import jp.titze.intellij.helix.keymap.HelixKeyHandler
 import jp.titze.intellij.helix.keymap.HelixKeyStroke
@@ -863,5 +864,208 @@ class HelixKeymapTest : BasePlatformTestCase() {
         HelixKeyHandler.handleKey('"', editor3)
 
         editor3.selectionModel.selectedText shouldBe " = "
+    }
+
+    fun testFunctionKeyStrokeParsing() {
+        val f1 = HelixKeyStroke.fromString("f1")
+        f1.keyCode shouldBe KeyEvent.VK_F1
+        f1.keyChar shouldBe null
+        f1.toDisplayString() shouldBe "F1"
+
+        val f12 = HelixKeyStroke.fromString("F12")
+        f12.keyCode shouldBe KeyEvent.VK_F12
+        f12.keyChar shouldBe null
+        f12.toDisplayString() shouldBe "F12"
+
+        val f13 = HelixKeyStroke.fromString("F13")
+        f13.keyCode shouldBe KeyEvent.VK_F13
+        f13.keyChar shouldBe null
+        f13.toDisplayString() shouldBe "F13"
+
+        val f24 = HelixKeyStroke.fromString("f24")
+        f24.keyCode shouldBe KeyEvent.VK_F24
+        f24.keyChar shouldBe null
+        f24.toDisplayString() shouldBe "F24"
+
+        val shiftF13 = HelixKeyStroke.fromString("S-F13")
+        shiftF13.keyCode shouldBe KeyEvent.VK_F13
+        shiftF13.isShift.shouldBeTrue()
+        shiftF13.toDisplayString() shouldBe "S-F13"
+
+        val ctrlF13 = HelixKeyStroke.fromString("C-F13")
+        ctrlF13.keyCode shouldBe KeyEvent.VK_F13
+        ctrlF13.isCtrl.shouldBeTrue()
+        ctrlF13.toDisplayString() shouldBe "C-F13"
+
+        val ctrlShiftF13 = HelixKeyStroke.fromString("C-S-F13")
+        ctrlShiftF13.keyCode shouldBe KeyEvent.VK_F13
+        ctrlShiftF13.isCtrl.shouldBeTrue()
+        ctrlShiftF13.isShift.shouldBeTrue()
+        ctrlShiftF13.toDisplayString() shouldBe "C-S-F13"
+
+        val altF12 = HelixKeyStroke.fromString("A-F12")
+        altF12.keyCode shouldBe KeyEvent.VK_F12
+        altF12.isAlt.shouldBeTrue()
+        altF12.toDisplayString() shouldBe "A-F12"
+    }
+
+    fun testFunctionKeyEventMatching() {
+        val strokeF13 = HelixKeyStroke.fromString("F13")
+        val strokeShiftF13 = HelixKeyStroke.fromString("S-F13")
+        val strokeCtrlF13 = HelixKeyStroke.fromString("C-F13")
+        val strokeCtrlShiftF13 = HelixKeyStroke.fromString("C-S-F13")
+
+        val label = javax.swing.JLabel()
+        val eventF13 = KeyEvent(
+            label,
+            KeyEvent.KEY_PRESSED,
+            System.currentTimeMillis(),
+            0,
+            KeyEvent.VK_F13,
+            KeyEvent.CHAR_UNDEFINED,
+        )
+        val eventShiftF13 = KeyEvent(
+            label,
+            KeyEvent.KEY_PRESSED,
+            System.currentTimeMillis(),
+            KeyEvent.SHIFT_DOWN_MASK,
+            KeyEvent.VK_F13,
+            KeyEvent.CHAR_UNDEFINED,
+        )
+        val eventCtrlF13 = KeyEvent(
+            label,
+            KeyEvent.KEY_PRESSED,
+            System.currentTimeMillis(),
+            KeyEvent.CTRL_DOWN_MASK,
+            KeyEvent.VK_F13,
+            KeyEvent.CHAR_UNDEFINED,
+        )
+        val eventCtrlShiftF13 = KeyEvent(
+            label,
+            KeyEvent.KEY_PRESSED,
+            System.currentTimeMillis(),
+            KeyEvent.CTRL_DOWN_MASK or KeyEvent.SHIFT_DOWN_MASK,
+            KeyEvent.VK_F13,
+            KeyEvent.CHAR_UNDEFINED,
+        )
+
+        HelixKeyStroke.fromKeyEvent(eventF13).matches(strokeF13).shouldBeTrue()
+        HelixKeyStroke.fromKeyEvent(eventF13).matches(strokeShiftF13).shouldBeFalse()
+
+        HelixKeyStroke.fromKeyEvent(eventShiftF13).matches(strokeShiftF13).shouldBeTrue()
+        HelixKeyStroke.fromKeyEvent(eventShiftF13).matches(strokeF13).shouldBeFalse()
+
+        HelixKeyStroke.fromKeyEvent(eventCtrlF13).matches(strokeCtrlF13).shouldBeTrue()
+        HelixKeyStroke.fromKeyEvent(eventCtrlShiftF13).matches(strokeCtrlShiftF13).shouldBeTrue()
+    }
+
+    fun testFunctionKeyBindingAndDispatch() {
+        val toml = """
+            [keys.normal]
+            F13 = "jump_view_left"
+            S-F13 = "jump_view_right"
+            C-F13 = "jump_view_up"
+            C-S-F13 = "jump_view_down"
+        """.trimIndent()
+
+        val parsed = HelixTomlParser.parse(toml)
+        parsed.bindings.size shouldBe 4
+        for ((mode, sequence, action) in parsed.bindings) {
+            HelixKeymapManager.bind(mode, sequence, action as String)
+        }
+
+        myFixture.configureByText("test.txt", "hello function keys")
+        val editor = myFixture.editor
+        val dispatcher = HelixEventDispatcher()
+        val executedActions = mutableListOf<String>()
+
+        HelixActionDelegate.actionExecutor = { actionId, _ ->
+            executedActions.add(actionId)
+            true
+        }
+
+        try {
+            val eventF13 = KeyEvent(
+                editor.contentComponent,
+                KeyEvent.KEY_PRESSED,
+                System.currentTimeMillis(),
+                0,
+                KeyEvent.VK_F13,
+                KeyEvent.CHAR_UNDEFINED,
+            )
+            dispatcher.dispatch(eventF13).shouldBeTrue()
+            executedActions shouldBe listOf("PrevSplitter")
+
+            executedActions.clear()
+            val eventShiftF13 = KeyEvent(
+                editor.contentComponent,
+                KeyEvent.KEY_PRESSED,
+                System.currentTimeMillis(),
+                KeyEvent.SHIFT_DOWN_MASK,
+                KeyEvent.VK_F13,
+                KeyEvent.CHAR_UNDEFINED,
+            )
+            dispatcher.dispatch(eventShiftF13).shouldBeTrue()
+            executedActions shouldBe listOf("NextSplitter")
+
+            executedActions.clear()
+            val eventCtrlF13 = KeyEvent(
+                editor.contentComponent,
+                KeyEvent.KEY_PRESSED,
+                System.currentTimeMillis(),
+                KeyEvent.CTRL_DOWN_MASK,
+                KeyEvent.VK_F13,
+                KeyEvent.CHAR_UNDEFINED,
+            )
+            dispatcher.dispatch(eventCtrlF13).shouldBeTrue()
+            executedActions shouldBe listOf("PrevSplitter")
+
+            executedActions.clear()
+            val eventCtrlShiftF13 = KeyEvent(
+                editor.contentComponent,
+                KeyEvent.KEY_PRESSED,
+                System.currentTimeMillis(),
+                KeyEvent.CTRL_DOWN_MASK or KeyEvent.SHIFT_DOWN_MASK,
+                KeyEvent.VK_F13,
+                KeyEvent.CHAR_UNDEFINED,
+            )
+            dispatcher.dispatch(eventCtrlShiftF13).shouldBeTrue()
+            executedActions shouldBe listOf("NextSplitter")
+
+            // Unbound function key passes through to IDE
+            val eventUnboundF1 = KeyEvent(
+                editor.contentComponent,
+                KeyEvent.KEY_PRESSED,
+                System.currentTimeMillis(),
+                0,
+                KeyEvent.VK_F1,
+                KeyEvent.CHAR_UNDEFINED,
+            )
+            dispatcher.dispatch(eventUnboundF1).shouldBeFalse()
+        } finally {
+            HelixActionDelegate.actionExecutor = null
+        }
+    }
+
+    fun testFunctionKeyWithCount() {
+        HelixKeymapManager.bind(HelixMode.NORMAL, "F12", "move_char_right")
+        myFixture.configureByText("test.txt", "abcdefghijklmnop")
+        val editor = myFixture.editor
+        editor.caretModel.moveToOffset(0)
+
+        // Type count '3'
+        HelixKeyHandler.handleKey('3', editor)
+
+        val dispatcher = HelixEventDispatcher()
+        val eventF12 = KeyEvent(
+            editor.contentComponent,
+            KeyEvent.KEY_PRESSED,
+            System.currentTimeMillis(),
+            0,
+            KeyEvent.VK_F12,
+            KeyEvent.CHAR_UNDEFINED,
+        )
+        dispatcher.dispatch(eventF12).shouldBeTrue()
+        editor.caretModel.offset shouldBe 3
     }
 }

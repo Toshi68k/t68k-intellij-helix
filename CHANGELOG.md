@@ -13,6 +13,14 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   - **Dynamic Line Tracking**: Pinned line numbers are dynamically derived from active `RangeMarker`s, keeping line numbers accurate as code shifts.
   - **Non-Destructive Branch Switching**: Preserves slot definitions for files temporarily absent on the current Git branch, labeling them `[other branch]` in the Harpoon card UI and Which-Key rather than discarding them.
 
+- **Functional Keys & Modifier Chords (`F1`–`F24`)**:
+  - Full support for binding functional keys (`F1`–`F24`, including extended keys `F13`–`F24`) and modifier chords (`S-F13`, `C-F13`, `A-F12`, `C-S-F13`, etc.) across `[keys.normal]`, `[keys.select]`, and `[keys.insert]` in `intellij.toml` and `config.toml`.
+  - Non-printable action key resolution via `HelixEventDispatcher`: function keys (which only emit `KEY_PRESSED` without `KEY_TYPED` in Java/Swing) resolve directly against the active keymap Trie.
+  - Fail-open IDE passthrough: unmapped function keys (e.g. `Shift+F6` for Rename, `F2` for Next Highlighted Error) pass through untouched to IntelliJ's native keymap.
+  - Full compatibility with remapped/virtual functional keys (e.g. AutoHotkey or Karabiner-Elements).
+  - Supports numeric count prefixes (e.g. `3 F12`).
+
+
 ### Fixed
 
 - **Inclusive Selection Model Matching Native Helix**:
