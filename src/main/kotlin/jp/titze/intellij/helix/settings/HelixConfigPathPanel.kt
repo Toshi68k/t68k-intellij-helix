@@ -3,6 +3,7 @@
 
 package jp.titze.intellij.helix.settings
 
+import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory
 import com.intellij.openapi.project.ProjectManager
 import com.intellij.openapi.ui.ComboBox
@@ -13,7 +14,6 @@ import com.intellij.ui.components.JBTextField
 import com.intellij.util.ui.JBUI
 import com.intellij.util.ui.UIUtil
 import jp.titze.intellij.helix.HelixBundle
-import jp.titze.intellij.helix.action.HelixWriteIntentAction
 import jp.titze.intellij.helix.config.HelixConfigLoader
 import jp.titze.intellij.helix.config.HelixConfigWatcher
 import jp.titze.intellij.helix.config.HelixOptionOverride
@@ -249,14 +249,9 @@ class HelixConfigPathPanel {
     private fun navigateToFile(override: HelixOptionOverride) {
         val sourceFile = override.sourceFile ?: return
         if (!sourceFile.exists()) return
-        val project = ProjectManager.getInstance().openProjects.firstOrNull { !it.isDisposed }
-        HelixWriteIntentAction.run {
-            val vf = com.intellij.openapi.vfs.LocalFileSystem.getInstance().refreshAndFindFileByIoFile(sourceFile)
-            if (vf != null && project != null) {
-                val line = maxOf(0, override.lineNumber - 1)
-                com.intellij.openapi.fileEditor.OpenFileDescriptor(project, vf, line, 0).navigate(true)
-            }
-        }
+        val project = ProjectManager.getInstance().openProjects.firstOrNull { !it.isDisposed } ?: return
+        val line = maxOf(0, override.lineNumber - 1)
+        HelixConfigLoader.openIoFileInEditor(project, sourceFile, line, ModalityState.stateForComponent(panel))
     }
 
     fun refreshStatus() {

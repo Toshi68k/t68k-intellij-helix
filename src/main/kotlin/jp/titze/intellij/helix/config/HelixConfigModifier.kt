@@ -3,8 +3,9 @@
 
 package jp.titze.intellij.helix.config
 
+import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.vfs.LocalFileSystem
-import jp.titze.intellij.helix.action.HelixWriteIntentAction
 import jp.titze.intellij.helix.state.HelixMode
 import java.io.File
 import java.io.IOException
@@ -54,14 +55,19 @@ object HelixConfigModifier {
     }
 
     private fun refreshAndReload(file: File) {
-        HelixWriteIntentAction.run {
-            LocalFileSystem.getInstance().refreshAndFindFileByIoFile(file)
-            val project = HelixConfigWatcher.findProjectForConfigPath(file)
-            if (project != null) {
-                HelixConfigLoader.loadProjectConfig(project, file)
-            } else {
-                HelixConfigLoader.loadConfig(file)
-            }
+        val app = ApplicationManager.getApplication()
+        if (app != null) {
+            app.invokeLater({
+                if (file.exists()) {
+                    LocalFileSystem.getInstance().refreshAndFindFileByIoFile(file)
+                }
+            }, ModalityState.defaultModalityState())
+        }
+        val project = HelixConfigWatcher.findProjectForConfigPath(file)
+        if (project != null) {
+            HelixConfigLoader.loadProjectConfig(project, file)
+        } else {
+            HelixConfigLoader.loadConfig(file)
         }
     }
 

@@ -3,8 +3,12 @@
 
 package jp.titze.intellij.helix.config
 
+import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.application.PathManager
-import jp.titze.intellij.helix.action.HelixWriteIntentAction
+import com.intellij.openapi.fileEditor.OpenFileDescriptor
+import com.intellij.openapi.project.Project
+import com.intellij.openapi.vfs.LocalFileSystem
 import jp.titze.intellij.helix.keymap.HelixCommandRegistry
 import jp.titze.intellij.helix.keymap.HelixKeymapConflictDetector
 import jp.titze.intellij.helix.keymap.HelixKeymapManager
@@ -23,7 +27,7 @@ object HelixConfigLoader {
     fun isCliConfigFile(file: File): Boolean = file.name.equals(CLI_CONFIG_FILE, ignoreCase = true)
 
     fun findProjectConfigFile(
-        project: com.intellij.openapi.project.Project?,
+        project: Project?,
         fallbackMode: HelixCliConfigFallbackMode = HelixSettings.instance.cliConfigFallbackMode,
     ): File? {
         if (project == null || project.isDisposed) return null
@@ -42,28 +46,49 @@ object HelixConfigLoader {
         return null
     }
 
-    fun getTargetProjectConfigFile(project: com.intellij.openapi.project.Project): File? {
+    fun getTargetProjectConfigFile(project: Project): File? {
         val basePath = project.basePath ?: return null
         return File(File(basePath, PROJECT_CONFIG_DIR), INTELLIJ_CONFIG_FILE)
     }
 
-    fun openOrCreateProjectConfigFile(project: com.intellij.openapi.project.Project?): Boolean {
+    fun openIoFileInEditor(
+        project: Project,
+        file: File,
+        line: Int = -1,
+        modalityState: ModalityState = ModalityState.defaultModalityState(),
+    ) {
+        val openTask = Runnable {
+            if (project.isDisposed || !file.exists()) return@Runnable
+            val vf = LocalFileSystem.getInstance().refreshAndFindFileByIoFile(file) ?: return@Runnable
+            val descriptor = if (line >= 0) {
+                OpenFileDescriptor(project, vf, line, 0)
+            } else {
+                OpenFileDescriptor(project, vf)
+            }
+            descriptor.navigate(true)
+        }
+        val app = ApplicationManager.getApplication()
+        if (app != null) {
+            app.invokeLater(openTask, modalityState)
+        } else {
+            openTask.run()
+        }
+    }
+
+    fun openOrCreateProjectConfigFile(project: Project?): Boolean {
         if (project == null || project.isDisposed) return false
         val fileToOpen = getTargetProjectConfigFile(project) ?: return false
-        return HelixWriteIntentAction.compute {
-            try {
-                fileToOpen.parentFile?.mkdirs()
-                if (!fileToOpen.exists()) {
-                    fileToOpen.writeText(getStarterProjectConfigTemplate())
-                }
-            } catch (_: java.io.IOException) {
-                // Ignore creation failure
+        try {
+            fileToOpen.parentFile?.mkdirs()
+            if (!fileToOpen.exists()) {
+                fileToOpen.writeText(getStarterProjectConfigTemplate())
             }
-            val vf = com.intellij.openapi.vfs.LocalFileSystem.getInstance().refreshAndFindFileByIoFile(fileToOpen)
-                ?: return@compute false
-            com.intellij.openapi.fileEditor.OpenFileDescriptor(project, vf).navigate(true)
-            true
+        } catch (_: java.io.IOException) {
+            // Ignore creation failure
         }
+        if (!fileToOpen.exists()) return false
+        openIoFileInEditor(project, fileToOpen)
+        return true
     }
 
     fun findConfigFile(
@@ -120,26 +145,19 @@ object HelixConfigLoader {
         }
     }
 
-    fun openOrCreateConfigFile(project: com.intellij.openapi.project.Project?): Boolean {
+    fun openOrCreateConfigFile(project: Project?): Boolean {
         val fileToOpen = getTargetConfigFile()
-        return HelixWriteIntentAction.compute {
-            try {
-                fileToOpen.parentFile?.mkdirs()
-                if (!fileToOpen.exists()) {
-                    fileToOpen.writeText(getStarterConfigTemplate())
-                }
-            } catch (_: java.io.IOException) {
-                // Ignore creation failure
+        try {
+            fileToOpen.parentFile?.mkdirs()
+            if (!fileToOpen.exists()) {
+                fileToOpen.writeText(getStarterConfigTemplate())
             }
-            val vf = com.intellij.openapi.vfs.LocalFileSystem.getInstance().refreshAndFindFileByIoFile(fileToOpen)
-                ?: return@compute false
-            if (project != null && !project.isDisposed) {
-                com.intellij.openapi.fileEditor.OpenFileDescriptor(project, vf).navigate(true)
-                true
-            } else {
-                false
-            }
+        } catch (_: java.io.IOException) {
+            // Ignore creation failure
         }
+        if (!fileToOpen.exists() || project == null || project.isDisposed) return false
+        openIoFileInEditor(project, fileToOpen)
+        return true
     }
 
     fun isValidActionName(actionName: String): Boolean {
@@ -148,7 +166,7 @@ object HelixConfigLoader {
         if (trimmed.startsWith("@")) return true
         if (trimmed.startsWith(":action ") || trimmed.startsWith(":")) return true
         if (HelixCommandRegistry.get(trimmed) != null) return true
-        val app = com.intellij.openapi.application.ApplicationManager.getApplication() ?: return true
+        val app = ApplicationManager.getApplication() ?: return true
         val am = app.getServiceIfCreated(com.intellij.openapi.actionSystem.ActionManager::class.java) ?: return true
         return am.getAction(trimmed) != null
     }
@@ -166,13 +184,13 @@ object HelixConfigLoader {
         }
         if (allowEditorOptions) {
             val overrides = HelixEditorOptions.evaluateTomlOptions(parseResult.editorOptions, null)
-            for (override in overrides.values) {
-                if (override.status == OptionStatus.INVALID) {
-                    val msg = override.diagnosticMessage
-                        ?: "Invalid value '${override.rawValueString}' for '${override.key}'"
-                    diagnostics.add("Line ${override.lineNumber}: $msg")
-                } else if (override.status == OptionStatus.IGNORED) {
-                    diagnostics.add("Line ${override.lineNumber}: Unknown [editor] option '${override.key}' (ignored)")
+            for ((key, _, rawValueString, _, lineNumber, status, diagnosticMessage) in overrides.values) {
+                if (status == OptionStatus.INVALID) {
+                    val msg = diagnosticMessage
+                        ?: "Invalid value '$rawValueString' for '$key'"
+                    diagnostics.add("Line $lineNumber: $msg")
+                } else if (status == OptionStatus.IGNORED) {
+                    diagnostics.add("Line $lineNumber: Unknown [editor] option '$key' (ignored)")
                 }
             }
         }
@@ -237,16 +255,16 @@ object HelixConfigLoader {
         return HelixConfigResult(file, boundCount, validated.errors)
     }
 
-    fun isProjectTrusted(project: com.intellij.openapi.project.Project): Boolean = try {
+    fun isProjectTrusted(project: Project): Boolean = try {
         val clazz = Class.forName("com.intellij.ide.impl.TrustedProjects")
-        val method = clazz.getMethod("isTrusted", com.intellij.openapi.project.Project::class.java)
+        val method = clazz.getMethod("isTrusted", Project::class.java)
         method.invoke(null, project) as? Boolean ?: true
     } catch (_: Throwable) {
         true
     }
 
     fun loadProjectConfig(
-        project: com.intellij.openapi.project.Project,
+        project: Project,
         explicitFile: File? = null,
     ): HelixConfigResult {
         if (project.isDisposed || !isProjectTrusted(project)) {
@@ -294,7 +312,7 @@ object HelixConfigLoader {
         return HelixConfigResult(file, boundCount, validated.errors)
     }
 
-    fun unloadProjectConfig(project: com.intellij.openapi.project.Project) {
+    fun unloadProjectConfig(project: Project) {
         HelixKeymapManager.clearProject(project)
         jp.titze.intellij.helix.settings.HelixEffectiveSettings.clearProjectOverrides(project)
     }
@@ -308,7 +326,7 @@ object HelixConfigLoader {
         }
     }
 
-    private fun applyBinding(binding: HelixParsedBinding, project: com.intellij.openapi.project.Project? = null) {
+    private fun applyBinding(binding: HelixParsedBinding, project: Project? = null) {
         val action = binding.action
         if (action is String) {
             HelixKeymapManager.bind(binding.mode, binding.sequence, action, project = project)

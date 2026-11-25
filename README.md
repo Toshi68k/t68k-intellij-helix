@@ -913,7 +913,7 @@ Dedicated full-screen configurable under **Helix Keymap &rarr; Keybindings** fea
    - **Live Search & Find by Keystroke**: Real-time filtering and physical keystroke recorder button.
    - **Trie Conflict & Shadowing Warnings**: Automatic trie analysis flags shadowed chords with `⚠` and diagnostic
      warnings.
-   - **Provenance Badges**: Displays whether each binding is stock `[Default]`, custom, or disabled `[no_op]`.
+   - **Provenance Badges**: Displays each binding's source (`[Default]`, `[Custom: Project]`, `[Custom: intellij.toml]`, `[Custom: config.toml]`, or `[Disabled]`).
 2. **Ctrl Keys**:
    - Manage OS-level keystroke ownership for all 26 control keys (`Ctrl+A` through `Ctrl+Z`) in Normal and Insert modes.
 
@@ -1069,14 +1069,15 @@ render = true
 Settings follow a layered, non-destructive precedence model:
 
 ```
-:set-option (session only)  ›  TOML [editor]  ›  Settings UI (persisted)  ›  built-in default
+:set-option (session only)  ›  Project TOML (.helix/)  ›  Global TOML  ›  Settings UI (persisted)  ›  built-in default
 ```
 
 1. **Session Options (`:set-option <key> <val>`)**: Active for the current IDE session only. Wins over TOML configuration.
-2. **TOML Configuration (`[editor]`)**: Sits cleanly on top of Settings UI values without altering persisted XML 
-  configuration. Removing an option from TOML restores the saved Settings UI value on the next reload.
-3. **Settings UI**: Persisted values configured in IDE Preferences / Settings.
-4. **Built-in Defaults**: Fallback defaults if no overrides are present.
+2. **Project TOML Configuration (`<projectRoot>/.helix/intellij.toml`)**: Repository-scoped `[editor]` overrides on top of global TOML without leaking to other open projects.
+3. **Global TOML Configuration (`~/.config/helix/intellij.toml`)**: Sits cleanly on top of Settings UI values without altering persisted XML 
+   configuration. Removing an option from TOML restores the saved Settings UI value on the next reload.
+4. **Settings UI**: Persisted values configured in IDE Preferences / Settings.
+5. **Built-in Defaults**: Fallback defaults if no overrides are present.
 
 When a setting is overridden by TOML, the corresponding Settings UI control is disabled with an explanatory notice badge 
 (`Set by intellij.toml: <key> = <val> · Open file`) linking directly to the line in your configuration file.

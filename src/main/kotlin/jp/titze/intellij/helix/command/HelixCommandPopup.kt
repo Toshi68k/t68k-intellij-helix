@@ -4,6 +4,7 @@
 package jp.titze.intellij.helix.command
 
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.ui.popup.JBPopupFactory
 import com.intellij.ui.CollectionListModel
@@ -13,7 +14,6 @@ import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.components.JBTextField
 import com.intellij.util.ui.JBUI
 import jp.titze.intellij.helix.HelixBundle
-import jp.titze.intellij.helix.action.HelixWriteIntentAction
 import jp.titze.intellij.helix.ui.HelixListUI
 import jp.titze.intellij.helix.ui.HelixTheme
 import java.awt.BorderLayout
@@ -220,14 +220,21 @@ object HelixCommandPopup {
 
         fun runChosenCommand() {
             val query = textField.text.trim().removePrefix(":")
-            popup.cancel()
             val selected = list.selectedValue
-            HelixWriteIntentAction.run {
+            popup.cancel()
+            val task = Runnable {
+                if (editor.isDisposed) return@Runnable
                 if (!shouldExecuteDirectly(query) && selected != null && selected.matches(query)) {
                     selected.action(editor)
                 } else if (query.isNotEmpty()) {
                     executeCommand(query, editor)
                 }
+            }
+            val app = ApplicationManager.getApplication()
+            if (app != null) {
+                app.invokeLater(task, ModalityState.nonModal())
+            } else {
+                task.run()
             }
         }
 
@@ -346,10 +353,19 @@ object HelixCommandPopup {
 
         list.addMouseListener(object : MouseAdapter() {
             override fun mouseClicked(e: MouseEvent) {
-                if (e.clickCount >= 1 && list.selectedValue != null) {
+                val selected = list.selectedValue ?: return
+                if (e.clickCount >= 1) {
                     popup.cancel()
-                    HelixWriteIntentAction.run {
-                        list.selectedValue.action(editor)
+                    val task = Runnable {
+                        if (!editor.isDisposed) {
+                            selected.action(editor)
+                        }
+                    }
+                    val app = ApplicationManager.getApplication()
+                    if (app != null) {
+                        app.invokeLater(task, ModalityState.nonModal())
+                    } else {
+                        task.run()
                     }
                 }
             }
