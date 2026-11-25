@@ -18,7 +18,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **Inclusive Selection Model Matching Native Helix**:
   - Fixed an issue where the character under the cursor was excluded from active selections in `SELECT` mode and range-selecting motions (such as `e` and `E`).
   - **Precise Word-End Positioning (`e` / `E`)**: Removed trailing offset shift so the cursor lands directly on the actual final character of the word (e.g. on `c` in `public` rather than trailing whitespace) while maintaining an inclusive selection of the entire word.
-  - **Inclusive Character Motions in Select Mode (`h` / `j` / `k` / `l` / visual lines)**: Moving in `SELECT` mode now treats the character under the cursor as part of the selection across all directions and line movements.
+  - **Inclusive Motions in Select Mode (`h` / `j` / `k` / `l` / `b` / `B` / `F` / `T` / visual lines)**: Moving in `SELECT` mode now treats the character under the cursor as part of the selection across all directions, backward word motions, backward find-char motions, and line movements.
+  - **Select Mode Jump-to-Word (`v` + `gw`)**: Jumping backward across word boundaries in Select mode now inclusively retains the starting character under the cursor; jumping to the current word where the cursor is positioned selects the entire word.
   - **Symmetric Selection Flipping (`Alt+;`)**: Flipping selection orientation toggles the cursor seamlessly between `selectionStart` and `selectionEnd - 1` without dropping the boundary character or advancing past the selection range.
 
 ## [0.9.0] - 2026-11-24

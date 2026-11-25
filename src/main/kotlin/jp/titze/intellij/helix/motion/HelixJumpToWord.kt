@@ -123,12 +123,23 @@ object HelixJumpToWord {
         val caret = editor.caretModel.primaryCaret
 
         if (isSelect) {
-            val anchor = if (caret.hasSelection()) caret.leadSelectionOffset else caret.offset
-            val start = minOf(anchor, target.offset)
-            val end = maxOf(anchor, target.endOffset)
-            val caretOffset = if (target.offset >= anchor) end else start
-            caret.moveToOffset(caretOffset)
-            caret.setSelection(start, end)
+            val hadSelection = caret.hasSelection()
+            val anchor = HelixMotionUtils.getHelixAnchor(caret)
+            val docLen = editor.document.textLength
+            val isBackward = target.offset < anchor
+
+            if (isBackward) {
+                val effectiveAnchor = if (!hadSelection && anchor < docLen) anchor + 1 else anchor
+                caret.moveToOffset(target.offset)
+                caret.setSelection(effectiveAnchor, target.offset)
+            } else if (target.offset > anchor) {
+                caret.moveToOffset(target.endOffset)
+                caret.setSelection(anchor, target.endOffset)
+            } else {
+                // target.offset == anchor (jumping to the current word where cursor started)
+                caret.moveToOffset(target.endOffset)
+                caret.setSelection(target.offset, target.endOffset)
+            }
         } else {
             caret.moveToOffset(target.endOffset)
             caret.setSelection(target.offset, target.endOffset)
@@ -269,13 +280,13 @@ object HelixJumpToWord {
                 val lineHeight = editor.lineHeight
                 val badgeHeight = (lineHeight - 2).coerceAtLeast(fm.height)
 
-                for (target in targets) {
-                    val p = editor.offsetToPoint2D(target.offset)
+                for ((offset, _, label) in targets) {
+                    val p = editor.offsetToPoint2D(offset)
                     if (!isBadgeInVisibleArea(p, lineHeight, visibleArea)) continue
 
                     val x = p.x.toInt()
                     val y = p.y.toInt() + 1
-                    val textWidth = fm.stringWidth(target.label)
+                    val textWidth = fm.stringWidth(label)
                     val badgeWidth = textWidth + BADGE_PADDING_X * 2
 
                     // Solid opaque background to completely cover the underlying code characters!
@@ -287,16 +298,16 @@ object HelixJumpToWord {
                     val textY = y + (badgeHeight - fm.height) / 2 + fm.ascent
                     val textX = x + BADGE_PADDING_X
 
-                    if (prefix.isNotEmpty() && target.label.startsWith(prefix)) {
+                    if (prefix.isNotEmpty() && label.startsWith(prefix)) {
                         val prefixWidth = fm.stringWidth(prefix)
                         g2d.color = BADGE_PREFIX_FG
                         g2d.drawString(prefix, textX, textY)
-                        val remaining = target.label.substring(prefix.length)
+                        val remaining = label.substring(prefix.length)
                         g2d.color = BADGE_ACTIVE_FG
                         g2d.drawString(remaining, textX + prefixWidth, textY)
                     } else {
                         g2d.color = BADGE_ACTIVE_FG
-                        g2d.drawString(target.label, textX, textY)
+                        g2d.drawString(label, textX, textY)
                     }
                 }
             } finally {
