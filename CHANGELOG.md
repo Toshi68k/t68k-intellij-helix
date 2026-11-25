@@ -5,8 +5,6 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
-## [0.9.1] - 2026-11-25
-
 ### Added
 
 - **Project-Local Configuration (`.helix/intellij.toml` & `.helix/config.toml`)**:
@@ -18,6 +16,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   - **Live VFS File Watcher**: `HelixConfigWatcher` monitors `.helix/` config files across open projects and triggers debounced live reloads upon saving.
   - **Keymap Browser & Settings Provenance**: Displays a distinct `[custom: project]` badge in the Keymap Browser for project-bound shortcuts; disabled Settings UI controls and Active Overrides tables highlight `.helix/` provenance with direct line navigation.
   - **Command Palette (`:config-open-project`)**: Added `:config-open-project` (aliases `:config-open-workspace`, `:project-config-open`, `:workspace-config-open`) to scaffold `.helix/intellij.toml` from a starter template and open it in the editor.
+    
+## [0.9.1] - 2026-11-25
+
+### Added
 
 - **Harpoon Persistence Across Restarts & Branch Switches**:
   - Pinned Harpoon slots (`space + 1..5`) now survive IDE restarts, project reopenings, and branch switches via a project-level `PersistentStateComponent` saved to `.idea/workspace.xml` (zero Git pollution).
