@@ -101,13 +101,13 @@ class HelixMotionsTest : BasePlatformTestCase() {
         HelixMotions.collapseSelection(editor)
         caret.moveToOffset(0)
         HelixMotions.moveBigWordEnd(editor)
-        caret.offset shouldBe 14 // index right after ')'
+        caret.offset shouldBe 13 // index of ')'
         caret.hasSelection().shouldBeTrue()
         caret.selectedText shouldBe "foo.bar(\"arg\")"
 
         // Another 'E' moves to end of next WORD
         HelixMotions.moveBigWordEnd(editor)
-        caret.offset shouldBe 24 // index right after ')'
+        caret.offset shouldBe 23 // index of ')'
         caret.hasSelection().shouldBeTrue()
         caret.selectedText shouldBe "baz.qux()"
 
@@ -174,7 +174,7 @@ class HelixMotionsTest : BasePlatformTestCase() {
         caret.moveToOffset(0)
         HelixMotions.collapseSelection(editor)
         HelixKeyHandler.handleKey('E', editor)
-        caret.offset shouldBe 5
+        caret.offset shouldBe 4
         caret.selectedText shouldBe "a.b()"
     }
 
@@ -594,7 +594,7 @@ class HelixMotionsTest : BasePlatformTestCase() {
         editor.document.getLineNumber(caret.offset) shouldBe halfPage
         caret.hasSelection().shouldBeTrue()
         caret.selectionStart shouldBe 0
-        caret.selectionEnd shouldBe caret.offset
+        caret.selectionEnd shouldBe caret.offset + 1
     }
 
     fun testPageMotionsWithCountPrefix() {
@@ -661,7 +661,7 @@ class HelixMotionsTest : BasePlatformTestCase() {
         val caret = editor.caretModel.primaryCaret
         caret.moveToOffset(0)
 
-        val dispatcher = jp.titze.intellij.helix.editor.HelixEventDispatcher()
+        val dispatcher = HelixEventDispatcher()
         val ctrlF = java.awt.event.KeyEvent(
             editor.contentComponent,
             java.awt.event.KeyEvent.KEY_PRESSED,
@@ -700,7 +700,7 @@ class HelixMotionsTest : BasePlatformTestCase() {
         val caret = editor.caretModel.primaryCaret
         caret.moveToOffset(0)
 
-        val dispatcher = jp.titze.intellij.helix.editor.HelixEventDispatcher()
+        val dispatcher = HelixEventDispatcher()
         val ctrlD = java.awt.event.KeyEvent(
             editor.contentComponent,
             java.awt.event.KeyEvent.KEY_PRESSED,
@@ -736,7 +736,7 @@ class HelixMotionsTest : BasePlatformTestCase() {
         val editor = myFixture.editor
         HelixActions.enterInsert(editor)
 
-        val dispatcher = jp.titze.intellij.helix.editor.HelixEventDispatcher()
+        val dispatcher = HelixEventDispatcher()
         val ctrlF = java.awt.event.KeyEvent(
             editor.contentComponent,
             java.awt.event.KeyEvent.KEY_PRESSED,
@@ -757,7 +757,7 @@ class HelixMotionsTest : BasePlatformTestCase() {
         val state = HelixStateManager.getOrCreate(editor)
         state.appendCountDigit('2')
 
-        val dispatcher = jp.titze.intellij.helix.editor.HelixEventDispatcher()
+        val dispatcher = HelixEventDispatcher()
         val ctrlD = java.awt.event.KeyEvent(
             editor.contentComponent,
             java.awt.event.KeyEvent.KEY_PRESSED,
@@ -1116,8 +1116,8 @@ class HelixMotionsTest : BasePlatformTestCase() {
         val caret = editor.caretModel.primaryCaret
 
         caret.moveToLogicalPosition(com.intellij.openapi.editor.LogicalPosition(0, 20))
-        val state = jp.titze.intellij.helix.state.HelixStateManager.getOrCreate(editor)
-        state.setMode(jp.titze.intellij.helix.state.HelixMode.SELECT)
+        val state = HelixStateManager.getOrCreate(editor)
+        state.setMode(HelixMode.SELECT)
 
         // Select down to short line
         HelixKeyHandler.handleKey('j', editor)
@@ -1129,7 +1129,7 @@ class HelixMotionsTest : BasePlatformTestCase() {
         HelixKeyHandler.handleKey('j', editor)
         caret.logicalPosition.line shouldBe 2
         caret.logicalPosition.column shouldBe 20
-        caret.leadSelectionOffset shouldBe 20
+        caret.selectionStart shouldBe 20
     }
 
     fun testHorizontalMotionResetsStickyColumn() {
@@ -1371,7 +1371,7 @@ class HelixMotionsTest : BasePlatformTestCase() {
         // 3e moves to end of 3rd word forward from "two" ("four")
         HelixKeyHandler.handleKey('3', editor)
         HelixKeyHandler.handleKey('e', editor)
-        caret.offset shouldBe 18
+        caret.offset shouldBe 17
         caret.selectedText shouldBe "four"
     }
 
@@ -1413,6 +1413,6 @@ class HelixMotionsTest : BasePlatformTestCase() {
         HelixKeyHandler.handleKey('j', editor)
         caret.logicalPosition.line shouldBe 4
         caret.hasSelection().shouldBeTrue()
-        caret.selectedText shouldBe "line 1\nline 2\nline 3\nline 4\n"
+        caret.selectedText shouldBe "line 1\nline 2\nline 3\nline 4\nl"
     }
 }

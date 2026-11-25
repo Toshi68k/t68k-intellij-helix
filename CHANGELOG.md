@@ -13,6 +13,14 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   - **Dynamic Line Tracking**: Pinned line numbers are dynamically derived from active `RangeMarker`s, keeping line numbers accurate as code shifts.
   - **Non-Destructive Branch Switching**: Preserves slot definitions for files temporarily absent on the current Git branch, labeling them `[other branch]` in the Harpoon card UI and Which-Key rather than discarding them.
 
+### Fixed
+
+- **Inclusive Selection Model Matching Native Helix**:
+  - Fixed an issue where the character under the cursor was excluded from active selections in `SELECT` mode and range-selecting motions (such as `e` and `E`).
+  - **Precise Word-End Positioning (`e` / `E`)**: Removed trailing offset shift so the cursor lands directly on the actual final character of the word (e.g. on `c` in `public` rather than trailing whitespace) while maintaining an inclusive selection of the entire word.
+  - **Inclusive Character Motions in Select Mode (`h` / `j` / `k` / `l` / visual lines)**: Moving in `SELECT` mode now treats the character under the cursor as part of the selection across all directions and line movements.
+  - **Symmetric Selection Flipping (`Alt+;`)**: Flipping selection orientation toggles the cursor seamlessly between `selectionStart` and `selectionEnd - 1` without dropping the boundary character or advancing past the selection range.
+
 ## [0.9.0] - 2026-11-24
 
 ### Added

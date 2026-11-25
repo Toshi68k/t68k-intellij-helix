@@ -1287,4 +1287,37 @@ class HelixSelectionTest : BasePlatformTestCase() {
         jp.titze.intellij.helix.command.HelixCommands.execute("select-all-occurrences", editor)
         caretModel.caretCount shouldBe 3
     }
+
+    fun testInclusiveSelectionWordEndAndFlipAndSelectMode() {
+        val text = "public String toString()"
+        myFixture.configureByText("test.txt", text)
+        val editor = myFixture.editor
+        val caret = editor.caretModel.primaryCaret
+
+        caret.moveToOffset(0) // On 'p'
+
+        // 'e' moves to end of word "public", landing on 'c' (index 5)
+        HelixKeyHandler.handleKey('e', editor)
+        caret.offset shouldBe 5
+        caret.selectedText shouldBe "public"
+
+        // Alt+; flips selection so head is at 'p' (index 0) and anchor is at 'c'
+        HelixMotions.flipSelection(editor)
+        caret.offset shouldBe 0
+        caret.selectedText shouldBe "public"
+
+        // 'v' toggles select mode
+        HelixActions.toggleSelectMode(editor)
+        HelixStateManager.getOrCreate(editor).mode shouldBe HelixMode.SELECT
+
+        // 'l' moves right to 'u' (index 1), shrinking selection from head while keeping 'c'
+        HelixKeyHandler.handleKey('l', editor)
+        caret.offset shouldBe 1
+        caret.selectedText shouldBe "ublic"
+
+        // 'l' moves right again to 'b' (index 2)
+        HelixKeyHandler.handleKey('l', editor)
+        caret.offset shouldBe 2
+        caret.selectedText shouldBe "blic"
+    }
 }
