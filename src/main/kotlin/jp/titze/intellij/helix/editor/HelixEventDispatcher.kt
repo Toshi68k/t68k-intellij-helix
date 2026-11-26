@@ -43,6 +43,10 @@ class HelixEventDispatcher : IdeEventQueue.EventDispatcher {
         val preHandled = handlePreDispatch(e)
         if (preHandled != null) return preHandled
 
+        if (HelixToolWindowNavigator.handleActiveSpeedSearchEnter(e)) {
+            return true
+        }
+
         val eligibleToolWindow = HelixToolWindowGuard.findEligibleTarget(e.component)
         if (eligibleToolWindow != null) {
             return HelixToolWindowNavigator.dispatch(e, eligibleToolWindow)

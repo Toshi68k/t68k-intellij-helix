@@ -24,6 +24,10 @@ class HelixToolWindowSettingsPanel {
     private val servicesBox = JBCheckBox(HelixBundle.message("settings.toolwindow.services"))
     private val debugBox = JBCheckBox(HelixBundle.message("settings.toolwindow.debug"))
     private val otherBox = JBCheckBox(HelixBundle.message("settings.toolwindow.other"))
+    private val seamlessFocusJumpBox = JBCheckBox(HelixBundle.message("settings.toolwindow.seamlessFocusJump"))
+    private val searchConfirmOnEnterBox = JBCheckBox(
+        HelixBundle.message("settings.toolwindow.searchConfirmOnEnter"),
+    )
 
     val panel: JPanel = JPanel(BorderLayout(0, 8))
 
@@ -47,9 +51,19 @@ class HelixToolWindowSettingsPanel {
             updateTargetBoxesEnabled()
         }
 
+        val seamlessPanel = JPanel(BorderLayout())
+        seamlessPanel.border = JBUI.Borders.empty(4, 0, 2, 0)
+        seamlessPanel.add(seamlessFocusJumpBox, BorderLayout.WEST)
+
+        val searchConfirmPanel = JPanel(BorderLayout())
+        searchConfirmPanel.border = JBUI.Borders.empty(2, 0)
+        searchConfirmPanel.add(searchConfirmOnEnterBox, BorderLayout.WEST)
+
         val settingsBox = JPanel()
         settingsBox.layout = BoxLayout(settingsBox, BoxLayout.Y_AXIS)
         settingsBox.add(targetsPanel)
+        settingsBox.add(seamlessPanel)
+        settingsBox.add(searchConfirmPanel)
 
         val optionsPanel = JPanel(BorderLayout(0, 4))
         optionsPanel.border = JBUI.Borders.emptyLeft(12)
@@ -77,11 +91,15 @@ class HelixToolWindowSettingsPanel {
         servicesBox.isEnabled = enabled
         debugBox.isEnabled = enabled
         otherBox.isEnabled = enabled
+        seamlessFocusJumpBox.isEnabled = enabled
+        searchConfirmOnEnterBox.isEnabled = enabled
     }
 
     fun isModified(settings: HelixSettings): Boolean {
         if (masterEnabledBox.isSelected != settings.toolWindowNavigationEnabled) return true
         if (otherBox.isSelected != settings.toolWindowOtherEnabled) return true
+        if (seamlessFocusJumpBox.isSelected != settings.toolWindowSeamlessFocusJump) return true
+        if (searchConfirmOnEnterBox.isSelected != settings.toolWindowSearchConfirmOnEnter) return true
         val currentTargets = collectSelectedTargets()
         return currentTargets != settings.toolWindowEnabledTargets
     }
@@ -107,6 +125,8 @@ class HelixToolWindowSettingsPanel {
     fun apply(settings: HelixSettings) {
         settings.toolWindowNavigationEnabled = masterEnabledBox.isSelected
         settings.toolWindowOtherEnabled = otherBox.isSelected
+        settings.toolWindowSeamlessFocusJump = seamlessFocusJumpBox.isSelected
+        settings.toolWindowSearchConfirmOnEnter = searchConfirmOnEnterBox.isSelected
         settings.toolWindowEnabledTargets = collectSelectedTargets()
     }
 
@@ -121,6 +141,8 @@ class HelixToolWindowSettingsPanel {
         servicesBox.isSelected = targets.contains("Services") || targets.contains("Run")
         debugBox.isSelected = targets.contains("Debug")
         otherBox.isSelected = settings.toolWindowOtherEnabled
+        seamlessFocusJumpBox.isSelected = settings.toolWindowSeamlessFocusJump
+        searchConfirmOnEnterBox.isSelected = settings.toolWindowSearchConfirmOnEnter
         updateTargetBoxesEnabled()
     }
 }

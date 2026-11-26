@@ -16,6 +16,11 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   - **Live VFS File Watcher**: `HelixConfigWatcher` monitors `.helix/` config files across open projects and triggers debounced live reloads upon saving.
   - **Keymap Browser & Settings Provenance**: Displays a distinct `[Custom: Project]` badge in the Keymap Browser for project-bound shortcuts; disabled Settings UI controls and Active Overrides tables highlight `.helix/` provenance (even when no global `intellij.toml` exists) with direct line navigation.
   - **Command Palette (`:config-open-project`)**: Added `:config-open-project` (aliases `:config-open-workspace`, `:project-config-open`, `:workspace-config-open`) to scaffold `.helix/intellij.toml` from a starter template and open it in the editor.
+  
+- **Tool Windows Navigation Extensions**:
+  - **VCS Commit Tool Window (`Alt+0`) Shortcuts**: Added `Space` to toggle file checkboxes in Changelist mode or stage/unstage (`Git.Stage.Add` / `Git.Stage.Reset`) in Git Staging mode, `d` to open the diff preview (`Diff.ShowDiff`, also in `Version Control`), and `c` to focus the commit message box cleanly for typing.
+  - **Two-Step SpeedSearch Confirmation, `?` Backward Search & `n`/`N` Navigation**: Added `?` to start backward SpeedSearch from the current row alongside `/` forward search, updated `n`/`N` to follow or reverse the active search direction (including after SpeedSearch closes), and confirmed the search on the first `Enter` without immediately executing/opening the selected item (letting a second `Enter` or `o` activate it), configurable via **Confirm speed search on Enter without executing (press Enter or o again to open/run)** (enabled by default).
+  - **Seamless Window Focus Jump (`Ctrl+w` / `space + w`)**: Enhanced `h`/`j`/`k`/`l` window navigation with 2D spatial split resolution (`FileEditorManagerEx`) and boundary crossing into enabled, Helix-navigable docked tool windows (and `Ctrl+w h/j/k/l` / `Ctrl+w w` inside tool windows to move between adjacent tool windows or return focus to the editor, automatically skipping `Terminal` and non-navigable consoles), configurable via **Cross editor/tool window boundaries with Ctrl+w / space + w (h/j/k/l)**.
     
 ## [0.9.1] - 2026-11-25
 
@@ -26,7 +31,6 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   - **Lazy RangeMarker Rehydration**: Restores file URLs, line numbers, and preview snippets on project load, creating active `RangeMarker` tracking on demand without blocking startup.
   - **Dynamic Line Tracking**: Pinned line numbers are dynamically derived from active `RangeMarker`s, keeping line numbers accurate as code shifts.
   - **Non-Destructive Branch Switching**: Preserves slot definitions for files temporarily absent on the current Git branch, labeling them `[other branch]` in the Harpoon card UI and Which-Key rather than discarding them.
-
 - **Functional Keys & Modifier Chords (`F1`–`F24`)**:
   - Full support for binding functional keys (`F1`–`F24`, including extended keys `F13`–`F24`) and modifier chords (`S-F13`, `C-F13`, `A-F12`, `C-S-F13`, etc.) across `[keys.normal]`, `[keys.select]`, and `[keys.insert]` in `intellij.toml` and `config.toml`.
   - Non-printable action key resolution via `HelixEventDispatcher`: function keys (which only emit `KEY_PRESSED` without `KEY_TYPED` in Java/Swing) resolve directly against the active keymap Trie.
@@ -55,17 +59,14 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   - **Harpoon Submenu (`space + H`)**: Dedicated Which-Key submenu with live preview of pinned files (`space + H 1..5`), auto-pin (`space + H a`), explicit slot assignment (`space + H s 1..5`), and slot deletion (`space + H d 1..5`).
   - **Clean Space Which-Key Hierarchy**: Root `<Space>` menu avoids numeric clutter by presenting a single compact `1-5: Quick slots 1–5` summary row and `H: Harpoon / Quick slots`.
   - **Command Palette (`:commands`) & Native Bookmarks Bridge**: Added `:harpoon` / `:pins`, `:pin [1-5]`, `:unpin [1-5]`, `:bookmarks` (`ShowBookmarks`), `:bookmark-toggle` (`ToggleBookmark`), and `:bookmark-mnemonic` (`ToggleBookmarkWithMnemonic`).
-
 - **Live Preview for Registers (`"`) and Insert Registers (`Ctrl-r`) in Which-Key**:
   - Pressing `"` in Normal or Select mode (or `Ctrl-r` in Insert mode) now displays a live preview overlay populated with actual text snippets from active registers instead of generic category rows.
   - Formats snippets with single-line whitespace normalization (`\n` &rarr; `⏎`), multi-line truncation (`…` at 36 chars), linewise tags (`[L]`), and multi-caret piece-wise selection counts (`[N sel]`).
   - Dynamically discovers and renders active delete history registers (`1`–`9`) and populated named registers (`a`–`z`), omitting empty letter slots to keep Which-Key compact and noise-free.
   - Monospace snippet styling matching the `:reg` palette, with custom tooltips previewing full register contents.
-    
 - **Helix Option Value Cycling (`:toggle-option` & `:toggle`)**:
   - Enhanced `:toggle-option <key> [val1 val2 ...]` (alias `:toggle`) to support cycling through multiple space-separated option values (e.g. `:toggle line-number relative absolute` or `:toggle whitespace.render all none`).
   - When no target values are provided, it performs canonical boolean or default state toggling.
-    
 - **Pure Relative Gutter Line Numbers (`pure-relative`)**:
   - Added an explicit `pure-relative` option (with aliases `relative-zero` and `zero-relative`) for users who specifically prefer IntelliJ's 0-based distance display on the cursor line instead of the hybrid Helix default.
 
@@ -144,15 +145,12 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **Cursor Shapes Rendering as Full Block**:
   - Corrected thickness factor in `HelixStateManager` for `BAR` (`0.25f`) and `UNDERLINE` (`0.20f`) cursor shapes; previously, a hardcoded `1.0f` thickness caused IntelliJ's `EditorCaretPainter` to render bars and underscores across 100% of character cell width and line height, making them visually indistinguishable from solid block cursors.
   - Added a `CaretListener` in `HelixStateManager` to ensure newly spawned carets (e.g., multi-cursor selections) immediately inherit the active mode's visual attributes.
-
 - **UnsupportedOperationException in Swing Text Components (`TextComponentEditor`)**:
   - Excluded lightweight Swing text component editors (`TextComponentEditorImpl`) from `HelixEditorEligibility` so dialog inputs and plain text areas (e.g. run configurations, commit templates, tool window fields) bypass modal editing and route directly to standard IDE action handlers.
   - Added defensive exception handling in `HelixStateManager.updateCursorColor` when retrieving `editor.colorsScheme` to prevent unhandled `UnsupportedOperationException` on the AWT Event Dispatch Thread when interacting with non-standard or stub editor implementations.
-
 - **EDT Freeze During Config Reload on File Save**:
   - Decoupled `HelixConfigWatcher` automatic reload from the VFS `BulkFileListener.after` write-lock callback using `Application.invokeLater`, preventing synchronous EDT lockups when saving `config.toml` or `intellij.toml`.
   - Mutated `editor.settings` directly when applying `soft-wrap` and `whitespace.render` in `HelixEffectiveSettings` and `HelixEditorOptions`, eliminating nested `ActionManager.tryToExecute` calls that trigger coroutine-based action expand deadlocks on the Event Dispatch Thread.
-
 - **Unwanted Line Numbers in VCS Commit Message Box**:
   - Excluded VCS commit message editors from `HelixLineNumberManager.applyLineNumbers` to prevent relative/smart line numbers from unexpectedly appearing in the commit tool window during modal editing.
 
@@ -178,7 +176,6 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   - Overridden controls in Appearance and Behavior panels are automatically locked with provenance notice badges linking directly to the line in the TOML file.
   - Added an **Active editor overrides** table in the Configuration (TOML) settings page with live status and double-click navigation.
   - Configurable per-mode caret shapes (`block`, `bar`, `underline`, `hidden`) dynamically updating `CaretVisualAttributes` across single and multi-carets.
-
 - **Code Generation & Refactoring Expansion (`space + m`)**:
   - Expanded the Refactor submenu (`space + m`) and Which-Key interactive chord menu with essential code generation, safe deletion, and OOP refactorings:
     - `space + m g`: **Generate Code** (`Generate`) for generating constructors, getters/setters, equals/hashCode, toString, and test methods.
@@ -289,20 +286,17 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   - Added runtime commands `:set-option line-number relative|smart|hybrid|absolute|off` and `:toggle-relative-line-numbers` (`:relative-numbers`, `:rnu`).
   - Added Gutter Line Numbers dropdown configuration in **Preferences &rarr; Tools &rarr; Helix Keymap &rarr; General**.
   - Registered `toggle_relative_line_numbers` in `HelixCommandRegistry` for user keybinding configurations.
-
 - **Mode-Colored Status Bar Pill (`color-modes = true`)**:
   - Added Helix-style color-coded status bar pills with custom background and foreground colors per mode (`NOR` in Indigo/Cyan, `INS` in Emerald Green, `SEL` in Purple/Magenta).
   - Added runtime commands `:set-option color-modes true|false` (`:set color-modes true|false`) and `:toggle-color-modes` (`:color-modes`).
   - Added "Enable mode-colored status bar pill" configuration setting in **Preferences &rarr; Tools &rarr; Helix Keymap &rarr; General**.
   - Added `HelixStatusBarWidget.updateAllWidgets()` to broadcast status bar widget invalidation across all open projects immediately on settings changes.
-
 - **Independent Editor Cursor Tinting (`cursor-tint = true`)**:
   - Decoupled cursor tinting into an independent setting, allowing users to keep mode-colored status pills without overriding editor caret color schemes.
   - Added dynamic cursor tint matching the active mode in the editor when `cursor-tint = true`.
   - Added runtime commands `:set-option cursor-tint true|false` (`:set cursor-tint true|false`) and `:toggle-cursor-tint` (`:cursor-tint`).
   - Added "Tint editor cursor to match mode color" configuration setting in **Preferences &rarr; Tools &rarr; Helix Keymap &rarr; General**.
   - Registered `toggle_color_modes` and `toggle_cursor_tint` in `HelixCommandRegistry` for user keybinding configurations.
-
 - **Deep IDE Intelligence & View Management Commands**:
   - Added `:recent-locations` (`:locations`, `:recents`) and bound `space + B` to open IntelliJ's `RecentLocations` popup for visual code snippet inspection of recently visited and edited code locations.
   - Added `:show-usages` (`:usages-popup`) to trigger `ShowUsages` for previewing symbol call sites in an in-place floating popup without opening the tool window.
@@ -310,17 +304,14 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   - Added `:close-to-right` (`:buffer-close-right`, `:bcr`, `CloseAllToTheRight`) to close all editor tabs located to the right of the active tab.
   - Added `:close-unmodified` (`:buffer-close-unmodified`, `:bcu`, `CloseAllUnmodifiedEditors`) to close all clean, unmodified editor tabs.
   - Registered `recent_locations`, `show_usages`, `maximize_view`, `wmaximize`, `close_to_right`, and `close_unmodified` in `HelixCommandRegistry`.
-
 - **Numeric Sorting**:
   - Added numeric line sorting (`:sort -n`, `:sort -rn`, `:sort-numeric`, `:sort-numeric-reverse`) that compares mathematical values (handling decimals and negative numbers) rather than raw ASCII/lexicographic order.
   - Registered `sort_numeric` and `sort_numeric_reverse` in `HelixCommandRegistry` for user keybinding configurations.
-
 - **Multi-Caret Commands (`add_selection_next` / `add_selection_prev` / `select_all_occurrences`)**:
   - Added `add_selection_next` (`:select-next-occurrence`, `:select-next`) to select the word under cursor or append the next occurrence of the selection as a new caret (the classic `Ctrl-D` / `SelectNextOccurrence` multi-cursor workflow).
   - Added `add_selection_prev` (`:select-prev-occurrence`, `:select-prev`) to append the previous occurrence of the selection as a new caret.
   - Added `select_all_occurrences` (`:select-all-occurrences`, `:select-all-matches`) to select all occurrences of the word/selection across the entire buffer simultaneously.
   - Registered commands in `HelixCommandRegistry` so users can bind them to arbitrary shortcuts (e.g. `"C-d" = "add_selection_next"`) in `intellij.toml` or `config.toml`.
-
 - **Essential Developer Workflow & Git Commands**:
   - Added `:reopen-closed-tab` (`:reopen`, `ReopenClosedTab`) to reopen the most recently closed editor tab.
   - Added `:copy-path` (`CopyAbsolutePath`), `:copy-relative-path` (`CopyContentRootPath`), and `:copy-reference` (`CopyReferencePopup`) to quickly copy file paths and qualified symbol references.
@@ -353,7 +344,6 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   - **Command Registry & Validation Integration**: Direct delegation in `HelixCommandRegistry.execute` for `@` prefixes, and updated `HelixConfigLoader.isValidActionName` so macro bindings pass config validation without errors.
   - **Which-Key Suppression & Recursion Guards**: Suppresses visual Which-Key popups during macro replay to avoid UI flicker, with built-in recursion depth limits.
   - **Arbitrary-Depth Sub-Keymap Routing**: Refined match submenu prefix matching in `HelixKeyHandler` so that deep custom sub-chords under `m` (e.g. `[keys.normal.m.n]` and `[keys.normal.m.p]` for jumping to and selecting next/previous enclosing delimiters) resolve cleanly through the keymap Trie.
-
 - **Visual & IDE Toggle Commands (`:set-option`, `:toggle-option`, and `:toggle-*`)**:
   - **Canonical Helix Option Commands**: Added `:set-option <key> <val>` (alias `:set`) and `:toggle-option <key>` (alias `:toggle`), matching modern Helix configuration commands. Supports both space-delimited (`:set soft-wrap.enable true`) and key-value formats (`:set soft-wrap=on`).
   - **Supported Option Keys & Enums**: Full support for canonical dotted keys and flat aliases:
@@ -366,7 +356,6 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   - **First-Class Palette Shorthands**: Added quick toggle commands with fuzzy aliases: `:toggle-soft-wrap` (`:soft-wrap`, `:wrap`), `:toggle-inlay-hints` (`:inlay-hints`, `:hints`), `:toggle-sticky-context` (`:sticky-context`, `:sticky-lines`), `:toggle-line-numbers` (`:line-numbers`, `:numbers`), `:toggle-render-whitespace` (`:whitespace`, `:whitespaces`), and `:toggle-breadcrumbs` (`:breadcrumbs`).
   - **Config Registry Identifiers**: Registered canonical identifiers (`toggle_soft_wrap`, `toggle_inlay_hints`, `toggle_sticky_context`, `toggle_line_numbers`, `toggle_whitespace`, `toggle_breadcrumbs`) in `HelixCommandRegistry` so users can bind them to arbitrary keys in `config.toml`.
   - **Modular Architecture Refactoring**: Extracted built-in command palette definitions into `HelixBuiltinCommands.kt` while maintaining `HelixCommands.COMMANDS` facade compatibility and keeping both classes comfortably under Detekt's file complexity limits.
-
 - **First-Class Refactoring Commands & Refactor Submenu (`space + m`)**:
   - **Refactor Submenu (`space + m`)**: Dedicated Which-Key submenu exposing core IntelliJ AST refactorings with single-key chords:
     - `space m v` &rarr; Extract variable (`IntroduceVariable`)
@@ -457,7 +446,6 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
       1. **Activation & Editor Scope**: Master activation switch, editor targets (Diff, Console, Commit, Other), and Color Theme.
       2. **Editing & Navigation Behavior**: Line navigation (`gh`/`gl` vs `0`/`$`), Scratch splits, Clipboard synchronization, Tab-switch Normal reset, and Jump list capacity.
       3. **Visual Prompts & Feedback**: Search prompt UI style & history size, Which-Key popup hints (hint mode, column layout).
-
   - **Visual Keybindings Explorer (Tab 2)**:
     - Interactive, searchable table displaying all active runtime bindings from `HelixKeymapManager` across Normal, Select, and Insert modes.
     - Chords filter dropdown (All, Space, Goto, View, Match, Window, Bracket, Single keys & other).
@@ -601,3 +589,22 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Removed
 
 - Incompatible with IdeaVim; both plugins replace the editor's typed-key handler.
+
+[Unreleased]: https://github.com/Toshi68k/t68k-intellij-helix/compare/v0.9.1...HEAD
+[0.9.1]: https://github.com/Toshi68k/t68k-intellij-helix/compare/v0.9.0...v0.9.1
+[0.9.0]: https://github.com/Toshi68k/t68k-intellij-helix/compare/v0.8.0...v0.9.0
+[0.8.0]: https://github.com/Toshi68k/t68k-intellij-helix/compare/v0.7.3...v0.8.0
+[0.7.3]: https://github.com/Toshi68k/t68k-intellij-helix/compare/v0.7.2...v0.7.3
+[0.7.2]: https://github.com/Toshi68k/t68k-intellij-helix/compare/v0.7.1...v0.7.2
+[0.7.1]: https://github.com/Toshi68k/t68k-intellij-helix/compare/v0.7.0...v0.7.1
+[0.7.0]: https://github.com/Toshi68k/t68k-intellij-helix/compare/v0.6.1...v0.7.0
+[0.6.1]: https://github.com/Toshi68k/t68k-intellij-helix/compare/v0.6.0...v0.6.1
+[0.6.0]: https://github.com/Toshi68k/t68k-intellij-helix/compare/v0.5.0...v0.6.0
+[0.5.0]: https://github.com/Toshi68k/t68k-intellij-helix/compare/v0.4.0...v0.5.0
+[0.4.0]: https://github.com/Toshi68k/t68k-intellij-helix/compare/v0.3.2...v0.4.0
+[0.3.2]: https://github.com/Toshi68k/t68k-intellij-helix/compare/v0.3.1...v0.3.2
+[0.3.1]: https://github.com/Toshi68k/t68k-intellij-helix/compare/v0.3.0...v0.3.1
+[0.3.0]: https://github.com/Toshi68k/t68k-intellij-helix/compare/v0.2.2...v0.3.0
+[0.2.2]: https://github.com/Toshi68k/t68k-intellij-helix/compare/v0.2.1...v0.2.2
+[0.2.1]: https://github.com/Toshi68k/t68k-intellij-helix/compare/v0.1.0...v0.2.1
+[0.1.0]: https://github.com/Toshi68k/t68k-intellij-helix/commits/v0.1.0

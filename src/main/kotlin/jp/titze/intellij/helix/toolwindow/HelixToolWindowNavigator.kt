@@ -4,8 +4,10 @@
 package jp.titze.intellij.helix.toolwindow
 
 import com.intellij.ui.ScrollingUtil
-import com.intellij.ui.SpeedSearchBase
-import com.intellij.ui.speedSearch.SpeedSearchSupply
+import jp.titze.intellij.helix.keymap.HelixKeyContext
+import jp.titze.intellij.helix.keymap.HelixShortcutPolicy
+import jp.titze.intellij.helix.settings.HelixSettings
+import java.awt.KeyboardFocusManager
 import java.awt.event.ActionEvent
 import java.awt.event.KeyEvent
 import javax.swing.JComponent
@@ -18,6 +20,14 @@ import javax.swing.JTree
  */
 object HelixToolWindowNavigator {
 
+    fun handleActiveSpeedSearchEnter(e: KeyEvent, settings: HelixSettings = HelixSettings.instance): Boolean =
+        HelixToolWindowSpeedSearch.handleActiveEnter(e, settings)
+
+    private fun isPlainKey(e: KeyEvent): Boolean {
+        if (e.isControlDown || e.isMetaDown) return false
+        return !e.isAltDown && !e.isShiftDown
+    }
+
     fun dispatch(e: KeyEvent, eligibleTarget: Pair<JComponent, String>? = null): Boolean {
         if (HelixToolWindowState.isDispatchingSynthetic) return false
 
@@ -28,7 +38,7 @@ object HelixToolWindowNavigator {
         val (component, toolWindowId) = eligible
 
         val isCtrl = e.isControlDown && !e.isMetaDown && !e.isAltDown
-        val isNoModifiers = !e.isControlDown && !e.isMetaDown && !e.isAltDown && !e.isShiftDown
+        val isNoModifiers = isPlainKey(e)
         val isShiftOnly = e.isShiftDown && !e.isControlDown && !e.isMetaDown && !e.isAltDown
 
         // Escape: reset state and pass through to IntelliJ natively
@@ -44,7 +54,7 @@ object HelixToolWindowNavigator {
         }
 
         val handled = when {
-            isCtrl -> handleCtrlKey(e, component)
+            isCtrl -> handleCtrlKey(e, component, toolWindowId)
             isNoModifiers || isShiftOnly -> handleNormalKey(e, component, toolWindowId, isShiftOnly)
             else -> false
         }
@@ -61,130 +71,214 @@ object HelixToolWindowNavigator {
         return false
     }
 
-    private fun handleCtrlKey(e: KeyEvent, component: JComponent): Boolean = when (e.keyCode) {
-        KeyEvent.VK_D -> {
-            moveHalfPage(component, down = true)
+    private fun handleCtrlKey(e: KeyEvent, component: JComponent, toolWindowId: String): Boolean {
+        if (HelixToolWindowState.getPendingSequence() == "C-w") {
+            HelixToolWindowState.clearPendingSequence()
+            return handleWindowChordKey(e.keyCode, e.isShiftDown, component, toolWindowId)
+        }
+
+        if (e.keyCode == KeyEvent.VK_W && canStartToolWindowChord()) {
+            HelixToolWindowState.takeCount()
+            HelixToolWindowState.setPendingSequence("C-w")
+            return true
+        }
+
+        return when (e.keyCode) {
+            KeyEvent.VK_D -> {
+                moveHalfPage(component, down = true)
+                true
+            }
+
+            KeyEvent.VK_U -> {
+                moveHalfPage(component, down = false)
+                true
+            }
+
+            KeyEvent.VK_F -> {
+                movePage(component, down = true)
+                true
+            }
+
+            KeyEvent.VK_B -> {
+                movePage(component, down = false)
+                true
+            }
+
+            else -> false
+        }
+    }
+
+    private fun canStartToolWindowChord(): Boolean = HelixSettings.instance.toolWindowSeamlessFocusJump &&
+        HelixShortcutPolicy.isHelixOwned(KeyEvent.VK_W, HelixKeyContext.NORMAL)
+
+    private fun handleWindowChordKey(
+        keyCode: Int,
+        isShift: Boolean,
+        component: JComponent,
+        toolWindowId: String,
+    ): Boolean {
+        val direction = when {
+            !isShift && keyCode == KeyEvent.VK_H -> FocusDirection.LEFT
+            !isShift && keyCode == KeyEvent.VK_J -> FocusDirection.DOWN
+            !isShift && keyCode == KeyEvent.VK_K -> FocusDirection.UP
+            !isShift && keyCode == KeyEvent.VK_L -> FocusDirection.RIGHT
+            else -> null
+        }
+        if (direction != null) {
+            return HelixWindowFocusNavigator.jumpFromToolWindow(direction, component, toolWindowId)
+        }
+        if (keyCode == KeyEvent.VK_W) {
+            return HelixWindowFocusNavigator.returnToEditorFromToolWindow(component)
+        }
+        return true // Swallow invalid C-w chord inside tool window
+    }
+
+    private fun handleNormalKey(e: KeyEvent, component: JComponent, toolWindowId: String, isShift: Boolean): Boolean {
+        val keyCode = e.keyCode
+        val effectiveChar = resolveEffectiveChar(keyCode, e.keyChar, isShift)
+        val pendingSeq = HelixToolWindowState.getPendingSequence()
+
+        if (pendingSeq == "C-w") {
+            HelixToolWindowState.clearPendingSequence()
+            return handleWindowChordKey(keyCode, isShift, component, toolWindowId)
+        }
+        if (pendingSeq == "g") {
+            HelixToolWindowState.clearPendingSequence()
+            return handleGChord(keyCode, effectiveChar, isShift, component)
+        }
+        if (!isShift && effectiveChar in '0'..'9' && appendCountDigitIfValid(effectiveChar)) {
+            return true
+        }
+
+        val count = HelixToolWindowState.takeCount() ?: 1
+        val dispatched = handleToolWindowActionKey(keyCode, effectiveChar, isShift, component, toolWindowId) ||
+            handleNavigationKey(keyCode, effectiveChar, isShift, component, count) ||
+            handleSearchKey(keyCode, effectiveChar, isShift, component, toolWindowId)
+        if (dispatched) return true
+
+        // Swallow unmapped letters to prevent accidental speed search popup
+        return effectiveChar in 'a'..'z' || effectiveChar in 'A'..'Z'
+    }
+
+    private fun resolveEffectiveChar(keyCode: Int, keyChar: Char, isShift: Boolean): Char =
+        if (keyChar != KeyEvent.CHAR_UNDEFINED) {
+            keyChar
+        } else {
+            HelixToolWindowState.keyCharFromCode(keyCode, isShift) ?: KeyEvent.CHAR_UNDEFINED
+        }
+
+    private fun appendCountDigitIfValid(effectiveChar: Char): Boolean {
+        val digit = effectiveChar - '0'
+        if (digit == 0 && HelixToolWindowState.getPendingCount() == null) return false
+        HelixToolWindowState.appendCountDigit(digit)
+        return true
+    }
+
+    private fun handleGChord(keyCode: Int, effectiveChar: Char, isShift: Boolean, component: JComponent): Boolean =
+        when {
+            !isShift && (keyCode == KeyEvent.VK_G || effectiveChar == 'g') -> {
+                moveToHome(component)
+                true
+            }
+
+            !isShift && (keyCode == KeyEvent.VK_E || effectiveChar == 'e') -> {
+                moveToEnd(component)
+                true
+            }
+
+            else -> true
+        }
+
+    private fun handleToolWindowActionKey(
+        keyCode: Int,
+        effectiveChar: Char,
+        isShift: Boolean,
+        component: JComponent,
+        toolWindowId: String,
+    ): Boolean = when {
+        !isShift && (keyCode == KeyEvent.VK_SPACE || effectiveChar == ' ') -> {
+            HelixCommitToolWindowActions.toggleStageOrCheckbox(component, toolWindowId)
+        }
+
+        !isShift && (keyCode == KeyEvent.VK_D || effectiveChar == 'd') -> {
+            HelixCommitToolWindowActions.openDiffPreview(component, toolWindowId) || true
+        }
+
+        !isShift && (keyCode == KeyEvent.VK_C || effectiveChar == 'c') -> {
+            HelixCommitToolWindowActions.focusCommitMessage(component, toolWindowId) || true
+        }
+
+        !isShift && (keyCode == KeyEvent.VK_O || effectiveChar == 'o') -> {
+            dispatchSyntheticKey(component, KeyEvent.VK_ENTER, '\n')
             true
         }
 
-        KeyEvent.VK_U -> {
-            moveHalfPage(component, down = false)
-            true
-        }
-
-        KeyEvent.VK_F -> {
-            movePage(component, down = true)
-            true
-        }
-
-        KeyEvent.VK_B -> {
-            movePage(component, down = false)
+        !isShift && (keyCode == KeyEvent.VK_G || effectiveChar == 'g') -> {
+            HelixToolWindowState.setPendingSequence("g")
             true
         }
 
         else -> false
     }
 
-    private fun handleNormalKey(e: KeyEvent, component: JComponent, toolWindowId: String, isShift: Boolean): Boolean {
-        val keyCode = e.keyCode
-        val effectiveChar = if (e.keyChar != KeyEvent.CHAR_UNDEFINED) {
-            e.keyChar
-        } else {
-            HelixToolWindowState.keyCharFromCode(keyCode, isShift) ?: KeyEvent.CHAR_UNDEFINED
-        }
-        val pendingSeq = HelixToolWindowState.getPendingSequence()
-
-        // Handle 'g' chords: gg / ge
-        if (pendingSeq == "g") {
-            HelixToolWindowState.clearPendingSequence()
-            return when {
-                !isShift && (keyCode == KeyEvent.VK_G || effectiveChar == 'g') -> {
-                    moveToHome(component)
-                    true
-                }
-
-                !isShift && (keyCode == KeyEvent.VK_E || effectiveChar == 'e') -> {
-                    moveToEnd(component)
-                    true
-                }
-
-                else -> true // Swallow invalid g-chords
-            }
+    private fun handleNavigationKey(
+        keyCode: Int,
+        effectiveChar: Char,
+        isShift: Boolean,
+        component: JComponent,
+        count: Int,
+    ): Boolean = when {
+        !isShift && (keyCode == KeyEvent.VK_J || effectiveChar == 'j') -> {
+            moveDown(component, count)
+            true
         }
 
-        // Count prefix accumulation: 1-9 starts a count; 0 appends if count > 0
-        if (!isShift && effectiveChar in '0'..'9') {
-            val digit = effectiveChar - '0'
-            if (digit > 0 || HelixToolWindowState.getPendingCount() != null) {
-                HelixToolWindowState.appendCountDigit(digit)
-                return true
-            }
+        !isShift && (keyCode == KeyEvent.VK_K || effectiveChar == 'k') -> {
+            moveUp(component, count)
+            true
         }
 
-        val count = HelixToolWindowState.takeCount() ?: 1
-
-        return when {
-            // j: down
-            !isShift && (keyCode == KeyEvent.VK_J || effectiveChar == 'j') -> {
-                moveDown(component, count)
-                true
-            }
-
-            // k: up
-            !isShift && (keyCode == KeyEvent.VK_K || effectiveChar == 'k') -> {
-                moveUp(component, count)
-                true
-            }
-
-            // h: collapse / parent in tree; swallow in table/list
-            !isShift && (keyCode == KeyEvent.VK_H || effectiveChar == 'h') -> {
-                collapseOrSelectParent(component)
-                true
-            }
-
-            // l: expand / child in tree; swallow in table/list
-            !isShift && (keyCode == KeyEvent.VK_L || effectiveChar == 'l') -> {
-                expandOrSelectChild(component)
-                true
-            }
-
-            // 'o': default action / open
-            !isShift && (keyCode == KeyEvent.VK_O || effectiveChar == 'o') -> {
-                dispatchSyntheticKey(component, KeyEvent.VK_ENTER, '\n')
-                true
-            }
-
-            // g: start chord
-            !isShift && (keyCode == KeyEvent.VK_G || effectiveChar == 'g') -> {
-                HelixToolWindowState.setPendingSequence("g")
-                true
-            }
-
-            // /: open speed search
-            !isShift && (keyCode == KeyEvent.VK_SLASH || effectiveChar == '/') -> {
-                openSpeedSearch(component)
-                true
-            }
-
-            // n: jump to next speed search match
-            !isShift && (keyCode == KeyEvent.VK_N || effectiveChar == 'n') -> {
-                jumpSpeedSearchMatch(component, toolWindowId)
-                true
-            }
-
-            // N: jump to previous speed search match
-            isShift && (keyCode == KeyEvent.VK_N || effectiveChar == 'N') -> {
-                jumpSpeedSearchMatch(component, toolWindowId)
-                true
-            }
-
-            // Swallow unmapped letters to prevent accidental speed search popup
-            effectiveChar in 'a'..'z' || effectiveChar in 'A'..'Z' -> {
-                true
-            }
-
-            else -> false
+        !isShift && (keyCode == KeyEvent.VK_H || effectiveChar == 'h') -> {
+            collapseOrSelectParent(component)
+            true
         }
+
+        !isShift && (keyCode == KeyEvent.VK_L || effectiveChar == 'l') -> {
+            expandOrSelectChild(component)
+            true
+        }
+
+        else -> false
+    }
+
+    private fun handleSearchKey(
+        keyCode: Int,
+        effectiveChar: Char,
+        isShift: Boolean,
+        component: JComponent,
+        toolWindowId: String,
+    ): Boolean = when {
+        !isShift && (keyCode == KeyEvent.VK_SLASH || effectiveChar == '/') -> {
+            HelixToolWindowSpeedSearch.open(component, toolWindowId, backward = false)
+            true
+        }
+
+        effectiveChar == '?' || (isShift && keyCode == KeyEvent.VK_SLASH) -> {
+            HelixToolWindowSpeedSearch.open(component, toolWindowId, backward = true)
+            true
+        }
+
+        !isShift && (keyCode == KeyEvent.VK_N || effectiveChar == 'n') -> {
+            HelixToolWindowSpeedSearch.jumpMatch(component, toolWindowId, opposite = false)
+            true
+        }
+
+        isShift && (keyCode == KeyEvent.VK_N || effectiveChar == 'N') -> {
+            HelixToolWindowSpeedSearch.jumpMatch(component, toolWindowId, opposite = true)
+            true
+        }
+
+        else -> false
     }
 
     private fun moveDown(component: JComponent, count: Int) {
@@ -331,26 +425,10 @@ object HelixToolWindowNavigator {
         else -> 10
     }
 
-    private fun openSpeedSearch(component: JComponent) {
-        val supply = SpeedSearchSupply.getSupply(component, true)
-        if (supply is SpeedSearchBase<*>) {
-            supply.showPopup()
-        }
-    }
-
-    private fun jumpSpeedSearchMatch(component: JComponent, toolWindowId: String) {
-        val supply = SpeedSearchSupply.getSupply(component) ?: return
-        val currentPrefix = supply.enteredPrefix
-        if (!currentPrefix.isNullOrEmpty()) {
-            HelixToolWindowState.setLastSearchQuery(toolWindowId, currentPrefix)
-        }
-        val query = HelixToolWindowState.getLastSearchQuery(toolWindowId) ?: return
-        supply.findAndSelectElement(query)
-    }
-
     fun dispatchSyntheticKey(component: JComponent, keyCode: Int, keyChar: Char = KeyEvent.CHAR_UNDEFINED) {
         if (HelixToolWindowState.isDispatchingSynthetic) return
         HelixToolWindowState.isDispatchingSynthetic = true
+        val focusManager = KeyboardFocusManager.getCurrentKeyboardFocusManager()
         try {
             val pressed = KeyEvent(
                 component,
@@ -360,7 +438,7 @@ object HelixToolWindowNavigator {
                 keyCode,
                 keyChar,
             )
-            component.dispatchEvent(pressed)
+            focusManager.redispatchEvent(component, pressed)
 
             if (keyChar != KeyEvent.CHAR_UNDEFINED) {
                 val typed = KeyEvent(
@@ -371,7 +449,7 @@ object HelixToolWindowNavigator {
                     KeyEvent.VK_UNDEFINED,
                     keyChar,
                 )
-                component.dispatchEvent(typed)
+                focusManager.redispatchEvent(component, typed)
             }
 
             val released = KeyEvent(
@@ -382,7 +460,7 @@ object HelixToolWindowNavigator {
                 keyCode,
                 keyChar,
             )
-            component.dispatchEvent(released)
+            focusManager.redispatchEvent(component, released)
         } finally {
             HelixToolWindowState.isDispatchingSynthetic = false
         }

@@ -42,6 +42,8 @@ class HelixSettingsTest : BasePlatformTestCase() {
         settings.searchWrapAround = true
         settings.jumpLabelAlphabet = "jfkdlsaurieowpqnvmcxz"
         settings.toolWindowNavigationEnabled = false
+        settings.toolWindowSeamlessFocusJump = true
+        settings.toolWindowSearchConfirmOnEnter = true
         settings.cliConfigFallbackMode = HelixCliConfigFallbackMode.KEYMAPS_ONLY
         HelixEffectiveSettings.clearAllOverrides()
         jp.titze.intellij.helix.ui.HelixPromptHistory.clear()
@@ -68,6 +70,8 @@ class HelixSettingsTest : BasePlatformTestCase() {
         settings.searchWrapAround.shouldBeTrue()
         settings.jumpLabelAlphabet shouldBe "jfkdlsaurieowpqnvmcxz"
         settings.toolWindowNavigationEnabled.shouldBeFalse()
+        settings.toolWindowSeamlessFocusJump.shouldBeTrue()
+        settings.toolWindowSearchConfirmOnEnter.shouldBeTrue()
         settings.cliConfigFallbackMode shouldBe HelixCliConfigFallbackMode.KEYMAPS_ONLY
     }
 
@@ -551,5 +555,37 @@ class HelixSettingsTest : BasePlatformTestCase() {
         appearancePanel.lineNumberNotice?.isVisible?.shouldBeFalse()
         behaviorPanel.searchSmartCaseCheckBox?.isEnabled?.shouldBeTrue()
         behaviorPanel.searchSmartCaseNotice?.isVisible?.shouldBeFalse()
+    }
+
+    fun testToolWindowSeamlessFocusJumpSettingsPanel() {
+        val settings = HelixSettings.instance
+        settings.toolWindowSeamlessFocusJump = false
+        settings.toolWindowSeamlessFocusJump.shouldBeFalse()
+
+        val panel = HelixToolWindowSettingsPanel()
+        panel.reset(settings)
+        panel.isModified(settings).shouldBeFalse()
+
+        settings.toolWindowSeamlessFocusJump = true
+        panel.isModified(settings).shouldBeTrue()
+
+        panel.apply(settings)
+        settings.toolWindowSeamlessFocusJump.shouldBeFalse()
+    }
+
+    fun testToolWindowSearchConfirmOnEnterSettingsPanel() {
+        val settings = HelixSettings.instance
+        settings.toolWindowSearchConfirmOnEnter = false
+        settings.toolWindowSearchConfirmOnEnter.shouldBeFalse()
+
+        val panel = HelixToolWindowSettingsPanel()
+        panel.reset(settings)
+        panel.isModified(settings).shouldBeFalse()
+
+        settings.toolWindowSearchConfirmOnEnter = true
+        panel.isModified(settings).shouldBeTrue()
+
+        panel.apply(settings)
+        settings.toolWindowSearchConfirmOnEnter.shouldBeFalse()
     }
 }

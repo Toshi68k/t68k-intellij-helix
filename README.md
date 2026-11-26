@@ -111,29 +111,43 @@ the need to reach for arrow keys once you open the Project explorer, VCS log, or
 
 ### Key Translations
 
-| Helix Key           | Native Action     | Tree Behavior                            | List / Table Behavior                |
-|---------------------|-------------------|------------------------------------------|--------------------------------------|
-| `j` / `k`           | `↓` / `↑`         | Move down / up one row                   | Move down / up one row               |
-| `h`                 | `←`               | Collapse node or jump to parent          | Swallow (pass-through)               |
-| `l`                 | `→`               | Expand node or jump to first child       | Swallow (pass-through)               |
-| `gg`                | `Home`            | Jump to first row                        | Jump to first row                    |
-| `ge`                | `End`             | Jump to last row                         | Jump to last row                     |
-| `Ctrl-d` / `Ctrl-u` | Page half down/up | Scroll half page down / up               | Scroll half page down / up           |
-| `Ctrl-f` / `Ctrl-b` | PageDown / PageUp | Scroll full page down / up               | Scroll full page down / up           |
-| `o` / `Enter`       | `Enter`           | Open or execute default action           | Open or execute default action       |
-| `[count]`           | Repeat            | Multiplies navigation (e.g. `5j`, `12k`) | Multiplies navigation                |
-| `/`                 | Speed Search      | Opens native IntelliJ speed search       | Opens native IntelliJ speed search   |
-| `n` / `N`           | Next / Prev match | Jump to next / previous search match     | Jump to next / previous search match |
-| `Esc`               | Native Esc        | Returns focus to the active editor       | Returns focus to the active editor   |
+| Helix Key           | Native Action     | Tree Behavior                                  | List / Table Behavior                          |
+|---------------------|-------------------|------------------------------------------------|------------------------------------------------|
+| `j` / `k`           | `↓` / `↑`         | Move down / up one row                         | Move down / up one row                         |
+| `h`                 | `←`               | Collapse node or jump to parent                | Swallow (pass-through)                         |
+| `l`                 | `→`               | Expand node or jump to first child             | Swallow (pass-through)                         |
+| `gg`                | `Home`            | Jump to first row                              | Jump to first row                              |
+| `ge`                | `End`             | Jump to last row                               | Jump to last row                               |
+| `Ctrl-d` / `Ctrl-u` | Page half down/up | Scroll half page down / up                     | Scroll half page down / up                     |
+| `Ctrl-f` / `Ctrl-b` | PageDown / PageUp | Scroll full page down / up                     | Scroll full page down / up                     |
+| `o` / `Enter`       | `Enter`           | Open or execute default action                 | Open or execute default action                 |
+| `[count]`           | Repeat            | Multiplies navigation (e.g. `5j`, `12k`)       | Multiplies navigation                          |
+| `/` / `?`           | Speed Search      | Open native speed search (forward / backward)  | Open speed search (forward / backward)         |
+| `n` / `N`           | Next / Prev match | Next / prev match (respects `/` vs `?`)        | Next / prev match (respects `/` vs `?`)        |
+| `Ctrl+w h/j/k/l`    | Window focus jump | Focus adjacent tool window or return to editor | Focus adjacent tool window or return to editor |
+| `Ctrl+w w`          | Return to editor  | Return focus to the active editor              | Return focus to the active editor              |
+| `Esc`               | Native Esc        | Returns focus to the active editor             | Returns focus to the active editor             |
+
+### VCS Commit Tool Window (`Alt+0`)
+
+| Helix Key | Target / Action | Behavior                                                                                                         |
+|-----------|-----------------|------------------------------------------------------------------------------------------------------------------|
+| `Space`   | Stage / Toggle  | Toggle checkbox in Changelist mode, or stage (`Git.Stage.Add`) / unstage (`Git.Stage.Reset`) in Git Staging mode |
+| `d`       | Diff preview    | Open diff preview (`Diff.ShowDiff`) for the selected change (also active in `Version Control`)                   |
+| `c`       | Commit message  | Focus the commit message box cleanly for typing                                                                  |
 
 ### Safety Guards & Fail-Open Design
-- **Text Inputs & Inline Editing**: Text fields (such as VCS filter inputs, Find query bars, and inline file renames)
-  automatically bypass modal navigation and accept raw typing.
-- **Speed Search Active**: While speed search is open, all keystrokes pass through natively for query typing and match 
-  selection.
+- **Text Inputs & Inline Editing**: Text fields (such as VCS filter inputs, Find query bars, commit message editors, 
+  and inline file renames) automatically bypass modal navigation and accept raw typing.
+- **Speed Search Active**: While speed search is open, all typing passes through natively for query entry. By default,
+  the first `Enter` confirms the search (closes speed search without executing the item, preserving the match for `n`/`N`
+  or inspection), and a second `Enter` (or `o`) opens/runs the selected item. Disable **Confirm speed search on Enter
+  without executing** in settings if you prefer native single-`Enter` execution.
 - **Dialogs & Popups**: General dialogs and popups pass through natively.
-- **Configurable Targets**: Enable or disable per target window (Project, Find/Usages, VCS, Problems, Structure, 
-  Services/Run, Debugger, Other).
+- **Configurable Targets & Safe Boundary Crossing**: Enable or disable per target window (Project, Find/Usages, VCS,
+  Problems, Structure, Services/Run, Debugger, Other) and toggle seamless `Ctrl+w` boundary jumping. Boundary jumps only
+  target enabled, Helix-navigable tool windows (with trees, tables, or lists) — skipping `Terminal` and text-only
+  consoles so `Ctrl+w` never strands focus.
 
 ---
 
@@ -446,25 +460,25 @@ interactive, non-intrusive **Which-Key popup** appears in authentic Helix cyan:
 
 #### Window & Split Management (`Ctrl+w` / `space + w`)
 
-| Key                                     | Helix Command      | IntelliJ Action          | Description                                    |
-|-----------------------------------------|--------------------|--------------------------|------------------------------------------------|
-| `Ctrl+w v` / `space + w v`              | `vsplit`           | `SplitVertically`        | Vertical editor split                          |
-| `Ctrl+w s` / `space + w s`              | `hsplit`           | `SplitHorizontally`      | Horizontal editor split                        |
-| `Ctrl+w n v` / `space + w n v`          | `vsplit_new`       | `SplitVertically`        | Open new scratch in vertical split             |
-| `Ctrl+w n s` / `space + w n s`          | `hsplit_new`       | `SplitHorizontally`      | Open new scratch in horizontal split           |
-| `Ctrl+w f` / `space + w f`              | `goto_file_hsplit` | `SplitHorizontally`      | Open file / declaration in horizontal split    |
-| `Ctrl+w F` / `space + w F`              | `goto_file_vsplit` | `SplitVertically`        | Open file / declaration in vertical split      |
-| `Ctrl+w t` / `space + w t`              | `transpose_view`   | `ChangeSplitOrientation` | Toggle split orientation (horizontal/vertical) |
-| `Ctrl+w h` / `space + w h`              | `jump_view_left`   | `PrevSplitter`           | Focus split to the left                        |
-| `Ctrl+w j` / `space + w j`              | `jump_view_down`   | `NextSplitter`           | Focus split below                              |
-| `Ctrl+w k` / `space + w k`              | `jump_view_up`     | `PrevSplitter`           | Focus split above                              |
-| `Ctrl+w l` / `space + w l`              | `jump_view_right`  | `NextSplitter`           | Focus split to the right                       |
-| `Ctrl+w w` / `space + w w`              | `jump_next_view`   | `NextSplitter`           | Cycle focus to next split window               |
-| `Ctrl+w W` / `space + w W`              | `jump_prev_view`   | `PrevSplitter`           | Cycle focus to previous split window           |
-| `Ctrl+w H` / `J` / `K` / `L`            | `swap_view_*`      | `ChangeSplitOrientation` | Swap split orientation                         |
-| `Ctrl+w q` / `Ctrl+w c` / `space + w q` | `wclose`           | `Unsplit`                | Close active split                             |
-| `Ctrl+w o` / `space + w o`              | `wonly`            | `UnsplitAll`             | Close all other splits                         |
-| `Ctrl+w m` / `space + w m`              | `wmaximize`        | `MaximizeEditorInSplit`  | Maximize active split / toggle full window     |
+| Key                                     | Helix Command      | IntelliJ Action          | Description                                            |
+|-----------------------------------------|--------------------|--------------------------|--------------------------------------------------------|
+| `Ctrl+w v` / `space + w v`              | `vsplit`           | `SplitVertically`        | Vertical editor split                                  |
+| `Ctrl+w s` / `space + w s`              | `hsplit`           | `SplitHorizontally`      | Horizontal editor split                                |
+| `Ctrl+w n v` / `space + w n v`          | `vsplit_new`       | `SplitVertically`        | Open new scratch in vertical split                     |
+| `Ctrl+w n s` / `space + w n s`          | `hsplit_new`       | `SplitHorizontally`      | Open new scratch in horizontal split                   |
+| `Ctrl+w f` / `space + w f`              | `goto_file_hsplit` | `SplitHorizontally`      | Open file / declaration in horizontal split            |
+| `Ctrl+w F` / `space + w F`              | `goto_file_vsplit` | `SplitVertically`        | Open file / declaration in vertical split              |
+| `Ctrl+w t` / `space + w t`              | `transpose_view`   | `ChangeSplitOrientation` | Toggle split orientation (horizontal/vertical)         |
+| `Ctrl+w h` / `space + w h`              | `jump_view_left`   | `PrevSplitter`           | Focus split to the left (or left docked tool window)   |
+| `Ctrl+w j` / `space + w j`              | `jump_view_down`   | `NextSplitter`           | Focus split below (or bottom docked tool window)       |
+| `Ctrl+w k` / `space + w k`              | `jump_view_up`     | `PrevSplitter`           | Focus split above (or top docked tool window)          |
+| `Ctrl+w l` / `space + w l`              | `jump_view_right`  | `NextSplitter`           | Focus split to the right (or right docked tool window) |
+| `Ctrl+w w` / `space + w w`              | `jump_next_view`   | `NextSplitter`           | Cycle focus to next split window                       |
+| `Ctrl+w W` / `space + w W`              | `jump_prev_view`   | `PrevSplitter`           | Cycle focus to previous split window                   |
+| `Ctrl+w H` / `J` / `K` / `L`            | `swap_view_*`      | `ChangeSplitOrientation` | Swap split orientation                                 |
+| `Ctrl+w q` / `Ctrl+w c` / `space + w q` | `wclose`           | `Unsplit`                | Close active split                                     |
+| `Ctrl+w o` / `space + w o`              | `wonly`            | `UnsplitAll`             | Close all other splits                                 |
+| `Ctrl+w m` / `space + w m`              | `wmaximize`        | `MaximizeEditorInSplit`  | Maximize active split / toggle full window             |
 
 *(In Helix, `space + w` is an exact alias for `Ctrl+w`, allowing split and window navigation without holding Ctrl.
 Holding Ctrl during chords, e.g. `Ctrl+w Ctrl+v`, `Ctrl+w Ctrl+w`, etc. is also fully supported. For saving, use `:w` /
