@@ -18,6 +18,7 @@ import jp.titze.intellij.helix.register.HelixRegisterManager
 import jp.titze.intellij.helix.settings.HelixLineNavigationMode
 import jp.titze.intellij.helix.settings.HelixSettings
 import jp.titze.intellij.helix.state.HelixMode
+import jp.titze.intellij.helix.toolwindow.HelixToolWindowSwitcher
 
 data class WhichKeyItem(
     val key: String,
@@ -61,6 +62,12 @@ object HelixWhichKeyMenus {
         WhichKeyItem("h", "Select references", "select_references", "FindUsages"),
         WhichKeyItem("'", "Last picker", "last_picker"),
         WhichKeyItem("w", "Window mode", "window_mode"),
+        WhichKeyItem(
+            "W",
+            "Tool window switcher",
+            "toolwindow_switcher",
+            "jp.titze.intellij.helix.toolWindowSwitcher",
+        ),
         WhichKeyItem("y", "Yank to clipboard", "yank_to_clipboard"),
         WhichKeyItem("Y", "Yank main selection", "yank_main_selection_to_clipboard"),
         WhichKeyItem("p", "Paste clipboard after", "paste_clipboard_after"),
@@ -458,24 +465,52 @@ object HelixWhichKeyMenus {
 
     private fun getBaseMenu(prefix: String, editor: Editor? = null): Pair<String, List<WhichKeyItem>>? = when (prefix) {
         " " -> HelixBundle.message("whichKey.menu.space") to spaceItems
+
         " G", "space G", "G", "dap" -> HelixBundle.message("whichKey.menu.debug") to debugItems
+
         " m", "space m", "refactor" -> HelixBundle.message("whichKey.menu.refactor") to refactorItems
+
         " t", "space t", "test" -> HelixBundle.message("whichKey.menu.test") to testItems
+
         " v", "space v", "vcs" -> HelixBundle.message("whichKey.menu.vcs") to vcsItems
+
         " H", "space H", "harpoon" -> HelixBundle.message("whichKey.menu.harpoon") to getHarpoonItems(editor)
+
         " H s", "space H s" -> HelixBundle.message("whichKey.menu.harpoonSet") to getHarpoonSetItems()
+
         " H d", "space H d" -> HelixBundle.message("whichKey.menu.harpoonDelete") to getHarpoonDeleteItems()
+
         "g" -> HelixBundle.message("whichKey.menu.goto") to gotoItems
+
         "m" -> HelixBundle.message("whichKey.menu.match") to matchItems
+
         "ma" -> HelixBundle.message("whichKey.menu.selectAround") to textObjectItems
+
         "mi" -> HelixBundle.message("whichKey.menu.selectInside") to textObjectItems
+
         "[" -> HelixBundle.message("whichKey.menu.jumpBack") to bracketOpenItems
+
         "]" -> HelixBundle.message("whichKey.menu.jumpForward") to bracketCloseItems
+
         "z" -> HelixBundle.message("whichKey.menu.view") to viewItems
+
         "Z" -> HelixBundle.message("whichKey.menu.stickyView") to viewItems
+
         "C-w", "Ctrl+w", "\u0017", " w", "space w" -> HelixBundle.message("whichKey.menu.window") to windowItems
+
+        HelixToolWindowSwitcher.PREFIX ->
+            HelixBundle.message("whichKey.menu.toolWindowSpace") to HelixToolWindowSwitcher.menuItems
+
+        HelixToolWindowSwitcher.EDITOR_PREFIX ->
+            HelixBundle.message("whichKey.menu.toolWindowSpace") to HelixToolWindowSwitcher.editorMenuItems
+
+        HelixToolWindowSwitcher.WINDOW_PREFIX ->
+            HelixBundle.message("whichKey.menu.window") to HelixToolWindowSwitcher.windowMenuItems
+
         "\"" -> HelixBundle.message("whichKey.menu.registers") to getRegisterItems(editor)
+
         "C-r", "Ctrl+r", "\u0012" -> HelixBundle.message("whichKey.menu.insertRegister") to getRegisterItems(editor)
+
         else -> null
     }
 

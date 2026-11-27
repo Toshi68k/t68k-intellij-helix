@@ -117,6 +117,10 @@ class HelixSettingsState {
         "Structure",
     )
     var toolWindowOtherEnabled: Boolean = false
+    var toolWindowSeamlessFocusJump: Boolean = true
+    var toolWindowSearchConfirmOnEnter: Boolean = true
+    var toolWindowSpaceSwitcher: Boolean = true
+    var toolWindowCommitSpaceSwitcher: Boolean = true
     var ctrlKeyOverrides: MutableMap<String, String> = mutableMapOf()
     var customConfigPath: String = ""
     var cliConfigFallbackMode: String = HelixCliConfigFallbackMode.KEYMAPS_ONLY.name
@@ -370,6 +374,30 @@ class HelixSettings : PersistentStateComponent<HelixSettingsState> {
         get() = myState.toolWindowOtherEnabled
         set(value) {
             myState.toolWindowOtherEnabled = value
+        }
+
+    var toolWindowSeamlessFocusJump: Boolean
+        get() = myState.toolWindowSeamlessFocusJump
+        set(value) {
+            myState.toolWindowSeamlessFocusJump = value
+        }
+
+    var toolWindowSearchConfirmOnEnter: Boolean
+        get() = myState.toolWindowSearchConfirmOnEnter
+        set(value) {
+            myState.toolWindowSearchConfirmOnEnter = value
+        }
+
+    var toolWindowSpaceSwitcher: Boolean
+        get() = myState.toolWindowSpaceSwitcher
+        set(value) {
+            myState.toolWindowSpaceSwitcher = value
+        }
+
+    var toolWindowCommitSpaceSwitcher: Boolean
+        get() = myState.toolWindowCommitSpaceSwitcher
+        set(value) {
+            myState.toolWindowCommitSpaceSwitcher = value
         }
 
     var ctrlKeyOverrides: Map<String, String>

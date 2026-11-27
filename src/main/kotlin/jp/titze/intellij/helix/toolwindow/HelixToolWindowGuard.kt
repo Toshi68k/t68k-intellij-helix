@@ -27,6 +27,8 @@ import javax.swing.text.JTextComponent
  */
 object HelixToolWindowGuard {
 
+    private val TERMINAL_CLASS_PREFIXES = listOf("org.jetbrains.plugins.terminal", "com.intellij.terminal")
+
     /**
      * Determines whether [eventComponent] or the current focus owner is eligible for Helix navigation.
      * Returns the target component (`JTree`, `JTable`, or `JList`) and the associated `toolWindowId`,
@@ -66,6 +68,71 @@ object HelixToolWindowGuard {
         return if (isAllowed) Pair(navComponent, toolWindowId) else null
     }
 
+    /**
+     * Returns the active [SpeedSearchSupply], its owning component, and the enclosing tool window ID
+     * when SpeedSearch is currently open inside an eligible tool window, or `null` otherwise.
+     */
+    fun findActiveSpeedSearchTarget(
+        eventComponent: Component?,
+        settings: HelixSettings = HelixSettings.instance,
+    ): Triple<JComponent, String, SpeedSearchSupply>? {
+        if (!settings.enabled || !settings.toolWindowNavigationEnabled) {
+            return null
+        }
+
+        val focusOwner = KeyboardFocusManager.getCurrentKeyboardFocusManager().focusOwner
+        if (isTextInputComponent(focusOwner) || isTextInputComponent(eventComponent)) {
+            return null
+        }
+
+        val navComponent = resolveNavComponent(eventComponent)
+            ?: resolveNavComponent(focusOwner)
+            ?: return null
+
+        val speedSearch = SpeedSearchSupply.getSupply(navComponent) ?: return null
+        val canHandlePopup = speedSearch.isPopupActive &&
+            !isEditingComponent(navComponent) &&
+            !isInsideDialogOrPopup(navComponent)
+        if (!canHandlePopup) {
+            return null
+        }
+
+        val toolWindowId = resolveToolWindowId(navComponent) ?: return null
+        val isAllowed = settings.toolWindowEnabledTargets.contains(toolWindowId) ||
+            settings.toolWindowOtherEnabled
+
+        return if (isAllowed) Triple(navComponent, toolWindowId, speedSearch) else null
+    }
+
+    /**
+     * Returns the focused component when [eventComponent] or the current focus owner resides inside
+     * the Terminal tool window (excluding dialogs and popups), or `null` otherwise.
+     */
+    fun findTerminalComponent(
+        eventComponent: Component?,
+        settings: HelixSettings = HelixSettings.instance,
+    ): JComponent? {
+        if (!settings.enabled) return null
+        val focusOwner = KeyboardFocusManager.getCurrentKeyboardFocusManager().focusOwner
+        val target = (eventComponent as? JComponent) ?: (focusOwner as? JComponent) ?: return null
+        if (isInsideDialogOrPopup(target)) return null
+        val isTerminalTw = findToolWindowIdFromAncestors(target) == "Terminal" ||
+            hasTerminalClassAncestor(target)
+        return if (isTerminalTw) target else null
+    }
+
+    private fun hasTerminalClassAncestor(component: Component): Boolean {
+        var current: Component? = component
+        var depth = 0
+        while (current != null && depth < 16) {
+            val className = current.javaClass.name
+            if (TERMINAL_CLASS_PREFIXES.any { className.startsWith(it) }) return true
+            current = current.parent
+            depth++
+        }
+        return false
+    }
+
     private fun rememberActiveSpeedSearchPrefix(navComponent: JComponent, speedSearch: SpeedSearchSupply?) {
         val prefix = speedSearch?.enteredPrefix
         if (prefix.isNullOrEmpty()) return
@@ -85,9 +152,12 @@ object HelixToolWindowGuard {
         else -> findNavComponentAncestor(component)
     }
 
+    private fun isEditingComponent(navComponent: JComponent): Boolean =
+        (navComponent is JTree && navComponent.isEditing) ||
+            (navComponent is JTable && navComponent.isEditing)
+
     private fun isComponentGuarded(navComponent: JComponent, isSpeedSearchActive: Boolean): Boolean {
-        if (navComponent is JTree && navComponent.isEditing) return true
-        if (navComponent is JTable && navComponent.isEditing) return true
+        if (isEditingComponent(navComponent)) return true
         if (isSpeedSearchActive) return true
         return isInsideDialogOrPopup(navComponent)
     }
@@ -127,7 +197,7 @@ object HelixToolWindowGuard {
         return null
     }
 
-    private fun findProjectForComponent(component: Component): Project? {
+    internal fun findProjectForComponent(component: Component): Project? {
         val openProjects = ProjectManager.getInstance().openProjects.filter { !it.isDisposed }
         if (openProjects.isEmpty()) return null
         if (openProjects.size == 1) return openProjects.first()

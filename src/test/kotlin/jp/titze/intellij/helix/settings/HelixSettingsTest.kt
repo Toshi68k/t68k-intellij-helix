@@ -42,6 +42,10 @@ class HelixSettingsTest : BasePlatformTestCase() {
         settings.searchWrapAround = true
         settings.jumpLabelAlphabet = "jfkdlsaurieowpqnvmcxz"
         settings.toolWindowNavigationEnabled = false
+        settings.toolWindowSeamlessFocusJump = true
+        settings.toolWindowSearchConfirmOnEnter = true
+        settings.toolWindowSpaceSwitcher = true
+        settings.toolWindowCommitSpaceSwitcher = true
         settings.cliConfigFallbackMode = HelixCliConfigFallbackMode.KEYMAPS_ONLY
         HelixEffectiveSettings.clearAllOverrides()
         jp.titze.intellij.helix.ui.HelixPromptHistory.clear()
@@ -68,6 +72,10 @@ class HelixSettingsTest : BasePlatformTestCase() {
         settings.searchWrapAround.shouldBeTrue()
         settings.jumpLabelAlphabet shouldBe "jfkdlsaurieowpqnvmcxz"
         settings.toolWindowNavigationEnabled.shouldBeFalse()
+        settings.toolWindowSeamlessFocusJump.shouldBeTrue()
+        settings.toolWindowSearchConfirmOnEnter.shouldBeTrue()
+        settings.toolWindowSpaceSwitcher.shouldBeTrue()
+        settings.toolWindowCommitSpaceSwitcher.shouldBeTrue()
         settings.cliConfigFallbackMode shouldBe HelixCliConfigFallbackMode.KEYMAPS_ONLY
     }
 
@@ -251,7 +259,16 @@ class HelixSettingsTest : BasePlatformTestCase() {
     fun testHelixBundleMessageResolution() {
         HelixBundle.message("settings.displayName") shouldBe "Helix Keymap"
         HelixBundle.message("status.widget.displayName") shouldBe "Helix Mode"
-        HelixBundle.message("action.jp.titze.intellij.helix.escape.text") shouldBe "Helix Escape"
+        HelixBundle.message("action.jp.titze.intellij.helix.escape.text") shouldBe "Helix: Escape"
+
+        val am = com.intellij.openapi.actionSystem.ActionManager.getInstance()
+        val helixActionIds = am.getActionIdList("jp.titze.intellij.helix.")
+        helixActionIds.isNotEmpty().shouldBeTrue()
+        helixActionIds.forEach { actionId ->
+            val text = am.getAction(actionId)?.templatePresentation?.text
+            assertNotNull("Missing action text for $actionId", text)
+            text!!.startsWith("Helix: ").shouldBeTrue()
+        }
 
         // Prompts & Search
         HelixBundle.message("prompt.shell.pressEnter") shouldBe "press Enter to execute"
@@ -551,5 +568,69 @@ class HelixSettingsTest : BasePlatformTestCase() {
         appearancePanel.lineNumberNotice?.isVisible?.shouldBeFalse()
         behaviorPanel.searchSmartCaseCheckBox?.isEnabled?.shouldBeTrue()
         behaviorPanel.searchSmartCaseNotice?.isVisible?.shouldBeFalse()
+    }
+
+    fun testToolWindowSeamlessFocusJumpSettingsPanel() {
+        val settings = HelixSettings.instance
+        settings.toolWindowSeamlessFocusJump = false
+        settings.toolWindowSeamlessFocusJump.shouldBeFalse()
+
+        val panel = HelixToolWindowSettingsPanel()
+        panel.reset(settings)
+        panel.isModified(settings).shouldBeFalse()
+
+        settings.toolWindowSeamlessFocusJump = true
+        panel.isModified(settings).shouldBeTrue()
+
+        panel.apply(settings)
+        settings.toolWindowSeamlessFocusJump.shouldBeFalse()
+    }
+
+    fun testToolWindowSearchConfirmOnEnterSettingsPanel() {
+        val settings = HelixSettings.instance
+        settings.toolWindowSearchConfirmOnEnter = false
+        settings.toolWindowSearchConfirmOnEnter.shouldBeFalse()
+
+        val panel = HelixToolWindowSettingsPanel()
+        panel.reset(settings)
+        panel.isModified(settings).shouldBeFalse()
+
+        settings.toolWindowSearchConfirmOnEnter = true
+        panel.isModified(settings).shouldBeTrue()
+
+        panel.apply(settings)
+        settings.toolWindowSearchConfirmOnEnter.shouldBeFalse()
+    }
+
+    fun testToolWindowSpaceSwitcherSettingsPanel() {
+        val settings = HelixSettings.instance
+        settings.toolWindowSpaceSwitcher = false
+        settings.toolWindowSpaceSwitcher.shouldBeFalse()
+
+        val panel = HelixToolWindowSettingsPanel()
+        panel.reset(settings)
+        panel.isModified(settings).shouldBeFalse()
+
+        settings.toolWindowSpaceSwitcher = true
+        panel.isModified(settings).shouldBeTrue()
+
+        panel.apply(settings)
+        settings.toolWindowSpaceSwitcher.shouldBeFalse()
+    }
+
+    fun testToolWindowCommitSpaceSwitcherSettingsPanel() {
+        val settings = HelixSettings.instance
+        settings.toolWindowCommitSpaceSwitcher = false
+        settings.toolWindowCommitSpaceSwitcher.shouldBeFalse()
+
+        val panel = HelixToolWindowSettingsPanel()
+        panel.reset(settings)
+        panel.isModified(settings).shouldBeFalse()
+
+        settings.toolWindowCommitSpaceSwitcher = true
+        panel.isModified(settings).shouldBeTrue()
+
+        panel.apply(settings)
+        settings.toolWindowCommitSpaceSwitcher.shouldBeFalse()
     }
 }

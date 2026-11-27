@@ -4,7 +4,10 @@
 package jp.titze.intellij.helix.toolwindow
 
 import java.awt.event.KeyEvent
+import java.util.Collections
+import java.util.WeakHashMap
 import java.util.concurrent.ConcurrentHashMap
+import javax.swing.JComponent
 
 /**
  * Tracks transient state for modal tool window navigation.
@@ -13,6 +16,12 @@ object HelixToolWindowState {
 
     private const val MAX_PENDING_TYPED_CHARS = 8
 
+    data class BackwardSearchSession(
+        val toolWindowId: String,
+        val anchorRow: Int,
+        var lastAdjustedPrefix: String? = null,
+    )
+
     private var pendingCount: Int? = null
     private var pendingSequence: String = ""
     private val pendingInterceptedChars = ArrayDeque<Char>()
@@ -20,8 +29,11 @@ object HelixToolWindowState {
     @Volatile
     var isDispatchingSynthetic: Boolean = false
 
-    // Remembers the last search pattern per tool window id
+    // Remembers the last search pattern and direction per tool window id
     private val lastSearchQueries = ConcurrentHashMap<String, String>()
+    private val lastSearchDirections = ConcurrentHashMap<String, Boolean>()
+    private val activeBackwardSessions: MutableMap<JComponent, BackwardSearchSession> =
+        Collections.synchronizedMap(WeakHashMap())
 
     fun getPendingCount(): Int? = pendingCount
 
@@ -51,6 +63,13 @@ object HelixToolWindowState {
         pendingSequence = ""
         pendingInterceptedChars.clear()
         isDispatchingSynthetic = false
+        HelixToolWindowSwitcher.clearActiveTargets()
+    }
+
+    fun clearSearchState() {
+        lastSearchQueries.clear()
+        lastSearchDirections.clear()
+        activeBackwardSessions.clear()
     }
 
     fun markInterceptedKey(keyCode: Int, keyChar: Char, isShift: Boolean = false) {
@@ -98,7 +117,9 @@ object HelixToolWindowState {
 
         in KeyEvent.VK_0..KeyEvent.VK_9 -> if (!isShift) ('0' + (keyCode - KeyEvent.VK_0)) else null
 
-        KeyEvent.VK_SLASH -> if (!isShift) '/' else null
+        KeyEvent.VK_SLASH -> if (isShift) '?' else '/'
+
+        KeyEvent.VK_SPACE -> if (!isShift) ' ' else null
 
         else -> null
     }
@@ -109,5 +130,21 @@ object HelixToolWindowState {
         if (query.isNotEmpty()) {
             lastSearchQueries[toolWindowId] = query
         }
+    }
+
+    fun isLastSearchBackward(toolWindowId: String): Boolean = lastSearchDirections[toolWindowId] == true
+
+    fun setLastSearchDirection(toolWindowId: String, backward: Boolean) {
+        lastSearchDirections[toolWindowId] = backward
+    }
+
+    fun startBackwardSearch(component: JComponent, toolWindowId: String, anchorRow: Int) {
+        activeBackwardSessions[component] = BackwardSearchSession(toolWindowId, anchorRow)
+    }
+
+    fun getBackwardSearch(component: JComponent): BackwardSearchSession? = activeBackwardSessions[component]
+
+    fun clearBackwardSearch(component: JComponent) {
+        activeBackwardSessions.remove(component)
     }
 }

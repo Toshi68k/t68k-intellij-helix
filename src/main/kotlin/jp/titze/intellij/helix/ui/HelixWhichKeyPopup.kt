@@ -5,10 +5,12 @@ package jp.titze.intellij.helix.ui
 
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.editor.Editor
+import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.popup.JBPopup
 import com.intellij.openapi.ui.popup.JBPopupFactory
 import com.intellij.openapi.ui.popup.JBPopupListener
 import com.intellij.openapi.ui.popup.LightweightWindowEvent
+import com.intellij.openapi.wm.WindowManager
 import com.intellij.ui.awt.RelativePoint
 import com.intellij.ui.components.JBLabel
 import com.intellij.util.ui.JBUI
@@ -19,23 +21,28 @@ import jp.titze.intellij.helix.settings.HelixSettings
 import jp.titze.intellij.helix.settings.WhichKeyColumnLayout
 import jp.titze.intellij.helix.settings.WhichKeyHintMode
 import jp.titze.intellij.helix.state.HelixStateManager
+import jp.titze.intellij.helix.toolwindow.HelixToolWindowGuard
+import jp.titze.intellij.helix.toolwindow.HelixToolWindowSwitcher
 import java.awt.BorderLayout
+import java.awt.Component
 import java.awt.Cursor
 import java.awt.FlowLayout
 import java.awt.Font
 import java.awt.Point
+import java.awt.Rectangle
 import java.awt.event.KeyAdapter
 import java.awt.event.KeyEvent
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
 import javax.swing.BorderFactory
+import javax.swing.JComponent
 import javax.swing.JPanel
 import javax.swing.SwingUtilities
 
 object HelixWhichKeyPopup {
     private var activePopup: JBPopup? = null
     private var currentPrefix: String? = null
-    private var activeEditor: Editor? = null
+    private var activeHost: WhichKeyHost? = null
     private var onToggleHintAction: (() -> Unit)? = null
 
     fun toggleHintMode(): Boolean {
@@ -74,28 +81,20 @@ object HelixWhichKeyPopup {
 
     fun cancelActive(): Boolean {
         if (isShowingInTest) {
-            val ed = activeEditor
+            val host = activeHost
             isShowingInTest = false
             currentPrefix = null
-            activeEditor = null
-            if (ed != null && !ed.isDisposed) {
-                val state = HelixStateManager.getOrCreate(ed)
-                state.clearPendingSequence()
-                state.clearCount()
-            }
+            activeHost = null
+            onToggleHintAction = null
+            host?.onExplicitCancel()
             return true
         }
         val popup = activePopup
-        val editor = activeEditor
+        val host = activeHost
         if (popup != null && !popup.isDisposed) {
             popup.cancel()
             hide()
-            if (editor != null && !editor.isDisposed) {
-                val state = HelixStateManager.getOrCreate(editor)
-                state.clearPendingSequence()
-                state.clearCount()
-                editor.contentComponent.requestFocusInWindow()
-            }
+            host?.onExplicitCancel()
             return true
         }
         return false
@@ -110,7 +109,7 @@ object HelixWhichKeyPopup {
 
         isShowingInTest = false
         currentPrefix = null
-        activeEditor = null
+        activeHost = null
         onToggleHintAction = null
         val popup = activePopup
         activePopup = null
@@ -118,6 +117,24 @@ object HelixWhichKeyPopup {
     }
 
     fun show(editor: Editor, prefix: String) {
+        val mode = HelixStateManager.getOrCreate(editor).mode
+        val (title, items) = HelixWhichKeyMenus.getMenu(prefix, mode, editor) ?: return
+        showWithHost(prefix, title, items, EditorHost(editor))
+    }
+
+    fun showForComponent(
+        anchorComponent: JComponent,
+        prefix: String,
+        title: String,
+        items: List<WhichKeyItem>,
+        onSelectChar: (Char) -> Boolean,
+        onCancel: () -> Unit = {},
+    ) {
+        val host = ComponentHost(anchorComponent, onSelectChar, onCancel)
+        showWithHost(prefix, title, items, host)
+    }
+
+    private fun showWithHost(prefix: String, title: String, items: List<WhichKeyItem>, host: WhichKeyHost) {
         val settings = HelixSettings.instance
         if (!settings.enableWhichKeyPopups || HelixMacroExecutor.isExecutingMacro) {
             return
@@ -127,12 +144,12 @@ object HelixWhichKeyPopup {
         if (app != null && (app.isUnitTestMode || app.isHeadlessEnvironment)) {
             isShowingInTest = true
             currentPrefix = prefix
-            activeEditor = editor
+            activeHost = host
             return
         }
 
         if (app != null && !app.isDispatchThread) {
-            SwingUtilities.invokeLater { show(editor, prefix) }
+            SwingUtilities.invokeLater { showWithHost(prefix, title, items, host) }
             return
         }
 
@@ -142,18 +159,16 @@ object HelixWhichKeyPopup {
 
         hide()
         currentPrefix = prefix
-        activeEditor = editor
+        activeHost = host
 
-        val mode = HelixStateManager.getOrCreate(editor).mode
-        val (title, items) = HelixWhichKeyMenus.getMenu(prefix, mode, editor) ?: return
-
-        val component = editor.component
-        val visibleRect = component.visibleRect
-        val viewWidth = if (visibleRect.width > 0) visibleRect.width else component.width
-        val viewHeight = if (visibleRect.height > 0) visibleRect.height else component.height
+        val posComp = host.positionComponent
+        val visibleRect = (posComp as? JComponent)?.visibleRect
+            ?: Rectangle(0, 0, posComp.width, posComp.height)
+        val viewWidth = if (visibleRect.width > 0) visibleRect.width else posComp.width
+        val viewHeight = if (visibleRect.height > 0) visibleRect.height else posComp.height
 
         val maxAvailableHeight = if (viewHeight > 0) viewHeight - JBUI.scale(40) else 600
-        val panel = createWhichKeyPanel(title, items, editor, maxAvailableHeight, viewWidth)
+        val panel = createWhichKeyPanelInternal(title, items, host, maxAvailableHeight, viewWidth)
 
         val popup = JBPopupFactory.getInstance()
             .createComponentPopupBuilder(panel, panel)
@@ -172,18 +187,16 @@ object HelixWhichKeyPopup {
                 if (activePopup === popup) {
                     activePopup = null
                     currentPrefix = null
-                    activeEditor = null
+                    activeHost = null
                     onToggleHintAction = null
                 }
                 if (!isHandlingSelection) {
-                    val state = HelixStateManager.getOrCreate(editor)
-                    state.clearPendingSequence()
-                    state.clearCount()
+                    host.onClosedWithoutSelection()
                 }
             }
         })
 
-        if (component.isShowing && viewWidth > 0 && viewHeight > 0) {
+        if (posComp.isShowing && viewWidth > 0 && viewHeight > 0) {
             val prefSize = panel.preferredSize
             val pos = calculatePopupPosition(
                 viewWidth = viewWidth,
@@ -193,14 +206,9 @@ object HelixWhichKeyPopup {
                 visibleX = visibleRect.x,
                 visibleY = visibleRect.y,
             )
-            popup.show(RelativePoint(component, pos))
+            popup.show(RelativePoint(posComp, pos))
         } else {
-            val project = editor.project
-            if (project != null) {
-                popup.showCenteredInCurrentWindow(project)
-            } else {
-                popup.showInBestPositionFor(editor)
-            }
+            host.showInBestPosition(popup)
         }
     }
 
@@ -227,9 +235,18 @@ object HelixWhichKeyPopup {
         editor: Editor,
         maxHeight: Int = 600,
         maxWidth: Int = 0,
+    ): JPanel = createWhichKeyPanelInternal(title, items, EditorHost(editor), maxHeight, maxWidth)
+
+    private fun createWhichKeyPanelInternal(
+        title: String,
+        items: List<WhichKeyItem>,
+        host: WhichKeyHost,
+        maxHeight: Int = 600,
+        maxWidth: Int = 0,
     ): JPanel {
         val settings = HelixSettings.instance
-        val (numColumns, cardMinWidth) = computeColumnAllocation(settings, items.size, maxWidth, editor)
+        val effectiveWidth = resolveEffectiveWidth(maxWidth, host.positionComponent)
+        val (numColumns, cardMinWidth) = computeColumnAllocationForWidth(settings, items.size, effectiveWidth)
         val mainPanel = RoundedCardPanel(BorderLayout(), minWidth = cardMinWidth).apply {
             isFocusable = true
             focusTraversalKeysEnabled = false
@@ -296,7 +313,7 @@ object HelixWhichKeyPopup {
         mainPanel.registerKeyboardAction(
             { toggleHintMode() },
             javax.swing.KeyStroke.getKeyStroke(KeyEvent.VK_TAB, 0),
-            javax.swing.JComponent.WHEN_IN_FOCUSED_WINDOW,
+            JComponent.WHEN_IN_FOCUSED_WINDOW,
         )
 
         toggleModeLabel.addMouseListener(object : MouseAdapter() {
@@ -305,7 +322,7 @@ object HelixWhichKeyPopup {
             }
         })
 
-        val itemsPanel = createItemsPanel(items, numColumns, activeHintMode, editor, allRows)
+        val itemsPanel = createItemsPanel(items, numColumns, activeHintMode, host, allRows)
         val scrollPane = com.intellij.ui.components.JBScrollPane(itemsPanel).apply {
             border = JBUI.Borders.empty()
             horizontalScrollBarPolicy = javax.swing.ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER
@@ -335,10 +352,7 @@ object HelixWhichKeyPopup {
         mainPanel.addKeyListener(object : KeyAdapter() {
             override fun keyPressed(e: KeyEvent) {
                 if (e.keyCode == KeyEvent.VK_ESCAPE) {
-                    val state = HelixStateManager.getOrCreate(editor)
-                    state.clearPendingSequence()
-                    state.clearCount()
-                    hide()
+                    host.onEscPressed { hide() }
                     e.consume()
                     return
                 }
@@ -352,8 +366,8 @@ object HelixWhichKeyPopup {
                 handleNavigationKeys(e, scrollPane)
                 if (e.isConsumed) return
 
-                if (e.isControlDown && currentPrefix == "C-w") {
-                    handleWindowCtrlChords(e, editor)
+                if (e.isControlDown && isWindowPrefixActive()) {
+                    handleWindowCtrlChords(e, host)
                 }
             }
 
@@ -362,15 +376,7 @@ object HelixWhichKeyPopup {
                 if (ch != KeyEvent.CHAR_UNDEFINED && ch != '\u001B' && ch != '\t') {
                     isHandlingSelection = true
                     try {
-                        val state = HelixStateManager.getOrCreate(editor)
-                        val inStickyView = state.pendingSequence == "Z"
-                        if (!inStickyView) {
-                            hide()
-                        }
-                        val handled = HelixKeyHandler.handleKey(ch, editor)
-                        if (inStickyView && (!handled || state.pendingSequence != "Z")) {
-                            hide()
-                        }
+                        host.handleTypedChar(ch) { hide() }
                     } finally {
                         isHandlingSelection = false
                     }
@@ -382,22 +388,21 @@ object HelixWhichKeyPopup {
         return mainPanel
     }
 
-    internal fun computeColumnAllocation(
+    private fun resolveEffectiveWidth(maxWidth: Int, component: Component): Int = if (maxWidth > 0) {
+        maxWidth
+    } else {
+        val visibleRect = (component as? JComponent)?.visibleRect
+            ?: Rectangle(0, 0, component.width, component.height)
+        if (visibleRect.width > 0) visibleRect.width else component.width
+    }
+
+    private fun computeColumnAllocationForWidth(
         settings: HelixSettings,
         itemsSize: Int,
-        maxWidth: Int,
-        editor: Editor,
+        effectiveWidth: Int,
     ): Pair<Int, Int> {
         val layoutPreference = settings.whichKeyColumnLayout
         val maxAllowedCols = layoutPreference.maxColumns
-
-        val effectiveWidth = if (maxWidth > 0) {
-            maxWidth
-        } else {
-            val component = editor.component
-            val visibleRect = component.visibleRect
-            if (visibleRect.width > 0) visibleRect.width else component.width
-        }
 
         val widthSupportedCols = if (effectiveWidth > 0) {
             when {
@@ -444,7 +449,7 @@ object HelixWhichKeyPopup {
         items: List<WhichKeyItem>,
         numColumns: Int,
         activeHintMode: WhichKeyHintMode,
-        editor: Editor,
+        host: WhichKeyHost,
         allRows: MutableList<WhichKeyRow>,
     ): JPanel {
         fun createRow(item: WhichKeyItem): JPanel {
@@ -452,16 +457,7 @@ object HelixWhichKeyPopup {
                 if (item.key.contains("-")) return@WhichKeyRow
                 isHandlingSelection = true
                 try {
-                    val state = HelixStateManager.getOrCreate(editor)
-                    val inStickyView = state.pendingSequence == "Z"
-                    if (!inStickyView) {
-                        hide()
-                    }
-                    val triggerChar = if (item.key.equals("Space", ignoreCase = true)) ' ' else item.key[0]
-                    val handled = HelixKeyHandler.handleKey(triggerChar, editor)
-                    if (inStickyView && (!handled || state.pendingSequence != "Z")) {
-                        hide()
-                    }
+                    host.handleItemClick(item) { hide() }
                 } finally {
                     isHandlingSelection = false
                 }
@@ -564,7 +560,7 @@ object HelixWhichKeyPopup {
         }
     }
 
-    private fun handleWindowCtrlChords(e: KeyEvent, editor: Editor) {
+    private fun handleWindowCtrlChords(e: KeyEvent, host: WhichKeyHost) {
         val ch = when (e.keyCode) {
             KeyEvent.VK_V -> 'v'
             KeyEvent.VK_S -> 's'
@@ -583,8 +579,7 @@ object HelixWhichKeyPopup {
         if (ch != null) {
             isHandlingSelection = true
             try {
-                hide()
-                HelixKeyHandler.handleKey(ch, editor)
+                host.handleWindowCtrlChord(ch) { hide() }
             } finally {
                 isHandlingSelection = false
             }
@@ -745,4 +740,158 @@ object HelixWhichKeyPopup {
             super.paintComponent(g)
         }
     }
+
+    private sealed interface WhichKeyHost {
+        val project: Project?
+        val positionComponent: Component
+
+        fun showInBestPosition(popup: JBPopup)
+
+        fun onClosedWithoutSelection()
+
+        fun onExplicitCancel()
+
+        fun onEscPressed(hidePopup: () -> Unit)
+
+        fun handleWindowCtrlChord(ch: Char, hidePopup: () -> Unit)
+
+        fun handleTypedChar(ch: Char, hidePopup: () -> Unit)
+
+        fun handleItemClick(item: WhichKeyItem, hidePopup: () -> Unit)
+    }
+
+    private class EditorHost(val editor: Editor) : WhichKeyHost {
+        override val project: Project? get() = editor.project
+        override val positionComponent: Component get() = editor.component
+
+        override fun showInBestPosition(popup: JBPopup) {
+            val proj = project
+            if (proj != null) {
+                popup.showCenteredInCurrentWindow(proj)
+            } else {
+                popup.showInBestPositionFor(editor)
+            }
+        }
+
+        override fun onClosedWithoutSelection() {
+            clearEditorState()
+        }
+
+        override fun onExplicitCancel() {
+            clearEditorState()
+            if (!editor.isDisposed) {
+                editor.contentComponent.requestFocusInWindow()
+            }
+        }
+
+        override fun onEscPressed(hidePopup: () -> Unit) {
+            clearEditorState()
+            hidePopup()
+        }
+
+        override fun handleWindowCtrlChord(ch: Char, hidePopup: () -> Unit) {
+            hidePopup()
+            HelixKeyHandler.handleKey(ch, editor)
+        }
+
+        override fun handleTypedChar(ch: Char, hidePopup: () -> Unit) {
+            executeEditorKey(ch, hidePopup)
+        }
+
+        override fun handleItemClick(item: WhichKeyItem, hidePopup: () -> Unit) {
+            if (item.key.contains("-")) return
+            val triggerChar = if (item.key.equals("Space", ignoreCase = true)) ' ' else item.key[0]
+            executeEditorKey(triggerChar, hidePopup)
+        }
+
+        private fun executeEditorKey(ch: Char, hidePopup: () -> Unit) {
+            val state = HelixStateManager.getOrCreate(editor)
+            val inStickyView = state.pendingSequence == "Z"
+            if (!inStickyView) {
+                hidePopup()
+            }
+            val handled = HelixKeyHandler.handleKey(ch, editor)
+            if (inStickyView && (!handled || state.pendingSequence != "Z")) {
+                hidePopup()
+            }
+        }
+
+        private fun clearEditorState() {
+            if (editor.isDisposed) return
+            val state = HelixStateManager.getOrCreate(editor)
+            state.clearPendingSequence()
+            state.clearCount()
+        }
+    }
+
+    private class ComponentHost(
+        private val anchorComponent: JComponent,
+        private val onSelectChar: (Char) -> Boolean,
+        private val onCancel: () -> Unit,
+    ) : WhichKeyHost {
+        override val project: Project?
+            get() = HelixToolWindowGuard.findProjectForComponent(anchorComponent)
+
+        override val positionComponent: Component
+            get() {
+                val rootPane = SwingUtilities.getRootPane(anchorComponent)
+                if (rootPane != null && rootPane.isShowing) return rootPane
+                val proj = project
+                val frame = if (proj != null && !proj.isDisposed) {
+                    WindowManager.getInstance().getFrame(proj)
+                } else {
+                    null
+                }
+                return frame?.rootPane ?: anchorComponent
+            }
+
+        override fun showInBestPosition(popup: JBPopup) {
+            val proj = project
+            if (proj != null && !proj.isDisposed) {
+                popup.showCenteredInCurrentWindow(proj)
+            } else {
+                val win = SwingUtilities.getWindowAncestor(anchorComponent)
+                if (win != null) {
+                    popup.showInCenterOf(win)
+                } else {
+                    popup.showInCenterOf(anchorComponent)
+                }
+            }
+        }
+
+        override fun onClosedWithoutSelection() {
+            onCancel()
+        }
+
+        override fun onExplicitCancel() {
+            onCancel()
+            anchorComponent.requestFocusInWindow()
+        }
+
+        override fun onEscPressed(hidePopup: () -> Unit) {
+            onCancel()
+            hidePopup()
+            anchorComponent.requestFocusInWindow()
+        }
+
+        override fun handleWindowCtrlChord(ch: Char, hidePopup: () -> Unit) {
+            hidePopup()
+            onSelectChar(ch)
+        }
+
+        override fun handleTypedChar(ch: Char, hidePopup: () -> Unit) {
+            hidePopup()
+            onSelectChar(ch)
+        }
+
+        override fun handleItemClick(item: WhichKeyItem, hidePopup: () -> Unit) {
+            if (item.key.contains("-")) return
+            val triggerChar = if (item.key.equals("Space", ignoreCase = true)) ' ' else item.key[0]
+            hidePopup()
+            onSelectChar(triggerChar)
+        }
+    }
+
+    private fun isWindowPrefixActive(): Boolean =
+        currentPrefix == "C-w" || currentPrefix == HelixToolWindowSwitcher.WINDOW_PREFIX
 }

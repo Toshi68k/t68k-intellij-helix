@@ -17,6 +17,9 @@ import jp.titze.intellij.helix.settings.HelixLineNavigationMode
 import jp.titze.intellij.helix.settings.HelixSettings
 import jp.titze.intellij.helix.state.HelixMode
 import jp.titze.intellij.helix.state.HelixStateManager
+import jp.titze.intellij.helix.toolwindow.FocusDirection
+import jp.titze.intellij.helix.toolwindow.HelixToolWindowSwitcher
+import jp.titze.intellij.helix.toolwindow.HelixWindowFocusNavigator
 import jp.titze.intellij.helix.ui.HelixDirectoryFilePickerPopup
 import jp.titze.intellij.helix.ui.HelixJumplistPopup
 import jp.titze.intellij.helix.ui.HelixSearchManager
@@ -576,6 +579,13 @@ object HelixCommandRegistry {
         register("command_palette", "Command palette", "GotoAction") { ed, _ ->
             HelixActionDelegate.executeAction("GotoAction", ed)
         }
+        register(
+            "toolwindow_switcher",
+            "Open tool window switcher",
+            "jp.titze.intellij.helix.toolWindowSwitcher",
+        ) { ed, _ ->
+            HelixToolWindowSwitcher.startFromEditor(ed)
+        }
     }
 
     private fun registerViewAndWindow() {
@@ -633,16 +643,16 @@ object HelixCommandRegistry {
                 HelixActionDelegate.executeAction("HideAllWindows", ed)
         }
         register("jump_view_left", "Focus left split", "PrevSplitter") { ed, _ ->
-            HelixActionDelegate.executeAction("PrevSplitter", ed)
+            HelixWindowFocusNavigator.jumpFromEditor(FocusDirection.LEFT, ed)
         }
         register("jump_view_right", "Focus right split", "NextSplitter") { ed, _ ->
-            HelixActionDelegate.executeAction("NextSplitter", ed)
+            HelixWindowFocusNavigator.jumpFromEditor(FocusDirection.RIGHT, ed)
         }
         register("jump_view_up", "Focus above split", "PrevSplitter") { ed, _ ->
-            HelixActionDelegate.executeAction("PrevSplitter", ed)
+            HelixWindowFocusNavigator.jumpFromEditor(FocusDirection.UP, ed)
         }
         register("jump_view_down", "Focus below split", "NextSplitter") { ed, _ ->
-            HelixActionDelegate.executeAction("NextSplitter", ed)
+            HelixWindowFocusNavigator.jumpFromEditor(FocusDirection.DOWN, ed)
         }
         register("transpose_view", "Transpose split", "ChangeSplitOrientation") { ed, _ ->
             HelixActionDelegate.executeAction("ChangeSplitOrientation", ed)

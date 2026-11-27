@@ -3,22 +3,31 @@
 
 package jp.titze.intellij.helix.editor
 
+import com.intellij.openapi.actionSystem.ActionUpdateThread
+import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.CommonDataKeys
+import com.intellij.openapi.actionSystem.PlatformDataKeys
+import com.intellij.openapi.wm.WindowManager
 import jp.titze.intellij.helix.action.HelixActionDelegate
 import jp.titze.intellij.helix.action.HelixActions
 import jp.titze.intellij.helix.command.HelixCommandPopup
 import jp.titze.intellij.helix.jumplist.HelixJumpListService
 import jp.titze.intellij.helix.keymap.HelixKeyHandler
 import jp.titze.intellij.helix.motion.HelixMotions
+import jp.titze.intellij.helix.settings.HelixSettings
 import jp.titze.intellij.helix.state.HelixMode
 import jp.titze.intellij.helix.state.HelixStateManager
+import jp.titze.intellij.helix.toolwindow.HelixToolWindowGuard
+import jp.titze.intellij.helix.toolwindow.HelixToolWindowSwitcher
 import jp.titze.intellij.helix.ui.HelixDirectoryFilePickerPopup
 import jp.titze.intellij.helix.ui.HelixHarpoonPopup
 import jp.titze.intellij.helix.ui.HelixJumplistPopup
 import jp.titze.intellij.helix.ui.HelixMacrosPopup
 import jp.titze.intellij.helix.ui.HelixRegistersPopup
 import jp.titze.intellij.helix.ui.HelixSearchManager
+import java.awt.KeyboardFocusManager
+import javax.swing.JComponent
 
 class HelixEscapeAction : HelixEditorAction() {
     override fun actionPerformed(e: AnActionEvent) {
@@ -540,7 +549,7 @@ class HelixEarlierAction : HelixEditorAction(requireInsertable = false) {
         val state = HelixStateManager.getOrCreate(editor)
         if (state.mode.isInsertable) return
         val count = state.takeCount() ?: 1
-        repeat(count) { HelixActionDelegate.executeAction("\$Undo", editor) }
+        repeat(count) { HelixActionDelegate.executeAction($$"$Undo", editor) }
     }
 }
 
@@ -550,6 +559,45 @@ class HelixLaterAction : HelixEditorAction(requireInsertable = false) {
         val state = HelixStateManager.getOrCreate(editor)
         if (state.mode.isInsertable) return
         val count = state.takeCount() ?: 1
-        repeat(count) { HelixActionDelegate.executeAction("\$Redo", editor) }
+        repeat(count) { HelixActionDelegate.executeAction($$"$Redo", editor) }
     }
+}
+
+class HelixToolWindowSwitcherAction : AnAction() {
+    override fun actionPerformed(e: AnActionEvent) {
+        val editor = e.getData(CommonDataKeys.EDITOR)
+        if (editor != null && HelixEditorEligibility.isActive(editor)) {
+            HelixToolWindowSwitcher.startFromEditor(editor)
+            return
+        }
+
+        val component = e.getData(PlatformDataKeys.CONTEXT_COMPONENT) as? JComponent
+            ?: KeyboardFocusManager.getCurrentKeyboardFocusManager().focusOwner as? JComponent
+            ?: editor?.contentComponent
+        if (component != null) {
+            val toolWindowId = HelixToolWindowGuard.resolveToolWindowId(component) ?: ""
+            HelixToolWindowSwitcher.startSpaceMenu(
+                component = component,
+                toolWindowId = toolWindowId,
+                includeEditorTargets = toolWindowId.isNotEmpty(),
+            )
+            return
+        }
+
+        val project = e.project ?: editor?.project
+        if (project != null && !project.isDisposed) {
+            val rootPane = WindowManager.getInstance().getFrame(project)?.rootPane ?: return
+            HelixToolWindowSwitcher.startSpaceMenu(
+                component = rootPane,
+                toolWindowId = "",
+                includeEditorTargets = true,
+            )
+        }
+    }
+
+    override fun update(e: AnActionEvent) {
+        e.presentation.isEnabled = HelixSettings.instance.enabled
+    }
+
+    override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT
 }

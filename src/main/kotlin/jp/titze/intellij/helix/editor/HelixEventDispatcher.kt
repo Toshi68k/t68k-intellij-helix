@@ -5,9 +5,12 @@ package jp.titze.intellij.helix.editor
 
 import com.intellij.ide.IdeEventQueue
 import com.intellij.openapi.Disposable
+import com.intellij.openapi.actionSystem.KeyboardShortcut
+import com.intellij.openapi.actionSystem.Shortcut
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.EditorFactory
+import com.intellij.openapi.keymap.KeymapManager
 import com.intellij.openapi.util.Disposer
 import jp.titze.intellij.helix.action.HelixActionDelegate
 import jp.titze.intellij.helix.action.HelixActions
@@ -24,6 +27,7 @@ import jp.titze.intellij.helix.state.HelixStateManager
 import jp.titze.intellij.helix.toolwindow.HelixToolWindowGuard
 import jp.titze.intellij.helix.toolwindow.HelixToolWindowNavigator
 import jp.titze.intellij.helix.toolwindow.HelixToolWindowState
+import jp.titze.intellij.helix.toolwindow.HelixToolWindowSwitcher
 import jp.titze.intellij.helix.ui.HelixPromptBar
 import jp.titze.intellij.helix.ui.HelixSearchManager
 import jp.titze.intellij.helix.ui.HelixSearchPopup
@@ -31,6 +35,7 @@ import jp.titze.intellij.helix.ui.HelixSelectRegexPopup
 import jp.titze.intellij.helix.ui.HelixWhichKeyPopup
 import java.awt.AWTEvent
 import java.awt.KeyboardFocusManager
+import java.awt.event.InputEvent
 import java.awt.event.KeyEvent
 import javax.swing.SwingUtilities
 
@@ -43,9 +48,17 @@ class HelixEventDispatcher : IdeEventQueue.EventDispatcher {
         val preHandled = handlePreDispatch(e)
         if (preHandled != null) return preHandled
 
+        if (HelixToolWindowNavigator.handleActiveSpeedSearchEnter(e)) {
+            return true
+        }
+
         val eligibleToolWindow = HelixToolWindowGuard.findEligibleTarget(e.component)
         if (eligibleToolWindow != null) {
             return HelixToolWindowNavigator.dispatch(e, eligibleToolWindow)
+        }
+
+        if (handleTerminalToolWindowSwitcher(e)) {
+            return true
         }
 
         val editor = findFocusedEditor(e)
@@ -53,6 +66,43 @@ class HelixEventDispatcher : IdeEventQueue.EventDispatcher {
             dispatchToEditor(e, editor)
         } else {
             false
+        }
+    }
+
+    private fun handleTerminalToolWindowSwitcher(e: KeyEvent): Boolean {
+        val shortcuts = resolveTerminalSwitcherShortcuts()
+        if (shortcuts.isEmpty() || !matchesAnySingleStrokeShortcut(e, shortcuts)) return false
+
+        val terminalComponent = HelixToolWindowGuard.findTerminalComponent(e.component) ?: return false
+        if (!e.isControlDown && !e.isMetaDown) {
+            HelixToolWindowState.markInterceptedKey(e.keyCode, e.keyChar, e.isShiftDown)
+        }
+        e.consume()
+        HelixToolWindowSwitcher.startSpaceMenu(
+            component = terminalComponent,
+            toolWindowId = "Terminal",
+            includeEditorTargets = true,
+        )
+        return true
+    }
+
+    private fun resolveTerminalSwitcherShortcuts(): Array<Shortcut> {
+        terminalShortcutsProvider?.let { return it() }
+        val keymap = try {
+            KeymapManager.getInstance()?.activeKeymap
+        } catch (_: Throwable) {
+            null
+        } ?: return emptyArray()
+        return keymap.getShortcuts(TOOL_WINDOW_SWITCHER_ACTION_ID)
+    }
+
+    private fun matchesAnySingleStrokeShortcut(e: KeyEvent, shortcuts: Array<Shortcut>): Boolean {
+        val eventMods = e.modifiersEx and RELEVANT_MODIFIER_MASK
+        return shortcuts.any { shortcut ->
+            if (shortcut !is KeyboardShortcut || shortcut.secondKeyStroke != null) return@any false
+            val first = shortcut.firstKeyStroke
+            val strokeMods = first.modifiers and RELEVANT_MODIFIER_MASK
+            first.keyCode == e.keyCode && strokeMods == eventMods && !first.isOnKeyRelease
         }
     }
 
@@ -766,6 +816,16 @@ class HelixEventDispatcher : IdeEventQueue.EventDispatcher {
     }
 
     companion object {
+        private const val TOOL_WINDOW_SWITCHER_ACTION_ID = "jp.titze.intellij.helix.toolWindowSwitcher"
+        private const val RELEVANT_MODIFIER_MASK =
+            InputEvent.SHIFT_DOWN_MASK or
+                InputEvent.CTRL_DOWN_MASK or
+                InputEvent.ALT_DOWN_MASK or
+                InputEvent.META_DOWN_MASK
+
+        @Volatile
+        internal var terminalShortcutsProvider: (() -> Array<Shortcut>)? = null
+
         private var installed = false
         private var currentDispatcher: HelixEventDispatcher? = null
         private var activeDisposable: Disposable? = null

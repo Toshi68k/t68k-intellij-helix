@@ -7,6 +7,8 @@ import com.intellij.openapi.editor.Editor
 import jp.titze.intellij.helix.action.HelixActionDelegate
 import jp.titze.intellij.helix.action.HelixSplitActions
 import jp.titze.intellij.helix.motion.HelixFileNavigation
+import jp.titze.intellij.helix.toolwindow.FocusDirection
+import jp.titze.intellij.helix.toolwindow.HelixWindowFocusNavigator
 
 internal object HelixWindowKeymap {
 
@@ -21,13 +23,13 @@ internal object HelixWindowKeymap {
 
         't', 'T' -> HelixActionDelegate.executeAction("ChangeSplitOrientation", editor)
 
-        'h' -> HelixActionDelegate.executeAction("PrevSplitter", editor)
+        'h' -> HelixWindowFocusNavigator.jumpFromEditor(FocusDirection.LEFT, editor)
 
-        'j' -> HelixActionDelegate.executeAction("NextSplitter", editor)
+        'j' -> HelixWindowFocusNavigator.jumpFromEditor(FocusDirection.DOWN, editor)
 
-        'k' -> HelixActionDelegate.executeAction("PrevSplitter", editor)
+        'k' -> HelixWindowFocusNavigator.jumpFromEditor(FocusDirection.UP, editor)
 
-        'l' -> HelixActionDelegate.executeAction("NextSplitter", editor)
+        'l' -> HelixWindowFocusNavigator.jumpFromEditor(FocusDirection.RIGHT, editor)
 
         'w' -> HelixActionDelegate.executeAction("NextSplitter", editor)
 
