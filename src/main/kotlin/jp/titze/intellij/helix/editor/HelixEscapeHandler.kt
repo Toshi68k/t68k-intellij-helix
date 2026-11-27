@@ -9,6 +9,7 @@ import jp.titze.intellij.helix.motion.HelixJumpToWord
 import jp.titze.intellij.helix.motion.HelixMotions
 import jp.titze.intellij.helix.state.HelixMode
 import jp.titze.intellij.helix.state.HelixStateManager
+import jp.titze.intellij.helix.toolwindow.HelixToolWindowSwitcher
 import jp.titze.intellij.helix.ui.HelixPromptBar
 import jp.titze.intellij.helix.ui.HelixWhichKeyPopup
 
@@ -22,6 +23,7 @@ object HelixEscapeHandler {
         val state = HelixStateManager.getOrCreate(editor)
 
         if (HelixWhichKeyPopup.cancelActive()) {
+            HelixToolWindowSwitcher.clearActiveTargets()
             return true
         }
         if (HelixPromptBar.cancelActivePrompt(editor)) {
@@ -29,6 +31,9 @@ object HelixEscapeHandler {
         }
 
         if (state.pendingSequence.isNotEmpty() || state.hasCount || state.selectedRegister != null) {
+            if (state.pendingSequence == HelixToolWindowSwitcher.EDITOR_PREFIX) {
+                HelixToolWindowSwitcher.clearActiveTargets()
+            }
             state.clearPendingSequence()
             state.clearCount()
             state.clearSelectedRegister()

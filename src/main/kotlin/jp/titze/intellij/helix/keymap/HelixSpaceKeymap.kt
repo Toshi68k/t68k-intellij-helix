@@ -9,6 +9,7 @@ import jp.titze.intellij.helix.action.HelixActions
 import jp.titze.intellij.helix.harpoon.HelixHarpoonService
 import jp.titze.intellij.helix.state.HelixMode
 import jp.titze.intellij.helix.state.HelixStateManager
+import jp.titze.intellij.helix.toolwindow.HelixToolWindowSwitcher
 import jp.titze.intellij.helix.ui.HelixDirectoryFilePickerPopup
 import jp.titze.intellij.helix.ui.HelixJumplistPopup
 
@@ -132,6 +133,8 @@ internal object HelixSpaceKeymap {
                 HelixKeyHandler.startWindowChord(editor)
                 true
             }
+
+            'W' -> HelixToolWindowSwitcher.startFromEditor(editor)
 
             'y', 'Y', 'p', 'P', 'R' -> handleClipboard(ch, editor)
 

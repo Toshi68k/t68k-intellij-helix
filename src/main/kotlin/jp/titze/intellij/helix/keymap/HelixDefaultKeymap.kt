@@ -156,6 +156,7 @@ object HelixDefaultKeymap {
         bind(trie, "space '", "last_picker", "Open last picker")
         bind(trie, "space h", "select_references", "Find references / usages")
         bind(trie, "space w", "window_mode", "Window mode")
+        bind(trie, "space W", "toolwindow_switcher", "Tool window switcher")
         bind(trie, "space ?", "command_palette", "Command palette")
         bind(trie, "space m v", "extract_variable", "Extract variable")
         bind(trie, "space m m", "extract_method", "Extract method")

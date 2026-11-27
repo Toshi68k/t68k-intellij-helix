@@ -124,15 +124,17 @@ the need to reach for arrow keys once you open the Project explorer, VCS log, or
 | `[count]`           | Repeat            | Multiplies navigation (e.g. `5j`, `12k`)       | Multiplies navigation                          |
 | `/` / `?`           | Speed Search      | Open native speed search (forward / backward)  | Open speed search (forward / backward)         |
 | `n` / `N`           | Next / Prev match | Next / prev match (respects `/` vs `?`)        | Next / prev match (respects `/` vs `?`)        |
-| `Ctrl+w h/j/k/l`    | Window focus jump | Focus adjacent tool window or return to editor | Focus adjacent tool window or return to editor |
-| `Ctrl+w w`          | Return to editor  | Return focus to the active editor              | Return focus to the active editor              |
+| `Space`             | Tool window menu  | Open Which-Key tool window switcher (also configurable for Commit) | Open Which-Key tool window switcher            |
+| `Ctrl+w h/j/k/l`    | Window focus jump | Focus adjacent tool window or return to editor (shows Which-Key) | Focus adjacent tool window or return to editor |
+| `Ctrl+w w`          | Return to editor  | Return focus to the active editor (shown in `Ctrl+w` Which-Key)  | Return focus to the active editor              |
 | `Esc`               | Native Esc        | Returns focus to the active editor             | Returns focus to the active editor             |
 
 ### VCS Commit Tool Window (`Alt+0`)
 
 | Helix Key | Target / Action | Behavior                                                                                                         |
 |-----------|-----------------|------------------------------------------------------------------------------------------------------------------|
-| `Space`   | Stage / Toggle  | Toggle checkbox in Changelist mode, or stage (`Git.Stage.Add`) / unstage (`Git.Stage.Reset`) in Git Staging mode |
+| `s`       | Stage / Toggle  | Toggle checkbox in Changelist mode, or stage (`Git.Stage.Add`) / unstage (`Git.Stage.Reset`) in Git Staging mode |
+| `Space`   | Switcher / Stage | Opens the Tool Window Switcher by default; toggleable in settings to stage / toggle checkboxes instead          |
 | `d`       | Diff preview    | Open diff preview (`Diff.ShowDiff`) for the selected change (also active in `Version Control`)                   |
 | `c`       | Commit message  | Focus the commit message box cleanly for typing                                                                  |
 
@@ -143,6 +145,7 @@ the need to reach for arrow keys once you open the Project explorer, VCS log, or
   the first `Enter` confirms the search (closes speed search without executing the item, preserving the match for `n`/`N`
   or inspection), and a second `Enter` (or `o`) opens/runs the selected item. Disable **Confirm speed search on Enter
   without executing** in settings if you prefer native single-`Enter` execution.
+- **Tool Window Switcher (`Space` / `Space+W`) & Focus Menu (`Ctrl+w`)**: Pressing `Space` in an eligible tool window (or `Space+W` / `:tool-windows` from an editor) opens a dynamic, installation-aware Which-Key menu listing tool windows available in the active project (e.g., `e` Project, `g` VCS, `c` Commit, `D` Problems, `f` Find, `s` Structure, `S` Services, `r` Run, `d` Debug, `b` Build, `G` Gradle, `t` Terminal, `B` Database, `m` Maven, `M` Bookmarks, `T` TODO, plus any installed plugin tool windows) or returning to the editor (`w` / `Space` when in a tool window). To launch it from the **Terminal** tool window without conflicting with shell shortcuts, bind any key to **Helix: Open Tool Window Switcher** (`jp.titze.intellij.helix.toolWindowSwitcher`) under **Settings → Keymap**; Helix intercepts that binding inside Terminal before PTY shortcut overrides. In `Commit`, **Also open switcher menu on Space in Commit tool window** is enabled by default (`s` always stages/toggles); uncheck it to use `Space` directly for staging/checkboxes in `Commit`. Non-`Commit` checkbox trees keep native `Space`. `Ctrl+w` also displays a compact Which-Key menu (`h`/`j`/`k`/`l`/`w`).
 - **Dialogs & Popups**: General dialogs and popups pass through natively.
 - **Configurable Targets & Safe Boundary Crossing**: Enable or disable per target window (Project, Find/Usages, VCS,
   Problems, Structure, Services/Run, Debugger, Other) and toggle seamless `Ctrl+w` boundary jumping. Boundary jumps only
@@ -528,6 +531,7 @@ pressed. Code folding is available via `:fold`, `:unfold`, `:fold-all`, and `:un
 | `space + C`               | `toggle_block_comments`                    | `CommentByBlockComment`            | Toggle block comments on selection                     |
 | `space + h`               | `select_references_to_symbol_under_cursor` | `FindUsages`                       | Find symbol references / usages across project         |
 | `space + w`               | `window_mode`                              | —                                  | Window mode menu (alias for `Ctrl+w`)                  |
+| `space + W`               | `toolwindow_switcher`                      | `jp.titze.intellij.helix.toolWindowSwitcher` | Dynamic tool window switcher popup           |
 | `space + y`               | `yank_to_clipboard`                        | —                                  | Yank active selections to system clipboard             |
 | `space + Y`               | `yank_main_selection_to_clipboard`         | —                                  | Yank main selection to system clipboard                |
 | `space + p`               | `paste_clipboard_after`                    | —                                  | Paste system clipboard after cursor / selection        |

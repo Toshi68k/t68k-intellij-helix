@@ -63,6 +63,7 @@ object HelixToolWindowState {
         pendingSequence = ""
         pendingInterceptedChars.clear()
         isDispatchingSynthetic = false
+        HelixToolWindowSwitcher.clearActiveTargets()
     }
 
     fun clearSearchState() {

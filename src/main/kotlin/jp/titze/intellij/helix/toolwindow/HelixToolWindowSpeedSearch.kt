@@ -143,7 +143,5 @@ object HelixToolWindowSpeedSearch {
         }
     }
 
-    private fun isPlainKey(e: KeyEvent): Boolean {
-        return !(e.isControlDown || e.isMetaDown) && !e.isAltDown && !e.isShiftDown
-    }
+    private fun isPlainKey(e: KeyEvent): Boolean = !(e.isControlDown || e.isMetaDown) && !e.isAltDown && !e.isShiftDown
 }

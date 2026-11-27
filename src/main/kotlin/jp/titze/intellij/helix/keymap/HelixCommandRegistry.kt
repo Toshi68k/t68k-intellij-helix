@@ -18,6 +18,7 @@ import jp.titze.intellij.helix.settings.HelixSettings
 import jp.titze.intellij.helix.state.HelixMode
 import jp.titze.intellij.helix.state.HelixStateManager
 import jp.titze.intellij.helix.toolwindow.FocusDirection
+import jp.titze.intellij.helix.toolwindow.HelixToolWindowSwitcher
 import jp.titze.intellij.helix.toolwindow.HelixWindowFocusNavigator
 import jp.titze.intellij.helix.ui.HelixDirectoryFilePickerPopup
 import jp.titze.intellij.helix.ui.HelixJumplistPopup
@@ -577,6 +578,13 @@ object HelixCommandRegistry {
         }
         register("command_palette", "Command palette", "GotoAction") { ed, _ ->
             HelixActionDelegate.executeAction("GotoAction", ed)
+        }
+        register(
+            "toolwindow_switcher",
+            "Open tool window switcher",
+            "jp.titze.intellij.helix.toolWindowSwitcher",
+        ) { ed, _ ->
+            HelixToolWindowSwitcher.startFromEditor(ed)
         }
     }
 

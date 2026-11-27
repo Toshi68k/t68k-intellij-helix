@@ -16,6 +16,7 @@ import jp.titze.intellij.helix.settings.HelixSettings
 import jp.titze.intellij.helix.state.HelixEditorState
 import jp.titze.intellij.helix.state.HelixMode
 import jp.titze.intellij.helix.state.HelixStateManager
+import jp.titze.intellij.helix.toolwindow.HelixToolWindowSwitcher
 import jp.titze.intellij.helix.ui.HelixSearchManager
 import jp.titze.intellij.helix.ui.HelixWhichKeyPopup
 
@@ -80,6 +81,7 @@ object HelixKeyHandler {
 
     private val PARAMETRIC_PREFIXES = setOf(
         "r", "f", "t", "F", "T", "\"", "C-r", " H", " H s", " H m", " H d",
+        HelixToolWindowSwitcher.EDITOR_PREFIX,
     )
     private val MATCH_PARAMETRIC_PREFIXES = setOf("ms", "md", "mr", "ma", "mi")
 
@@ -256,6 +258,11 @@ object HelixKeyHandler {
                 } else {
                     false
                 }
+            }
+
+            HelixToolWindowSwitcher.EDITOR_PREFIX -> {
+                HelixToolWindowSwitcher.handleEditorSelectionChar(ch, editor)
+                true
             }
 
             else -> HelixMatchKeymap.handleSubmenu(prefix, ch, editor, state)

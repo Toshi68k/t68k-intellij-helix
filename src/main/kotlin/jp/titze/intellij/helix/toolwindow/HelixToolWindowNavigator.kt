@@ -7,6 +7,7 @@ import com.intellij.ui.ScrollingUtil
 import jp.titze.intellij.helix.keymap.HelixKeyContext
 import jp.titze.intellij.helix.keymap.HelixShortcutPolicy
 import jp.titze.intellij.helix.settings.HelixSettings
+import jp.titze.intellij.helix.ui.HelixWhichKeyPopup
 import java.awt.KeyboardFocusManager
 import java.awt.event.ActionEvent
 import java.awt.event.KeyEvent
@@ -44,6 +45,9 @@ object HelixToolWindowNavigator {
         // Escape: reset state and pass through to IntelliJ natively
         if (e.keyCode == KeyEvent.VK_ESCAPE && isNoModifiers) {
             HelixToolWindowState.reset()
+            if (isToolWindowWhichKeyShowing()) {
+                HelixWhichKeyPopup.hide()
+            }
             return false
         }
 
@@ -71,6 +75,9 @@ object HelixToolWindowNavigator {
         return false
     }
 
+    private fun isToolWindowWhichKeyShowing(): Boolean = HelixWhichKeyPopup.isShowing(HelixToolWindowSwitcher.PREFIX) ||
+        HelixWhichKeyPopup.isShowing(HelixToolWindowSwitcher.WINDOW_PREFIX)
+
     private fun handleCtrlKey(e: KeyEvent, component: JComponent, toolWindowId: String): Boolean {
         if (HelixToolWindowState.getPendingSequence() == "C-w") {
             HelixToolWindowState.clearPendingSequence()
@@ -80,6 +87,7 @@ object HelixToolWindowNavigator {
         if (e.keyCode == KeyEvent.VK_W && canStartToolWindowChord()) {
             HelixToolWindowState.takeCount()
             HelixToolWindowState.setPendingSequence("C-w")
+            HelixToolWindowSwitcher.showWindowMenu(component, toolWindowId)
             return true
         }
 
@@ -117,6 +125,9 @@ object HelixToolWindowNavigator {
         component: JComponent,
         toolWindowId: String,
     ): Boolean {
+        if (HelixWhichKeyPopup.isShowing(HelixToolWindowSwitcher.WINDOW_PREFIX)) {
+            HelixWhichKeyPopup.hide()
+        }
         val direction = when {
             !isShift && keyCode == KeyEvent.VK_H -> FocusDirection.LEFT
             !isShift && keyCode == KeyEvent.VK_J -> FocusDirection.DOWN
@@ -141,6 +152,9 @@ object HelixToolWindowNavigator {
         if (pendingSeq == "C-w") {
             HelixToolWindowState.clearPendingSequence()
             return handleWindowChordKey(keyCode, isShift, component, toolWindowId)
+        }
+        if (pendingSeq == HelixToolWindowSwitcher.PREFIX) {
+            return HelixToolWindowSwitcher.handlePendingKey(keyCode, effectiveChar, isShift, component, toolWindowId)
         }
         if (pendingSeq == "g") {
             HelixToolWindowState.clearPendingSequence()
@@ -197,7 +211,12 @@ object HelixToolWindowNavigator {
         toolWindowId: String,
     ): Boolean = when {
         !isShift && (keyCode == KeyEvent.VK_SPACE || effectiveChar == ' ') -> {
-            HelixCommitToolWindowActions.toggleStageOrCheckbox(component, toolWindowId)
+            handleSpaceKey(component, toolWindowId)
+        }
+
+        !isShift && (keyCode == KeyEvent.VK_S || effectiveChar == 's') &&
+            HelixCommitToolWindowActions.isCommitToolWindow(toolWindowId) -> {
+            HelixCommitToolWindowActions.toggleStageOrCheckbox(component, toolWindowId, allowNativePassthrough = false)
         }
 
         !isShift && (keyCode == KeyEvent.VK_D || effectiveChar == 'd') -> {
@@ -216,6 +235,19 @@ object HelixToolWindowNavigator {
         !isShift && (keyCode == KeyEvent.VK_G || effectiveChar == 'g') -> {
             HelixToolWindowState.setPendingSequence("g")
             true
+        }
+
+        else -> false
+    }
+
+    private fun handleSpaceKey(component: JComponent, toolWindowId: String): Boolean = when {
+        HelixToolWindowSwitcher.isEligibleForSpaceSwitcher(component, toolWindowId) -> {
+            HelixToolWindowSwitcher.startSpaceMenu(component, toolWindowId)
+        }
+
+        HelixCommitToolWindowActions.isCommitToolWindow(toolWindowId) ||
+            HelixCommitToolWindowActions.isChangesTreeWithCheckboxes(component) -> {
+            HelixCommitToolWindowActions.toggleStageOrCheckbox(component, toolWindowId)
         }
 
         else -> false

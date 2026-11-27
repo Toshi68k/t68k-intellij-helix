@@ -191,4 +191,37 @@ class HelixToolWindowGuardTest : BasePlatformTestCase() {
             plainDialog.dispose()
         }
     }
+
+    fun testFindTerminalComponentByToolWindowIdAndPopupGuard() {
+        val settings = HelixSettings()
+        settings.enabled = true
+
+        val terminalPanel = JPanel()
+        terminalPanel.putClientProperty("ToolWindow.id", "Terminal")
+        val childWidget = JPanel()
+        terminalPanel.add(childWidget)
+
+        assertEquals(childWidget, HelixToolWindowGuard.findTerminalComponent(childWidget, settings))
+
+        settings.enabled = false
+        assertNull(HelixToolWindowGuard.findTerminalComponent(childWidget, settings))
+
+        settings.enabled = true
+        val otherPanel = JPanel()
+        otherPanel.putClientProperty("ToolWindow.id", "Project")
+        assertNull(HelixToolWindowGuard.findTerminalComponent(otherPanel, settings))
+
+        val originalDetector = HelixToolWindowGuard.isDialogAncestor
+        try {
+            val plainDialogPanel = JPanel()
+            val plainChild = JPanel()
+            plainDialogPanel.add(plainChild)
+            HelixToolWindowGuard.isDialogAncestor = { comp ->
+                SwingUtilities.isDescendingFrom(comp, plainDialogPanel)
+            }
+            assertNull(HelixToolWindowGuard.findTerminalComponent(plainChild, settings))
+        } finally {
+            HelixToolWindowGuard.isDialogAncestor = originalDetector
+        }
+    }
 }

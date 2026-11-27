@@ -5,6 +5,9 @@ package jp.titze.intellij.helix.toolwindow
 
 import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.actionSystem.ActionPlaces
+import com.intellij.openapi.actionSystem.AnAction
+import com.intellij.openapi.actionSystem.KeyboardShortcut
+import com.intellij.openapi.actionSystem.ex.ActionUtil
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.wm.IdeFocusManager
 import com.intellij.openapi.wm.ToolWindowManager
@@ -13,11 +16,12 @@ import java.awt.Container
 import java.awt.event.KeyEvent
 import javax.swing.JComponent
 import javax.swing.JTree
+import javax.swing.KeyStroke
 import javax.swing.text.JTextComponent
 import javax.swing.tree.DefaultMutableTreeNode
 
 /**
- * Handles VCS Commit and Version Control tool window shortcuts (`Space`, `d`, `c`).
+ * Handles VCS Commit and Version Control tool window shortcuts (`Space`/`s`, `d`, `c`).
  */
 object HelixCommitToolWindowActions {
 
@@ -29,7 +33,11 @@ object HelixCommitToolWindowActions {
     fun isCommitOrVcsToolWindow(toolWindowId: String): Boolean =
         toolWindowId == "Commit" || toolWindowId == "Version Control"
 
-    fun toggleStageOrCheckbox(component: JComponent, toolWindowId: String): Boolean {
+    fun toggleStageOrCheckbox(
+        component: JComponent,
+        toolWindowId: String,
+        allowNativePassthrough: Boolean = true,
+    ): Boolean {
         if (!isCommitToolWindow(toolWindowId)) return false
 
         if (isGitStageTree(component)) {
@@ -41,11 +49,55 @@ object HelixCommitToolWindowActions {
 
         // Changelist mode uses ChangesTree$MyToggleSelectionAction via IdeKeyEventDispatcher
         if (isChangesTreeWithCheckboxes(component)) {
-            return false
+            if (allowNativePassthrough) {
+                return false
+            }
+            if (executeComponentSpaceToggleAction(component)) {
+                return true
+            }
         }
 
         HelixToolWindowNavigator.dispatchSyntheticKey(component, KeyEvent.VK_SPACE, ' ')
         return true
+    }
+
+    private fun executeComponentSpaceToggleAction(component: JComponent): Boolean {
+        val actionManager = ActionManager.getInstance() ?: return false
+        val spaceStroke = KeyStroke.getKeyStroke(KeyEvent.VK_SPACE, 0)
+        val actions = ActionUtil.getActions(component)
+        val toggleAction = actions.firstOrNull { isSpaceToggleAction(it, spaceStroke) } ?: return false
+        val app = ApplicationManager.getApplication()
+        if (app != null) {
+            app.invokeLater {
+                actionManager.tryToExecute(
+                    toggleAction,
+                    null,
+                    component,
+                    ActionPlaces.TOOLWINDOW_CONTENT,
+                    true,
+                )
+            }
+        } else {
+            actionManager.tryToExecute(
+                toggleAction,
+                null,
+                component,
+                ActionPlaces.TOOLWINDOW_CONTENT,
+                true,
+            )
+        }
+        return true
+    }
+
+    private fun isSpaceToggleAction(action: AnAction, spaceStroke: KeyStroke): Boolean {
+        if (action.javaClass.simpleName.contains("ToggleSelection", ignoreCase = true)) {
+            return true
+        }
+        return action.shortcutSet.shortcuts.any { shortcut ->
+            shortcut is KeyboardShortcut &&
+                shortcut.firstKeyStroke == spaceStroke &&
+                shortcut.secondKeyStroke == null
+        }
     }
 
     fun openDiffPreview(component: JComponent, toolWindowId: String): Boolean {

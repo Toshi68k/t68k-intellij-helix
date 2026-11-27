@@ -91,7 +91,7 @@
   <li><b><kbd>Space</kbd> + <code>a</code> / <code>r</code></b> → Code actions (<kbd>Alt+Enter</kbd>) &amp; symbol rename</li>
   <li><b><kbd>Space</kbd> + <code>d</code> / <code>D</code></b> → Diagnostic inspection &amp; Problems tool window</li>
   <li><b><kbd>Space</kbd> + <code>j</code></b> → Interactive Jumplist picker popup</li>
-  <li><b><kbd>Space</kbd> + <code>w</code></b> → Window &amp; split layout management (including scratch splits and maximize view)</li>
+  <li><b><kbd>Space</kbd> + <code>w</code> / <code>W</code></b> → Window &amp; split layout management / Tool Window Switcher</li>
   <li><b><kbd>Space</kbd> + <code>G</code></b> → Interactive DAP debugging menu (breakpoints, stepping, eval)</li>
   <li><b><kbd>Space</kbd> + <code>k</code> / <code>?</code></b> → Documentation hover &amp; command search</li>
 </ul>
@@ -541,6 +541,10 @@
             <keyboard-shortcut keymap="$default" first-keystroke="alt shift U"/>
             <keyboard-shortcut keymap="Mac OS X" first-keystroke="alt shift U"/>
             <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="alt shift U"/>
+        </action>
+
+        <action id="jp.titze.intellij.helix.toolWindowSwitcher"
+                class="jp.titze.intellij.helix.editor.HelixToolWindowSwitcherAction">
         </action>
     </actions>
 </idea-plugin>

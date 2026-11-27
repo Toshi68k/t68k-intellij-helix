@@ -61,6 +61,13 @@ internal object HelixBuiltinCommands {
             settings.enabled = !settings.enabled
             HelixEditorEligibility.refreshAllEditors()
         },
+        HelixCommandItem(
+            "tool-windows",
+            listOf("toolwindows", "toolwindow-switcher", "tw"),
+            "Open dynamic tool window switcher popup",
+        ) { editor ->
+            jp.titze.intellij.helix.toolwindow.HelixToolWindowSwitcher.startFromEditor(editor)
+        },
         HelixCommandItem("write", listOf("w"), "Save all modified files") { editor ->
             HelixActionDelegate.executeAction("SaveAll", editor)
         },

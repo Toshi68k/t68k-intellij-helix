@@ -8,6 +8,8 @@ import com.intellij.ui.components.JBList
 import com.intellij.ui.table.JBTable
 import com.intellij.ui.treeStructure.Tree
 import jp.titze.intellij.helix.settings.HelixSettings
+import jp.titze.intellij.helix.ui.HelixWhichKeyMenus
+import jp.titze.intellij.helix.ui.HelixWhichKeyPopup
 import java.awt.event.KeyEvent
 import javax.swing.DefaultListModel
 import javax.swing.JPanel
@@ -19,18 +21,31 @@ class HelixToolWindowNavigatorTest : BasePlatformTestCase() {
 
     override fun setUp() {
         super.setUp()
+        HelixWhichKeyPopup.hide()
         HelixToolWindowState.reset()
         HelixToolWindowState.clearSearchState()
         HelixSettings.instance.toolWindowNavigationEnabled = true
+        HelixSettings.instance.toolWindowSpaceSwitcher = true
+        HelixSettings.instance.toolWindowCommitSpaceSwitcher = true
+        HelixSettings.instance.enabled = true
+        jp.titze.intellij.helix.keymap.HelixKeymapManager.resetToDefaults()
     }
 
     override fun tearDown() {
+        HelixWhichKeyPopup.hide()
         HelixCommitToolWindowActions.actionExecutor = null
         HelixWindowFocusNavigator.toolWindowJumpHook = null
+        HelixToolWindowSwitcher.switchExecutor = null
+        jp.titze.intellij.helix.editor.HelixEventDispatcher.terminalShortcutsProvider = null
+        jp.titze.intellij.helix.keymap.HelixKeymapManager.resetToDefaults()
+        HelixSettings.instance.enabled = true
         HelixSettings.instance.toolWindowNavigationEnabled = false
         HelixSettings.instance.toolWindowOtherEnabled = false
         HelixSettings.instance.toolWindowSeamlessFocusJump = true
         HelixSettings.instance.toolWindowSearchConfirmOnEnter = true
+        HelixSettings.instance.toolWindowSpaceSwitcher = true
+        HelixSettings.instance.toolWindowCommitSpaceSwitcher = true
+        HelixSettings.instance.enableWhichKeyPopups = true
         HelixToolWindowState.reset()
         HelixToolWindowState.clearSearchState()
         super.tearDown()
@@ -331,6 +346,7 @@ class HelixToolWindowNavigatorTest : BasePlatformTestCase() {
     }
 
     fun testCommitSpaceTogglesCheckboxAndSuppressesKeyTyped() {
+        HelixSettings.instance.toolWindowCommitSpaceSwitcher = false
         com.intellij.testFramework.runInEdtAndWait {
             val root = com.intellij.ui.CheckedTreeNode("Changes")
             val fileNode = com.intellij.ui.CheckedTreeNode("App.kt")
@@ -385,6 +401,7 @@ class HelixToolWindowNavigatorTest : BasePlatformTestCase() {
     }
 
     fun testCommitSpaceStagesAndUnstagesInGitStageTree() {
+        HelixSettings.instance.toolWindowCommitSpaceSwitcher = false
         val root = DefaultMutableTreeNode("Root")
         val stagedGroup = DefaultMutableTreeNode("STAGED")
         val stagedFile = DefaultMutableTreeNode("StagedFile.kt")
@@ -441,6 +458,7 @@ class HelixToolWindowNavigatorTest : BasePlatformTestCase() {
     }
 
     fun testCommitSpacePassesThroughForChangesTreeWithCheckboxes() {
+        HelixSettings.instance.toolWindowCommitSpaceSwitcher = false
         val changesTree = object : Tree() {
             private val showCheckboxesFlag = true
 
@@ -463,7 +481,8 @@ class HelixToolWindowNavigatorTest : BasePlatformTestCase() {
         assertFalse(spaceEvent.isConsumed)
     }
 
-    fun testSpaceNotInterceptedOutsideCommitToolWindow() {
+    fun testSpaceNotInterceptedOutsideCommitToolWindowWhenSwitcherDisabled() {
+        HelixSettings.instance.toolWindowSpaceSwitcher = false
         val tree = Tree()
         val panel = JPanel()
         panel.putClientProperty("ToolWindow.id", "Project")
@@ -955,5 +974,464 @@ class HelixToolWindowNavigatorTest : BasePlatformTestCase() {
             assertFalse(HelixToolWindowState.isLastSearchBackward("Project"))
             assertNull(HelixToolWindowState.getBackwardSearch(tree))
         }
+    }
+
+    fun testSpaceOpensWhichKeySwitcherAndSwitchesToolWindow() {
+        val tree = Tree()
+        val panel = JPanel()
+        panel.putClientProperty("ToolWindow.id", "Project")
+        panel.add(tree)
+
+        val switched = mutableListOf<Pair<String, String?>>()
+        HelixToolWindowSwitcher.switchExecutor = { actionId, targetTwId, _ ->
+            switched.add(actionId to targetTwId)
+            true
+        }
+
+        val dispatcher = jp.titze.intellij.helix.editor.HelixEventDispatcher()
+
+        // Space opens the tool window switcher Which-Key menu and sets pending sequence
+        val spacePressed = KeyEvent(tree, KeyEvent.KEY_PRESSED, System.currentTimeMillis(), 0, KeyEvent.VK_SPACE, ' ')
+        assertTrue(dispatcher.dispatch(spacePressed))
+        assertTrue(spacePressed.isConsumed)
+        assertEquals(HelixToolWindowSwitcher.PREFIX, HelixToolWindowState.getPendingSequence())
+        assertTrue(HelixWhichKeyPopup.isShowing(HelixToolWindowSwitcher.PREFIX))
+
+        // Consume matching KEY_TYPED ' '
+        val spaceTyped = KeyEvent(tree, KeyEvent.KEY_TYPED, System.currentTimeMillis(), 0, KeyEvent.VK_UNDEFINED, ' ')
+        assertTrue(dispatcher.dispatch(spaceTyped))
+        assertTrue(spaceTyped.isConsumed)
+
+        // Press 'g' -> switches to Version Control and clears pending state & popup
+        val gPressed = KeyEvent(tree, KeyEvent.KEY_PRESSED, System.currentTimeMillis(), 0, KeyEvent.VK_G, 'g')
+        assertTrue(dispatcher.dispatch(gPressed))
+        assertTrue(gPressed.isConsumed)
+        assertEquals("", HelixToolWindowState.getPendingSequence())
+        assertFalse(HelixWhichKeyPopup.isShowing())
+        assertEquals(listOf("ActivateVersionControlToolWindow" to "Version Control"), switched)
+
+        val gTyped = KeyEvent(tree, KeyEvent.KEY_TYPED, System.currentTimeMillis(), 0, KeyEvent.VK_UNDEFINED, 'g')
+        assertTrue(dispatcher.dispatch(gTyped))
+        assertTrue(gTyped.isConsumed)
+
+        // Space + D (Shift+D) -> Problems View; Space + Space -> FocusEditor (even with visual Which-Key disabled)
+        HelixSettings.instance.enableWhichKeyPopups = false
+        assertTrue(
+            dispatcher.dispatch(
+                KeyEvent(tree, KeyEvent.KEY_PRESSED, System.currentTimeMillis(), 0, KeyEvent.VK_SPACE, ' '),
+            ),
+        )
+        assertFalse(HelixWhichKeyPopup.isShowing())
+        assertTrue(
+            dispatcher.dispatch(
+                KeyEvent(tree, KeyEvent.KEY_TYPED, System.currentTimeMillis(), 0, KeyEvent.VK_UNDEFINED, ' '),
+            ),
+        )
+        val shiftD = KeyEvent(
+            tree,
+            KeyEvent.KEY_PRESSED,
+            System.currentTimeMillis(),
+            KeyEvent.SHIFT_DOWN_MASK,
+            KeyEvent.VK_D,
+            'D',
+        )
+        assertTrue(dispatcher.dispatch(shiftD))
+        assertEquals("", HelixToolWindowState.getPendingSequence())
+
+        assertTrue(
+            dispatcher.dispatch(
+                KeyEvent(tree, KeyEvent.KEY_PRESSED, System.currentTimeMillis(), 0, KeyEvent.VK_SPACE, ' '),
+            ),
+        )
+        assertTrue(
+            dispatcher.dispatch(
+                KeyEvent(tree, KeyEvent.KEY_PRESSED, System.currentTimeMillis(), 0, KeyEvent.VK_SPACE, ' '),
+            ),
+        )
+        assertEquals(
+            listOf(
+                "ActivateVersionControlToolWindow" to "Version Control",
+                "ActivateProblemsViewToolWindow" to "Problems View",
+                "FocusEditor" to null,
+            ),
+            switched,
+        )
+    }
+
+    fun testSpaceSwitcherSkippedForCheckboxTreeOutsideCommit() {
+        val checkboxTree = object : Tree() {
+            private val showCheckboxesFlag = true
+
+            @Suppress("unused")
+            fun isShowCheckboxes(): Boolean = showCheckboxesFlag
+        }
+        val panel = JPanel()
+        panel.putClientProperty("ToolWindow.id", "Project")
+        panel.add(checkboxTree)
+
+        val spaceEvent = KeyEvent(
+            checkboxTree,
+            KeyEvent.KEY_PRESSED,
+            System.currentTimeMillis(),
+            0,
+            KeyEvent.VK_SPACE,
+            ' ',
+        )
+        assertFalse(HelixToolWindowNavigator.dispatch(spaceEvent))
+        assertFalse(spaceEvent.isConsumed)
+        assertFalse(HelixWhichKeyPopup.isShowing())
+    }
+
+    fun testSpaceSwitcherCancelWithEscapeInWhichKeyPopup() {
+        val tree = Tree()
+        val panel = JPanel()
+        panel.putClientProperty("ToolWindow.id", "Project")
+        panel.add(tree)
+
+        val dispatcher = jp.titze.intellij.helix.editor.HelixEventDispatcher()
+        assertTrue(
+            dispatcher.dispatch(
+                KeyEvent(tree, KeyEvent.KEY_PRESSED, System.currentTimeMillis(), 0, KeyEvent.VK_SPACE, ' '),
+            ),
+        )
+        assertTrue(HelixWhichKeyPopup.isShowing(HelixToolWindowSwitcher.PREFIX))
+
+        val escPressed = KeyEvent(
+            tree,
+            KeyEvent.KEY_PRESSED,
+            System.currentTimeMillis(),
+            0,
+            KeyEvent.VK_ESCAPE,
+            KeyEvent.CHAR_UNDEFINED,
+        )
+        assertTrue(dispatcher.dispatch(escPressed))
+        assertTrue(escPressed.isConsumed)
+        assertFalse(HelixWhichKeyPopup.isShowing())
+        assertEquals("", HelixToolWindowState.getPendingSequence())
+    }
+
+    fun testWhichKeyMenusIncludesToolWindowSpaceAndWindowMenus() {
+        val spaceMenu = HelixWhichKeyMenus.getMenu(HelixToolWindowSwitcher.PREFIX)
+        assertNotNull(spaceMenu)
+        assertTrue(spaceMenu!!.second.any { it.key == "e" && it.intelliJAction == "ActivateProjectToolWindow" })
+        assertTrue(spaceMenu.second.any { it.key == "Space" && it.helixCommand == "focus_editor" })
+
+        val windowMenu = HelixWhichKeyMenus.getMenu(HelixToolWindowSwitcher.WINDOW_PREFIX)
+        assertNotNull(windowMenu)
+        assertEquals(listOf("h", "j", "k", "l", "w"), windowMenu!!.second.map { it.key })
+    }
+
+    fun testCommitSpaceOpensSwitcherByDefaultAndSStagesAndToggles() {
+        // Default toolWindowCommitSpaceSwitcher == true -> Space in Commit opens switcher
+        com.intellij.testFramework.runInEdtAndWait {
+            val root = com.intellij.ui.CheckedTreeNode("Changes")
+            val fileNode = com.intellij.ui.CheckedTreeNode("App.kt")
+            fileNode.isChecked = false
+            root.add(fileNode)
+            val tree = object : com.intellij.ui.CheckboxTree(
+                object : CheckboxTreeCellRenderer() {
+                    override fun customizeRenderer(
+                        tree: javax.swing.JTree?,
+                        value: Any?,
+                        selected: Boolean,
+                        expanded: Boolean,
+                        leaf: Boolean,
+                        row: Int,
+                        hasFocus: Boolean,
+                    ) {
+                        textRenderer.append(value?.toString() ?: "")
+                    }
+                },
+                root,
+            ) {}
+            val panel = JPanel()
+            panel.putClientProperty("ToolWindow.id", "Commit")
+            panel.add(tree)
+            tree.expandRow(0)
+            tree.selectionPath = javax.swing.tree.TreePath(arrayOf(root, fileNode))
+
+            val dispatcher = jp.titze.intellij.helix.editor.HelixEventDispatcher()
+            val switched = mutableListOf<Pair<String, String?>>()
+            HelixToolWindowSwitcher.switchExecutor = { actionId, twId, _ ->
+                switched.add(actionId to twId)
+                true
+            }
+
+            // Space opens switcher instead of toggling checkbox
+            assertTrue(
+                dispatcher.dispatch(
+                    KeyEvent(tree, KeyEvent.KEY_PRESSED, System.currentTimeMillis(), 0, KeyEvent.VK_SPACE, ' '),
+                ),
+            )
+            assertTrue(HelixWhichKeyPopup.isShowing(HelixToolWindowSwitcher.PREFIX))
+            assertFalse(fileNode.isChecked)
+
+            // 'w' selects Focus editor and closes switcher
+            assertTrue(
+                dispatcher.dispatch(
+                    KeyEvent(tree, KeyEvent.KEY_PRESSED, System.currentTimeMillis(), 0, KeyEvent.VK_W, 'w'),
+                ),
+            )
+            assertFalse(HelixWhichKeyPopup.isShowing())
+            assertEquals(listOf("FocusEditor" to null), switched)
+
+            // 's' toggles the CheckboxTree node
+            assertTrue(
+                dispatcher.dispatch(
+                    KeyEvent(tree, KeyEvent.KEY_PRESSED, System.currentTimeMillis(), 0, KeyEvent.VK_S, 's'),
+                ),
+            )
+            assertTrue(fileNode.isChecked)
+            assertTrue(
+                dispatcher.dispatch(
+                    KeyEvent(tree, KeyEvent.KEY_TYPED, System.currentTimeMillis(), 0, KeyEvent.VK_UNDEFINED, 's'),
+                ),
+            )
+        }
+
+        // 's' in GitStage tree triggers Git.Stage.Add / Git.Stage.Reset
+        val stageRoot = DefaultMutableTreeNode("Root")
+        val unstagedGroup = DefaultMutableTreeNode("UNSTAGED")
+        val unstagedFile = DefaultMutableTreeNode("Changed.kt")
+        unstagedGroup.add(unstagedFile)
+        val stagedGroup = DefaultMutableTreeNode("STAGED")
+        val stagedFile = DefaultMutableTreeNode("Ready.kt")
+        stagedGroup.add(stagedFile)
+        stageRoot.add(unstagedGroup)
+        stageRoot.add(stagedGroup)
+
+        val stageTree = object : Tree(DefaultTreeModel(stageRoot)) {
+            private val showCheckboxesFlag = false
+
+            @Suppress("unused")
+            fun isShowCheckboxes(): Boolean = showCheckboxesFlag
+        }
+        stageTree.expandRow(0)
+        stageTree.expandPath(javax.swing.tree.TreePath(arrayOf(stageRoot, unstagedGroup)))
+        stageTree.expandPath(javax.swing.tree.TreePath(arrayOf(stageRoot, stagedGroup)))
+        val stagePanel = JPanel()
+        stagePanel.putClientProperty("ToolWindow.id", "Commit")
+        stagePanel.add(stageTree)
+
+        val executed = mutableListOf<String>()
+        HelixCommitToolWindowActions.actionExecutor = { actionId, _ ->
+            executed.add(actionId)
+            true
+        }
+
+        stageTree.selectionPath = javax.swing.tree.TreePath(arrayOf(stageRoot, unstagedGroup, unstagedFile))
+        assertTrue(
+            HelixToolWindowNavigator.dispatch(
+                KeyEvent(stageTree, KeyEvent.KEY_PRESSED, System.currentTimeMillis(), 0, KeyEvent.VK_S, 's'),
+            ),
+        )
+        stageTree.selectionPath = javax.swing.tree.TreePath(arrayOf(stageRoot, stagedGroup, stagedFile))
+        assertTrue(
+            HelixToolWindowNavigator.dispatch(
+                KeyEvent(stageTree, KeyEvent.KEY_PRESSED, System.currentTimeMillis(), 0, KeyEvent.VK_S, 's'),
+            ),
+        )
+        assertEquals(listOf("Git.Stage.Add", "Git.Stage.Reset"), executed)
+    }
+
+    fun testCtrlWShowsWindowWhichKeyPopupAndHidesOnSelectionOrEscape() {
+        val tree = Tree()
+        val panel = JPanel()
+        panel.putClientProperty("ToolWindow.id", "Project")
+        panel.add(tree)
+
+        val jumps = mutableListOf<Pair<FocusDirection, String>>()
+        HelixWindowFocusNavigator.toolWindowJumpHook = { dir, id ->
+            jumps.add(dir to id)
+            true
+        }
+
+        val dispatcher = jp.titze.intellij.helix.editor.HelixEventDispatcher()
+        val ctrlW = KeyEvent(
+            tree,
+            KeyEvent.KEY_PRESSED,
+            System.currentTimeMillis(),
+            KeyEvent.CTRL_DOWN_MASK,
+            KeyEvent.VK_W,
+            'w',
+        )
+        assertTrue(dispatcher.dispatch(ctrlW))
+        assertEquals("C-w", HelixToolWindowState.getPendingSequence())
+        assertTrue(HelixWhichKeyPopup.isShowing(HelixToolWindowSwitcher.WINDOW_PREFIX))
+
+        // Pressing 'l' completes the jump and hides the popup
+        assertTrue(
+            dispatcher.dispatch(
+                KeyEvent(tree, KeyEvent.KEY_PRESSED, System.currentTimeMillis(), 0, KeyEvent.VK_L, 'l'),
+            ),
+        )
+        assertFalse(HelixWhichKeyPopup.isShowing())
+        assertEquals("", HelixToolWindowState.getPendingSequence())
+        assertEquals(listOf(FocusDirection.RIGHT to "Project"), jumps)
+
+        // Pressing Ctrl+w then Esc cancels cleanly
+        assertTrue(dispatcher.dispatch(ctrlW))
+        assertTrue(HelixWhichKeyPopup.isShowing(HelixToolWindowSwitcher.WINDOW_PREFIX))
+        val esc = KeyEvent(
+            tree,
+            KeyEvent.KEY_PRESSED,
+            System.currentTimeMillis(),
+            0,
+            KeyEvent.VK_ESCAPE,
+            KeyEvent.CHAR_UNDEFINED,
+        )
+        assertTrue(dispatcher.dispatch(esc))
+        assertFalse(HelixWhichKeyPopup.isShowing())
+        assertEquals("", HelixToolWindowState.getPendingSequence())
+    }
+
+    fun testDynamicToolWindowDiscoveryIncludesOptionalAndPluginWindows() {
+        val available = listOf(
+            "Project" to "Project",
+            "DatabaseView" to "Database",
+            "Endpoints" to "Endpoints",
+            "CustomTool" to "Custom Inspector",
+        )
+        val targets = HelixToolWindowSwitcher.buildTargetsFromAvailable(available)
+
+        // Installed curated windows keep stable mnemonics; absent windows like Gradle are omitted
+        assertTrue(targets.any { it.key == 'e' && it.toolWindowId == "Project" })
+        assertTrue(targets.any { it.key == 'B' && it.toolWindowId == "DatabaseView" })
+        assertFalse(targets.any { it.toolWindowId == "Gradle" })
+
+        // Dynamic/third-party tool windows get unused keys automatically ('E' for Endpoints since 'e' is taken)
+        val endpointsTarget = targets.firstOrNull { it.toolWindowId == "Endpoints" }
+        assertNotNull(endpointsTarget)
+        assertEquals('E', endpointsTarget!!.key)
+
+        val customTarget = targets.firstOrNull { it.toolWindowId == "CustomTool" }
+        assertNotNull(customTarget)
+        assertNotNull(customTarget!!.key)
+
+        // Focus editor ('w' and ' ') always included at the end
+        assertTrue(targets.any { it.key == 'w' && it.toolWindowId == null })
+        assertTrue(targets.any { it.key == ' ' && it.toolWindowId == null })
+
+        // Editor-launched targets omit redundant Focus editor entries while preserving mnemonics
+        val editorTargets = HelixToolWindowSwitcher.buildTargetsFromAvailable(available, includeEditorTargets = false)
+        assertFalse(editorTargets.any { it.toolWindowId == null })
+        assertTrue(editorTargets.any { it.key == 'e' && it.toolWindowId == "Project" })
+    }
+
+    fun testEditorSpaceWOpensSwitcherAndActivatesToolWindow() {
+        myFixture.configureByText("Main.txt", "hello world\n")
+        val editor = myFixture.editor
+        val state = jp.titze.intellij.helix.state.HelixStateManager.getOrCreate(editor)
+
+        val spaceMenu = HelixWhichKeyMenus.getMenu(" ") ?: error("Missing space menu")
+        assertTrue(spaceMenu.second.any { it.key == "W" && it.helixCommand == "toolwindow_switcher" })
+
+        val activations = mutableListOf<Pair<String, String?>>()
+        HelixToolWindowSwitcher.switchExecutor = { actionId, twId, _ ->
+            activations.add(actionId to twId)
+            true
+        }
+
+        // Pressing Space -> W from editor opens editor tool window switcher
+        assertTrue(jp.titze.intellij.helix.keymap.HelixKeyHandler.handleKey(' ', editor))
+        assertTrue(jp.titze.intellij.helix.keymap.HelixKeyHandler.handleKey('W', editor))
+        assertTrue(HelixWhichKeyPopup.isShowing(HelixToolWindowSwitcher.EDITOR_PREFIX))
+        assertEquals(HelixToolWindowSwitcher.EDITOR_PREFIX, state.pendingSequence)
+
+        // Selecting 't' activates Terminal and clears pending state
+        assertTrue(jp.titze.intellij.helix.keymap.HelixKeyHandler.handleKey('t', editor))
+        assertFalse(HelixWhichKeyPopup.isShowing())
+        assertEquals("", state.pendingSequence)
+        assertEquals(listOf("ActivateTerminalToolWindow" to "Terminal"), activations)
+
+        // Launching via :tool-windows and cancelling with Escape resets cleanly
+        jp.titze.intellij.helix.command.HelixCommands.execute("tool-windows", editor)
+        assertTrue(HelixWhichKeyPopup.isShowing(HelixToolWindowSwitcher.EDITOR_PREFIX))
+        assertTrue(jp.titze.intellij.helix.editor.HelixEscapeHandler.handleEscape(editor))
+        assertFalse(HelixWhichKeyPopup.isShowing())
+        assertEquals("", state.pendingSequence)
+    }
+
+    fun testTerminalUserBoundShortcutOpensSwitcherAndConsumesRollover() {
+        val terminalPanel = JPanel()
+        terminalPanel.putClientProperty("ToolWindow.id", "Terminal")
+        val terminalWidget = JPanel()
+        terminalPanel.add(terminalWidget)
+
+        val dispatcher = jp.titze.intellij.helix.editor.HelixEventDispatcher()
+
+        // Unbound by default: Ctrl+Shift+Space passes through untouched to Terminal
+        val ctrlShiftSpace = KeyEvent(
+            terminalWidget,
+            KeyEvent.KEY_PRESSED,
+            System.currentTimeMillis(),
+            KeyEvent.CTRL_DOWN_MASK or KeyEvent.SHIFT_DOWN_MASK,
+            KeyEvent.VK_SPACE,
+            ' ',
+        )
+        assertFalse(dispatcher.dispatch(ctrlShiftSpace))
+        assertFalse(HelixWhichKeyPopup.isShowing())
+
+        // Once bound in Keymap, dispatcher intercepts it in Terminal and opens switcher with editor focus target
+        jp.titze.intellij.helix.editor.HelixEventDispatcher.terminalShortcutsProvider = {
+            arrayOf(
+                com.intellij.openapi.actionSystem.KeyboardShortcut(
+                    javax.swing.KeyStroke.getKeyStroke(
+                        KeyEvent.VK_SPACE,
+                        KeyEvent.CTRL_DOWN_MASK or KeyEvent.SHIFT_DOWN_MASK,
+                    ),
+                    null,
+                ),
+                com.intellij.openapi.actionSystem.KeyboardShortcut(
+                    javax.swing.KeyStroke.getKeyStroke(
+                        KeyEvent.VK_W,
+                        KeyEvent.ALT_DOWN_MASK or KeyEvent.SHIFT_DOWN_MASK,
+                    ),
+                    null,
+                ),
+            )
+        }
+
+        assertTrue(dispatcher.dispatch(ctrlShiftSpace))
+        assertTrue(ctrlShiftSpace.isConsumed)
+        assertTrue(HelixWhichKeyPopup.isShowing(HelixToolWindowSwitcher.PREFIX))
+
+        val switched = mutableListOf<Pair<String, String?>>()
+        HelixToolWindowSwitcher.switchExecutor = { actionId, twId, _ ->
+            switched.add(actionId to twId)
+            true
+        }
+        assertTrue(HelixToolWindowSwitcher.handleSelectionChar('w', terminalWidget, "Terminal"))
+        assertEquals(listOf("FocusEditor" to null), switched)
+        HelixWhichKeyPopup.hide()
+
+        // Alt-based user binding suppresses trailing KEY_TYPED character so nothing leaks into PTY
+        val altShiftW = KeyEvent(
+            terminalWidget,
+            KeyEvent.KEY_PRESSED,
+            System.currentTimeMillis(),
+            KeyEvent.ALT_DOWN_MASK or KeyEvent.SHIFT_DOWN_MASK,
+            KeyEvent.VK_W,
+            'W',
+        )
+        assertTrue(dispatcher.dispatch(altShiftW))
+        assertTrue(altShiftW.isConsumed)
+        assertTrue(HelixWhichKeyPopup.isShowing(HelixToolWindowSwitcher.PREFIX))
+
+        HelixWhichKeyPopup.hide()
+        val trailingTyped = KeyEvent(
+            terminalWidget,
+            KeyEvent.KEY_TYPED,
+            System.currentTimeMillis(),
+            KeyEvent.ALT_DOWN_MASK or KeyEvent.SHIFT_DOWN_MASK,
+            KeyEvent.VK_UNDEFINED,
+            'W',
+        )
+        assertTrue(dispatcher.dispatch(trailingTyped))
+        assertTrue(trailingTyped.isConsumed)
+
+        // Master disabled skips Terminal interception
+        HelixSettings.instance.enabled = false
+        assertFalse(dispatcher.dispatch(ctrlShiftSpace))
     }
 }

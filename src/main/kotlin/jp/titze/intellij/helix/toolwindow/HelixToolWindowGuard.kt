@@ -27,6 +27,8 @@ import javax.swing.text.JTextComponent
  */
 object HelixToolWindowGuard {
 
+    private val TERMINAL_CLASS_PREFIXES = listOf("org.jetbrains.plugins.terminal", "com.intellij.terminal")
+
     /**
      * Determines whether [eventComponent] or the current focus owner is eligible for Helix navigation.
      * Returns the target component (`JTree`, `JTable`, or `JList`) and the associated `toolWindowId`,
@@ -100,6 +102,35 @@ object HelixToolWindowGuard {
             settings.toolWindowOtherEnabled
 
         return if (isAllowed) Triple(navComponent, toolWindowId, speedSearch) else null
+    }
+
+    /**
+     * Returns the focused component when [eventComponent] or the current focus owner resides inside
+     * the Terminal tool window (excluding dialogs and popups), or `null` otherwise.
+     */
+    fun findTerminalComponent(
+        eventComponent: Component?,
+        settings: HelixSettings = HelixSettings.instance,
+    ): JComponent? {
+        if (!settings.enabled) return null
+        val focusOwner = KeyboardFocusManager.getCurrentKeyboardFocusManager().focusOwner
+        val target = (eventComponent as? JComponent) ?: (focusOwner as? JComponent) ?: return null
+        if (isInsideDialogOrPopup(target)) return null
+        val isTerminalTw = findToolWindowIdFromAncestors(target) == "Terminal" ||
+            hasTerminalClassAncestor(target)
+        return if (isTerminalTw) target else null
+    }
+
+    private fun hasTerminalClassAncestor(component: Component): Boolean {
+        var current: Component? = component
+        var depth = 0
+        while (current != null && depth < 16) {
+            val className = current.javaClass.name
+            if (TERMINAL_CLASS_PREFIXES.any { className.startsWith(it) }) return true
+            current = current.parent
+            depth++
+        }
+        return false
     }
 
     private fun rememberActiveSpeedSearchPrefix(navComponent: JComponent, speedSearch: SpeedSearchSupply?) {
