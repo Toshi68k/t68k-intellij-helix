@@ -738,10 +738,6 @@ object HelixCommandRegistry {
             HelixKeyHandler.recordJump(ed)
             HelixFileNavigation.gotoPreviousBuffer(ed, cnt)
         }
-        register("goto_last_change", "Jump to last change", "JumpToLastChange") { ed, _ ->
-            HelixKeyHandler.recordJump(ed)
-            HelixActionDelegate.executeAction("JumpToLastChange", ed)
-        }
         register("goto_last_accessed_file", "Last accessed file") { ed, _ ->
             HelixKeyHandler.recordJump(ed)
             HelixFileNavigation.gotoLastAccessedFile(ed)

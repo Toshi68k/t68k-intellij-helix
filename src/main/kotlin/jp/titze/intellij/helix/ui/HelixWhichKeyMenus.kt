@@ -103,7 +103,7 @@ object HelixWhichKeyMenus {
                 WhichKeyItem("r", "Goto reference", "goto_reference", "FindUsages"),
                 WhichKeyItem("n", "Next buffer / tab", "goto_next_buffer", "NextTab"),
                 WhichKeyItem("p", "Previous buffer / tab", "goto_previous_buffer", "PreviousTab"),
-                WhichKeyItem(".", "Last edit location", "goto_last_change", "JumpToLastChange"),
+                WhichKeyItem(".", "Last edit location", "goto_last_modification", "JumpToLastChange"),
                 WhichKeyItem("h", "Goto line start", "goto_line_start"),
                 WhichKeyItem("l", "Goto line end", "goto_line_end"),
                 WhichKeyItem("s", "Goto first non-whitespace", "goto_first_nonwhitespace"),

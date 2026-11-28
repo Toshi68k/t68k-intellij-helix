@@ -322,6 +322,9 @@ object HelixJumpMotions {
     @Volatile
     internal var changeRangesProvider: ((Editor) -> List<ChangeLineRange>?)? = null
 
+    @Volatile
+    internal var vcsClassLoaderProvider: (() -> List<ClassLoader?>)? = null
+
     /**
      * [g / ]g / [G / ]G: VCS change marker navigation (and diff-hunk navigation inside diff viewers)
      */
@@ -351,7 +354,7 @@ object HelixJumpMotions {
     }
 
     internal fun readTrackerChangeRanges(project: Project, editor: Editor): List<ChangeLineRange>? = try {
-        val managerClass = Class.forName("com.intellij.openapi.vcs.impl.LineStatusTrackerManager")
+        val managerClass = loadVcsClass("com.intellij.openapi.vcs.impl.LineStatusTrackerManager") ?: return null
         val manager = managerClass.getMethod("getInstance", Project::class.java).invoke(null, project)
             ?: return null
         val tracker = findAccessibleMethod(manager.javaClass, "getLineStatusTracker", Document::class.java)
@@ -360,6 +363,41 @@ object HelixJumpMotions {
     } catch (_: Throwable) {
         null
     }
+
+    internal fun loadVcsClass(className: String): Class<*>? {
+        for (loader in resolveVcsClassLoaders()) {
+            if (loader == null) continue
+            try {
+                return Class.forName(className, true, loader)
+            } catch (_: Throwable) {
+                // try next classloader
+            }
+        }
+        return null
+    }
+
+    private const val ACTION_NEXT_CHANGE_MARKER = "VcsShowNextChangeMarker"
+    private const val ACTION_PREV_CHANGE_MARKER = "VcsShowPrevChangeMarker"
+    private const val ACTION_LAST_CHANGE_MARKER = "VcsShowLastChangeMarker"
+    private const val ACTION_FIRST_CHANGE_MARKER = "VcsShowFirstChangeMarker"
+
+    private fun resolveVcsClassLoaders(): List<ClassLoader?> {
+        vcsClassLoaderProvider?.let { return it() }
+        val actionManager = try {
+            ActionManager.getInstance()
+        } catch (_: Throwable) {
+            null
+        }
+        return listOf(
+            HelixJumpMotions::class.java.classLoader,
+            resolveActionClassLoader(actionManager, ACTION_NEXT_CHANGE_MARKER),
+            resolveActionClassLoader(actionManager, ACTION_PREV_CHANGE_MARKER),
+            Thread.currentThread().contextClassLoader,
+        ).distinct()
+    }
+
+    private fun resolveActionClassLoader(actionManager: ActionManager?, actionId: String): ClassLoader? =
+        actionManager?.getAction(actionId)?.javaClass?.classLoader
 
     internal fun extractChangeRangesFromTracker(tracker: Any, editor: Editor): List<ChangeLineRange>? = try {
         val isValid = findAccessibleMethod(tracker.javaClass, "isValid")?.invoke(tracker) == true
@@ -371,7 +409,7 @@ object HelixJumpMotions {
             val rawRanges = HelixReadAction.compute {
                 findAccessibleMethod(tracker.javaClass, "getRanges")?.invoke(tracker) as? List<*>
             } ?: return null
-            rawRanges.mapNotNull(::toChangeLineRange)
+            rawRanges.mapNotNull(::toChangeLineRange).sortedBy { it.line1 }
         }
     } catch (_: Throwable) {
         null
@@ -419,19 +457,18 @@ object HelixJumpMotions {
 
     private fun moveChangeViaActions(editor: Editor, forward: Boolean, count: Int, toEnd: Boolean): Boolean {
         if (toEnd) {
-            if (forward) {
-                if (!HelixActionDelegate.executeAction("VcsShowLastChangeMarker", editor)) {
-                    editor.caretModel.primaryCaret.moveToOffset(editor.document.textLength)
-                    HelixActionDelegate.executeAction("VcsShowPrevChangeMarker", editor)
-                }
-            } else {
-                if (!HelixActionDelegate.executeAction("VcsShowFirstChangeMarker", editor)) {
-                    editor.caretModel.primaryCaret.moveToOffset(0)
-                    HelixActionDelegate.executeAction("VcsShowNextChangeMarker", editor)
+            val savedOffset = editor.caretModel.primaryCaret.offset
+            val endAction = if (forward) ACTION_LAST_CHANGE_MARKER else ACTION_FIRST_CHANGE_MARKER
+            if (!HelixActionDelegate.executeAction(endAction, editor)) {
+                val boundaryOffset = if (forward) editor.document.textLength else 0
+                val stepAction = if (forward) ACTION_PREV_CHANGE_MARKER else ACTION_NEXT_CHANGE_MARKER
+                editor.caretModel.primaryCaret.moveToOffset(boundaryOffset)
+                if (!HelixActionDelegate.executeAction(stepAction, editor)) {
+                    editor.caretModel.primaryCaret.moveToOffset(savedOffset)
                 }
             }
         } else {
-            val action = if (forward) "VcsShowNextChangeMarker" else "VcsShowPrevChangeMarker"
+            val action = if (forward) ACTION_NEXT_CHANGE_MARKER else ACTION_PREV_CHANGE_MARKER
             repeat(count.coerceAtLeast(1)) {
                 HelixActionDelegate.executeAction(action, editor)
             }
@@ -452,17 +489,118 @@ object HelixJumpMotions {
         return true
     }
 
+    private const val MAX_COMBINED_DIFF_STEPS = 10_000
+
     private fun moveToEndChangeInDiff(editor: Editor, forward: Boolean): Boolean {
-        val iterable = getDiffIterable(editor) ?: return true
-        val maxSteps = editor.document.lineCount.coerceAtLeast(1) + 1
+        val dataContext = DataManager.getInstance().getDataContext(editor.contentComponent)
+        val combinedViewer = dataContext.getData(combinedDiffViewerKey)
+        if (combinedViewer != null) {
+            return moveToEndInCombinedDiff(editor, combinedViewer, forward)
+        }
+        val diffViewer = dataContext.getData(diffViewerKey)
+        if (diffViewer != null && scrollDiffViewerToEnd(diffViewer, forward)) {
+            return true
+        }
+        val iterable = dataContext.getData(diffIterableKey) ?: return true
+        return moveToEndWithIterable(editor, forward, iterable)
+    }
+
+    private fun moveToEndInCombinedDiff(editor: Editor, combinedViewer: Any, forward: Boolean): Boolean {
+        val initialIterable = getDiffIterable(editor)
+        if (initialIterable != null) {
+            scrollIterableToBoundary(initialIterable, forward)
+        }
         var steps = 0
-        while (steps < maxSteps && canStepDiff(iterable, forward)) {
-            val prevOffset = editor.caretModel.primaryCaret.offset
-            stepDiff(iterable, forward)
+        while (steps < MAX_COMBINED_DIFF_STEPS && canStepCombinedDiff(combinedViewer, forward)) {
+            stepCombinedDiff(combinedViewer, forward)
             steps++
-            if (editor.caretModel.primaryCaret.offset == prevOffset) break
+            val currentIterable = getDiffIterable(editor) ?: initialIterable
+            if (currentIterable != null) {
+                scrollIterableToBoundary(currentIterable, forward)
+            }
         }
         return true
+    }
+
+    private fun scrollDiffViewerToEnd(viewer: Any, forward: Boolean): Boolean {
+        val policyClassName = "com.intellij.diff.util.DiffUserDataKeysEx\$ScrollToPolicy"
+        val loader = viewer.javaClass.classLoader ?: HelixJumpMotions::class.java.classLoader
+        val policyClass = try {
+            Class.forName(policyClassName, true, loader)
+        } catch (_: Throwable) {
+            return false
+        }
+        val fieldName = if (forward) "LAST_CHANGE" else "FIRST_CHANGE"
+        val policy = try {
+            policyClass.getField(fieldName).get(null)
+        } catch (_: Throwable) {
+            return false
+        } ?: return false
+        val method = findAccessibleMethod(viewer.javaClass, "scrollToChange", policyClass) ?: return false
+        return try {
+            method.invoke(viewer, policy) == true
+        } catch (_: Throwable) {
+            false
+        }
+    }
+
+    private fun moveToEndWithIterable(editor: Editor, forward: Boolean, iterable: Any): Boolean {
+        if (scrollIterableToBoundary(iterable, forward)) {
+            return true
+        }
+        val trackedEditor = (invokeNoArgMethod(iterable, "getEditor") as? Editor) ?: editor
+        val maxSteps = maxOf(editor.document.lineCount, trackedEditor.document.lineCount, 1) + 1
+        var steps = 0
+        while (steps < maxSteps && canStepDiff(iterable, forward)) {
+            val prevPrimary = editor.caretModel.primaryCaret.offset
+            val prevTracked = trackedEditor.caretModel.primaryCaret.offset
+            val prevRange = invokeNoArgMethod(iterable, "getCurrentLineRange")
+            stepDiff(iterable, forward)
+            steps++
+            val unchanged = isIterableStateUnchanged(
+                editor,
+                trackedEditor,
+                iterable,
+                prevPrimary,
+                prevTracked,
+                prevRange,
+            )
+            if (unchanged) break
+        }
+        return true
+    }
+
+    private fun isIterableStateUnchanged(
+        editor: Editor,
+        trackedEditor: Editor,
+        iterable: Any,
+        prevPrimary: Int,
+        prevTracked: Int,
+        prevRange: Any?,
+    ): Boolean {
+        val samePrimary = editor.caretModel.primaryCaret.offset == prevPrimary
+        val sameTracked = trackedEditor.caretModel.primaryCaret.offset == prevTracked
+        val sameRange = invokeNoArgMethod(iterable, "getCurrentLineRange") == prevRange
+        return samePrimary && sameTracked && sameRange
+    }
+
+    private fun scrollIterableToBoundary(iterable: Any, forward: Boolean): Boolean = try {
+        if (forward) {
+            val method = findAccessibleMethod(iterable.javaClass, "goLast") ?: return false
+            method.invoke(iterable)
+            true
+        } else {
+            val method = findAccessibleMethod(
+                iterable.javaClass,
+                "goFirst",
+                ScrollType::class.java,
+                Boolean::class.javaPrimitiveType!!,
+            ) ?: return false
+            method.invoke(iterable, ScrollType.CENTER, true)
+            true
+        }
+    } catch (_: Throwable) {
+        false
     }
 
     private fun stepDiffIterable(editor: Editor, forward: Boolean) {
@@ -472,19 +610,28 @@ object HelixJumpMotions {
         }
     }
 
+    private val combinedDiffViewerKey: DataKey<Any> = DataKey.create("combined_diff_viewer")
+    private val diffViewerKey: DataKey<Any> = DataKey.create("diff_frame_viewer")
     private val diffIterableKey: DataKey<Any> = DataKey.create("prev_next_difference_iterable")
 
     private fun getDiffIterable(editor: Editor): Any? =
         DataManager.getInstance().getDataContext(editor.contentComponent).getData(diffIterableKey)
 
-    private fun canStepDiff(iterable: Any, forward: Boolean): Boolean =
-        invokeDiffMethod(iterable, if (forward) "canGoNext" else "canGoPrev") == true
+    private fun canStepCombinedDiff(viewer: Any, forward: Boolean): Boolean =
+        invokeNoArgMethod(viewer, if (forward) "canGoNextDiff" else "canGoPrevDiff") == true
 
-    private fun stepDiff(iterable: Any, forward: Boolean) {
-        invokeDiffMethod(iterable, if (forward) "goNext" else "goPrev")
+    private fun stepCombinedDiff(viewer: Any, forward: Boolean) {
+        invokeNoArgMethod(viewer, if (forward) "goNextDiff" else "goPrevDiff")
     }
 
-    private fun invokeDiffMethod(target: Any, methodName: String): Any? = try {
+    private fun canStepDiff(iterable: Any, forward: Boolean): Boolean =
+        invokeNoArgMethod(iterable, if (forward) "canGoNext" else "canGoPrev") == true
+
+    private fun stepDiff(iterable: Any, forward: Boolean) {
+        invokeNoArgMethod(iterable, if (forward) "goNext" else "goPrev")
+    }
+
+    private fun invokeNoArgMethod(target: Any, methodName: String): Any? = try {
         val method = findAccessibleMethod(target.javaClass, methodName) ?: return null
         method.invoke(target)
     } catch (_: Throwable) {
@@ -496,14 +643,13 @@ object HelixJumpMotions {
         methodName: String,
         vararg paramTypes: Class<*>,
     ): java.lang.reflect.Method? {
+        findInterfaceMethod(cls, methodName, *paramTypes)?.let { return it }
         var current: Class<*>? = cls
         while (current != null) {
-            for (iface in current.interfaces) {
-                try {
-                    return iface.getMethod(methodName, *paramTypes)
-                } catch (_: Throwable) {
-                    // try next interface
-                }
+            try {
+                return current.getDeclaredMethod(methodName, *paramTypes).apply { trySetAccessible() }
+            } catch (_: Throwable) {
+                // try superclass
             }
             current = current.superclass
         }
@@ -512,6 +658,26 @@ object HelixJumpMotions {
         } catch (_: Throwable) {
             null
         }
+    }
+
+    private fun findInterfaceMethod(
+        cls: Class<*>,
+        methodName: String,
+        vararg paramTypes: Class<*>,
+    ): java.lang.reflect.Method? {
+        var current: Class<*>? = cls
+        while (current != null) {
+            for (iface in current.interfaces) {
+                if (!java.lang.reflect.Modifier.isPublic(iface.modifiers)) continue
+                try {
+                    return iface.getMethod(methodName, *paramTypes).apply { trySetAccessible() }
+                } catch (_: Throwable) {
+                    // try next interface
+                }
+            }
+            current = current.superclass
+        }
+        return null
     }
 
     /**

@@ -20,6 +20,7 @@ class HelixCodeNavigationTest : BasePlatformTestCase() {
         jp.titze.intellij.helix.motion.HelixMotionHistory.lastMotion = null
         jp.titze.intellij.helix.editor.HelixInsertTracker.reset()
         jp.titze.intellij.helix.motion.HelixJumpMotions.changeRangesProvider = null
+        jp.titze.intellij.helix.motion.HelixJumpMotions.vcsClassLoaderProvider = null
     }
 
     override fun tearDown() {
@@ -27,6 +28,7 @@ class HelixCodeNavigationTest : BasePlatformTestCase() {
         jp.titze.intellij.helix.motion.HelixMotionHistory.lastMotion = null
         jp.titze.intellij.helix.editor.HelixInsertTracker.reset()
         jp.titze.intellij.helix.motion.HelixJumpMotions.changeRangesProvider = null
+        jp.titze.intellij.helix.motion.HelixJumpMotions.vcsClassLoaderProvider = null
         super.tearDown()
     }
 
@@ -940,16 +942,195 @@ class HelixCodeNavigationTest : BasePlatformTestCase() {
             HelixKeyHandler.handleKey('g', rightEditor).shouldBeTrue()
             caret.logicalPosition.line shouldBe 4
 
-            // ]G jumps to last diff hunk (line 8), [G jumps to first diff hunk (line 1)
+            // ]G from line 0 (before hunk #1) jumps straight to last diff hunk (line 8), not hunk #2 (line 4)
+            caret.moveToOffset(0)
             HelixKeyHandler.handleKey(']', rightEditor).shouldBeTrue()
             HelixKeyHandler.handleKey('G', rightEditor).shouldBeTrue()
             caret.logicalPosition.line shouldBe 8
 
+            // [G jumps straight back to first diff hunk (line 1)
             HelixKeyHandler.handleKey('[', rightEditor).shouldBeTrue()
             HelixKeyHandler.handleKey('G', rightEditor).shouldBeTrue()
             caret.logicalPosition.line shouldBe 1
+
+            // Left-side editor also jumps across all 3 hunks with ]G and [G
+            val leftEditor = viewer.editor1
+            val leftCaret = leftEditor.caretModel.primaryCaret
+            leftCaret.moveToOffset(0)
+            HelixKeyHandler.handleKey(']', leftEditor).shouldBeTrue()
+            HelixKeyHandler.handleKey('G', leftEditor).shouldBeTrue()
+            leftCaret.logicalPosition.line shouldBe 8
+
+            HelixKeyHandler.handleKey('[', leftEditor).shouldBeTrue()
+            HelixKeyHandler.handleKey('G', leftEditor).shouldBeTrue()
+            leftCaret.logicalPosition.line shouldBe 1
         } finally {
             com.intellij.openapi.util.Disposer.dispose(viewer)
+        }
+    }
+
+    fun testChangeNavigationMovesToLastAndFirstInUnifiedDiffViewer() {
+        val leftText = "line 0\nline 1\nline 2\nline 3\nline 4\nline 5\nline 6\nline 7\nline 8\nline 9\n"
+        val rightText = "line 0\nchanged 1\nline 2\nline 3\nchanged 4\nline 5\nline 6\nline 7\nchanged 8\nline 9\n"
+        val factory = com.intellij.diff.DiffContentFactory.getInstance()
+        val request = com.intellij.diff.requests.SimpleDiffRequest(
+            "Unified Diff",
+            factory.create(project, leftText),
+            factory.create(project, rightText),
+            "Left",
+            "Right",
+        )
+        val context = object : com.intellij.diff.DiffContext() {
+            override fun getProject() = this@HelixCodeNavigationTest.project
+            override fun isWindowFocused() = true
+            override fun isFocusedInWindow() = true
+            override fun requestFocusInWindow() { /* no-op */ }
+        }
+        val viewer = com.intellij.diff.tools.fragmented.UnifiedDiffViewer(context, request)
+        com.intellij.ide.impl.HeadlessDataManager.fallbackToProductionDataManager(viewer)
+        try {
+            viewer.init()
+            viewer.rediff(true)
+            val deadline = System.currentTimeMillis() + 5_000
+            while (viewer.hasPendingRediff() && System.currentTimeMillis() < deadline) {
+                com.intellij.util.ui.UIUtil.dispatchAllInvocationEvents()
+                Thread.sleep(10)
+            }
+            viewer.hasPendingRediff().shouldBeFalse()
+            val editor = viewer.editor
+            val caret = editor.caretModel.primaryCaret
+            caret.moveToOffset(0)
+
+            // ]G from line 0 jumps straight to last diff hunk (not hunk #1 or #2)
+            HelixKeyHandler.handleKey(']', editor).shouldBeTrue()
+            HelixKeyHandler.handleKey('G', editor).shouldBeTrue()
+            val lastLine = caret.logicalPosition.line
+            (lastLine > 8).shouldBeTrue()
+
+            // [G jumps straight back to first diff hunk
+            HelixKeyHandler.handleKey('[', editor).shouldBeTrue()
+            HelixKeyHandler.handleKey('G', editor).shouldBeTrue()
+            (caret.logicalPosition.line < lastLine).shouldBeTrue()
+            (caret.logicalPosition.line <= 3).shouldBeTrue()
+        } finally {
+            com.intellij.openapi.util.Disposer.dispose(viewer)
+        }
+    }
+
+    fun testChangeNavigationTraversesCombinedDiffViewerBlocks() {
+        val doc = com.intellij.openapi.editor.EditorFactory.getInstance().createDocument(
+            "line 0\nchunk 1\nline 2\nchunk 2\nline 4\n",
+        )
+        val diffEditor = com.intellij.openapi.editor.EditorFactory.getInstance()
+            .createEditor(doc, project, com.intellij.openapi.editor.EditorKind.DIFF)
+
+        // Block index 0 has 2 hunks (hunk 0 moves diffEditor caret; block 1 and 2 are separate blocks
+        // where diffEditor's caret offset intentionally stays unchanged — the regression in v0.10.0)
+        var currentBlock = 0
+        var currentHunkInBlock = 0
+        val hunksPerBlock = listOf(2, 2, 2)
+
+        val blockIterable = object : com.intellij.diff.tools.util.PrevNextDifferenceIterable {
+            override fun canGoPrev(): Boolean = currentHunkInBlock > 0
+            override fun canGoNext(): Boolean = currentHunkInBlock < hunksPerBlock[currentBlock] - 1
+            override fun goPrev() {
+                currentHunkInBlock--
+                if (currentBlock == 0) {
+                    val line = if (currentHunkInBlock == 0) 1 else 3
+                    diffEditor.caretModel.primaryCaret.moveToOffset(doc.getLineStartOffset(line))
+                }
+            }
+
+            override fun goNext() {
+                currentHunkInBlock++
+                if (currentBlock == 0) {
+                    val line = if (currentHunkInBlock == 0) 1 else 3
+                    diffEditor.caretModel.primaryCaret.moveToOffset(doc.getLineStartOffset(line))
+                }
+            }
+
+            @Suppress("unused")
+            fun goFirst(
+                @Suppress(
+                    "UNUSED_PARAMETER",
+                ) scrollType: com.intellij.openapi.editor.ScrollType,
+                @Suppress("UNUSED_PARAMETER") requestFocus: Boolean,
+            ) {
+                currentHunkInBlock = 0
+                if (currentBlock == 0) {
+                    diffEditor.caretModel.primaryCaret.moveToOffset(doc.getLineStartOffset(1))
+                }
+            }
+
+            @Suppress("unused")
+            fun goLast() {
+                currentHunkInBlock = hunksPerBlock[currentBlock] - 1
+                if (currentBlock == 0) {
+                    diffEditor.caretModel.primaryCaret.moveToOffset(doc.getLineStartOffset(3))
+                }
+            }
+        }
+
+        val combinedViewer = object {
+            @Suppress("unused")
+            fun canGoNextDiff(): Boolean =
+                currentBlock < hunksPerBlock.lastIndex || currentHunkInBlock < hunksPerBlock[currentBlock] - 1
+
+            @Suppress("unused")
+            fun canGoPrevDiff(): Boolean = currentBlock > 0 || currentHunkInBlock > 0
+
+            @Suppress("unused")
+            fun goNextDiff() {
+                if (currentHunkInBlock < hunksPerBlock[currentBlock] - 1) {
+                    currentHunkInBlock++
+                } else if (currentBlock < hunksPerBlock.lastIndex) {
+                    currentBlock++
+                    currentHunkInBlock = 0
+                }
+            }
+
+            @Suppress("unused")
+            fun goPrevDiff() {
+                if (currentHunkInBlock > 0) {
+                    currentHunkInBlock--
+                } else if (currentBlock > 0) {
+                    currentBlock--
+                    currentHunkInBlock = hunksPerBlock[currentBlock] - 1
+                }
+            }
+        }
+
+        val panel = object :
+            javax.swing.JPanel(
+                java.awt.BorderLayout(),
+            ),
+            com.intellij.openapi.actionSystem.DataProvider {
+            init {
+                add(diffEditor.component, java.awt.BorderLayout.CENTER)
+            }
+
+            override fun getData(dataId: String): Any? = when (dataId) {
+                "combined_diff_viewer" -> combinedViewer
+                "prev_next_difference_iterable" -> blockIterable
+                else -> null
+            }
+        }
+        com.intellij.ide.impl.HeadlessDataManager.fallbackToProductionDataManager(testRootDisposable)
+
+        try {
+            diffEditor.caretModel.primaryCaret.moveToOffset(doc.getLineStartOffset(1))
+            HelixKeyHandler.handleKey(']', diffEditor).shouldBeTrue()
+            HelixKeyHandler.handleKey('G', diffEditor).shouldBeTrue()
+            currentBlock shouldBe 2
+            currentHunkInBlock shouldBe 1
+
+            HelixKeyHandler.handleKey('[', diffEditor).shouldBeTrue()
+            HelixKeyHandler.handleKey('G', diffEditor).shouldBeTrue()
+            currentBlock shouldBe 0
+            currentHunkInBlock shouldBe 0
+            diffEditor.caretModel.primaryCaret.logicalPosition.line shouldBe 1
+        } finally {
+            com.intellij.openapi.editor.EditorFactory.getInstance().releaseEditor(diffEditor)
         }
     }
 
@@ -1095,7 +1276,7 @@ class HelixCodeNavigationTest : BasePlatformTestCase() {
             @Suppress("unused")
             fun getRanges(): List<FakeRange> = rangeList
         }
-        val validTracker = FakeTracker(true, editor, listOf(FakeRange(1, 3), FakeRange(4, 4)))
+        val validTracker = FakeTracker(true, editor, listOf(FakeRange(4, 4), FakeRange(1, 3)))
         val invalidTracker = FakeTracker(false, editor, listOf(FakeRange(0, 1)))
 
         jp.titze.intellij.helix.motion.HelixJumpMotions.extractChangeRangesFromTracker(validTracker, editor) shouldBe
@@ -1126,6 +1307,54 @@ class HelixCodeNavigationTest : BasePlatformTestCase() {
             extracted shouldBe listOf(jp.titze.intellij.helix.motion.HelixJumpMotions.ChangeLineRange(1, 3))
         } finally {
             trackerClass.getMethod("release").invoke(realTracker)
+        }
+    }
+
+    fun testChangeNavigationExtractsRangesFromChangelistsTrackerAndIsolatedClassLoader() {
+        val currentText = "line 0\nmod 1\nline 2\nmod 3\nline 4\nmod 5\n"
+        val baseText = "line 0\norig 1\nline 2\norig 3\nline 4\norig 5\n"
+        val psiFile = myFixture.configureByText("ChangelistsTracker.txt", currentText)
+        val editor = myFixture.editor
+
+        // Simulate v2 module classloader isolation where primary loader blocks VCS classes
+        val isolatingLoader = object : ClassLoader(null) {
+            override fun loadClass(name: String, resolve: Boolean): Class<*> = throw ClassNotFoundException(name)
+        }
+        val nextChangeActionId = "VcsShowNextChangeMarker"
+        val vcsActionLoader = com.intellij.openapi.actionSystem.ActionManager.getInstance()
+            .getAction(nextChangeActionId)?.javaClass?.classLoader
+        vcsActionLoader.shouldNotBeNull()
+        jp.titze.intellij.helix.motion.HelixJumpMotions.vcsClassLoaderProvider = {
+            listOf(isolatingLoader, vcsActionLoader)
+        }
+        try {
+            val loadedManager = jp.titze.intellij.helix.motion.HelixJumpMotions
+                .loadVcsClass("com.intellij.openapi.vcs.impl.LineStatusTrackerManager")
+            loadedManager.shouldNotBeNull()
+        } finally {
+            jp.titze.intellij.helix.motion.HelixJumpMotions.vcsClassLoaderProvider = null
+        }
+
+        // Verify reflective extraction against IntelliJ's ChangelistsLocalLineStatusTracker
+        val clTrackerClass = Class.forName("com.intellij.openapi.vcs.ex.ChangelistsLocalLineStatusTracker")
+        val ctor = clTrackerClass.getConstructor(
+            com.intellij.openapi.project.Project::class.java,
+            com.intellij.openapi.editor.Document::class.java,
+            com.intellij.openapi.vfs.VirtualFile::class.java,
+        )
+        val clTracker = ctor.newInstance(project, editor.document, psiFile.virtualFile)
+        clTracker.shouldNotBeNull()
+        try {
+            clTrackerClass.getMethod("setBaseRevision", CharSequence::class.java).invoke(clTracker, baseText)
+            val extracted = jp.titze.intellij.helix.motion.HelixJumpMotions
+                .extractChangeRangesFromTracker(clTracker, editor)
+            extracted shouldBe listOf(
+                jp.titze.intellij.helix.motion.HelixJumpMotions.ChangeLineRange(1, 2),
+                jp.titze.intellij.helix.motion.HelixJumpMotions.ChangeLineRange(3, 4),
+                jp.titze.intellij.helix.motion.HelixJumpMotions.ChangeLineRange(5, 6),
+            )
+        } finally {
+            clTrackerClass.getMethod("release").invoke(clTracker)
         }
     }
 }
