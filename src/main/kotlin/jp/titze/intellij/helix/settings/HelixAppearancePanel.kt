@@ -30,6 +30,7 @@ import javax.swing.JPanel
 class HelixAppearancePanel {
 
     private var syncThemeRadio: JBRadioButton? = null
+    private var darkNeutralThemeRadio: JBRadioButton? = null
     private var darkThemeRadio: JBRadioButton? = null
     private var lightThemeRadio: JBRadioButton? = null
     private var colorModesCheckBox: JBCheckBox? = null
@@ -87,13 +88,16 @@ class HelixAppearancePanel {
 
         val radioGroup = ButtonGroup()
         val sync = JBRadioButton(HelixBundle.message("settings.theme.mode.sync"))
+        val darkNeutral = JBRadioButton(HelixBundle.message("settings.theme.mode.darkNeutral"))
         val dark = JBRadioButton(HelixBundle.message("settings.theme.mode.dark"))
         val light = JBRadioButton(HelixBundle.message("settings.theme.mode.light"))
         syncThemeRadio = sync
+        darkNeutralThemeRadio = darkNeutral
         darkThemeRadio = dark
         lightThemeRadio = light
 
         radioGroup.add(sync)
+        radioGroup.add(darkNeutral)
         radioGroup.add(dark)
         radioGroup.add(light)
 
@@ -120,19 +124,21 @@ class HelixAppearancePanel {
             }
             add(sync, gbc)
             gbc.gridy = 1
-            add(dark, gbc)
+            add(darkNeutral, gbc)
             gbc.gridy = 2
-            add(light, gbc)
+            add(dark, gbc)
             gbc.gridy = 3
+            add(light, gbc)
+            gbc.gridy = 4
             gbc.insets = JBUI.insets(6, 0, 2, 0)
             add(colorModesCb, gbc)
-            gbc.gridy = 4
+            gbc.gridy = 5
             gbc.insets = JBUI.insetsBottom(2)
             add(cmNotice, gbc)
-            gbc.gridy = 5
+            gbc.gridy = 6
             gbc.insets = JBUI.insets(4, 0, 2, 0)
             add(cursorTintCb, gbc)
-            gbc.gridy = 6
+            gbc.gridy = 7
             gbc.insets = JBUI.insetsBottom(2)
             add(ctNotice, gbc)
         }
@@ -410,6 +416,7 @@ class HelixAppearancePanel {
     }
 
     private fun getSelectedColorTheme(): HelixColorTheme = when {
+        darkNeutralThemeRadio?.isSelected == true -> HelixColorTheme.DARK_NEUTRAL
         darkThemeRadio?.isSelected == true -> HelixColorTheme.DARK
         lightThemeRadio?.isSelected == true -> HelixColorTheme.LIGHT
         else -> HelixColorTheme.SYNC
@@ -487,6 +494,7 @@ class HelixAppearancePanel {
 
     fun reset(settings: HelixSettings = HelixSettings.instance) {
         syncThemeRadio?.isSelected = (settings.colorTheme == HelixColorTheme.SYNC)
+        darkNeutralThemeRadio?.isSelected = (settings.colorTheme == HelixColorTheme.DARK_NEUTRAL)
         darkThemeRadio?.isSelected = (settings.colorTheme == HelixColorTheme.DARK)
         lightThemeRadio?.isSelected = (settings.colorTheme == HelixColorTheme.LIGHT)
 
@@ -523,6 +531,7 @@ class HelixAppearancePanel {
 
     fun disposeUIResources() {
         syncThemeRadio = null
+        darkNeutralThemeRadio = null
         darkThemeRadio = null
         lightThemeRadio = null
         colorModesCheckBox = null

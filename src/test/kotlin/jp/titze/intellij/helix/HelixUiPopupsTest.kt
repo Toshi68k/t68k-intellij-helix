@@ -2980,4 +2980,26 @@ class HelixUiPopupsTest : BasePlatformTestCase() {
         // Test Command Palette Action
         myFixture.testAction(jp.titze.intellij.helix.editor.HelixCommandPaletteAction())
     }
+
+    fun testWhichKeySubmenuItemsAreFlagged() {
+        val (_, spaceItems) = HelixWhichKeyMenus.getMenu(" ") ?: error("space menu not found")
+        val submenuKeys = setOf("m", "t", "v", "w", "W", "G", "H")
+        for (key in submenuKeys) {
+            spaceItems.first { it.key == key }.isSubmenu.shouldBeTrue()
+        }
+        val leafKeys = setOf("f", "b", "y", "c", "?")
+        for (key in leafKeys) {
+            spaceItems.first { it.key == key }.isSubmenu.shouldBeFalse()
+        }
+
+        val (_, matchItems) = HelixWhichKeyMenus.getMenu("m") ?: error("match menu not found")
+        matchItems.first { it.key == "a" }.isSubmenu.shouldBeTrue()
+        matchItems.first { it.key == "i" }.isSubmenu.shouldBeTrue()
+        matchItems.first { it.key == "m" }.isSubmenu.shouldBeFalse()
+
+        // Dynamic custom branch under space -> z -> a should flag 'z' as submenu
+        HelixKeymapManager.bind(HelixMode.NORMAL, "space z a", "file_picker")
+        val (_, mergedSpace) = HelixWhichKeyMenus.getMenu(" ", HelixMode.NORMAL) ?: error("space menu not found")
+        mergedSpace.first { it.key == "z" }.isSubmenu.shouldBeTrue()
+    }
 }

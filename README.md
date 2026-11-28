@@ -446,7 +446,8 @@ and [Helix Textobjects](https://docs.helix-editor.com/textobjects.html):
 #### Interactive Which-Key Floating Menu
 
 Whenever a chord prefix key (<kbd>Space</kbd>, `Ctrl+w`, `"`, `g`, `m`, `[`, `]`, or Insert `Ctrl+r`) is pressed, an
-interactive, non-intrusive **Which-Key popup** appears in authentic Helix cyan:
+interactive, non-intrusive **Which-Key popup** adapts cleanly to your active IDE theme (with accent-tinted keycaps for
+nested submenu prefixes):
 
 - **Zero latency**: Muscle memory stays instant—typing the follow-up key immediately executes the command without
   waiting.
@@ -896,7 +897,10 @@ Organized into 3 dedicated tabs for core editor preferences:
     cursor.
 
 - **Tab 2: Appearance & UI**:
-  - **Color Theme & Mode Colors**: Choose between Sync with IDE, Dark, or Light themes for all Helix overlays. 
+  - **Color Theme & Mode Colors**: Choose between **Sync with IDE** (default — automatically adapts dark overlays to your
+    active IntelliJ dark theme and keeps the crisp cool-tinted palette on light themes), **Dark (Neutral Charcoal)**
+    (elevated neutral charcoal & soft blue palette), **Dark (Classic Indigo)** (original deep-indigo palette — select this
+    if you want to keep the previous dark overlay colors), or **Light** for all Helix overlays.
     Independently toggle mode-colored status pills (`color-modes = true`) and mode cursor tinting (`cursor-tint = true`).
   - **Per-Mode Cursor Shapes (`cursor-shape`)**: Configure caret shapes individually for Normal, Insert, and Select modes
     (**Block**, **Bar**, **Underline**, **Hidden**). Mode changes dynamically update caret visual attributes across 
