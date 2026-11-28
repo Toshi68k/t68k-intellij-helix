@@ -5,6 +5,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.10.0] - 2026-11-28
+
 ### Added
 
 - **Project-Local Configuration (`.helix/intellij.toml` & `.helix/config.toml`)**:
@@ -614,6 +616,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Incompatible with IdeaVim; both plugins replace the editor's typed-key handler.
 
 [Unreleased]: https://github.com/Toshi68k/t68k-intellij-helix/compare/v0.9.1...HEAD
+[0.10.0]: https://github.com/Toshi68k/t68k-intellij-helix/compare/v0.9.1...v0.10.0
 [0.9.1]: https://github.com/Toshi68k/t68k-intellij-helix/compare/v0.9.0...v0.9.1
 [0.9.0]: https://github.com/Toshi68k/t68k-intellij-helix/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/Toshi68k/t68k-intellij-helix/compare/v0.7.3...v0.8.0
