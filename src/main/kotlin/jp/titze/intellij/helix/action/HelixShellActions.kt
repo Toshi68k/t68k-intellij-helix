@@ -9,6 +9,7 @@ import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.util.TextRange
 import jp.titze.intellij.helix.HelixBundle
 import jp.titze.intellij.helix.command.HelixDirectoryManager
+import jp.titze.intellij.helix.editor.HelixEditorEligibility
 import jp.titze.intellij.helix.shell.HelixShellExecutor
 import jp.titze.intellij.helix.shell.HelixShellResult
 import jp.titze.intellij.helix.state.HelixMode
@@ -42,6 +43,7 @@ object HelixShellActions {
     }
 
     fun pipeSelections(editor: Editor, command: String, baseSnapshot: List<HelixCaretSnapshot>? = null): Boolean {
+        if (!HelixEditorEligibility.ensureWritable(editor)) return false
         val snapshots = baseSnapshot ?: HelixCaretUtils.captureCarets(editor)
         if (snapshots.isEmpty()) return false
 
@@ -81,6 +83,7 @@ object HelixShellActions {
         append: Boolean = false,
         baseSnapshot: List<HelixCaretSnapshot>? = null,
     ): Boolean {
+        if (!HelixEditorEligibility.ensureWritable(editor)) return false
         val snapshots = baseSnapshot ?: HelixCaretUtils.captureCarets(editor)
         if (snapshots.isEmpty()) return false
 
@@ -100,12 +103,12 @@ object HelixShellActions {
             editor.project,
             "Helix Shell Output",
             null,
-            Runnable {
-                for (snap in sortedSnapshots) {
+            {
+                for ((offset, selectionStart, selectionEnd) in sortedSnapshots) {
                     val insertOffset = if (append) {
-                        if (snap.selectionEnd > snap.selectionStart) snap.selectionEnd else snap.offset
+                        if (selectionEnd > selectionStart) selectionEnd else offset
                     } else {
-                        snap.selectionStart
+                        selectionStart
                     }
                     val safeOffset = insertOffset.coerceIn(0, doc.textLength)
                     shiftSnapshots(newSnapshots, output.length)
@@ -209,7 +212,7 @@ object HelixShellActions {
             editor.project,
             "Helix Shell Pipe",
             null,
-            Runnable {
+            {
                 for ((snap, newText) in sorted) {
                     val start = snap.selectionStart
                     val end = if (snap.selectionEnd > snap.selectionStart) {

@@ -7,6 +7,7 @@ import com.intellij.openapi.editor.Editor
 import jp.titze.intellij.helix.action.HelixActionDelegate
 import jp.titze.intellij.helix.action.HelixActions
 import jp.titze.intellij.helix.command.HelixCommandPopup
+import jp.titze.intellij.helix.editor.HelixEditorEligibility
 import jp.titze.intellij.helix.editor.HelixInsertTracker
 import jp.titze.intellij.helix.jumplist.HelixJumpListService
 import jp.titze.intellij.helix.motion.HelixJumpToWord
@@ -116,9 +117,17 @@ object HelixKeyHandler {
                 true
             }
 
-            'f', 't', 'F', 'T', 'r' -> {
+            'f', 't', 'F', 'T' -> {
                 state.clearSelectedRegister()
                 state.appendKey(charTyped)
+                true
+            }
+
+            'r' -> {
+                state.clearSelectedRegister()
+                if (HelixEditorEligibility.ensureWritable(editor)) {
+                    state.appendKey(charTyped)
+                }
                 true
             }
 
@@ -160,6 +169,7 @@ object HelixKeyHandler {
         return when (prefix) {
             "r" -> {
                 state.clearPendingSequence()
+                if (!HelixEditorEligibility.ensureWritable(editor)) return true
                 HelixActions.replaceChar(editor, ch, count ?: 1)
                 true
             }
@@ -446,9 +456,15 @@ object HelixKeyHandler {
             // Mode & History & IDE
             'v' -> HelixActions.toggleSelectMode(editor)
 
-            'u' -> repeat(count) { HelixActionDelegate.executeAction($$"$Undo", editor) }
+            'u' -> {
+                if (!HelixEditorEligibility.ensureWritable(editor)) return true
+                repeat(count) { HelixActionDelegate.executeAction($$"$Undo", editor) }
+            }
 
-            'U' -> repeat(count) { HelixActionDelegate.executeAction($$"$Redo", editor) }
+            'U' -> {
+                if (!HelixEditorEligibility.ensureWritable(editor)) return true
+                repeat(count) { HelixActionDelegate.executeAction($$"$Redo", editor) }
+            }
 
             'Q' -> {
                 HelixActionDelegate.executeAction("StartStopMacroRecording", editor)
@@ -460,16 +476,19 @@ object HelixKeyHandler {
             'K' -> HelixSearchManager.startKeepSelections(editor)
 
             '=' -> {
+                if (!HelixEditorEligibility.ensureWritable(editor)) return true
                 HelixActionDelegate.executeAction("ReformatCode", editor)
                 if (state.mode == HelixMode.SELECT) state.setMode(HelixMode.NORMAL)
             }
 
             '>' -> {
+                if (!HelixEditorEligibility.ensureWritable(editor)) return true
                 repeat(count) { HelixActionDelegate.executeAction("EditorIndentLineOrSelection", editor) }
                 if (state.mode == HelixMode.SELECT) state.setMode(HelixMode.NORMAL)
             }
 
             '<' -> {
+                if (!HelixEditorEligibility.ensureWritable(editor)) return true
                 repeat(count) { HelixActionDelegate.executeAction("EditorUnindentSelection", editor) }
                 if (state.mode == HelixMode.SELECT) state.setMode(HelixMode.NORMAL)
             }

@@ -46,6 +46,7 @@ class HelixSettingsTest : BasePlatformTestCase() {
         settings.toolWindowSearchConfirmOnEnter = true
         settings.toolWindowSpaceSwitcher = true
         settings.toolWindowCommitSpaceSwitcher = true
+        settings.activateInReadOnlyViewers = true
         settings.cliConfigFallbackMode = HelixCliConfigFallbackMode.KEYMAPS_ONLY
         HelixEffectiveSettings.clearAllOverrides()
         jp.titze.intellij.helix.ui.HelixPromptHistory.clear()
@@ -76,6 +77,7 @@ class HelixSettingsTest : BasePlatformTestCase() {
         settings.toolWindowSearchConfirmOnEnter.shouldBeTrue()
         settings.toolWindowSpaceSwitcher.shouldBeTrue()
         settings.toolWindowCommitSpaceSwitcher.shouldBeTrue()
+        settings.activateInReadOnlyViewers.shouldBeTrue()
         settings.cliConfigFallbackMode shouldBe HelixCliConfigFallbackMode.KEYMAPS_ONLY
     }
 
@@ -317,10 +319,28 @@ class HelixSettingsTest : BasePlatformTestCase() {
         val settings = HelixSettings.instance
         settings.enabled.shouldBeTrue()
         settings.activateInDiff.shouldBeTrue()
+        settings.activateInReadOnlyViewers.shouldBeTrue()
         settings.activateInConsole.shouldBeFalse()
         settings.activateInCommitMessage.shouldBeFalse()
         settings.activateInAiPrompt.shouldBeFalse()
         settings.activateInOtherEditors.shouldBeFalse()
+
+        val activationPanel = HelixActivationPanel()
+        activationPanel.reset(settings)
+        activationPanel.readOnlyViewersBox.isSelected.shouldBeTrue()
+        activationPanel.isModified(settings).shouldBeFalse()
+
+        activationPanel.readOnlyViewersBox.isSelected = false
+        activationPanel.isModified(settings).shouldBeTrue()
+        activationPanel.apply(settings)
+        settings.activateInReadOnlyViewers.shouldBeFalse()
+        activationPanel.isModified(settings).shouldBeFalse()
+
+        settings.activateInReadOnlyViewers = true
+        activationPanel.isModified(settings).shouldBeTrue()
+        activationPanel.reset(settings)
+        activationPanel.readOnlyViewersBox.isSelected.shouldBeTrue()
+        activationPanel.isModified(settings).shouldBeFalse()
 
         settings.activateInAiPrompt = true
         settings.activateInAiPrompt.shouldBeTrue()

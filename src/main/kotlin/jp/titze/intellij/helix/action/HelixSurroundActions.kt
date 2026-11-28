@@ -7,6 +7,7 @@ import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.editor.Caret
 import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.Editor
+import jp.titze.intellij.helix.editor.HelixEditorEligibility
 import jp.titze.intellij.helix.state.HelixMode
 import jp.titze.intellij.helix.state.HelixStateManager
 
@@ -268,7 +269,7 @@ object HelixSurroundActions {
                 val pos = unescaped.indexOf(idx)
                 if (pos % 2 == 0 && pos + 1 < unescaped.size) {
                     return Pair(unescaped[pos], unescaped[pos + 1])
-                } else if (pos % 2 == 1 && pos - 1 >= 0) {
+                } else if (pos % 2 == 1) {
                     return Pair(unescaped[pos - 1], unescaped[pos])
                 }
             }
@@ -278,6 +279,7 @@ object HelixSurroundActions {
     }
 
     fun surroundAdd(editor: Editor, ch: Char): Boolean {
+        if (!HelixEditorEligibility.ensureWritable(editor)) return false
         val project = editor.project
         val (openStr, closeStr) = resolvePair(ch)
 
@@ -289,9 +291,8 @@ object HelixSurroundActions {
                     val end = caret.selectionEnd
                     editor.document.insertString(end, closeStr)
                     editor.document.insertString(start, openStr)
-                    val newStart = start
                     val newEnd = end + openStr.length + closeStr.length
-                    caret.setSelection(newStart, newEnd)
+                    caret.setSelection(start, newEnd)
                     caret.moveToOffset(newEnd)
                 } else {
                     val offset = caret.offset
@@ -299,9 +300,8 @@ object HelixSurroundActions {
                     if (offset < docLen) {
                         editor.document.insertString(offset + 1, closeStr)
                         editor.document.insertString(offset, openStr)
-                        val newStart = offset
                         val newEnd = offset + 1 + openStr.length + closeStr.length
-                        caret.setSelection(newStart, newEnd)
+                        caret.setSelection(offset, newEnd)
                         caret.moveToOffset(newEnd)
                     } else {
                         editor.document.insertString(offset, openStr + closeStr)
@@ -318,6 +318,7 @@ object HelixSurroundActions {
     }
 
     fun surroundDelete(editor: Editor, ch: Char): Boolean {
+        if (!HelixEditorEligibility.ensureWritable(editor)) return false
         val project = editor.project
         val doc = editor.document
 
@@ -341,6 +342,7 @@ object HelixSurroundActions {
     }
 
     fun surroundReplace(editor: Editor, fromChar: Char, toChar: Char): Boolean {
+        if (!HelixEditorEligibility.ensureWritable(editor)) return false
         val project = editor.project
         val doc = editor.document
         val (newOpen, newClose) = resolvePair(toChar)

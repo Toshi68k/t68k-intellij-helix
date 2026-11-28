@@ -9,6 +9,7 @@ import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.ScrollType
 import com.intellij.openapi.util.TextRange
+import jp.titze.intellij.helix.editor.HelixEditorEligibility
 import jp.titze.intellij.helix.state.HelixMode
 import jp.titze.intellij.helix.state.HelixStateManager
 
@@ -33,6 +34,7 @@ object HelixCaseActions {
     }
 
     fun transformCase(editor: Editor, transformation: HelixCaseTransformation, count: Int = 1) {
+        if (!HelixEditorEligibility.ensureWritable(editor)) return
         val project = editor.project
         val doc = editor.document
         val state = HelixStateManager.getOrCreate(editor)

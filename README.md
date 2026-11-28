@@ -85,10 +85,11 @@ conflicts. This plugin declares an incompatibility with IdeaVim (`<incompatible-
 
 ## Editor Scope & Activation
 
-By default, Helix is active in all primary code editors and diff viewers. To prevent interference with terminal sessions or tool windows, activation scope is configurable under **Settings &rarr; Tools &rarr; Helix Keymap**:
+By default, Helix is active in all primary code editors, diff viewers, and read-only viewers (including diff left/base panes and decompiled files). To prevent interference with terminal sessions or tool windows, activation scope is configurable under **Settings &rarr; Tools &rarr; Helix Keymap**:
 
 - **Code Editors**: Active (locked, core functionality).
-- **Diff Viewers**: Active by default.
+- **Diff & Merge Viewers**: Active by default.
+- **Read-Only Viewers & Diff Left/Base Panes**: Active by default (navigation, selection, and yanking work normally; Insert mode and edits remain blocked with a `"Buffer is read-only"` notice). Opt-out via settings.
 - **Terminal Tool Windows**: Always excluded (raw terminal keys pass through untouched).
 - **Console / REPL Editors**: Inactive by default (opt-in via settings).
 - **VCS Commit Message Editors**: Inactive by default (opt-in via settings).
@@ -888,8 +889,8 @@ Organized into 3 dedicated tabs for core editor preferences:
 
 - **Tab 1: General & Scope**:
   - **Master Enable**: Toggle Helix modal editing across the IDE.
-  - **Editor Environments**: Configure active scopes for Main text editors, Diff viewers, Consoles, Commit messages, and
-    Other editors.
+  - **Editor Environments**: Configure active scopes for Main text editors, Diff and merge viewers, Read-only viewers and diff
+    left/base panes (navigation, selection, and yanking only), Consoles, Commit messages, AI prompts, and Other editors.
   - **System Clipboard**: Toggle synchronization of system clipboard with the default `"` register.
   - **Reset to Normal Mode on Tab Switch** *(default: enabled)*: Ensures each tab starts in Normal mode with a block 
     cursor.

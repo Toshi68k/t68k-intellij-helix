@@ -3,10 +3,15 @@
 
 package jp.titze.intellij.helix.editor
 
+import com.intellij.openapi.editor.EditorFactory
+import com.intellij.openapi.editor.EditorKind
+import com.intellij.openapi.editor.ex.EditorEx
 import com.intellij.openapi.editor.textarea.TextComponentEditorImpl
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.booleans.shouldBeTrue
+import io.kotest.matchers.shouldBe
+import jp.titze.intellij.helix.settings.HelixEffectiveSettings
 import jp.titze.intellij.helix.settings.HelixSettings
 import jp.titze.intellij.helix.state.HelixMode
 import jp.titze.intellij.helix.state.HelixStateManager
@@ -17,12 +22,20 @@ class HelixEditorEligibilityTest : BasePlatformTestCase() {
     override fun setUp() {
         super.setUp()
         HelixSettings.instance.enabled = true
+        HelixSettings.instance.activateInDiff = true
+        HelixSettings.instance.activateInReadOnlyViewers = true
         HelixSettings.instance.activateInOtherEditors = true
+        HelixEditorEligibility.onReadOnlyNotice = null
+        HelixEffectiveSettings.clearAllOverrides()
     }
 
     override fun tearDown() {
         HelixSettings.instance.enabled = true
+        HelixSettings.instance.activateInDiff = true
+        HelixSettings.instance.activateInReadOnlyViewers = true
         HelixSettings.instance.activateInOtherEditors = false
+        HelixEditorEligibility.onReadOnlyNotice = null
+        HelixEffectiveSettings.clearAllOverrides()
         super.tearDown()
     }
 
@@ -57,7 +70,7 @@ class HelixEditorEligibilityTest : BasePlatformTestCase() {
 
         HelixEditorEligibility.isCommitEditor(editor).shouldBeTrue()
 
-        jp.titze.intellij.helix.settings.HelixEffectiveSettings.setSessionOption(
+        HelixEffectiveSettings.setSessionOption(
             "line-number",
             jp.titze.intellij.helix.settings.HelixLineNumberMode.SMART,
         )
@@ -90,7 +103,7 @@ class HelixEditorEligibilityTest : BasePlatformTestCase() {
             HelixSettings.instance.activateInAiPrompt = true
             HelixEditorEligibility.isActive(editor).shouldBeTrue()
 
-            jp.titze.intellij.helix.settings.HelixEffectiveSettings.setSessionOption(
+            HelixEffectiveSettings.setSessionOption(
                 "line-number",
                 jp.titze.intellij.helix.settings.HelixLineNumberMode.SMART,
             )
@@ -138,6 +151,67 @@ class HelixEditorEligibilityTest : BasePlatformTestCase() {
             HelixSettings.instance.activateInOtherEditors = false
             HelixSettings.instance.activateInAiPrompt = false
             editor.putUserData(key, null)
+        }
+    }
+
+    fun testReadOnlyViewerEligibilityAndToggle() {
+        myFixture.configureByText("viewer.txt", "hello world")
+        val editor = myFixture.editor as EditorEx
+        editor.isViewer = true
+        try {
+            HelixSettings.instance.activateInReadOnlyViewers = true
+            HelixEditorEligibility.isActive(editor).shouldBeTrue()
+
+            HelixSettings.instance.activateInReadOnlyViewers = false
+            HelixEditorEligibility.isActive(editor).shouldBeFalse()
+        } finally {
+            editor.isViewer = false
+        }
+
+        val diffViewer = EditorFactory.getInstance().createViewer(editor.document, project, EditorKind.DIFF)
+        try {
+            HelixSettings.instance.activateInDiff = true
+            HelixSettings.instance.activateInReadOnlyViewers = true
+            HelixEditorEligibility.isActive(diffViewer).shouldBeTrue()
+
+            HelixSettings.instance.activateInReadOnlyViewers = false
+            HelixEditorEligibility.isActive(diffViewer).shouldBeFalse()
+
+            HelixSettings.instance.activateInReadOnlyViewers = true
+            HelixSettings.instance.activateInDiff = false
+            HelixEditorEligibility.isActive(diffViewer).shouldBeFalse()
+        } finally {
+            EditorFactory.getInstance().releaseEditor(diffViewer)
+        }
+    }
+
+    fun testIsReadOnlyAndEnsureWritable() {
+        myFixture.configureByText("ro_guard.txt", "hello world")
+        val editor = myFixture.editor as EditorEx
+        val notices = mutableListOf<String>()
+        HelixEditorEligibility.onReadOnlyNotice = { _, message -> notices.add(message) }
+
+        HelixEditorEligibility.isReadOnly(editor).shouldBeFalse()
+        HelixEditorEligibility.ensureWritable(editor).shouldBeTrue()
+        notices shouldBe emptyList()
+
+        editor.isViewer = true
+        try {
+            HelixEditorEligibility.isReadOnly(editor).shouldBeTrue()
+            HelixEditorEligibility.ensureWritable(editor).shouldBeFalse()
+            notices shouldBe listOf("Buffer is read-only")
+        } finally {
+            editor.isViewer = false
+        }
+
+        notices.clear()
+        editor.document.setReadOnly(true)
+        try {
+            HelixEditorEligibility.isReadOnly(editor).shouldBeTrue()
+            HelixEditorEligibility.ensureWritable(editor).shouldBeFalse()
+            notices shouldBe listOf("Buffer is read-only")
+        } finally {
+            editor.document.setReadOnly(false)
         }
     }
 }

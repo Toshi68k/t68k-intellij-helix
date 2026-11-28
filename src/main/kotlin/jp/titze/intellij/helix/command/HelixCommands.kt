@@ -12,6 +12,7 @@ import jp.titze.intellij.helix.action.HelixShellActions
 import jp.titze.intellij.helix.action.HelixVisualToggleActions
 import jp.titze.intellij.helix.config.HelixConfigLoader
 import jp.titze.intellij.helix.config.HelixEditorOptions
+import jp.titze.intellij.helix.editor.HelixEditorEligibility
 import jp.titze.intellij.helix.jumplist.HelixJumpListService
 import jp.titze.intellij.helix.motion.HelixFileNavigation
 import jp.titze.intellij.helix.motion.HelixMotions
@@ -246,7 +247,9 @@ object HelixCommands {
                 HelixActionDelegate.executeAction("ChangeSplitOrientation", editor)
             }
 
-            "format" -> HelixActionDelegate.executeAction("ReformatCode", editor)
+            "format" -> if (HelixEditorEligibility.ensureWritable(editor)) {
+                HelixActionDelegate.executeAction("ReformatCode", editor)
+            }
 
             "fold" -> HelixActionDelegate.executeAction("CollapseRegion", editor)
 
@@ -333,7 +336,9 @@ object HelixCommands {
             }
 
             "reflow", "reflow-paragraph", "fill-paragraph" -> {
-                HelixActionDelegate.executeAction("FillParagraph", editor)
+                if (HelixEditorEligibility.ensureWritable(editor)) {
+                    HelixActionDelegate.executeAction("FillParagraph", editor)
+                }
             }
 
             "file-explorer-buffer", "file_explorer_buffer" -> {
@@ -354,7 +359,10 @@ object HelixCommands {
         "diffget", "diffg", "reset-diff-change", "reset_diff_change",
         "rollback-hunk", "rollback_hunk", "revert-hunk", "revert_hunk",
         -> {
-            HelixActionDelegate.executeAction("Vcs.RollbackChangedLines", editor)
+            if (HelixEditorEligibility.ensureWritable(editor)) {
+                HelixActionDelegate.executeAction("Vcs.RollbackChangedLines", editor)
+            }
+            true
         }
 
         "file-history", "file_history", "history", "git-history" -> {
@@ -375,7 +383,9 @@ object HelixCommands {
 
     private fun executeRefactorFallbackCommand(cleanCmd: String, editor: Editor): Boolean = when (cleanCmd) {
         "cleanup", "clean", "code-cleanup", "reformat-cleanup" -> {
-            if (!HelixActionDelegate.executeAction("ReformatWithCodeCleanup", editor)) {
+            if (HelixEditorEligibility.ensureWritable(editor) &&
+                !HelixActionDelegate.executeAction("ReformatWithCodeCleanup", editor)
+            ) {
                 HelixActionDelegate.executeAction("ReformatCode", editor)
                 HelixActionDelegate.executeAction("OptimizeImports", editor)
             }
@@ -383,22 +393,30 @@ object HelixCommands {
         }
 
         "safe-delete", "safe_delete", "safedelete" -> {
-            HelixActionDelegate.executeAction("SafeDelete", editor)
+            if (HelixEditorEligibility.ensureWritable(editor)) {
+                HelixActionDelegate.executeAction("SafeDelete", editor)
+            }
             true
         }
 
         "pull-up", "pull_up", "members-pull-up" -> {
-            HelixActionDelegate.executeAction("MembersPullUp", editor)
+            if (HelixEditorEligibility.ensureWritable(editor)) {
+                HelixActionDelegate.executeAction("MembersPullUp", editor)
+            }
             true
         }
 
         "push-down", "push_down", "push-members-down" -> {
-            HelixActionDelegate.executeAction("PushMembersDown", editor)
+            if (HelixEditorEligibility.ensureWritable(editor)) {
+                HelixActionDelegate.executeAction("PushMembersDown", editor)
+            }
             true
         }
 
         "generate", "gen" -> {
-            HelixActionDelegate.executeAction("Generate", editor)
+            if (HelixEditorEligibility.ensureWritable(editor)) {
+                HelixActionDelegate.executeAction("Generate", editor)
+            }
             true
         }
 

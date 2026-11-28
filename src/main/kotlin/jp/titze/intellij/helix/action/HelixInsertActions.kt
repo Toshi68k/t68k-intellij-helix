@@ -7,6 +7,7 @@ import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.editor.Caret
 import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.Editor
+import jp.titze.intellij.helix.editor.HelixEditorEligibility
 import jp.titze.intellij.helix.editor.HelixInsertTracker
 import jp.titze.intellij.helix.register.HelixRegisterManager
 
@@ -23,6 +24,7 @@ object HelixInsertActions {
     private fun isHorizontalSpace(c: Char): Boolean = c == ' ' || c == '\t'
 
     fun deleteWordBackward(editor: Editor) {
+        if (!HelixEditorEligibility.ensureWritable(editor)) return
         val project = editor.project ?: return
         val doc = editor.document
 
@@ -71,6 +73,7 @@ object HelixInsertActions {
     }
 
     fun deleteWordForward(editor: Editor) {
+        if (!HelixEditorEligibility.ensureWritable(editor)) return
         val project = editor.project ?: return
         val doc = editor.document
 
@@ -118,6 +121,7 @@ object HelixInsertActions {
     }
 
     fun killToLineStart(editor: Editor) {
+        if (!HelixEditorEligibility.ensureWritable(editor)) return
         val project = editor.project ?: return
         val doc = editor.document
 
@@ -151,6 +155,7 @@ object HelixInsertActions {
     }
 
     fun killToLineEnd(editor: Editor) {
+        if (!HelixEditorEligibility.ensureWritable(editor)) return
         val project = editor.project ?: return
         val doc = editor.document
 
@@ -188,6 +193,7 @@ object HelixInsertActions {
     }
 
     fun insertRegister(editor: Editor, register: Char) {
+        if (!HelixEditorEligibility.ensureWritable(editor)) return
         val entry = HelixRegisterManager.get(register, editor) ?: return
         val textToInsert = entry.text
         if (textToInsert.isEmpty()) return

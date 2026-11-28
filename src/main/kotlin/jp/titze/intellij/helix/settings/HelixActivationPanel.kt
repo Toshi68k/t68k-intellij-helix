@@ -18,6 +18,7 @@ class HelixActivationPanel {
     private val masterEnabledBox = JBCheckBox(HelixBundle.message("settings.activation.enabled"))
     private val mainEditorBox = JBCheckBox(HelixBundle.message("settings.activation.mainEditor"))
     private val diffBox = JBCheckBox(HelixBundle.message("settings.activation.diff"))
+    internal val readOnlyViewersBox = JBCheckBox(HelixBundle.message("settings.activation.readOnlyViewers"))
     private val consoleBox = JBCheckBox(HelixBundle.message("settings.activation.console"))
     private val commitMessageBox = JBCheckBox(HelixBundle.message("settings.activation.commitMessage"))
     private val aiPromptBox = JBCheckBox(HelixBundle.message("settings.activation.aiPrompt"))
@@ -33,10 +34,11 @@ class HelixActivationPanel {
         mainEditorBox.isSelected = true
         mainEditorBox.isEnabled = false
 
-        val scopeOptionsPanel = JPanel(GridLayout(6, 1, 0, 4))
+        val scopeOptionsPanel = JPanel(GridLayout(7, 1, 0, 4))
         scopeOptionsPanel.border = JBUI.Borders.empty(4, 24, 4, 0)
         scopeOptionsPanel.add(mainEditorBox)
         scopeOptionsPanel.add(diffBox)
+        scopeOptionsPanel.add(readOnlyViewersBox)
         scopeOptionsPanel.add(consoleBox)
         scopeOptionsPanel.add(commitMessageBox)
         scopeOptionsPanel.add(aiPromptBox)
@@ -64,6 +66,7 @@ class HelixActivationPanel {
 
     fun isModified(settings: HelixSettings): Boolean = masterEnabledBox.isSelected != settings.enabled ||
         diffBox.isSelected != settings.activateInDiff ||
+        readOnlyViewersBox.isSelected != settings.activateInReadOnlyViewers ||
         consoleBox.isSelected != settings.activateInConsole ||
         commitMessageBox.isSelected != settings.activateInCommitMessage ||
         aiPromptBox.isSelected != settings.activateInAiPrompt ||
@@ -72,6 +75,7 @@ class HelixActivationPanel {
     fun apply(settings: HelixSettings) {
         settings.enabled = masterEnabledBox.isSelected
         settings.activateInDiff = diffBox.isSelected
+        settings.activateInReadOnlyViewers = readOnlyViewersBox.isSelected
         settings.activateInConsole = consoleBox.isSelected
         settings.activateInCommitMessage = commitMessageBox.isSelected
         settings.activateInAiPrompt = aiPromptBox.isSelected
@@ -81,6 +85,7 @@ class HelixActivationPanel {
     fun reset(settings: HelixSettings) {
         masterEnabledBox.isSelected = settings.enabled
         diffBox.isSelected = settings.activateInDiff
+        readOnlyViewersBox.isSelected = settings.activateInReadOnlyViewers
         consoleBox.isSelected = settings.activateInConsole
         commitMessageBox.isSelected = settings.activateInCommitMessage
         aiPromptBox.isSelected = settings.activateInAiPrompt

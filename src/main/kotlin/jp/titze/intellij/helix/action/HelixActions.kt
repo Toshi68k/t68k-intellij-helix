@@ -9,6 +9,7 @@ import com.intellij.openapi.command.undo.UndoManager
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.ScrollType
 import com.intellij.openapi.util.TextRange
+import jp.titze.intellij.helix.editor.HelixEditorEligibility
 import jp.titze.intellij.helix.state.HelixMode
 import jp.titze.intellij.helix.state.HelixStateManager
 
@@ -76,6 +77,7 @@ object HelixActions {
     }
 
     fun replaceChar(editor: Editor, replacement: Char, count: Int = 1) {
+        if (!HelixEditorEligibility.ensureWritable(editor)) return
         val project = editor.project
         val doc = editor.document
         if (doc.textLength == 0) return
@@ -142,6 +144,7 @@ object HelixActions {
     }
 
     fun joinLines(editor: Editor, count: Int = 1, selectSpace: Boolean = false) {
+        if (!HelixEditorEligibility.ensureWritable(editor)) return
         val project = editor.project
         val doc = editor.document
         if (doc.lineCount <= 1) return
@@ -233,6 +236,7 @@ object HelixActions {
     }
 
     fun enterInsert(editor: Editor) {
+        if (!HelixEditorEligibility.ensureWritable(editor)) return
         editor.caretModel.runForEachCaret { caret ->
             if (caret.hasSelection()) {
                 val start = caret.selectionStart
@@ -246,6 +250,7 @@ object HelixActions {
     }
 
     fun enterInsertAppend(editor: Editor) {
+        if (!HelixEditorEligibility.ensureWritable(editor)) return
         val maxLen = editor.document.textLength
         editor.caretModel.runForEachCaret { caret ->
             val newOffset = if (caret.hasSelection()) {
@@ -260,6 +265,7 @@ object HelixActions {
     }
 
     fun enterInsertLineStart(editor: Editor) {
+        if (!HelixEditorEligibility.ensureWritable(editor)) return
         val doc = editor.document
         val text = doc.charsSequence
         editor.caretModel.runForEachCaret { caret ->
@@ -278,6 +284,7 @@ object HelixActions {
     }
 
     fun enterInsertLineEnd(editor: Editor) {
+        if (!HelixEditorEligibility.ensureWritable(editor)) return
         val doc = editor.document
         editor.caretModel.runForEachCaret { caret ->
             val line = doc.getLineNumber(caret.offset)
@@ -290,11 +297,13 @@ object HelixActions {
     }
 
     fun openNewLineBelow(editor: Editor) {
+        if (!HelixEditorEligibility.ensureWritable(editor)) return
         enterInsert(editor)
         HelixActionDelegate.executeAction("EditorStartNewLine", editor)
     }
 
     fun openNewLineAbove(editor: Editor) {
+        if (!HelixEditorEligibility.ensureWritable(editor)) return
         enterInsert(editor)
         HelixActionDelegate.executeAction("EditorStartNewLineBefore", editor)
     }
@@ -322,10 +331,6 @@ object HelixActions {
 
     fun restoreCarets(editor: Editor, snapshot: List<HelixCaretSnapshot>) {
         HelixCaretUtils.restoreCarets(editor, snapshot)
-    }
-
-    fun applyCarets(editor: Editor, matches: List<Pair<Int, Int>>) {
-        HelixCaretUtils.applyCarets(editor, matches)
     }
 
     // -------------------------------------------------------------------------
@@ -488,18 +493,6 @@ object HelixActions {
     fun selectAllSiblings(editor: Editor): Boolean = HelixAstActions.selectAllSiblings(editor)
 
     fun selectAllChildren(editor: Editor): Boolean = HelixAstActions.selectAllChildren(editor)
-
-    fun pipeSelections(editor: Editor, command: String): Boolean = HelixShellActions.pipeSelections(editor, command)
-
-    fun insertShellOutput(editor: Editor, command: String, append: Boolean = false): Boolean =
-        HelixShellActions.insertOutput(editor, command, append)
-
-    fun keepPipeSelections(editor: Editor, command: String): Boolean =
-        HelixShellActions.keepPipeSelections(editor, command)
-
-    fun pipeToSelections(editor: Editor, command: String): Boolean = HelixShellActions.pipeToSelections(editor, command)
-
-    fun runShellCommand(editor: Editor, command: String) = HelixShellActions.runShellCommand(editor, command)
 
     fun showRegistersPicker(editor: Editor) = jp.titze.intellij.helix.ui.HelixRegistersPopup.show(editor)
 

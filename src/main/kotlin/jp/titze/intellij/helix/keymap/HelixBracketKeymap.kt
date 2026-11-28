@@ -5,6 +5,7 @@ package jp.titze.intellij.helix.keymap
 
 import com.intellij.openapi.editor.Editor
 import jp.titze.intellij.helix.action.HelixActionDelegate
+import jp.titze.intellij.helix.editor.HelixEditorEligibility
 import jp.titze.intellij.helix.motion.HelixFileNavigation
 import jp.titze.intellij.helix.motion.HelixMotions
 
@@ -80,7 +81,9 @@ internal object HelixBracketKeymap {
         }
 
         ' ' -> {
-            HelixMotions.addNewline(editor, below = false, count = count)
+            if (HelixEditorEligibility.ensureWritable(editor)) {
+                HelixMotions.addNewline(editor, below = false, count = count)
+            }
             true
         }
 
@@ -157,7 +160,9 @@ internal object HelixBracketKeymap {
         }
 
         ' ' -> {
-            HelixMotions.addNewline(editor, below = true, count = count)
+            if (HelixEditorEligibility.ensureWritable(editor)) {
+                HelixMotions.addNewline(editor, below = true, count = count)
+            }
             true
         }
 

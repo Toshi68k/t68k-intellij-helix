@@ -7,6 +7,7 @@ import com.intellij.openapi.editor.Editor
 import jp.titze.intellij.helix.action.HelixActionDelegate
 import jp.titze.intellij.helix.action.HelixActions
 import jp.titze.intellij.helix.command.HelixCommands
+import jp.titze.intellij.helix.editor.HelixEditorEligibility
 import jp.titze.intellij.helix.editor.HelixInsertTracker
 import jp.titze.intellij.helix.jumplist.HelixJumpListService
 import jp.titze.intellij.helix.macro.HelixMacroExecutor
@@ -29,6 +30,7 @@ data class HelixRegisteredCommand(
     val id: String,
     val description: String,
     val intelliJAction: String? = null,
+    val requiresWritable: Boolean = false,
     val action: (Editor, count: Int) -> Boolean,
 )
 
@@ -39,6 +41,28 @@ object HelixCommandRegistry {
 
     private val commands = ConcurrentHashMap<String, HelixRegisteredCommand>()
 
+    private val WRITABLE_INTELLIJ_ACTIONS = setOf(
+        "ReformatCode",
+        "ReformatWithCodeCleanup",
+        "OptimizeImports",
+        "CommentByLineComment",
+        "CommentByBlockComment",
+        "EditorIndentLineOrSelection",
+        "EditorUnindentSelection",
+        "EditorBackSpace",
+        "EditorDelete",
+        "EditorEnter",
+        "EditorStartNewLine",
+        "EditorStartNewLineBefore",
+        "RenameElement",
+        "FillParagraph",
+        "MoveLineUp",
+        "MoveLineDown",
+        "Vcs.RollbackChangedLines",
+        $$"$Undo",
+        $$"$Redo",
+    )
+
     init {
         registerBuiltins()
     }
@@ -47,9 +71,10 @@ object HelixCommandRegistry {
         id: String,
         description: String,
         intelliJAction: String? = null,
+        requiresWritable: Boolean = false,
         action: (Editor, count: Int) -> Boolean,
     ) {
-        commands[id] = HelixRegisteredCommand(id, description, intelliJAction, action)
+        commands[id] = HelixRegisteredCommand(id, description, intelliJAction, requiresWritable, action)
     }
 
     fun get(id: String): HelixRegisteredCommand? = commands[id]
@@ -66,6 +91,9 @@ object HelixCommandRegistry {
 
         if (trimmed.startsWith(":action ")) {
             val actionId = trimmed.removePrefix(":action ").trim()
+            if (actionId in WRITABLE_INTELLIJ_ACTIONS && !HelixEditorEligibility.ensureWritable(editor)) {
+                return true
+            }
             var success = false
             repeat(count) {
                 if (HelixActionDelegate.executeAction(actionId, editor)) success = true
@@ -80,7 +108,14 @@ object HelixCommandRegistry {
 
         val registered = commands[trimmed]
         if (registered != null) {
+            if (registered.requiresWritable && !HelixEditorEligibility.ensureWritable(editor)) {
+                return true
+            }
             return registered.action(editor, count)
+        }
+
+        if (trimmed in WRITABLE_INTELLIJ_ACTIONS && !HelixEditorEligibility.ensureWritable(editor)) {
+            return true
         }
 
         // Fallback: check if the string itself is an IntelliJ action ID
@@ -220,19 +255,19 @@ object HelixCommandRegistry {
     }
 
     private fun registerEdits() {
-        register("delete_selection", "Delete selection") { ed, cnt ->
+        register("delete_selection", "Delete selection", requiresWritable = true) { ed, cnt ->
             HelixActions.deleteSelection(ed, count = cnt)
             true
         }
-        register("change_selection", "Change selection") { ed, cnt ->
+        register("change_selection", "Change selection", requiresWritable = true) { ed, cnt ->
             HelixActions.deleteSelection(ed, enterInsert = true, count = cnt)
             true
         }
-        register("delete_selection_noyank", "Delete selection without yanking") { ed, cnt ->
+        register("delete_selection_noyank", "Delete selection without yanking", requiresWritable = true) { ed, cnt ->
             HelixActions.deleteSelectionNoYank(ed, count = cnt)
             true
         }
-        register("change_selection_noyank", "Change selection without yanking") { ed, cnt ->
+        register("change_selection_noyank", "Change selection without yanking", requiresWritable = true) { ed, cnt ->
             HelixActions.changeSelectionNoYank(ed, count = cnt)
             true
         }
@@ -248,73 +283,73 @@ object HelixCommandRegistry {
             HelixActions.yankMainSelection(ed, register = '+')
             true
         }
-        register("paste_after", "Paste after") { ed, _ ->
+        register("paste_after", "Paste after", requiresWritable = true) { ed, _ ->
             HelixActions.paste(ed, after = true)
             true
         }
-        register("paste_before", "Paste before") { ed, _ ->
+        register("paste_before", "Paste before", requiresWritable = true) { ed, _ ->
             HelixActions.paste(ed, after = false)
             true
         }
-        register("paste_clipboard_after", "Paste clipboard after") { ed, _ ->
+        register("paste_clipboard_after", "Paste clipboard after", requiresWritable = true) { ed, _ ->
             HelixActions.paste(ed, after = true, register = '+')
             true
         }
-        register("paste_clipboard_before", "Paste clipboard before") { ed, _ ->
+        register("paste_clipboard_before", "Paste clipboard before", requiresWritable = true) { ed, _ ->
             HelixActions.paste(ed, after = false, register = '+')
             true
         }
-        register("replace_with_yanked", "Replace with yanked") { ed, _ ->
+        register("replace_with_yanked", "Replace with yanked", requiresWritable = true) { ed, _ ->
             HelixActions.replaceWithClipboard(ed)
             true
         }
-        register("replace_clipboard", "Replace with clipboard") { ed, _ ->
+        register("replace_clipboard", "Replace with clipboard", requiresWritable = true) { ed, _ ->
             HelixActions.replaceWithClipboard(ed, register = '+')
             true
         }
-        register("join_lines", "Join lines") { ed, cnt ->
+        register("join_lines", "Join lines", requiresWritable = true) { ed, cnt ->
             HelixActions.joinLines(ed, cnt)
             true
         }
     }
 
     private fun registerInsertTransitions() {
-        register("insert_mode", "Enter insert mode") { ed, _ ->
+        register("insert_mode", "Enter insert mode", requiresWritable = true) { ed, _ ->
             HelixActions.enterInsert(ed)
             true
         }
-        register("append_mode", "Enter insert mode (append)") { ed, _ ->
+        register("append_mode", "Enter insert mode (append)", requiresWritable = true) { ed, _ ->
             HelixActions.enterInsertAppend(ed)
             true
         }
-        register("insert_at_line_start", "Insert at line start") { ed, _ ->
+        register("insert_at_line_start", "Insert at line start", requiresWritable = true) { ed, _ ->
             HelixActions.enterInsertLineStart(ed)
             true
         }
-        register("insert_at_line_end", "Insert at line end") { ed, _ ->
+        register("insert_at_line_end", "Insert at line end", requiresWritable = true) { ed, _ ->
             HelixActions.enterInsertLineEnd(ed)
             true
         }
-        register("open_below", "Open new line below") { ed, _ ->
+        register("open_below", "Open new line below", requiresWritable = true) { ed, _ ->
             HelixActions.openNewLineBelow(ed)
             true
         }
-        register("open_above", "Open new line above") { ed, _ ->
+        register("open_above", "Open new line above", requiresWritable = true) { ed, _ ->
             HelixActions.openNewLineAbove(ed)
             true
         }
-        register("repeat_last_insert", "Repeat last insert") { ed, cnt ->
+        register("repeat_last_insert", "Repeat last insert", requiresWritable = true) { ed, cnt ->
             HelixInsertTracker.repeatLastInsert(ed, cnt)
             true
         }
     }
 
     private fun registerFormattingAndIndents() {
-        register("toggle_case", "Toggle case") { ed, cnt ->
+        register("toggle_case", "Toggle case", requiresWritable = true) { ed, cnt ->
             HelixActions.toggleCase(ed, cnt)
             true
         }
-        register("switch_to_lowercase", "Switch to lowercase") { ed, cnt ->
+        register("switch_to_lowercase", "Switch to lowercase", requiresWritable = true) { ed, cnt ->
             HelixActions.toLowerCase(ed, cnt)
             true
         }
@@ -322,11 +357,16 @@ object HelixCommandRegistry {
             HelixActions.trimSelections(ed)
             true
         }
-        register("align_selections", "Align selections into columns") { ed, _ ->
+        register("align_selections", "Align selections into columns", requiresWritable = true) { ed, _ ->
             HelixActions.alignSelections(ed)
             true
         }
-        register("indent", "Indent line/selection", "EditorIndentLineOrSelection") { ed, cnt ->
+        register(
+            "indent",
+            "Indent line/selection",
+            "EditorIndentLineOrSelection",
+            requiresWritable = true,
+        ) { ed, cnt ->
             repeat(cnt) { HelixActionDelegate.executeAction("EditorIndentLineOrSelection", ed) }
             val state = HelixStateManager.getOrCreate(ed)
             if (state.mode == HelixMode.SELECT) {
@@ -334,7 +374,12 @@ object HelixCommandRegistry {
             }
             true
         }
-        register("unindent", "Unindent selection", "EditorUnindentSelection") { ed, cnt ->
+        register(
+            "unindent",
+            "Unindent selection",
+            "EditorUnindentSelection",
+            requiresWritable = true,
+        ) { ed, cnt ->
             repeat(cnt) { HelixActionDelegate.executeAction("EditorUnindentSelection", ed) }
             val state = HelixStateManager.getOrCreate(ed)
             if (state.mode == HelixMode.SELECT) {
@@ -345,7 +390,7 @@ object HelixCommandRegistry {
         register("repeat_last_motion", "Repeat last motion") { ed, cnt ->
             HelixActions.repeatLastMotion(ed, count = cnt)
         }
-        register("format_selections", "Format selections", "ReformatCode") { ed, _ ->
+        register("format_selections", "Format selections", "ReformatCode", requiresWritable = true) { ed, _ ->
             val res = HelixActionDelegate.executeAction("ReformatCode", ed)
             val state = HelixStateManager.getOrCreate(ed)
             if (state.mode == HelixMode.SELECT) {
@@ -353,7 +398,12 @@ object HelixCommandRegistry {
             }
             res
         }
-        register("cleanup", "Reformat and optimize imports", "ReformatWithCodeCleanup") { ed, _ ->
+        register(
+            "cleanup",
+            "Reformat and optimize imports",
+            "ReformatWithCodeCleanup",
+            requiresWritable = true,
+        ) { ed, _ ->
             val executed = HelixActionDelegate.executeAction("ReformatWithCodeCleanup", ed)
             val res = if (!executed) {
                 val r = HelixActionDelegate.executeAction("ReformatCode", ed)
@@ -404,11 +454,11 @@ object HelixCommandRegistry {
             HelixMotions.copySelectionOnNextLine(ed, cnt)
             true
         }
-        register("undo", "Undo", $$"$Undo") { ed, cnt ->
+        register("undo", "Undo", $$"$Undo", requiresWritable = true) { ed, cnt ->
             repeat(cnt) { HelixActionDelegate.executeAction($$"$Undo", ed) }
             true
         }
-        register("redo", "Redo", $$"$Redo") { ed, cnt ->
+        register("redo", "Redo", $$"$Redo", requiresWritable = true) { ed, cnt ->
             repeat(cnt) { HelixActionDelegate.executeAction($$"$Redo", ed) }
             true
         }
@@ -461,11 +511,11 @@ object HelixCommandRegistry {
             HelixActions.searchSelection(ed)
             true
         }
-        register("shell_pipe", "Pipe selections through shell") { ed, _ ->
+        register("shell_pipe", "Pipe selections through shell", requiresWritable = true) { ed, _ ->
             HelixSearchManager.startShellPipe(ed)
             true
         }
-        register("shell_insert", "Insert output of shell command") { ed, _ ->
+        register("shell_insert", "Insert output of shell command", requiresWritable = true) { ed, _ ->
             HelixSearchManager.startShellInsert(ed)
             true
         }
@@ -515,18 +565,6 @@ object HelixCommandRegistry {
             HelixActions.showMacrosPicker(ed)
             true
         }
-        register(
-            "registers_picker",
-            "Open registers picker popup",
-            "jp.titze.intellij.helix.registersPicker",
-        ) { ed, _ ->
-            HelixActions.showRegistersPicker(ed)
-            true
-        }
-        register("macro_picker", "Open macros picker popup", "jp.titze.intellij.helix.macrosPicker") { ed, _ ->
-            HelixActions.showMacrosPicker(ed)
-            true
-        }
         register("symbol_picker", "Symbol picker", "FileStructurePopup") { ed, _ ->
             HelixSpaceKeymap.lastPickerChar = 's'
             HelixKeyHandler.recordJump(ed)
@@ -545,6 +583,10 @@ object HelixCommandRegistry {
             HelixSpaceKeymap.lastPickerChar = 'D'
             HelixActionDelegate.executeAction("ActivateProblemsViewToolWindow", ed)
         }
+        registerLeaderActions()
+    }
+
+    private fun registerLeaderActions() {
         register("file_explorer", "File explorer", "ActivateProjectToolWindow") { ed, _ ->
             HelixActionDelegate.executeAction("ActivateProjectToolWindow", ed)
         }
@@ -555,13 +597,23 @@ object HelixCommandRegistry {
             HelixActionDelegate.executeAction("ActivateVersionControlToolWindow", ed) ||
                 HelixActionDelegate.executeAction("Vcs.Show.Local.Changes", ed)
         }
-        register("toggle_comments", "Toggle line comment", "CommentByLineComment") { ed, _ ->
+        register(
+            "toggle_comments",
+            "Toggle line comment",
+            "CommentByLineComment",
+            requiresWritable = true,
+        ) { ed, _ ->
             val res = HelixActionDelegate.executeAction("CommentByLineComment", ed)
             val state = HelixStateManager.getOrCreate(ed)
             if (state.mode == HelixMode.SELECT) state.setMode(HelixMode.NORMAL)
             res
         }
-        register("toggle_block_comments", "Toggle block comment", "CommentByBlockComment") { ed, _ ->
+        register(
+            "toggle_block_comments",
+            "Toggle block comment",
+            "CommentByBlockComment",
+            requiresWritable = true,
+        ) { ed, _ ->
             val res = HelixActionDelegate.executeAction("CommentByBlockComment", ed)
             val state = HelixStateManager.getOrCreate(ed)
             if (state.mode == HelixMode.SELECT) state.setMode(HelixMode.NORMAL)
@@ -573,7 +625,7 @@ object HelixCommandRegistry {
         register("code_action", "Code action", "ShowIntentionActions") { ed, _ ->
             HelixActionDelegate.executeAction("ShowIntentionActions", ed)
         }
-        register("rename_symbol", "Rename symbol", "RenameElement") { ed, _ ->
+        register("rename_symbol", "Rename symbol", "RenameElement", requiresWritable = true) { ed, _ ->
             HelixActionDelegate.executeAction("RenameElement", ed)
         }
         register("command_palette", "Command palette", "GotoAction") { ed, _ ->

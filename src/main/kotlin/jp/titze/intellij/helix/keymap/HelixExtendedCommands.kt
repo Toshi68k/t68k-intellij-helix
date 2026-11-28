@@ -172,11 +172,11 @@ internal object HelixExtendedCommands {
             HelixMotionHistory.recordBracket(isOpen = false, targetChar = 'a')
             HelixMotions.moveParameter(ed, forward = true, count = cnt)
         }
-        HelixCommandRegistry.register("add_newline_above", "Add newline above") { ed, cnt ->
+        HelixCommandRegistry.register("add_newline_above", "Add newline above", requiresWritable = true) { ed, cnt ->
             HelixMotions.addNewline(ed, below = false, count = cnt)
             true
         }
-        HelixCommandRegistry.register("add_newline_below", "Add newline below") { ed, cnt ->
+        HelixCommandRegistry.register("add_newline_below", "Add newline below", requiresWritable = true) { ed, cnt ->
             HelixMotions.addNewline(ed, below = true, count = cnt)
             true
         }
@@ -199,13 +199,13 @@ internal object HelixExtendedCommands {
             HelixMotionHistory.recordMatchBracket()
             HelixMotions.matchBrackets(ed, cnt)
         }
-        HelixCommandRegistry.register("surround_add", "Surround add") { ed, _ ->
+        HelixCommandRegistry.register("surround_add", "Surround add", requiresWritable = true) { ed, _ ->
             armSubmode(ed, 's')
         }
-        HelixCommandRegistry.register("surround_delete", "Surround delete") { ed, _ ->
+        HelixCommandRegistry.register("surround_delete", "Surround delete", requiresWritable = true) { ed, _ ->
             armSubmode(ed, 'd')
         }
-        HelixCommandRegistry.register("surround_replace", "Surround replace") { ed, _ ->
+        HelixCommandRegistry.register("surround_replace", "Surround replace", requiresWritable = true) { ed, _ ->
             armSubmode(ed, 'r')
         }
         HelixCommandRegistry.register("select_textobject_around", "Select textobject around") { ed, _ ->
@@ -249,26 +249,50 @@ internal object HelixExtendedCommands {
             HelixSelectionActions.mergeAllSelections(ed)
             true
         }
-        HelixCommandRegistry.register("sort", "Sort selected lines alphabetically") { ed, _ ->
-            HelixActions.sortLines(ed, reverse = false, numeric = false)
-            true
-        }
-        HelixCommandRegistry.register("sort_reverse", "Sort selected lines in reverse") { ed, _ ->
-            HelixActions.sortLines(ed, reverse = true, numeric = false)
-            true
-        }
-        HelixCommandRegistry.register("sort_numeric", "Sort selected lines numerically") { ed, _ ->
-            HelixActions.sortLines(ed, reverse = false, numeric = true)
-            true
-        }
-        HelixCommandRegistry.register("sort_numeric_reverse", "Sort selected lines numerically in reverse") { ed, _ ->
-            HelixActions.sortLines(ed, reverse = true, numeric = true)
-            true
-        }
+        registerSortCommands()
+        registerSelectionGroomingContinued()
         HelixCommandRegistry.register("copy_selection_on_prev_line", "Copy selection on previous line") { ed, cnt ->
             HelixMotions.copySelectionOnPrevLine(ed, cnt)
             true
         }
+    }
+
+    private fun registerSortCommands() {
+        HelixCommandRegistry.register(
+            "sort",
+            "Sort selected lines alphabetically",
+            requiresWritable = true,
+        ) { ed, _ ->
+            HelixActions.sortLines(ed, reverse = false, numeric = false)
+            true
+        }
+        HelixCommandRegistry.register(
+            "sort_reverse",
+            "Sort selected lines in reverse",
+            requiresWritable = true,
+        ) { ed, _ ->
+            HelixActions.sortLines(ed, reverse = true, numeric = false)
+            true
+        }
+        HelixCommandRegistry.register(
+            "sort_numeric",
+            "Sort selected lines numerically",
+            requiresWritable = true,
+        ) { ed, _ ->
+            HelixActions.sortLines(ed, reverse = false, numeric = true)
+            true
+        }
+        HelixCommandRegistry.register(
+            "sort_numeric_reverse",
+            "Sort selected lines numerically in reverse",
+            requiresWritable = true,
+        ) { ed, _ ->
+            HelixActions.sortLines(ed, reverse = true, numeric = true)
+            true
+        }
+    }
+
+    private fun registerSelectionGroomingContinued() {
         HelixCommandRegistry.register(
             "expand_selection",
             "Expand selection to parent node",
@@ -316,6 +340,7 @@ internal object HelixExtendedCommands {
         HelixCommandRegistry.register(
             "rotate_selections_contents_forward",
             "Rotate selections contents forward",
+            requiresWritable = true,
         ) { ed, _ ->
             HelixActions.rotateSelectionsContents(ed, forward = true)
             true
@@ -323,6 +348,7 @@ internal object HelixExtendedCommands {
         HelixCommandRegistry.register(
             "rotate_selections_contents_backward",
             "Rotate selections contents backward",
+            requiresWritable = true,
         ) { ed, _ ->
             HelixActions.rotateSelectionsContents(ed, forward = false)
             true
@@ -343,6 +369,7 @@ internal object HelixExtendedCommands {
             "delete_char_backward",
             "Delete character backward",
             "EditorBackSpace",
+            requiresWritable = true,
         ) { ed, cnt ->
             repeat(cnt) { HelixActionDelegate.executeAction("EditorBackSpace", ed) }
             true
@@ -351,6 +378,7 @@ internal object HelixExtendedCommands {
             "delete_char_forward",
             "Delete character forward",
             "EditorDelete",
+            requiresWritable = true,
         ) { ed, cnt ->
             repeat(cnt) { HelixActionDelegate.executeAction("EditorDelete", ed) }
             true
@@ -359,27 +387,48 @@ internal object HelixExtendedCommands {
             "insert_newline",
             "Insert newline",
             "EditorEnter",
+            requiresWritable = true,
         ) { ed, cnt ->
             repeat(cnt) { HelixActionDelegate.executeAction("EditorEnter", ed) }
             true
         }
-        HelixCommandRegistry.register("delete_word_backward", "Delete word backward") { ed, _ ->
+        HelixCommandRegistry.register(
+            "delete_word_backward",
+            "Delete word backward",
+            requiresWritable = true,
+        ) { ed, _ ->
             HelixActions.deleteWordBackward(ed)
             true
         }
-        HelixCommandRegistry.register("delete_word_forward", "Delete word forward") { ed, _ ->
+        HelixCommandRegistry.register(
+            "delete_word_forward",
+            "Delete word forward",
+            requiresWritable = true,
+        ) { ed, _ ->
             HelixActions.deleteWordForward(ed)
             true
         }
-        HelixCommandRegistry.register("kill_to_line_start", "Delete to line start") { ed, _ ->
+        HelixCommandRegistry.register(
+            "kill_to_line_start",
+            "Delete to line start",
+            requiresWritable = true,
+        ) { ed, _ ->
             HelixActions.killToLineStart(ed)
             true
         }
-        HelixCommandRegistry.register("kill_to_line_end", "Delete to line end") { ed, _ ->
+        HelixCommandRegistry.register(
+            "kill_to_line_end",
+            "Delete to line end",
+            requiresWritable = true,
+        ) { ed, _ ->
             HelixActions.killToLineEnd(ed)
             true
         }
-        HelixCommandRegistry.register("insert_register", "Insert register content") { ed, _ ->
+        HelixCommandRegistry.register(
+            "insert_register",
+            "Insert register content",
+            requiresWritable = true,
+        ) { ed, _ ->
             HelixRegistersPopup.show(ed)
             true
         }
@@ -396,11 +445,19 @@ internal object HelixExtendedCommands {
     }
 
     private fun registerNumbers() {
-        HelixCommandRegistry.register("increment", "Increment number under cursor") { ed, cnt ->
+        HelixCommandRegistry.register(
+            "increment",
+            "Increment number under cursor",
+            requiresWritable = true,
+        ) { ed, cnt ->
             HelixActions.increment(ed, cnt)
             true
         }
-        HelixCommandRegistry.register("decrement", "Decrement number under cursor") { ed, cnt ->
+        HelixCommandRegistry.register(
+            "decrement",
+            "Decrement number under cursor",
+            requiresWritable = true,
+        ) { ed, cnt ->
             HelixActions.decrement(ed, cnt)
             true
         }
@@ -472,7 +529,11 @@ internal object HelixExtendedCommands {
         HelixCommandRegistry.register("jump_next_view", "Focus next split", "NextSplitter") { ed, _ ->
             HelixActionDelegate.executeAction("NextSplitter", ed)
         }
-        HelixCommandRegistry.register("switch_to_uppercase", "Switch to uppercase") { ed, cnt ->
+        HelixCommandRegistry.register(
+            "switch_to_uppercase",
+            "Switch to uppercase",
+            requiresWritable = true,
+        ) { ed, cnt ->
             HelixActions.toUpperCase(ed, cnt)
             true
         }
@@ -647,6 +708,7 @@ internal object HelixExtendedCommands {
             "vcs_rollback_hunk",
             "Rollback VCS change hunk",
             "Vcs.RollbackChangedLines",
+            requiresWritable = true,
         ) { ed, _ -> HelixActionDelegate.executeAction("Vcs.RollbackChangedLines", ed) }
         HelixCommandRegistry.register(
             "vcs_diff",

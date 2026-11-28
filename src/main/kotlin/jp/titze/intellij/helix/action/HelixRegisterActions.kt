@@ -8,6 +8,7 @@ import com.intellij.openapi.editor.Caret
 import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.util.TextRange
+import jp.titze.intellij.helix.editor.HelixEditorEligibility
 import jp.titze.intellij.helix.register.HelixRegisterManager
 import jp.titze.intellij.helix.state.HelixMode
 import jp.titze.intellij.helix.state.HelixStateManager
@@ -16,6 +17,7 @@ import jp.titze.intellij.helix.ui.HelixVisualFeedback
 object HelixRegisterActions {
 
     fun deleteSelection(editor: Editor, enterInsert: Boolean = false, count: Int = 1, register: Char? = null) {
+        if (!HelixEditorEligibility.ensureWritable(editor)) return
         val project = editor.project
         val state = HelixStateManager.getOrCreate(editor)
 
@@ -121,6 +123,7 @@ object HelixRegisterActions {
     }
 
     fun paste(editor: Editor, after: Boolean = true, register: Char? = null) {
+        if (!HelixEditorEligibility.ensureWritable(editor)) return
         val project = editor.project
         val entry = HelixRegisterManager.get(register, editor) ?: return
         val doc = editor.document
@@ -171,6 +174,7 @@ object HelixRegisterActions {
     }
 
     fun replaceWithRegister(editor: Editor, register: Char? = null) {
+        if (!HelixEditorEligibility.ensureWritable(editor)) return
         val project = editor.project
         val entry = HelixRegisterManager.get(register, editor) ?: return
         val doc = editor.document

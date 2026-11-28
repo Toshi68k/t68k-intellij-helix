@@ -3,6 +3,7 @@
 
 package jp.titze.intellij.helix.editor
 
+import com.intellij.codeInsight.hint.HintManager
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.editor.Editor
@@ -10,7 +11,9 @@ import com.intellij.openapi.editor.EditorFactory
 import com.intellij.openapi.editor.EditorKind
 import com.intellij.openapi.editor.ex.EditorSettingsExternalizable
 import com.intellij.openapi.editor.textarea.TextComponentEditor
+import com.intellij.openapi.wm.WindowManager
 import com.intellij.ui.EditorTextField
+import jp.titze.intellij.helix.HelixBundle
 import jp.titze.intellij.helix.settings.HelixSettings
 import jp.titze.intellij.helix.state.HelixStateManager
 import jp.titze.intellij.helix.ui.HelixStatusBarWidget
@@ -33,6 +36,9 @@ object HelixEditorEligibility {
     )
     private const val MAX_ANCESTOR_DEPTH = 12
 
+    @Volatile
+    internal var onReadOnlyNotice: ((Editor, String) -> Unit)? = null
+
     fun isActive(editor: Editor?): Boolean {
         if (editor == null) return false
         val target = HelixStateManager.resolveHostEditor(editor)
@@ -40,10 +46,18 @@ object HelixEditorEligibility {
             return isActive(target)
         }
         val settings = HelixSettings.instance
-        if (!settings.enabled) return false
-        if (editor is TextComponentEditor) return false
-        if (editor.isOneLineMode || editor.isViewer || editor.isDisposed) return false
-        if (hasAncestorClass(editor, TERMINAL_PREFIXES)) return false
+        if (!isEligibleHost(editor, settings)) return false
+        return isEnvironmentActive(editor, settings)
+    }
+
+    private fun isEligibleHost(editor: Editor, settings: HelixSettings): Boolean {
+        if (!settings.enabled || editor is TextComponentEditor) return false
+        if (editor.isOneLineMode || editor.isDisposed) return false
+        if (editor.isViewer && !settings.activateInReadOnlyViewers) return false
+        return !hasAncestorClass(editor, TERMINAL_PREFIXES)
+    }
+
+    private fun isEnvironmentActive(editor: Editor, settings: HelixSettings): Boolean {
         if (isCommitEditor(editor)) return settings.activateInCommitMessage
         if (isAiPromptEditor(editor)) return settings.activateInAiPrompt
         if (isEditorTextField(editor) && !settings.activateInOtherEditors) return false
@@ -58,6 +72,47 @@ object HelixEditorEligibility {
             kind == EditorKind.CONSOLE -> settings.activateInConsole
             else -> settings.activateInOtherEditors
         }
+    }
+
+    fun isReadOnly(editor: Editor): Boolean {
+        val host = HelixStateManager.resolveHostEditor(editor)
+        return host.isViewer || !host.document.isWritable
+    }
+
+    fun ensureWritable(editor: Editor): Boolean {
+        if (!isReadOnly(editor)) return true
+        notifyReadOnly(editor)
+        return false
+    }
+
+    fun notifyReadOnly(editor: Editor) {
+        val host = HelixStateManager.resolveHostEditor(editor)
+        val message = HelixBundle.message("status.readOnly.notice")
+        onReadOnlyNotice?.invoke(host, message)
+
+        val showFeedback = {
+            if (!host.isDisposed) {
+                host.project?.let { project ->
+                    if (!project.isDisposed) {
+                        WindowManager.getInstance().getStatusBar(project)?.info = message
+                    }
+                }
+                if (canShowPopupHint(host)) {
+                    HintManager.getInstance().showInformationHint(host, message)
+                }
+            }
+        }
+        val app = ApplicationManager.getApplication()
+        if (app != null && !app.isDispatchThread) {
+            app.invokeLater(showFeedback, ModalityState.any())
+        } else {
+            showFeedback()
+        }
+    }
+
+    private fun canShowPopupHint(editor: Editor): Boolean {
+        val app = ApplicationManager.getApplication() ?: return false
+        return !app.isUnitTestMode && !app.isHeadlessEnvironment && editor.contentComponent.isShowing
     }
 
     /**

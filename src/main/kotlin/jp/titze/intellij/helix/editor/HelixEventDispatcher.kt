@@ -128,6 +128,12 @@ class HelixEventDispatcher : IdeEventQueue.EventDispatcher {
         if (handleEscapeEvent(e, editor, isNoModifiers, isCtrl)) return true
 
         val state = HelixStateManager.getOrCreate(editor)
+        if (state.mode.isInsertable && HelixEditorEligibility.isReadOnly(editor)) {
+            HelixActions.enterNormalMode(editor)
+            HelixEditorEligibility.notifyReadOnly(editor)
+            e.consume()
+            return true
+        }
         if (handleFunctionKey(e, editor, state)) {
             e.consume()
             return true
@@ -460,7 +466,9 @@ class HelixEventDispatcher : IdeEventQueue.EventDispatcher {
             }
 
             KeyEvent.VK_C -> {
-                HelixActionDelegate.executeAction("CommentByLineComment", editor)
+                if (HelixEditorEligibility.ensureWritable(editor)) {
+                    HelixActionDelegate.executeAction("CommentByLineComment", editor)
+                }
                 true
             }
 
@@ -483,12 +491,18 @@ class HelixEventDispatcher : IdeEventQueue.EventDispatcher {
             }
 
             KeyEvent.VK_A -> {
-                HelixActions.increment(editor, state.takeCount() ?: 1)
+                val count = state.takeCount() ?: 1
+                if (HelixEditorEligibility.ensureWritable(editor)) {
+                    HelixActions.increment(editor, count)
+                }
                 true
             }
 
             KeyEvent.VK_X -> {
-                HelixActions.decrement(editor, state.takeCount() ?: 1)
+                val count = state.takeCount() ?: 1
+                if (HelixEditorEligibility.ensureWritable(editor)) {
+                    HelixActions.decrement(editor, count)
+                }
                 true
             }
 
@@ -582,13 +596,17 @@ class HelixEventDispatcher : IdeEventQueue.EventDispatcher {
 
             !e.isShiftDown && (e.keyCode == KeyEvent.VK_U || e.keyChar == 'u') -> {
                 val count = state.takeCount() ?: 1
-                repeat(count) { HelixActionDelegate.executeAction($$"$Undo", editor) }
+                if (HelixEditorEligibility.ensureWritable(editor)) {
+                    repeat(count) { HelixActionDelegate.executeAction($$"$Undo", editor) }
+                }
                 true
             }
 
             (e.isShiftDown && e.keyCode == KeyEvent.VK_U) || e.keyChar == 'U' -> {
                 val count = state.takeCount() ?: 1
-                repeat(count) { HelixActionDelegate.executeAction($$"$Redo", editor) }
+                if (HelixEditorEligibility.ensureWritable(editor)) {
+                    repeat(count) { HelixActionDelegate.executeAction($$"$Redo", editor) }
+                }
                 true
             }
 

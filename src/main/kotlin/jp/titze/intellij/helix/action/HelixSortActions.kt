@@ -6,6 +6,7 @@ package jp.titze.intellij.helix.action
 import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.util.TextRange
+import jp.titze.intellij.helix.editor.HelixEditorEligibility
 import jp.titze.intellij.helix.state.HelixMode
 import jp.titze.intellij.helix.state.HelixStateManager
 
@@ -15,6 +16,7 @@ object HelixSortActions {
 
     @JvmOverloads
     fun sortLines(editor: Editor, reverse: Boolean = false, numeric: Boolean = false) {
+        if (!HelixEditorEligibility.ensureWritable(editor)) return
         val project = editor.project ?: return
         val doc = editor.document
         if (doc.lineCount <= 1 || doc.textLength == 0) return
@@ -23,7 +25,7 @@ object HelixSortActions {
             project,
             "Sort Lines",
             null,
-            Runnable {
+            {
                 val selectedRanges = collectLineRanges(editor)
 
                 if (selectedRanges.isNotEmpty()) {
