@@ -5,6 +5,7 @@ package jp.titze.intellij.helix.editor
 
 import com.intellij.openapi.editor.Editor
 import jp.titze.intellij.helix.action.HelixActions
+import jp.titze.intellij.helix.action.HelixReadAction
 import jp.titze.intellij.helix.motion.HelixJumpToWord
 import jp.titze.intellij.helix.motion.HelixMotions
 import jp.titze.intellij.helix.state.HelixMode
@@ -15,19 +16,19 @@ import jp.titze.intellij.helix.ui.HelixWhichKeyPopup
 
 object HelixEscapeHandler {
 
-    fun handleEscape(editor: Editor): Boolean {
+    fun handleEscape(editor: Editor): Boolean = HelixReadAction.runWriteIntent {
         if (HelixJumpToWord.cancel(editor)) {
-            return true
+            return@runWriteIntent true
         }
 
         val state = HelixStateManager.getOrCreate(editor)
 
         if (HelixWhichKeyPopup.cancelActive()) {
             HelixToolWindowSwitcher.clearActiveTargets()
-            return true
+            return@runWriteIntent true
         }
         if (HelixPromptBar.cancelActivePrompt(editor)) {
-            return true
+            return@runWriteIntent true
         }
 
         if (state.pendingSequence.isNotEmpty() || state.hasCount || state.selectedRegister != null) {
@@ -37,7 +38,7 @@ object HelixEscapeHandler {
             state.clearPendingSequence()
             state.clearCount()
             state.clearSelectedRegister()
-            return true
+            return@runWriteIntent true
         }
 
         when (state.mode) {
@@ -61,6 +62,6 @@ object HelixEscapeHandler {
                 }
             }
         }
-        return true
+        true
     }
 }

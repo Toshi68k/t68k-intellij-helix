@@ -34,6 +34,11 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   - Added subtle keycap differentiation in Which-Key menus (`WhichKeyItem.isSubmenu`) so leaf actions use calm neutral keycaps while nested submenu prefixes (`m`, `t`, `v`, `w`, `W`, `G`, `H`, `ma`, `mi`, and custom TOML branch nodes) stand out with accent styling.
   - **Keeping the previous dark colors**: **Dark (Classic Indigo)** (`HelixColorTheme.DARK`) preserves the original deep-indigo dark palette. To keep the old dark overlay colors, select **Dark (Classic Indigo)** under **Settings &rarr; Tools &rarr; Helix Keymap &rarr; Appearance &amp; UI &rarr; Color Theme**.
 
+### Fixed
+
+- **Intermittent Read-Access Exception on `Escape` and Key Dispatch**:
+  - Fixed an intermittent EDT read-access exception (`Read access is allowed from inside read-action only` in `CaretImpl.hasSelection()`) when pressing `Escape` or dispatching Helix editor shortcuts on IntelliJ 2025.1+.
+
 ## [0.9.1] - 2026-11-25
 
 ### Added
