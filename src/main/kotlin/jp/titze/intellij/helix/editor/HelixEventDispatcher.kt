@@ -14,6 +14,7 @@ import com.intellij.openapi.keymap.KeymapManager
 import com.intellij.openapi.util.Disposer
 import jp.titze.intellij.helix.action.HelixActionDelegate
 import jp.titze.intellij.helix.action.HelixActions
+import jp.titze.intellij.helix.action.HelixReadAction
 import jp.titze.intellij.helix.jumplist.HelixJumpListService
 import jp.titze.intellij.helix.keymap.HelixCommandRegistry
 import jp.titze.intellij.helix.keymap.HelixKeyHandler
@@ -118,9 +119,23 @@ class HelixEventDispatcher : IdeEventQueue.EventDispatcher {
     }
 
     private fun dispatchToEditor(e: KeyEvent, editor: Editor): Boolean {
-        if (handlePromptBarEvent(e, editor)) return true
-        if (isInsideActivePromptBar(e, editor)) return false
+        if (HelixPromptBar.isPromptActive(editor)) {
+            if (isPromptCancelKey(e)) {
+                return HelixReadAction.runWriteIntent {
+                    HelixPromptBar.cancelActivePrompt(editor)
+                    e.consume()
+                    true
+                }
+            }
+            if (isInsideActivePromptBar(e, editor)) return false
+        }
 
+        return HelixReadAction.runWriteIntent {
+            dispatchToActiveEditor(e, editor)
+        }
+    }
+
+    private fun dispatchToActiveEditor(e: KeyEvent, editor: Editor): Boolean {
         val isCtrl = e.isControlDown && !e.isMetaDown && !e.isAltDown
         val isAlt = e.isAltDown && !e.isControlDown && !e.isMetaDown
         val isNoModifiers = !e.isControlDown && !e.isMetaDown && !e.isAltDown && !e.isShiftDown
@@ -237,7 +252,9 @@ class HelixEventDispatcher : IdeEventQueue.EventDispatcher {
                 return true
             }
             if (isPromptCancelKey(e)) {
-                val cancelled = HelixWhichKeyPopup.cancelActive()
+                val cancelled = HelixReadAction.runWriteIntent {
+                    HelixWhichKeyPopup.cancelActive()
+                }
                 if (cancelled) {
                     e.consume()
                     return true
@@ -275,16 +292,6 @@ class HelixEventDispatcher : IdeEventQueue.EventDispatcher {
         val isCtrlC = isCtrl && isCtrlCKey(e)
         val isCtrlBracket = isCtrl && e.keyCode == KeyEvent.VK_OPEN_BRACKET
         return isEscape || isCtrlC || isCtrlBracket
-    }
-
-    private fun handlePromptBarEvent(e: KeyEvent, editor: Editor): Boolean {
-        if (!HelixPromptBar.isPromptActive(editor)) return false
-        if (isPromptCancelKey(e)) {
-            HelixPromptBar.cancelActivePrompt(editor)
-            e.consume()
-            return true
-        }
-        return false
     }
 
     private fun isInsideActivePromptBar(e: KeyEvent, editor: Editor): Boolean {
