@@ -16,7 +16,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   - **Live VFS File Watcher**: `HelixConfigWatcher` monitors `.helix/` config files across open projects and triggers debounced live reloads upon saving.
   - **Keymap Browser & Settings Provenance**: Displays a distinct `[Custom: Project]` badge in the Keymap Browser for project-bound shortcuts; disabled Settings UI controls and Active Overrides tables highlight `.helix/` provenance (even when no global `intellij.toml` exists) with direct line navigation.
   - **Command Palette (`:config-open-project`)**: Added `:config-open-project` (aliases `:config-open-workspace`, `:project-config-open`, `:workspace-config-open`) to scaffold `.helix/intellij.toml` from a starter template and open it in the editor.
-- **Tool Windows Navigation Extensions**:
+- **Tool Windows Navigation Extensions (Experimental)**:
   - **Dynamic Tool Window Switcher (`Space`, `Space+W` & Terminal Keymap) & `Ctrl+w` Which-Key Menu**: Added a toggleable `Space` Which-Key switcher menu inside eligible tool windows (enabled by default, including `Commit`), `Space+W` (`toolwindow_switcher` / `:tool-windows`) from editors, and a user-configurable `Helix: Open Tool Window Switcher` IntelliJ action (`jp.titze.intellij.helix.toolWindowSwitcher`) whose keymap binding is honored even inside the `Terminal` tool window. Dynamically lists tool windows installed and available in the current project (`Project`, `Version Control`, `Commit`, `Problems View`, `Find`, `Structure`, `Services`, `Run`, `Debug`, `Build`, `Gradle`, `Terminal`, `Database`, `Maven`, `Bookmarks`, `TODO`, `Pull Requests`, `Hierarchy`, `Notifications`, plus auto-assigned keys for any other plugin tool windows) alongside `w` / `Space` to return focus to the editor from tool windows. Also added a compact `Ctrl+w` Which-Key menu (`h`/`j`/`k`/`l`/`w`) inside tool windows.
   - **VCS Commit Tool Window (`Alt+0`) Shortcuts**: Added `s` to toggle file checkboxes in Changelist mode or stage/unstage (`Git.Stage.Add` / `Git.Stage.Reset`) in Git Staging mode (with an option to let `Space` stage/toggle in `Commit` instead of opening the switcher), `d` to open the diff preview (`Diff.ShowDiff`, also in `Version Control`), and `c` to focus the commit message box cleanly for typing.
   - **Two-Step SpeedSearch Confirmation, `?` Backward Search & `n`/`N` Navigation**: Added `?` to start backward SpeedSearch from the current row alongside `/` forward search, updated `n`/`N` to follow or reverse the active search direction (including after SpeedSearch closes), and confirmed the search on the first `Enter` without immediately executing/opening the selected item (letting a second `Enter` or `o` activate it), configurable via **Confirm speed search on Enter without executing (press Enter or o again to open/run)** (enabled by default).
@@ -36,6 +36,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- **Native Editor Find/Replace (`Ctrl+F` / `Cmd+F`) `Escape` & Key Handling**:
+  - Fixed `Escape` not closing IntelliJ's native in-editor Find/Replace bar when focus is inside the search/replace input, and allowed normal navigation and modifier shortcuts inside the Find bar to pass through untouched.
+  - Pressing `Escape` in Normal mode (with a single caret) while the native Find bar is open now also dismisses the Find bar and clears the search match selection, after exiting Insert/Select mode or reducing extra carets if active.
 - **Intermittent Read-Access Exception on `Escape` and Key Dispatch**:
   - Fixed an intermittent EDT read-access exception (`Read access is allowed from inside read-action only` in `CaretImpl.hasSelection()`) when pressing `Escape` or dispatching Helix editor shortcuts on IntelliJ 2025.1+.
 
@@ -480,7 +483,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
-- **[BETA] Configurable Keymaps (`config.toml`)**:
+- **Configurable Keymaps (`config.toml`) (Beta)**:
   - Authentic Helix-style key rebinding via `~/.config/helix/config.toml` (or custom path configured in IDE Settings).
   - Pure-Kotlin, zero-dependency TOML parser supporting `[keys.normal]`, `[keys.insert]`, `[keys.select]`, nested submode prefixes (`[keys.normal.space]`, `[keys.normal.g]`, `[keys.normal.z]`, `[keys.normal."C-w"]`), and top-level shorthand tables (`[keys.space]`, `[keys.goto]`, `[keys.view]`, `[keys.match]`, `[keys.window]`).
   - Word modifier support in key sequences (e.g. `ctrl-s`, `control-s`, `alt-x`, `shift-tab`, `meta-f`, `insert`).
