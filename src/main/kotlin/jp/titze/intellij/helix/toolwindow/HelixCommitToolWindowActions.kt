@@ -6,6 +6,7 @@ package jp.titze.intellij.helix.toolwindow
 import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.actionSystem.ActionPlaces
 import com.intellij.openapi.actionSystem.AnAction
+import com.intellij.openapi.actionSystem.IdeActions
 import com.intellij.openapi.actionSystem.KeyboardShortcut
 import com.intellij.openapi.actionSystem.ex.ActionUtil
 import com.intellij.openapi.application.ApplicationManager
@@ -21,7 +22,7 @@ import javax.swing.text.JTextComponent
 import javax.swing.tree.DefaultMutableTreeNode
 
 /**
- * Handles VCS Commit and Version Control tool window shortcuts (`Space`/`s`, `d`, `c`).
+ * Handles VCS Commit and Version Control tool window shortcuts (`Space`/`s`, `d`, `e`, `c`).
  */
 object HelixCommitToolWindowActions {
 
@@ -109,6 +110,14 @@ object HelixCommitToolWindowActions {
                 return true
             }
         }
+        return true
+    }
+
+    fun openInEditor(component: JComponent, toolWindowId: String): Boolean {
+        if (!isCommitOrVcsToolWindow(toolWindowId)) return false
+
+        HelixToolWindowState.reset()
+        executeToolWindowAction(IdeActions.ACTION_EDIT_SOURCE, component)
         return true
     }
 

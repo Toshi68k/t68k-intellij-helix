@@ -529,6 +529,106 @@ class HelixToolWindowNavigatorTest : BasePlatformTestCase() {
         assertEquals(2, executed.size)
     }
 
+    fun testCommitAndVcsOpenInEditorShortcut() {
+        val executed = mutableListOf<String>()
+        HelixCommitToolWindowActions.actionExecutor = { actionId, _ ->
+            executed.add(actionId)
+            true
+        }
+
+        val dispatcher = jp.titze.intellij.helix.editor.HelixEventDispatcher()
+
+        val commitTree = Tree()
+        val commitPanel = JPanel()
+        commitPanel.putClientProperty("ToolWindow.id", "Commit")
+        commitPanel.add(commitTree)
+        HelixToolWindowState.appendCountDigit(2)
+
+        val eCommitPressed = KeyEvent(
+            commitTree,
+            KeyEvent.KEY_PRESSED,
+            System.currentTimeMillis(),
+            0,
+            KeyEvent.VK_E,
+            'e',
+        )
+        assertTrue(dispatcher.dispatch(eCommitPressed))
+        assertTrue(eCommitPressed.isConsumed)
+        assertEquals(listOf("EditSource"), executed)
+        assertNull(HelixToolWindowState.getPendingCount())
+
+        val eCommitTyped = KeyEvent(
+            commitTree,
+            KeyEvent.KEY_TYPED,
+            System.currentTimeMillis(),
+            0,
+            KeyEvent.VK_UNDEFINED,
+            'e',
+        )
+        assertTrue(dispatcher.dispatch(eCommitTyped))
+        assertTrue(eCommitTyped.isConsumed)
+
+        val vcsTree = Tree()
+        val vcsPanel = JPanel()
+        vcsPanel.putClientProperty("ToolWindow.id", "Version Control")
+        vcsPanel.add(vcsTree)
+
+        val eVcs = KeyEvent(vcsTree, KeyEvent.KEY_PRESSED, System.currentTimeMillis(), 0, KeyEvent.VK_E, 'e')
+        assertTrue(dispatcher.dispatch(eVcs))
+        assertTrue(eVcs.isConsumed)
+        assertEquals(listOf("EditSource", "EditSource"), executed)
+
+        // 'e' in Project tool window is swallowed without invoking EditSource
+        val projectTree = Tree()
+        val projectPanel = JPanel()
+        projectPanel.putClientProperty("ToolWindow.id", "Project")
+        projectPanel.add(projectTree)
+
+        val eProject = KeyEvent(projectTree, KeyEvent.KEY_PRESSED, System.currentTimeMillis(), 0, KeyEvent.VK_E, 'e')
+        assertTrue(dispatcher.dispatch(eProject))
+        assertTrue(eProject.isConsumed)
+        assertEquals(2, executed.size)
+
+        // 'ge' in Commit still moves to end of tree without invoking EditSource
+        val root = DefaultMutableTreeNode("Root")
+        root.add(DefaultMutableTreeNode("A.kt"))
+        root.add(DefaultMutableTreeNode("B.kt"))
+        val navTree = Tree(DefaultTreeModel(root))
+        commitPanel.add(navTree)
+        navTree.setSelectionRow(0)
+        assertTrue(
+            dispatcher.dispatch(
+                KeyEvent(navTree, KeyEvent.KEY_PRESSED, System.currentTimeMillis(), 0, KeyEvent.VK_G, 'g'),
+            ),
+        )
+        assertTrue(
+            dispatcher.dispatch(
+                KeyEvent(navTree, KeyEvent.KEY_PRESSED, System.currentTimeMillis(), 0, KeyEvent.VK_E, 'e'),
+            ),
+        )
+        assertEquals(2, navTree.leadSelectionRow)
+        assertEquals(2, executed.size)
+
+        // 'Space' -> 'e' in Commit still switches to Project without invoking EditSource
+        val switched = mutableListOf<Pair<String, String?>>()
+        HelixToolWindowSwitcher.switchExecutor = { actionId, twId, _ ->
+            switched.add(actionId to twId)
+            true
+        }
+        assertTrue(
+            dispatcher.dispatch(
+                KeyEvent(commitTree, KeyEvent.KEY_PRESSED, System.currentTimeMillis(), 0, KeyEvent.VK_SPACE, ' '),
+            ),
+        )
+        assertTrue(
+            dispatcher.dispatch(
+                KeyEvent(commitTree, KeyEvent.KEY_PRESSED, System.currentTimeMillis(), 0, KeyEvent.VK_E, 'e'),
+            ),
+        )
+        assertEquals(listOf("ActivateProjectToolWindow" to "Project"), switched)
+        assertEquals(2, executed.size)
+    }
+
     fun testCommitCFocusesMessageInput() {
         val commitPanel = JPanel()
         commitPanel.putClientProperty("ToolWindow.id", "Commit")
