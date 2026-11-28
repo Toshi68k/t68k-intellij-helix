@@ -26,6 +26,7 @@ data class WhichKeyItem(
     val helixCommand: String = "",
     val intelliJAction: String = "",
     val snippet: String? = null,
+    val isSubmenu: Boolean = false,
 ) {
     val description: String get() = helixCommand
 }
@@ -54,19 +55,20 @@ object HelixWhichKeyMenus {
         WhichKeyItem("j", "Jumplist picker", "jumplist_picker"),
         WhichKeyItem("a", "Code action", "code_action", "ShowIntentionActions"),
         WhichKeyItem("r", "Rename symbol", "rename_symbol", "RenameElement"),
-        WhichKeyItem("m", "Refactor menu", "refactor_menu"),
-        WhichKeyItem("t", "Test menu", "test_menu"),
-        WhichKeyItem("v", "VCS / Git menu", "vcs_menu"),
+        WhichKeyItem("m", "Refactor menu", "refactor_menu", isSubmenu = true),
+        WhichKeyItem("t", "Test menu", "test_menu", isSubmenu = true),
+        WhichKeyItem("v", "VCS / Git menu", "vcs_menu", isSubmenu = true),
         WhichKeyItem("c", "Toggle line comment", "toggle_comments", "CommentByLineComment"),
         WhichKeyItem("C", "Toggle block comment", "toggle_block_comments", "CommentByBlockComment"),
         WhichKeyItem("h", "Select references", "select_references", "FindUsages"),
         WhichKeyItem("'", "Last picker", "last_picker"),
-        WhichKeyItem("w", "Window mode", "window_mode"),
+        WhichKeyItem("w", "Window mode", "window_mode", isSubmenu = true),
         WhichKeyItem(
             "W",
             "Tool window switcher",
             "toolwindow_switcher",
             "jp.titze.intellij.helix.toolWindowSwitcher",
+            isSubmenu = true,
         ),
         WhichKeyItem("y", "Yank to clipboard", "yank_to_clipboard"),
         WhichKeyItem("Y", "Yank main selection", "yank_main_selection_to_clipboard"),
@@ -74,9 +76,9 @@ object HelixWhichKeyMenus {
         WhichKeyItem("P", "Paste clipboard before", "paste_clipboard_before"),
         WhichKeyItem("R", "Replace with clipboard", "replace_clipboard"),
         WhichKeyItem("k", "Hover / Documentation", "hover", "QuickJavaDoc"),
-        WhichKeyItem("G", "Debug (DAP) menu", "dap"),
+        WhichKeyItem("G", "Debug (DAP) menu", "dap", isSubmenu = true),
         WhichKeyItem("1-5", "Quick slots 1–5", "harpoon_quick_jump"),
-        WhichKeyItem("H", "Harpoon / Quick slots", "harpoon_menu"),
+        WhichKeyItem("H", "Harpoon / Quick slots", "harpoon_menu", isSubmenu = true),
         WhichKeyItem("?", "Command palette", "command_palette", "GotoAction"),
     )
 
@@ -126,8 +128,8 @@ object HelixWhichKeyMenus {
         WhichKeyItem("r", "Surround replace", "surround_replace <from><to>"),
         WhichKeyItem("d", "Surround delete", "surround_delete <char>"),
         WhichKeyItem("m", "Match bracket", "match_brackets"),
-        WhichKeyItem("a", "Select around textobject", "select_around_textobject <obj>"),
-        WhichKeyItem("i", "Select inside textobject", "select_inside_textobject <obj>"),
+        WhichKeyItem("a", "Select around textobject", "select_around_textobject <obj>", isSubmenu = true),
+        WhichKeyItem("i", "Select inside textobject", "select_inside_textobject <obj>", isSubmenu = true),
     )
 
     val bracketOpenItems = listOf(
@@ -549,8 +551,8 @@ object HelixWhichKeyMenus {
             )
         }
         items.add(WhichKeyItem("a", "Pin current file", "harpoon_pin"))
-        items.add(WhichKeyItem("s", "Set slot (1-5)", "harpoon_set_slot"))
-        items.add(WhichKeyItem("d", "Delete slot (1-5)", "harpoon_delete_slot"))
+        items.add(WhichKeyItem("s", "Set slot (1-5)", "harpoon_set_slot", isSubmenu = true))
+        items.add(WhichKeyItem("d", "Delete slot (1-5)", "harpoon_delete_slot", isSubmenu = true))
         items.add(WhichKeyItem("H", "Open Harpoon card UI", "harpoon_popup"))
         return items
     }
@@ -562,6 +564,20 @@ object HelixWhichKeyMenus {
     fun getHarpoonDeleteItems(): List<WhichKeyItem> = (1..HelixHarpoonService.SLOT_COUNT).map { i ->
         WhichKeyItem(i.toString(), "Delete slot $i", "harpoon_delete_$i")
     }
+
+    private val SUBMENU_COMMANDS = setOf(
+        "window_mode",
+        "toolwindow_switcher",
+        "select_textobject_around",
+        "select_textobject_inner",
+        "harpoon_menu",
+        "harpoon_set_slot",
+        "harpoon_delete_slot",
+        "refactor_menu",
+        "test_menu",
+        "vcs_menu",
+        "dap",
+    )
 
     private fun mergeMenuItems(
         baseItems: List<WhichKeyItem>,
@@ -575,15 +591,18 @@ object HelixWhichKeyMenus {
             val intelliJ = child.intelliJAction
                 ?: HelixCommandRegistry.get(action)?.intelliJAction
                 ?: extractIntelliJAction(action)
+            val isSubmenu = child.isBranch || action in SUBMENU_COMMANDS
 
             val existingIndex = result.indexOfFirst { it.key == keyStr }
             if (existingIndex >= 0) {
                 val baseItem = result[existingIndex]
                 if (child.action != null && action != baseItem.helixCommand) {
-                    result[existingIndex] = WhichKeyItem(keyStr, label, action, intelliJ)
+                    result[existingIndex] = WhichKeyItem(keyStr, label, action, intelliJ, isSubmenu = isSubmenu)
+                } else if (isSubmenu && !baseItem.isSubmenu) {
+                    result[existingIndex] = baseItem.copy(isSubmenu = true)
                 }
-            } else if (label.isNotEmpty() || action.isNotEmpty()) {
-                result.add(WhichKeyItem(keyStr, label, action, intelliJ))
+            } else if (label.isNotEmpty() || action.isNotEmpty() || isSubmenu) {
+                result.add(WhichKeyItem(keyStr, label, action, intelliJ, isSubmenu = isSubmenu))
             }
         }
         return result

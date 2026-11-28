@@ -143,13 +143,63 @@ class HelixSettingsTest : BasePlatformTestCase() {
         settings.colorTheme = HelixColorTheme.DARK
         settings.colorTheme shouldBe HelixColorTheme.DARK
         HelixTheme.isDark.shouldBeTrue()
+        HelixTheme.CARD_BG.rgb shouldBe java.awt.Color(0x151622).rgb
+        HelixTheme.KEYCAP_SUBMENU_FG.rgb shouldBe java.awt.Color(0xC7D2FE).rgb
+
+        settings.colorTheme = HelixColorTheme.DARK_NEUTRAL
+        settings.colorTheme shouldBe HelixColorTheme.DARK_NEUTRAL
+        HelixTheme.isDark.shouldBeTrue()
+        HelixTheme.CARD_BG.rgb shouldBe java.awt.Color(0x26282E).rgb
+        HelixTheme.KEYCAP_SUBMENU_FG.rgb shouldBe java.awt.Color(0x8AB4F8).rgb
 
         settings.colorTheme = HelixColorTheme.LIGHT
         settings.colorTheme shouldBe HelixColorTheme.LIGHT
         HelixTheme.isDark.shouldBeFalse()
+        HelixTheme.CARD_BG.rgb shouldBe java.awt.Color(0xFAFAFC).rgb
+        HelixTheme.KEYCAP_SUBMENU_FG.rgb shouldBe java.awt.Color(0x3730A3).rgb
 
         settings.colorTheme = HelixColorTheme.SYNC
         settings.colorTheme shouldBe HelixColorTheme.SYNC
+        HelixTheme.currentSyncDarkPalette().cardBg.rgb shouldBe java.awt.Color(0x26282E).rgb
+    }
+
+    fun testDeriveDarkPaletteAdaptsToIdeTheme() {
+        val editorBg = java.awt.Color(0x1E1F22)
+        val popupBg = java.awt.Color(0x2B2D30)
+        val labelFg = java.awt.Color(0xDFE1E5)
+        val helpFg = java.awt.Color(0x7A7E85)
+        val linkFg = java.awt.Color(0x548AF7)
+        val border = java.awt.Color(0x393B40)
+
+        val palette = HelixTheme.deriveDarkPalette(
+            key = 1L,
+            popupBg = popupBg,
+            editorBg = editorBg,
+            labelFg = labelFg,
+            helpFg = helpFg,
+            linkFg = linkFg,
+            ideBorder = border,
+        )
+
+        com.intellij.ui.ColorUtil.isDark(palette.cardBg).shouldBeTrue()
+        // Elevated above editor background instead of sinking darker than it
+        (palette.cardBg.red > editorBg.red).shouldBeTrue()
+        // Leaf keycaps stay neutral while submenu keycaps carry accent tint
+        (palette.keycapSubmenuFg.rgb != palette.keycapFg.rgb).shouldBeTrue()
+        (palette.keycapSubmenuBg.rgb != palette.keycapBg.rgb).shouldBeTrue()
+        palette.itemTextColor.rgb shouldBe labelFg.rgb
+
+        // When editor and popup share the exact same color, cardBg lifts slightly so it remains distinct
+        val sameBgPalette = HelixTheme.deriveDarkPalette(
+            key = 2L,
+            popupBg = editorBg,
+            editorBg = editorBg,
+            labelFg = labelFg,
+            helpFg = helpFg,
+            linkFg = linkFg,
+            ideBorder = border,
+        )
+        (sameBgPalette.cardBg.rgb != editorBg.rgb).shouldBeTrue()
     }
 
     fun testConfigurableModificationsAndApply() {

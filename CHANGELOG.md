@@ -26,6 +26,14 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   - **Navigation, Selection & Yanking Without Mutation**: Supports all Normal and Select mode motions, bracket matching, text-object selection, multi-caret selection grooming, and yanking (`y`, `Space+y`) inside read-only buffers.
   - **Write & Insert Mode Guard**: Blocks Insert mode transitions (`i`, `a`, `I`, `A`, `o`, `O`), mutating keys and chords (`d`, `c`, `r`, `p`, `R`, `J`, `~`, `` ` ``, `u`, `=`, `>`, `<`, `.`, `m s`/`m d`/`m r`, `[ <Space>`/`] <Space>`, `Space c`/`Space p`), and mutating Command Palette/registry commands before invoking IDE write actions, displaying a brief `"Buffer is read-only"` notice while remaining cleanly in Normal/Select mode without IDE read-only unlock dialogs.
 
+### Changed
+
+- **Adaptive Dark Theme (`Sync with IDE`), `Dark (Neutral Charcoal)` Preset & Submenu Keycap Highlighting**:
+  - Updated **Sync with IDE** (`HelixColorTheme.SYNC`, the default) to dynamically derive dark overlay colors (`CARD_BG`, borders, dividers, hover highlights, recessed inputs, text, and soft accents) from your active IntelliJ dark theme (`Popup.BACKGROUND`, editor background, label/context-help/link foregrounds) with a neutral charcoal fallback, matching neutral dark IDE themes such as Islands Dark and Darcula while preserving the existing light palette on light themes.
+  - Added **Dark (Neutral Charcoal)** (`HelixColorTheme.DARK_NEUTRAL`) in **Settings &rarr; Tools &rarr; Helix Keymap &rarr; Appearance &amp; UI &rarr; Color Theme** so users can also select the elevated neutral charcoal &amp; soft blue palette explicitly regardless of IDE theme.
+  - Added subtle keycap differentiation in Which-Key menus (`WhichKeyItem.isSubmenu`) so leaf actions use calm neutral keycaps while nested submenu prefixes (`m`, `t`, `v`, `w`, `W`, `G`, `H`, `ma`, `mi`, and custom TOML branch nodes) stand out with accent styling.
+  - **Keeping the previous dark colors**: **Dark (Classic Indigo)** (`HelixColorTheme.DARK`) preserves the original deep-indigo dark palette. To keep the old dark overlay colors, select **Dark (Classic Indigo)** under **Settings &rarr; Tools &rarr; Helix Keymap &rarr; Appearance &amp; UI &rarr; Color Theme**.
+
 ## [0.9.1] - 2026-11-25
 
 ### Added

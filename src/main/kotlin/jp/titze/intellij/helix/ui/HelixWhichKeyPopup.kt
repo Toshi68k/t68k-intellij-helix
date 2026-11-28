@@ -60,6 +60,9 @@ object HelixWhichKeyPopup {
     private val KEYCAP_BG get() = HelixTheme.KEYCAP_BG
     private val KEYCAP_BORDER get() = HelixTheme.KEYCAP_BORDER
     private val KEYCAP_FG get() = HelixTheme.KEYCAP_FG
+    private val KEYCAP_SUBMENU_BG get() = HelixTheme.KEYCAP_SUBMENU_BG
+    private val KEYCAP_SUBMENU_BORDER get() = HelixTheme.KEYCAP_SUBMENU_BORDER
+    private val KEYCAP_SUBMENU_FG get() = HelixTheme.KEYCAP_SUBMENU_FG
     private val ITEM_TEXT_COLOR get() = HelixTheme.ITEM_TEXT_COLOR
     private val ITEM_DESC_COLOR get() = HelixTheme.ITEM_DESC_COLOR
     private val HOVER_BG get() = HelixTheme.HOVER_BG
@@ -611,12 +614,12 @@ object HelixWhichKeyPopup {
         }
     }
 
-    private class KeycapBadge(key: String) : JPanel(BorderLayout()) {
+    private class KeycapBadge(key: String, private val isSubmenu: Boolean = false) : JPanel(BorderLayout()) {
         init {
             isOpaque = false
             val label = JBLabel(key, javax.swing.SwingConstants.CENTER)
             label.font = Font(Font.MONOSPACED, Font.BOLD, JBUI.scaleFontSize(10.5f))
-            label.foreground = KEYCAP_FG
+            label.foreground = if (isSubmenu) KEYCAP_SUBMENU_FG else KEYCAP_FG
             add(label, BorderLayout.CENTER)
             border = JBUI.Borders.empty(1, 4)
         }
@@ -632,9 +635,9 @@ object HelixWhichKeyPopup {
             val g2 = g.create() as java.awt.Graphics2D
             g2.setRenderingHint(java.awt.RenderingHints.KEY_ANTIALIASING, java.awt.RenderingHints.VALUE_ANTIALIAS_ON)
             val arc = JBUI.scale(6)
-            g2.color = KEYCAP_BG
+            g2.color = if (isSubmenu) KEYCAP_SUBMENU_BG else KEYCAP_BG
             g2.fillRoundRect(0, 0, width, height, arc, arc)
-            g2.color = KEYCAP_BORDER
+            g2.color = if (isSubmenu) KEYCAP_SUBMENU_BORDER else KEYCAP_BORDER
             g2.drawRoundRect(0, 0, width - 1, height - 1, arc, arc)
             g2.dispose()
             super.paintComponent(g)
@@ -667,7 +670,7 @@ object HelixWhichKeyPopup {
             cursor = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
             border = JBUI.Borders.empty(2, 6)
 
-            val badge = KeycapBadge(item.key)
+            val badge = KeycapBadge(item.key, isSubmenu = item.isSubmenu)
             add(badge, BorderLayout.WEST)
 
             val textPanel = JPanel(BorderLayout())

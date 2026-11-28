@@ -16,7 +16,8 @@ enum class HelixSearchUiMode(val displayName: String) {
 
 enum class HelixColorTheme(val displayName: String) {
     SYNC("Sync with IDE"),
-    DARK("Dark"),
+    DARK("Dark (Classic Indigo)"),
+    DARK_NEUTRAL("Dark (Neutral Charcoal)"),
     LIGHT("Light"),
 }
 
