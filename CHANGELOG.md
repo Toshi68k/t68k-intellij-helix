@@ -5,6 +5,14 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.10.1] - 2026-11-28
+
+### Fixed
+
+- **Last / First VCS Change & Diff Hunk Jumping (`] G` / `[ G`)**:
+  - Fixed `] G` and `[ G` stopping at the next chunk instead of jumping straight to the last or first change across normal editors with gutter change markers and IntelliJ diff views (side-by-side, unified, and multi-file combined diffs).
+  - Updated the `g .` Which-Key command identifier to `goto_last_modification` so it no longer collides with `] G` (`goto_last_change`).
+
 ## [0.10.0] - 2026-11-28
 
 ### Added
@@ -615,7 +623,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 - Incompatible with IdeaVim; both plugins replace the editor's typed-key handler.
 
-[Unreleased]: https://github.com/Toshi68k/t68k-intellij-helix/compare/v0.9.1...HEAD
+[Unreleased]: https://github.com/Toshi68k/t68k-intellij-helix/compare/v0.10.1...HEAD
+[0.10.1]: https://github.com/Toshi68k/t68k-intellij-helix/compare/v0.10.0...v0.10.1
 [0.10.0]: https://github.com/Toshi68k/t68k-intellij-helix/compare/v0.9.1...v0.10.0
 [0.9.1]: https://github.com/Toshi68k/t68k-intellij-helix/compare/v0.9.0...v0.9.1
 [0.9.0]: https://github.com/Toshi68k/t68k-intellij-helix/compare/v0.8.0...v0.9.0

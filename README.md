@@ -426,7 +426,7 @@ and [Helix Textobjects](https://docs.helix-editor.com/textobjects.html):
 - `gr` &rarr; `goto_reference` (`FindUsages`)
 - `gn` &rarr; `goto_next_buffer` (`NextTab`)
 - `gp` &rarr; `goto_previous_buffer` (`PreviousTab`)
-- `g.` &rarr; `goto_last_change` (`JumpToLastChange`)
+- `g.` &rarr; `goto_last_modification` (`JumpToLastChange`)
 - `gh` &rarr; `goto_line_start` (Line start)
 - `gs` &rarr; `goto_first_nonwhitespace` (First non-whitespace character)
 - `gl` &rarr; `goto_line_end` (Line end)
