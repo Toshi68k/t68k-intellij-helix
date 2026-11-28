@@ -5,11 +5,15 @@ package jp.titze.intellij.helix.motion
 
 import com.intellij.ide.DataManager
 import com.intellij.openapi.actionSystem.ActionManager
+import com.intellij.openapi.actionSystem.DataKey
+import com.intellij.openapi.actionSystem.IdeActions
 import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.Editor
+import com.intellij.openapi.editor.EditorKind
 import com.intellij.openapi.editor.ScrollType
 import com.intellij.openapi.editor.actionSystem.EditorAction
+import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.TextRange
 import com.intellij.psi.PsiComment
 import com.intellij.psi.PsiDocumentManager
@@ -313,10 +317,107 @@ object HelixJumpMotions {
         return true
     }
 
+    internal data class ChangeLineRange(val line1: Int, val line2: Int)
+
+    @Volatile
+    internal var changeRangesProvider: ((Editor) -> List<ChangeLineRange>?)? = null
+
     /**
-     * [g / ]g / [G / ]G: VCS change marker navigation
+     * [g / ]g / [G / ]G: VCS change marker navigation (and diff-hunk navigation inside diff viewers)
      */
     fun moveChange(editor: Editor, forward: Boolean, count: Int = 1, toEnd: Boolean = false): Boolean {
+        if (editor.editorKind == EditorKind.DIFF) {
+            return moveChangeInDiff(editor, forward, count, toEnd)
+        }
+        val canUseTracker = HelixActionDelegate.actionExecutor == null || changeRangesProvider != null
+        if (canUseTracker && moveChangeInEditorTracker(editor, forward, count, toEnd)) {
+            return true
+        }
+        return moveChangeViaActions(editor, forward, count, toEnd)
+    }
+
+    private fun moveChangeInEditorTracker(editor: Editor, forward: Boolean, count: Int, toEnd: Boolean): Boolean {
+        val ranges = resolveChangeRanges(editor) ?: return false
+        val caretLine = editor.caretModel.primaryCaret.logicalPosition.line
+        val target = findTargetChangeRange(ranges, caretLine, forward, count, toEnd) ?: return true
+        jumpToChangeRangeStart(editor, target)
+        return true
+    }
+
+    private fun resolveChangeRanges(editor: Editor): List<ChangeLineRange>? {
+        changeRangesProvider?.let { return it(editor) }
+        val project = editor.project ?: return null
+        return readTrackerChangeRanges(project, editor)
+    }
+
+    internal fun readTrackerChangeRanges(project: Project, editor: Editor): List<ChangeLineRange>? = try {
+        val managerClass = Class.forName("com.intellij.openapi.vcs.impl.LineStatusTrackerManager")
+        val manager = managerClass.getMethod("getInstance", Project::class.java).invoke(null, project)
+            ?: return null
+        val tracker = findAccessibleMethod(manager.javaClass, "getLineStatusTracker", Document::class.java)
+            ?.invoke(manager, editor.document) ?: return null
+        extractChangeRangesFromTracker(tracker, editor)
+    } catch (_: Throwable) {
+        null
+    }
+
+    internal fun extractChangeRangesFromTracker(tracker: Any, editor: Editor): List<ChangeLineRange>? = try {
+        val isValid = findAccessibleMethod(tracker.javaClass, "isValid")?.invoke(tracker) == true
+        val isAvailable = findAccessibleMethod(tracker.javaClass, "isAvailableAt", Editor::class.java)
+            ?.invoke(tracker, editor) == true
+        if (!isValid || !isAvailable) {
+            null
+        } else {
+            val rawRanges = HelixReadAction.compute {
+                findAccessibleMethod(tracker.javaClass, "getRanges")?.invoke(tracker) as? List<*>
+            } ?: return null
+            rawRanges.mapNotNull(::toChangeLineRange)
+        }
+    } catch (_: Throwable) {
+        null
+    }
+
+    private fun toChangeLineRange(range: Any?): ChangeLineRange? {
+        if (range == null) return null
+        val line1 = findAccessibleMethod(range.javaClass, "getLine1")?.invoke(range) as? Int ?: return null
+        val line2 = findAccessibleMethod(range.javaClass, "getLine2")?.invoke(range) as? Int ?: return null
+        return ChangeLineRange(line1, line2)
+    }
+
+    private fun findTargetChangeRange(
+        ranges: List<ChangeLineRange>,
+        caretLine: Int,
+        forward: Boolean,
+        count: Int,
+        toEnd: Boolean,
+    ): ChangeLineRange? {
+        if (ranges.isEmpty()) return null
+        if (toEnd) {
+            return if (forward) ranges.last() else ranges.first()
+        }
+        val stepCount = count.coerceAtLeast(1)
+        return if (forward) {
+            val candidates = ranges.filter { it.line1 > caretLine }
+            candidates.getOrNull((stepCount - 1).coerceAtMost(candidates.lastIndex))
+        } else {
+            val candidates = ranges.filter { it.line1 < caretLine && it.line2 <= caretLine }
+            candidates.getOrNull((candidates.size - stepCount).coerceAtLeast(0))
+        }
+    }
+
+    private fun jumpToChangeRangeStart(editor: Editor, range: ChangeLineRange) {
+        val doc = editor.document
+        val maxLine = (doc.lineCount - 1).coerceAtLeast(0)
+        val targetLine = range.line1.coerceIn(0, maxLine)
+        val targetOffset = if (doc.lineCount > 0) doc.getLineStartOffset(targetLine) else 0
+        val isSelect = HelixStateManager.getOrCreate(editor).mode == HelixMode.SELECT
+        val caret = editor.caretModel.primaryCaret
+        val anchor = if (isSelect) HelixMotionUtils.getHelixAnchor(caret) else targetOffset
+        HelixMotionUtils.applyMotion(caret, anchor, targetOffset, isSelect)
+        editor.scrollingModel.scrollToCaret(ScrollType.CENTER)
+    }
+
+    private fun moveChangeViaActions(editor: Editor, forward: Boolean, count: Int, toEnd: Boolean): Boolean {
         if (toEnd) {
             if (forward) {
                 if (!HelixActionDelegate.executeAction("VcsShowLastChangeMarker", editor)) {
@@ -336,6 +437,81 @@ object HelixJumpMotions {
             }
         }
         return true
+    }
+
+    private fun moveChangeInDiff(editor: Editor, forward: Boolean, count: Int, toEnd: Boolean): Boolean {
+        if (toEnd) {
+            return moveToEndChangeInDiff(editor, forward)
+        }
+        val actionId = if (forward) IdeActions.ACTION_NEXT_DIFF else IdeActions.ACTION_PREVIOUS_DIFF
+        repeat(count.coerceAtLeast(1)) {
+            if (!HelixActionDelegate.executeComponentAction(actionId, editor)) {
+                stepDiffIterable(editor, forward)
+            }
+        }
+        return true
+    }
+
+    private fun moveToEndChangeInDiff(editor: Editor, forward: Boolean): Boolean {
+        val iterable = getDiffIterable(editor) ?: return true
+        val maxSteps = editor.document.lineCount.coerceAtLeast(1) + 1
+        var steps = 0
+        while (steps < maxSteps && canStepDiff(iterable, forward)) {
+            val prevOffset = editor.caretModel.primaryCaret.offset
+            stepDiff(iterable, forward)
+            steps++
+            if (editor.caretModel.primaryCaret.offset == prevOffset) break
+        }
+        return true
+    }
+
+    private fun stepDiffIterable(editor: Editor, forward: Boolean) {
+        val iterable = getDiffIterable(editor) ?: return
+        if (canStepDiff(iterable, forward)) {
+            stepDiff(iterable, forward)
+        }
+    }
+
+    private val diffIterableKey: DataKey<Any> = DataKey.create("prev_next_difference_iterable")
+
+    private fun getDiffIterable(editor: Editor): Any? =
+        DataManager.getInstance().getDataContext(editor.contentComponent).getData(diffIterableKey)
+
+    private fun canStepDiff(iterable: Any, forward: Boolean): Boolean =
+        invokeDiffMethod(iterable, if (forward) "canGoNext" else "canGoPrev") == true
+
+    private fun stepDiff(iterable: Any, forward: Boolean) {
+        invokeDiffMethod(iterable, if (forward) "goNext" else "goPrev")
+    }
+
+    private fun invokeDiffMethod(target: Any, methodName: String): Any? = try {
+        val method = findAccessibleMethod(target.javaClass, methodName) ?: return null
+        method.invoke(target)
+    } catch (_: Throwable) {
+        null
+    }
+
+    private fun findAccessibleMethod(
+        cls: Class<*>,
+        methodName: String,
+        vararg paramTypes: Class<*>,
+    ): java.lang.reflect.Method? {
+        var current: Class<*>? = cls
+        while (current != null) {
+            for (iface in current.interfaces) {
+                try {
+                    return iface.getMethod(methodName, *paramTypes)
+                } catch (_: Throwable) {
+                    // try next interface
+                }
+            }
+            current = current.superclass
+        }
+        return try {
+            cls.getMethod(methodName, *paramTypes).apply { trySetAccessible() }
+        } catch (_: Throwable) {
+            null
+        }
     }
 
     /**

@@ -41,6 +41,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   - Pressing `Escape` in Normal mode (with a single caret) while the native Find bar is open now also dismisses the Find bar and clears the search match selection, after exiting Insert/Select mode or reducing extra carets if active.
 - **Intermittent Read-Access Exception on `Escape` and Key Dispatch**:
   - Fixed an intermittent EDT read-access exception (`Read access is allowed from inside read-action only` in `CaretImpl.hasSelection()`) when pressing `Escape` or dispatching Helix editor shortcuts on IntelliJ 2025.1+.
+- **Diff & VCS Change Block Navigation (`] g` / `[ g` / `] G` / `[ G`)**:
+  - Fixed `] g`, `[ g`, `] G`, and `[ G` (including count prefixes and `Alt+.` repeat) not jumping between diff blocks when focus is inside IntelliJ's Diff display (side-by-side, unified, combined diff, and merge viewers).
+  - Unified normal-editor change navigation to land cleanly at the start line of each VCS change block without opening an obstructing diff popup (matching Helix and IntelliJ's Diff display, including changes starting on the first line or reaching the end of the file, and extending selection in Select mode).
 
 ## [0.9.1] - 2026-11-25
 
