@@ -35,6 +35,7 @@ import jp.titze.intellij.helix.ui.HelixSearchPopup
 import jp.titze.intellij.helix.ui.HelixSelectRegexPopup
 import jp.titze.intellij.helix.ui.HelixWhichKeyPopup
 import java.awt.AWTEvent
+import java.awt.Component
 import java.awt.KeyboardFocusManager
 import java.awt.event.InputEvent
 import java.awt.event.KeyEvent
@@ -823,22 +824,29 @@ class HelixEventDispatcher : IdeEventQueue.EventDispatcher {
 
         val component = e.component
         if (component != null) {
-            val matching = allEditors.firstOrNull {
-                it.contentComponent == component || SwingUtilities.isDescendingFrom(component, it.component)
-            }
+            val matching = allEditors.firstOrNull { isEditorKeyTarget(it, component) }
             if (matching != null) return matching
+            if (allEditors.any { SwingUtilities.isDescendingFrom(component, it.component) }) {
+                return null
+            }
         }
 
         val focusOwner = KeyboardFocusManager.getCurrentKeyboardFocusManager().focusOwner
         if (focusOwner != null) {
-            val matching = allEditors.firstOrNull {
-                it.contentComponent == focusOwner || SwingUtilities.isDescendingFrom(focusOwner, it.component)
-            }
+            val matching = allEditors.firstOrNull { isEditorKeyTarget(it, focusOwner) }
             if (matching != null) return matching
+            if (allEditors.any { SwingUtilities.isDescendingFrom(focusOwner, it.component) }) {
+                return null
+            }
         }
 
         return allEditors.firstOrNull { it.contentComponent.isFocusOwner }
     }
+
+    private fun isEditorKeyTarget(editor: Editor, component: Component): Boolean =
+        component == editor.contentComponent ||
+            SwingUtilities.isDescendingFrom(component, editor.contentComponent) ||
+            HelixPromptBar.isPromptComponent(editor, component)
 
     companion object {
         private const val TOOL_WINDOW_SWITCHER_ACTION_ID = "jp.titze.intellij.helix.toolWindowSwitcher"

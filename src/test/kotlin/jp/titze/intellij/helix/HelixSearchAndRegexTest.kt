@@ -3,16 +3,19 @@
 
 package jp.titze.intellij.helix
 
+import com.intellij.find.EditorSearchSession
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.nulls.shouldBeNull
+import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import jp.titze.intellij.helix.action.HelixActionDelegate
 import jp.titze.intellij.helix.action.HelixActions
 import jp.titze.intellij.helix.action.HelixCaretSnapshot
 import jp.titze.intellij.helix.action.HelixRegexActions
 import jp.titze.intellij.helix.action.HelixSearchActions
+import jp.titze.intellij.helix.editor.HelixEscapeHandler
 import jp.titze.intellij.helix.editor.HelixEventDispatcher
 import jp.titze.intellij.helix.keymap.HelixKeyHandler
 import jp.titze.intellij.helix.state.HelixMode
@@ -36,6 +39,7 @@ class HelixSearchAndRegexTest : BasePlatformTestCase() {
         HelixPromptHistory.clear()
         if (myFixture.editor != null && !myFixture.editor.isDisposed) {
             HelixPromptBar.cancelActivePrompt(myFixture.editor)
+            EditorSearchSession.get(myFixture.editor)?.close()
         }
         super.tearDown()
     }
@@ -709,5 +713,133 @@ class HelixSearchAndRegexTest : BasePlatformTestCase() {
             maxCount = 10,
         )
         customCount shouldBe 10
+    }
+
+    fun testCtrlFSearchBarEscapeAndNavigationPassThroughDispatcher() {
+        myFixture.configureByText("test.txt", "alpha beta gamma\n")
+        val editor = myFixture.editor
+        val session = EditorSearchSession.start(editor, project)
+        val searchField = session.component.searchTextComponent
+
+        val dispatcher = HelixEventDispatcher()
+        val escEvent = KeyEvent(
+            searchField,
+            KeyEvent.KEY_PRESSED,
+            System.currentTimeMillis(),
+            0,
+            KeyEvent.VK_ESCAPE,
+            KeyEvent.CHAR_UNDEFINED,
+        )
+        dispatcher.dispatch(escEvent).shouldBeFalse()
+        escEvent.isConsumed.shouldBeFalse()
+
+        val leftEvent = KeyEvent(
+            searchField,
+            KeyEvent.KEY_PRESSED,
+            System.currentTimeMillis(),
+            0,
+            KeyEvent.VK_LEFT,
+            KeyEvent.CHAR_UNDEFINED,
+        )
+        dispatcher.dispatch(leftEvent).shouldBeFalse()
+        leftEvent.isConsumed.shouldBeFalse()
+
+        val ctrlFEvent = KeyEvent(
+            searchField,
+            KeyEvent.KEY_PRESSED,
+            System.currentTimeMillis(),
+            InputEvent.CTRL_DOWN_MASK,
+            KeyEvent.VK_F,
+            'f',
+        )
+        dispatcher.dispatch(ctrlFEvent).shouldBeFalse()
+        ctrlFEvent.isConsumed.shouldBeFalse()
+
+        val altCEvent = KeyEvent(
+            searchField,
+            KeyEvent.KEY_PRESSED,
+            System.currentTimeMillis(),
+            InputEvent.ALT_DOWN_MASK,
+            KeyEvent.VK_C,
+            'c',
+        )
+        dispatcher.dispatch(altCEvent).shouldBeFalse()
+        altCEvent.isConsumed.shouldBeFalse()
+        EditorSearchSession.get(editor).shouldNotBeNull()
+    }
+
+    fun testCtrlFSearchBarEscapePassesThroughInInsertMode() {
+        myFixture.configureByText("test.txt", "alpha beta gamma\n")
+        val editor = myFixture.editor
+        val state = HelixStateManager.getOrCreate(editor)
+        state.setMode(HelixMode.INSERT)
+        val session = EditorSearchSession.start(editor, project)
+        val searchField = session.component.searchTextComponent
+
+        val dispatcher = HelixEventDispatcher()
+        val escEvent = KeyEvent(
+            searchField,
+            KeyEvent.KEY_PRESSED,
+            System.currentTimeMillis(),
+            0,
+            KeyEvent.VK_ESCAPE,
+            KeyEvent.CHAR_UNDEFINED,
+        )
+        dispatcher.dispatch(escEvent).shouldBeFalse()
+        escEvent.isConsumed.shouldBeFalse()
+        state.mode shouldBe HelixMode.INSERT
+        EditorSearchSession.get(editor).shouldNotBeNull()
+    }
+
+    fun testEscapeInEditorClosesActiveEditorSearchSessionInNormalMode() {
+        myFixture.configureByText("test.txt", "alpha beta gamma\n")
+        val editor = myFixture.editor
+        EditorSearchSession.start(editor, project)
+        editor.selectionModel.setSelection(0, 5)
+        EditorSearchSession.get(editor).shouldNotBeNull()
+
+        val dispatcher = HelixEventDispatcher()
+        val escEvent = KeyEvent(
+            editor.contentComponent,
+            KeyEvent.KEY_PRESSED,
+            System.currentTimeMillis(),
+            0,
+            KeyEvent.VK_ESCAPE,
+            KeyEvent.CHAR_UNDEFINED,
+        )
+        dispatcher.dispatch(escEvent).shouldBeTrue()
+        escEvent.isConsumed.shouldBeTrue()
+        EditorSearchSession.get(editor).shouldBeNull()
+        editor.headerComponent.shouldBeNull()
+        editor.selectionModel.hasSelection().shouldBeFalse()
+    }
+
+    fun testEscapeInEditorExitsInsertAndMultiCaretBeforeClosingEditorSearchSession() {
+        myFixture.configureByText("test.txt", "alpha beta gamma\n")
+        val editor = myFixture.editor
+        val state = HelixStateManager.getOrCreate(editor)
+
+        // Insert mode exits to Normal mode first, then closes Ctrl+F search on next Escape
+        EditorSearchSession.start(editor, project)
+        state.setMode(HelixMode.INSERT)
+        HelixEscapeHandler.handleEscape(editor).shouldBeTrue()
+        state.mode shouldBe HelixMode.NORMAL
+        EditorSearchSession.get(editor).shouldNotBeNull()
+
+        HelixEscapeHandler.handleEscape(editor).shouldBeTrue()
+        EditorSearchSession.get(editor).shouldBeNull()
+
+        // Multi-caret reduces carets first, then closes Ctrl+F search on next Escape
+        EditorSearchSession.start(editor, project)
+        editor.caretModel.primaryCaret.moveToOffset(0)
+        editor.caretModel.addCaret(editor.offsetToVisualPosition(6), false).shouldNotBeNull()
+        editor.caretModel.caretCount shouldBe 2
+
+        HelixEscapeHandler.handleEscape(editor).shouldBeTrue()
+        editor.caretModel.caretCount shouldBe 1
+        EditorSearchSession.get(editor).shouldNotBeNull()
+
+        HelixEscapeHandler.handleEscape(editor).shouldBeTrue()
+        EditorSearchSession.get(editor).shouldBeNull()
     }
 }
