@@ -47,14 +47,13 @@ class HelixFileEditorListener : FileEditorManagerListener {
     private fun handleEditorActivated(editor: com.intellij.openapi.editor.Editor) {
         if (!HelixEditorEligibility.isActive(editor)) return
 
-        if (HelixSettings.instance.resetToNormalOnTabSwitch) {
-            val state = HelixStateManager.getOrCreate(editor)
-            if (state.mode != HelixMode.NORMAL) {
-                HelixActions.enterNormalMode(editor)
-            }
+        val state = HelixStateManager.getOrCreate(editor)
+        val forceNormalForReadOnly = HelixEditorEligibility.isReadOnly(editor) && state.mode.isInsertable
+        val shouldResetToNormal = HelixSettings.instance.resetToNormalOnTabSwitch || forceNormalForReadOnly
+        if (shouldResetToNormal && state.mode != HelixMode.NORMAL) {
+            HelixActions.enterNormalMode(editor)
         }
 
-        val state = HelixStateManager.getOrCreate(editor)
         HelixStateManager.updateCursor(editor, state.mode)
         jp.titze.intellij.helix.settings.HelixEffectiveSettings.applyAllToEditor(editor)
     }

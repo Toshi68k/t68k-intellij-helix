@@ -18,6 +18,7 @@ import com.intellij.psi.PsiFile
 import jp.titze.intellij.helix.action.HelixActionDelegate
 import jp.titze.intellij.helix.action.HelixReadAction
 import jp.titze.intellij.helix.action.HelixSurroundActions
+import jp.titze.intellij.helix.editor.HelixEditorEligibility
 import jp.titze.intellij.helix.jumplist.HelixJumpListService
 import jp.titze.intellij.helix.state.HelixMode
 import jp.titze.intellij.helix.state.HelixStateManager
@@ -95,6 +96,7 @@ object HelixJumpMotions {
      * [Space / ]Space: Add empty line above/below without entering insert mode
      */
     fun addNewline(editor: Editor, below: Boolean, count: Int = 1) {
+        if (!HelixEditorEligibility.ensureWritable(editor)) return
         val project = editor.project
         val doc = editor.document
         val totalCount = count.coerceAtLeast(1)

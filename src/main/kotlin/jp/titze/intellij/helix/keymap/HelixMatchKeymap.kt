@@ -6,6 +6,7 @@ package jp.titze.intellij.helix.keymap
 import com.intellij.openapi.editor.Editor
 import jp.titze.intellij.helix.action.HelixSurroundActions
 import jp.titze.intellij.helix.action.HelixTextObjectActions
+import jp.titze.intellij.helix.editor.HelixEditorEligibility
 import jp.titze.intellij.helix.motion.HelixMotions
 import jp.titze.intellij.helix.state.HelixEditorState
 
@@ -13,7 +14,16 @@ internal object HelixMatchKeymap {
 
     fun handle(ch: Char, editor: Editor, state: HelixEditorState, count: Int? = null): Boolean {
         when (ch) {
-            's', 'd', 'r', 'a', 'i' -> {
+            's', 'd', 'r' -> {
+                if (!HelixEditorEligibility.ensureWritable(editor)) {
+                    state.clearPendingSequence()
+                    return true
+                }
+                state.appendKey(ch)
+                return true
+            }
+
+            'a', 'i' -> {
                 state.appendKey(ch)
                 return true
             }
@@ -34,16 +44,28 @@ internal object HelixMatchKeymap {
     fun handleSubmenu(prefix: String, ch: Char, editor: Editor, state: HelixEditorState): Boolean = when (prefix) {
         "ms" -> {
             state.clearPendingSequence()
-            HelixSurroundActions.surroundAdd(editor, ch)
+            if (HelixEditorEligibility.ensureWritable(editor)) {
+                HelixSurroundActions.surroundAdd(editor, ch)
+            } else {
+                true
+            }
         }
 
         "md" -> {
             state.clearPendingSequence()
-            HelixSurroundActions.surroundDelete(editor, ch)
+            if (HelixEditorEligibility.ensureWritable(editor)) {
+                HelixSurroundActions.surroundDelete(editor, ch)
+            } else {
+                true
+            }
         }
 
         "mr" -> {
-            state.appendKey(ch)
+            if (HelixEditorEligibility.ensureWritable(editor)) {
+                state.appendKey(ch)
+            } else {
+                state.clearPendingSequence()
+            }
             true
         }
 
@@ -61,7 +83,11 @@ internal object HelixMatchKeymap {
             if (prefix.startsWith("mr") && prefix.length == 3) {
                 val fromChar = prefix[2]
                 state.clearPendingSequence()
-                HelixSurroundActions.surroundReplace(editor, fromChar, ch)
+                if (HelixEditorEligibility.ensureWritable(editor)) {
+                    HelixSurroundActions.surroundReplace(editor, fromChar, ch)
+                } else {
+                    true
+                }
             } else {
                 state.clearPendingSequence()
                 false

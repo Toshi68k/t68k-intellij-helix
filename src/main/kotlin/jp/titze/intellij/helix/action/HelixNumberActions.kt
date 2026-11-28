@@ -9,6 +9,7 @@ import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.ScrollType
 import com.intellij.openapi.util.TextRange
+import jp.titze.intellij.helix.editor.HelixEditorEligibility
 import jp.titze.intellij.helix.state.HelixMode
 import jp.titze.intellij.helix.state.HelixStateManager
 import java.math.BigInteger
@@ -34,6 +35,7 @@ object HelixNumberActions {
     }
 
     private fun modifyNumber(editor: Editor, amount: Int) {
+        if (!HelixEditorEligibility.ensureWritable(editor)) return
         val project = editor.project ?: return
         val doc = editor.document
         val state = HelixStateManager.getOrCreate(editor)

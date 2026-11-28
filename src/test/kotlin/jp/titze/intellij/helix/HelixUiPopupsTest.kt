@@ -766,6 +766,7 @@ class HelixUiPopupsTest : BasePlatformTestCase() {
                 originalCmd.id,
                 originalCmd.description,
                 originalCmd.intelliJAction,
+                originalCmd.requiresWritable,
                 originalCmd.action,
             )
         }

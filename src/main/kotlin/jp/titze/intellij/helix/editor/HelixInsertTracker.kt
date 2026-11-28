@@ -49,6 +49,7 @@ object HelixInsertTracker {
     }
 
     fun repeatLastInsert(editor: Editor, count: Int = 1): Boolean {
+        if (!HelixEditorEligibility.ensureWritable(editor)) return false
         val text = lastInsertedText ?: return false
         if (text.isEmpty()) return false
         val project = editor.project

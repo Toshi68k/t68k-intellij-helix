@@ -8,6 +8,7 @@ import com.intellij.openapi.editor.CaretState
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.ScrollType
 import com.intellij.openapi.util.TextRange
+import jp.titze.intellij.helix.editor.HelixEditorEligibility
 import jp.titze.intellij.helix.register.HelixRegisterEntry
 import jp.titze.intellij.helix.register.HelixRegisterManager
 import jp.titze.intellij.helix.state.HelixMode
@@ -71,6 +72,7 @@ object HelixSelectionActions {
     }
 
     fun alignSelections(editor: Editor) {
+        if (!HelixEditorEligibility.ensureWritable(editor)) return
         val allCarets = editor.caretModel.allCarets
         if (allCarets.size <= 1) return
         val doc = editor.document
@@ -260,6 +262,7 @@ object HelixSelectionActions {
     }
 
     private fun transformSelectionsContents(editor: Editor, transform: (List<String>) -> List<String>) {
+        if (!HelixEditorEligibility.ensureWritable(editor)) return
         val allCarets = editor.caretModel.allCarets
         if (allCarets.size <= 1) return
         val doc = editor.document

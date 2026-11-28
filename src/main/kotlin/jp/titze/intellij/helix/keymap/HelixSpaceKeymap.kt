@@ -6,6 +6,7 @@ package jp.titze.intellij.helix.keymap
 import com.intellij.openapi.editor.Editor
 import jp.titze.intellij.helix.action.HelixActionDelegate
 import jp.titze.intellij.helix.action.HelixActions
+import jp.titze.intellij.helix.editor.HelixEditorEligibility
 import jp.titze.intellij.helix.harpoon.HelixHarpoonService
 import jp.titze.intellij.helix.state.HelixMode
 import jp.titze.intellij.helix.state.HelixStateManager
@@ -81,6 +82,7 @@ internal object HelixSpaceKeymap {
             }
 
             'c' -> {
+                if (!HelixEditorEligibility.ensureWritable(editor)) return true
                 val res = HelixActionDelegate.executeAction("CommentByLineComment", editor)
                 val state = HelixStateManager.getOrCreate(editor)
                 if (state.mode == HelixMode.SELECT) state.setMode(HelixMode.NORMAL)
@@ -88,6 +90,7 @@ internal object HelixSpaceKeymap {
             }
 
             'C' -> {
+                if (!HelixEditorEligibility.ensureWritable(editor)) return true
                 val res = HelixActionDelegate.executeAction("CommentByBlockComment", editor)
                 val state = HelixStateManager.getOrCreate(editor)
                 if (state.mode == HelixMode.SELECT) state.setMode(HelixMode.NORMAL)
@@ -106,7 +109,10 @@ internal object HelixSpaceKeymap {
 
             'a' -> HelixActionDelegate.executeAction("ShowIntentionActions", editor)
 
-            'r' -> HelixActionDelegate.executeAction("RenameElement", editor)
+            'r' -> {
+                if (!HelixEditorEligibility.ensureWritable(editor)) return true
+                HelixActionDelegate.executeAction("RenameElement", editor)
+            }
 
             'm' -> {
                 val state = HelixStateManager.getOrCreate(editor)
@@ -170,17 +176,23 @@ internal object HelixSpaceKeymap {
         }
 
         'p' -> {
-            HelixActions.paste(editor, after = true, register = '+')
+            if (HelixEditorEligibility.ensureWritable(editor)) {
+                HelixActions.paste(editor, after = true, register = '+')
+            }
             true
         }
 
         'P' -> {
-            HelixActions.paste(editor, after = false, register = '+')
+            if (HelixEditorEligibility.ensureWritable(editor)) {
+                HelixActions.paste(editor, after = false, register = '+')
+            }
             true
         }
 
         'R' -> {
-            HelixActions.replaceWithClipboard(editor, register = '+')
+            if (HelixEditorEligibility.ensureWritable(editor)) {
+                HelixActions.replaceWithClipboard(editor, register = '+')
+            }
             true
         }
 

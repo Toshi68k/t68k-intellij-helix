@@ -102,6 +102,7 @@ class HelixSelectNextOccurrenceAction : HelixEditorAction() {
 class HelixCommentLineAction : HelixEditorAction() {
     override fun actionPerformed(e: AnActionEvent) {
         val editor = e.getData(CommonDataKeys.EDITOR) ?: return
+        if (!HelixEditorEligibility.ensureWritable(editor)) return
         HelixActionDelegate.executeAction("CommentByLineComment", editor)
         val state = HelixStateManager.getOrCreate(editor)
         if (state.mode == HelixMode.SELECT) {
@@ -135,6 +136,10 @@ class HelixHalfPageDownAction : HelixEditorAction() {
         val editor = e.getData(CommonDataKeys.EDITOR) ?: return
         val state = HelixStateManager.getOrCreate(editor)
         if (state.mode.isInsertable) {
+            if (!HelixEditorEligibility.ensureWritable(editor)) {
+                HelixActions.enterNormalMode(editor)
+                return
+            }
             HelixActionDelegate.executeAction("EditorDelete", editor)
             return
         }
@@ -148,6 +153,10 @@ class HelixHalfPageUpAction : HelixEditorAction() {
         val editor = e.getData(CommonDataKeys.EDITOR) ?: return
         val state = HelixStateManager.getOrCreate(editor)
         if (state.mode.isInsertable) {
+            if (!HelixEditorEligibility.ensureWritable(editor)) {
+                HelixActions.enterNormalMode(editor)
+                return
+            }
             HelixActions.killToLineStart(editor)
             return
         }
@@ -367,6 +376,10 @@ class HelixWindowChordAction : HelixEditorAction() {
         val editor = e.getData(CommonDataKeys.EDITOR) ?: return
         val state = HelixStateManager.getOrCreate(editor)
         if (state.mode.isInsertable) {
+            if (!HelixEditorEligibility.ensureWritable(editor)) {
+                HelixActions.enterNormalMode(editor)
+                return
+            }
             HelixActions.deleteWordBackward(editor)
             return
         }
@@ -489,6 +502,10 @@ class HelixDeleteNoYankAction : HelixEditorAction() {
         val editor = e.getData(CommonDataKeys.EDITOR) ?: return
         val state = HelixStateManager.getOrCreate(editor)
         if (state.mode.isInsertable) {
+            if (!HelixEditorEligibility.ensureWritable(editor)) {
+                HelixActions.enterNormalMode(editor)
+                return
+            }
             HelixActions.deleteWordForward(editor)
             return
         }
@@ -549,6 +566,7 @@ class HelixEarlierAction : HelixEditorAction(requireInsertable = false) {
         val state = HelixStateManager.getOrCreate(editor)
         if (state.mode.isInsertable) return
         val count = state.takeCount() ?: 1
+        if (!HelixEditorEligibility.ensureWritable(editor)) return
         repeat(count) { HelixActionDelegate.executeAction($$"$Undo", editor) }
     }
 }
@@ -559,6 +577,7 @@ class HelixLaterAction : HelixEditorAction(requireInsertable = false) {
         val state = HelixStateManager.getOrCreate(editor)
         if (state.mode.isInsertable) return
         val count = state.takeCount() ?: 1
+        if (!HelixEditorEligibility.ensureWritable(editor)) return
         repeat(count) { HelixActionDelegate.executeAction($$"$Redo", editor) }
     }
 }

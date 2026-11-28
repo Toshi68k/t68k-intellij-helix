@@ -3,6 +3,7 @@
 
 package jp.titze.intellij.helix
 
+import com.intellij.openapi.editor.ex.EditorEx
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.booleans.shouldBeTrue
@@ -10,11 +11,14 @@ import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
 import jp.titze.intellij.helix.action.HelixActions
 import jp.titze.intellij.helix.command.HelixCommands
+import jp.titze.intellij.helix.editor.HelixEditorEligibility
 import jp.titze.intellij.helix.editor.HelixEscapeHandler
 import jp.titze.intellij.helix.editor.HelixInsertTracker
+import jp.titze.intellij.helix.keymap.HelixCommandRegistry
 import jp.titze.intellij.helix.keymap.HelixKeyHandler
 import jp.titze.intellij.helix.motion.HelixMotions
 import jp.titze.intellij.helix.register.HelixRegisterManager
+import jp.titze.intellij.helix.settings.HelixSettings
 import jp.titze.intellij.helix.state.HelixMode
 import jp.titze.intellij.helix.state.HelixStateManager
 
@@ -23,6 +27,8 @@ class HelixEditingActionsTest : BasePlatformTestCase() {
     override fun setUp() {
         super.setUp()
         jp.titze.intellij.helix.keymap.HelixShortcutPolicy.macOverride = true
+        HelixSettings.instance.activateInReadOnlyViewers = true
+        HelixEditorEligibility.onReadOnlyNotice = null
         HelixRegisterManager.clear()
         jp.titze.intellij.helix.motion.HelixMotionHistory.lastMotion = null
         HelixInsertTracker.reset()
@@ -31,6 +37,8 @@ class HelixEditingActionsTest : BasePlatformTestCase() {
     override fun tearDown() {
         jp.titze.intellij.helix.editor.HelixEditorActionHandler.uninstall()
         jp.titze.intellij.helix.keymap.HelixShortcutPolicy.macOverride = null
+        HelixSettings.instance.activateInReadOnlyViewers = true
+        HelixEditorEligibility.onReadOnlyNotice = null
         HelixRegisterManager.clear()
         jp.titze.intellij.helix.motion.HelixMotionHistory.lastMotion = null
         HelixInsertTracker.reset()
@@ -508,7 +516,7 @@ class HelixEditingActionsTest : BasePlatformTestCase() {
         val state = HelixStateManager.getOrCreate(editor)
         state.setMode(HelixMode.INSERT)
 
-        jp.titze.intellij.helix.editor.HelixEscapeHandler.handleEscape(editor)
+        HelixEscapeHandler.handleEscape(editor)
         state.mode shouldBe HelixMode.NORMAL
     }
 
@@ -616,7 +624,7 @@ class HelixEditingActionsTest : BasePlatformTestCase() {
         HelixActions.enterInsert(editor)
         myFixture.type("foo ")
 
-        val cmd = jp.titze.intellij.helix.command.HelixCommands.COMMANDS
+        val cmd = HelixCommands.COMMANDS
             .first { it.name == "commit-undo-checkpoint" }
         cmd.action(editor)
 
@@ -895,7 +903,7 @@ class HelixEditingActionsTest : BasePlatformTestCase() {
         state.pendingSequence shouldBe ""
 
         // Escape to normal and test repeat insert via '.'
-        jp.titze.intellij.helix.editor.HelixEscapeHandler.handleEscape(editor)
+        HelixEscapeHandler.handleEscape(editor)
         state.mode shouldBe HelixMode.NORMAL
 
         editor.caretModel.primaryCaret.moveToOffset(0)
@@ -1476,5 +1484,174 @@ class HelixEditingActionsTest : BasePlatformTestCase() {
 
         HelixCommands.execute("sort -rn", editor)
         editor.document.text shouldBe "line 100\nline 20\nline 3"
+    }
+
+    fun testReadOnlyNavigationAndYankWorkInReadOnlyDocumentAndViewer() {
+        val sample = "fun foo() {\n    val bar = 1\n}"
+        myFixture.configureByText("ro_nav.kt", sample)
+        val editor = myFixture.editor as EditorEx
+
+        editor.document.setReadOnly(true)
+        try {
+            assertReadOnlyNavigationAndYank(editor, sample)
+        } finally {
+            editor.document.setReadOnly(false)
+        }
+
+        editor.isViewer = true
+        try {
+            assertReadOnlyNavigationAndYank(editor, sample)
+        } finally {
+            editor.isViewer = false
+        }
+    }
+
+    fun testReadOnlyBlocksInsertTransitionsMutationsAndCommands() {
+        val sample = "alpha beta\ngamma delta"
+        myFixture.configureByText("ro_block.txt", sample)
+        val editor = myFixture.editor as EditorEx
+
+        HelixInsertTracker.startInsert()
+        HelixInsertTracker.recordText("inserted")
+        HelixInsertTracker.finishInsert()
+        HelixRegisterManager.recordYank("yanked", false, listOf("yanked"))
+
+        editor.document.setReadOnly(true)
+        try {
+            assertReadOnlyBlocksEdits(editor, sample)
+        } finally {
+            editor.document.setReadOnly(false)
+        }
+
+        editor.isViewer = true
+        try {
+            assertReadOnlyBlocksEdits(editor, sample)
+        } finally {
+            editor.isViewer = false
+        }
+    }
+
+    private fun assertReadOnlyNavigationAndYank(editor: EditorEx, initialText: String) {
+        val notices = mutableListOf<String>()
+        HelixEditorEligibility.onReadOnlyNotice = { _, msg -> notices.add(msg) }
+        val state = HelixStateManager.getOrCreate(editor)
+        val caret = editor.caretModel.primaryCaret
+        caret.removeSelection()
+        caret.moveToOffset(0)
+        HelixActions.enterNormalMode(editor)
+
+        // Word forward (w), line down (j), and goto top (gg)
+        HelixKeyHandler.handleKey('w', editor).shouldBeTrue()
+        caret.offset shouldBe 4
+        HelixKeyHandler.handleKey('j', editor).shouldBeTrue()
+        editor.document.getLineNumber(caret.offset) shouldBe 1
+        HelixKeyHandler.handleKey('g', editor).shouldBeTrue()
+        HelixKeyHandler.handleKey('g', editor).shouldBeTrue()
+        caret.offset shouldBe 0
+
+        // Matching bracket (mm)
+        val openBrace = initialText.indexOf('{')
+        caret.moveToOffset(openBrace)
+        HelixKeyHandler.handleKey('m', editor).shouldBeTrue()
+        HelixKeyHandler.handleKey('m', editor).shouldBeTrue()
+        caret.offset shouldBe initialText.indexOf('}')
+
+        // Select mode + select line (vx) + yank (y)
+        caret.moveToOffset(0)
+        HelixKeyHandler.handleKey('v', editor).shouldBeTrue()
+        state.mode shouldBe HelixMode.SELECT
+        HelixKeyHandler.handleKey('x', editor).shouldBeTrue()
+        caret.selectedText shouldBe "fun foo() {\n"
+        HelixKeyHandler.handleKey('y', editor).shouldBeTrue()
+        HelixRegisterManager.get('"')?.text shouldBe "fun foo() {\n"
+        state.mode shouldBe HelixMode.NORMAL
+        notices shouldBe emptyList()
+        editor.document.text shouldBe initialText
+    }
+
+    private fun assertReadOnlyBlocksEdits(editor: EditorEx, initialText: String) {
+        val notices = mutableListOf<String>()
+        HelixEditorEligibility.onReadOnlyNotice = { _, msg -> notices.add(msg) }
+        val state = HelixStateManager.getOrCreate(editor)
+        val caret = editor.caretModel.primaryCaret
+        caret.removeSelection()
+        caret.moveToOffset(0)
+        HelixActions.enterNormalMode(editor)
+
+        fun assertBlocked(actionName: String, block: () -> Unit) {
+            notices.clear()
+            block()
+            editor.document.text shouldBe initialText
+            state.mode.isInsertable.shouldBeFalse()
+            state.pendingSequence shouldBe ""
+            assertTrue("Expected read-only notice for $actionName", notices.isNotEmpty())
+            notices.last() shouldBe "Buffer is read-only"
+        }
+
+        // Insert transitions
+        for (insertKey in listOf('i', 'a', 'I', 'A', 'o', 'O')) {
+            assertBlocked("insert key '$insertKey'") {
+                HelixKeyHandler.handleKey(insertKey, editor).shouldBeTrue()
+            }
+            state.mode shouldBe HelixMode.NORMAL
+        }
+
+        // Single-key mutations
+        for (editKey in listOf('d', 'c', 'p', 'P', 'R', 'J', '~', '`', 'u', '=', '>', '<', '.')) {
+            assertBlocked("edit key '$editKey'") {
+                HelixKeyHandler.handleKey(editKey, editor).shouldBeTrue()
+            }
+            state.mode shouldBe HelixMode.NORMAL
+        }
+
+        // Count prefix should be cleanly consumed on blocked count-accepting keys
+        assertBlocked("count + undo") {
+            HelixKeyHandler.handleKey('3', editor).shouldBeTrue()
+            HelixKeyHandler.handleKey('u', editor).shouldBeTrue()
+        }
+        state.count.shouldBeNull()
+
+        // Mutating chords: r<char>, ms(, [<space>, ]<space>, <space>c, <space>p
+        assertBlocked("r + x") {
+            HelixKeyHandler.handleKey('r', editor).shouldBeTrue()
+            HelixKeyHandler.handleKey('x', editor).shouldBeTrue()
+        }
+        assertBlocked("ms(") {
+            HelixKeyHandler.handleKey('m', editor).shouldBeTrue()
+            HelixKeyHandler.handleKey('s', editor).shouldBeTrue()
+            HelixKeyHandler.handleKey('(', editor).shouldBeTrue()
+        }
+        assertBlocked("[<space>") {
+            HelixKeyHandler.handleKey('[', editor).shouldBeTrue()
+            HelixKeyHandler.handleKey(' ', editor).shouldBeTrue()
+        }
+        assertBlocked("]<space>") {
+            HelixKeyHandler.handleKey(']', editor).shouldBeTrue()
+            HelixKeyHandler.handleKey(' ', editor).shouldBeTrue()
+        }
+        assertBlocked("<space>c") {
+            HelixKeyHandler.handleKey(' ', editor).shouldBeTrue()
+            HelixKeyHandler.handleKey('c', editor).shouldBeTrue()
+        }
+        assertBlocked("<space>p") {
+            HelixKeyHandler.handleKey(' ', editor).shouldBeTrue()
+            HelixKeyHandler.handleKey('p', editor).shouldBeTrue()
+        }
+
+        // Select-mode mutation should also stay non-insertable and leave text untouched
+        HelixKeyHandler.handleKey('v', editor).shouldBeTrue()
+        HelixKeyHandler.handleKey('w', editor).shouldBeTrue()
+        assertBlocked("select + d") {
+            HelixKeyHandler.handleKey('d', editor).shouldBeTrue()
+        }
+        HelixActions.enterNormalMode(editor)
+
+        // Command palette & registry commands
+        assertBlocked(":format") {
+            HelixCommands.execute("format", editor)
+        }
+        assertBlocked("delete_selection command") {
+            HelixCommandRegistry.execute("delete_selection", editor)
+        }
     }
 }

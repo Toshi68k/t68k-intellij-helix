@@ -4,6 +4,7 @@
 package jp.titze.intellij.helix.ui
 
 import com.intellij.openapi.editor.Editor
+import jp.titze.intellij.helix.editor.HelixEditorEligibility
 import jp.titze.intellij.helix.settings.HelixSearchUiMode
 import jp.titze.intellij.helix.settings.HelixSettings
 
@@ -48,14 +49,17 @@ object HelixSearchManager {
     }
 
     fun startShellPipe(editor: Editor) {
+        if (!HelixEditorEligibility.ensureWritable(editor)) return
         HelixPromptBar.show(editor, HelixPromptType.PIPE, count = 1)
     }
 
     fun startShellInsert(editor: Editor) {
+        if (!HelixEditorEligibility.ensureWritable(editor)) return
         HelixPromptBar.show(editor, HelixPromptType.INSERT_OUTPUT, count = 1)
     }
 
     fun startShellAppend(editor: Editor) {
+        if (!HelixEditorEligibility.ensureWritable(editor)) return
         HelixPromptBar.show(editor, HelixPromptType.APPEND_OUTPUT, count = 1)
     }
 

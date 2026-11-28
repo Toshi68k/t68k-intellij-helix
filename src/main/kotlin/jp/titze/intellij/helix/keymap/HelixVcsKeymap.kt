@@ -5,11 +5,18 @@ package jp.titze.intellij.helix.keymap
 
 import com.intellij.openapi.editor.Editor
 import jp.titze.intellij.helix.action.HelixActionDelegate
+import jp.titze.intellij.helix.editor.HelixEditorEligibility
 
 internal object HelixVcsKeymap {
 
     fun handle(ch: Char, editor: Editor): Boolean = when (ch) {
-        'r' -> HelixActionDelegate.executeAction("Vcs.RollbackChangedLines", editor)
+        'r' -> {
+            if (HelixEditorEligibility.ensureWritable(editor)) {
+                HelixActionDelegate.executeAction("Vcs.RollbackChangedLines", editor)
+            } else {
+                true
+            }
+        }
 
         'd' -> {
             HelixActionDelegate.executeAction("Compare.SameVersion", editor) ||

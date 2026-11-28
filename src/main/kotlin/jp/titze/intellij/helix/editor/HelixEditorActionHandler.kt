@@ -9,6 +9,7 @@ import com.intellij.openapi.editor.Caret
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.actionSystem.EditorActionHandler
 import com.intellij.openapi.editor.actionSystem.EditorActionManager
+import jp.titze.intellij.helix.action.HelixActions
 import jp.titze.intellij.helix.keymap.HelixKeyHandler
 import jp.titze.intellij.helix.motion.HelixJumpToWord
 import jp.titze.intellij.helix.motion.HelixMotions
@@ -35,6 +36,11 @@ class HelixEditorActionHandler(private val actionId: String, private val origina
 
         val state = HelixStateManager.getOrCreate(editor)
         if (state.mode.isInsertable) {
+            if (HelixEditorEligibility.isReadOnly(editor)) {
+                HelixActions.enterNormalMode(editor)
+                HelixEditorEligibility.notifyReadOnly(editor)
+                return
+            }
             originalHandler?.execute(editor, caret, dataContext)
             return
         }
@@ -80,6 +86,7 @@ class HelixEditorActionHandler(private val actionId: String, private val origina
 
         val state = HelixStateManager.getOrCreate(editor)
         if (state.mode.isInsertable) {
+            if (HelixEditorEligibility.isReadOnly(editor)) return false
             return originalHandler?.isEnabled(editor, caret, dataContext) ?: true
         }
 

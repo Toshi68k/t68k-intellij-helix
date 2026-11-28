@@ -103,6 +103,7 @@ class HelixSettingsState {
     var shellHistory: MutableList<String> = mutableListOf()
     var enabled: Boolean = true
     var activateInDiff: Boolean = true
+    var activateInReadOnlyViewers: Boolean = true
     var activateInConsole: Boolean = false
     var activateInCommitMessage: Boolean = false
     var activateInAiPrompt: Boolean = false
@@ -332,6 +333,12 @@ class HelixSettings : PersistentStateComponent<HelixSettingsState> {
         get() = myState.activateInDiff
         set(value) {
             myState.activateInDiff = value
+        }
+
+    var activateInReadOnlyViewers: Boolean
+        get() = myState.activateInReadOnlyViewers
+        set(value) {
+            myState.activateInReadOnlyViewers = value
         }
 
     var activateInConsole: Boolean

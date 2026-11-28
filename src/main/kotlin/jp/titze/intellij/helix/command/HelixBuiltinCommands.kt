@@ -140,7 +140,9 @@ internal object HelixBuiltinCommands {
             HelixFileNavigation.gotoFileInSplit(editor, vertical = true)
         },
         HelixCommandItem("format", emptyList(), "Format buffer using IDE code formatter") { editor ->
-            HelixActionDelegate.executeAction("ReformatCode", editor)
+            if (HelixEditorEligibility.ensureWritable(editor)) {
+                HelixActionDelegate.executeAction("ReformatCode", editor)
+            }
         },
         HelixCommandItem("fold", listOf("collapse-region"), "Fold block under cursor (CollapseRegion)") { editor ->
             HelixActionDelegate.executeAction("CollapseRegion", editor)
@@ -166,13 +168,19 @@ internal object HelixBuiltinCommands {
             "optimize-imports",
             listOf("optimize_imports", "oi"),
             "Optimize and clean imports in current file",
-        ) { editor -> HelixActionDelegate.executeAction("OptimizeImports", editor) },
+        ) { editor ->
+            if (HelixEditorEligibility.ensureWritable(editor)) {
+                HelixActionDelegate.executeAction("OptimizeImports", editor)
+            }
+        },
         HelixCommandItem(
             "cleanup",
             listOf("clean", "code-cleanup", "format-cleanup", "reformat-cleanup"),
             "Format code and optimize imports in current buffer (ReformatWithCodeCleanup)",
         ) { editor ->
-            if (!HelixActionDelegate.executeAction("ReformatWithCodeCleanup", editor)) {
+            if (HelixEditorEligibility.ensureWritable(editor) &&
+                !HelixActionDelegate.executeAction("ReformatWithCodeCleanup", editor)
+            ) {
                 HelixActionDelegate.executeAction("ReformatCode", editor)
                 HelixActionDelegate.executeAction("OptimizeImports", editor)
             }
@@ -239,7 +247,9 @@ internal object HelixBuiltinCommands {
             "Move active line or selection up (MoveLineUp)",
         ) { editor ->
             val count = HelixStateManager.getOrCreate(editor).takeCount() ?: 1
-            repeat(count) { HelixActionDelegate.executeAction("MoveLineUp", editor) }
+            if (HelixEditorEligibility.ensureWritable(editor)) {
+                repeat(count) { HelixActionDelegate.executeAction("MoveLineUp", editor) }
+            }
         },
         HelixCommandItem(
             "move-line-down",
@@ -247,15 +257,21 @@ internal object HelixBuiltinCommands {
             "Move active line or selection down (MoveLineDown)",
         ) { editor ->
             val count = HelixStateManager.getOrCreate(editor).takeCount() ?: 1
-            repeat(count) { HelixActionDelegate.executeAction("MoveLineDown", editor) }
+            if (HelixEditorEligibility.ensureWritable(editor)) {
+                repeat(count) { HelixActionDelegate.executeAction("MoveLineDown", editor) }
+            }
         },
         HelixCommandItem("earlier", listOf("undo-earlier"), "Undo earlier changes (Alt+u)") { editor ->
             val count = HelixStateManager.getOrCreate(editor).takeCount() ?: 1
-            repeat(count) { HelixActionDelegate.executeAction($$"$Undo", editor) }
+            if (HelixEditorEligibility.ensureWritable(editor)) {
+                repeat(count) { HelixActionDelegate.executeAction($$"$Undo", editor) }
+            }
         },
         HelixCommandItem("later", listOf("redo-later"), "Redo later changes (Alt+U)") { editor ->
             val count = HelixStateManager.getOrCreate(editor).takeCount() ?: 1
-            repeat(count) { HelixActionDelegate.executeAction($$"$Redo", editor) }
+            if (HelixEditorEligibility.ensureWritable(editor)) {
+                repeat(count) { HelixActionDelegate.executeAction($$"$Redo", editor) }
+            }
         },
         HelixCommandItem(
             "commit-undo-checkpoint",
@@ -510,12 +526,20 @@ internal object HelixBuiltinCommands {
                 "revert_hunk",
             ),
             "Revert VCS git hunk under cursor (Vcs.RollbackChangedLines)",
-        ) { editor -> HelixActionDelegate.executeAction("Vcs.RollbackChangedLines", editor) },
+        ) { editor ->
+            if (HelixEditorEligibility.ensureWritable(editor)) {
+                HelixActionDelegate.executeAction("Vcs.RollbackChangedLines", editor)
+            }
+        },
         HelixCommandItem(
             "reflow",
             listOf("reflow-paragraph", "fill-paragraph"),
             "Hard-wrap selected lines or comments to editor column margin (FillParagraph)",
-        ) { editor -> HelixActionDelegate.executeAction("FillParagraph", editor) },
+        ) { editor ->
+            if (HelixEditorEligibility.ensureWritable(editor)) {
+                HelixActionDelegate.executeAction("FillParagraph", editor)
+            }
+        },
         HelixCommandItem(
             "clear-register",
             listOf("clear_register"),
@@ -628,12 +652,20 @@ internal object HelixBuiltinCommands {
             "delete-char-backward",
             listOf("delete_char_backward"),
             "Delete character backward (Ctrl+h, Backspace)",
-        ) { editor -> HelixActionDelegate.executeAction("EditorBackSpace", editor) },
+        ) { editor ->
+            if (HelixEditorEligibility.ensureWritable(editor)) {
+                HelixActionDelegate.executeAction("EditorBackSpace", editor)
+            }
+        },
         HelixCommandItem(
             "delete-char-forward",
             listOf("delete_char_forward"),
             "Delete character forward (Ctrl+d, Delete)",
-        ) { editor -> HelixActionDelegate.executeAction("EditorDelete", editor) },
+        ) { editor ->
+            if (HelixEditorEligibility.ensureWritable(editor)) {
+                HelixActionDelegate.executeAction("EditorDelete", editor)
+            }
+        },
         HelixCommandItem(
             "delete-word-backward",
             listOf("delete_word_backward"),
@@ -999,77 +1031,137 @@ internal object HelixBuiltinCommands {
             "extract-variable",
             listOf("var", "extract_variable"),
             "Extract selection into variable (space + m v)",
-        ) { editor -> HelixActionDelegate.executeAction("IntroduceVariable", editor) },
+        ) { editor ->
+            if (HelixEditorEligibility.ensureWritable(editor)) {
+                HelixActionDelegate.executeAction("IntroduceVariable", editor)
+            }
+        },
         HelixCommandItem(
             "extract-method",
             listOf("method", "extract_method"),
             "Extract selection into method / function (space + m m)",
-        ) { editor -> HelixActionDelegate.executeAction("ExtractMethod", editor) },
+        ) { editor ->
+            if (HelixEditorEligibility.ensureWritable(editor)) {
+                HelixActionDelegate.executeAction("ExtractMethod", editor)
+            }
+        },
         HelixCommandItem(
             "extract-constant",
             listOf("const", "extract_constant"),
             "Extract selection into constant field (space + m c)",
-        ) { editor -> HelixActionDelegate.executeAction("IntroduceConstant", editor) },
+        ) { editor ->
+            if (HelixEditorEligibility.ensureWritable(editor)) {
+                HelixActionDelegate.executeAction("IntroduceConstant", editor)
+            }
+        },
         HelixCommandItem(
             "extract-field",
             listOf("field", "extract_field"),
             "Extract expression into class field (space + m f)",
-        ) { editor -> HelixActionDelegate.executeAction("IntroduceField", editor) },
+        ) { editor ->
+            if (HelixEditorEligibility.ensureWritable(editor)) {
+                HelixActionDelegate.executeAction("IntroduceField", editor)
+            }
+        },
         HelixCommandItem(
             "extract-parameter",
             listOf("param", "extract_parameter"),
             "Turn expression into parameter (space + m p)",
-        ) { editor -> HelixActionDelegate.executeAction("IntroduceParameter", editor) },
+        ) { editor ->
+            if (HelixEditorEligibility.ensureWritable(editor)) {
+                HelixActionDelegate.executeAction("IntroduceParameter", editor)
+            }
+        },
         HelixCommandItem(
             "inline",
             listOf("inline-variable", "inline_variable"),
             "Inline variable, method, or constant (space + m i)",
-        ) { editor -> HelixActionDelegate.executeAction("Inline", editor) },
+        ) { editor ->
+            if (HelixEditorEligibility.ensureWritable(editor)) {
+                HelixActionDelegate.executeAction("Inline", editor)
+            }
+        },
         HelixCommandItem(
             "change-signature",
             listOf("cs", "change_signature"),
             "Refactor signature and parameters (space + m s)",
-        ) { editor -> HelixActionDelegate.executeAction("ChangeSignature", editor) },
+        ) { editor ->
+            if (HelixEditorEligibility.ensureWritable(editor)) {
+                HelixActionDelegate.executeAction("ChangeSignature", editor)
+            }
+        },
         HelixCommandItem(
             "move",
             listOf("move-element", "move_element"),
             "Move symbol or file (space + m M)",
-        ) { editor -> HelixActionDelegate.executeAction("Move", editor) },
+        ) { editor ->
+            if (HelixEditorEligibility.ensureWritable(editor)) {
+                HelixActionDelegate.executeAction("Move", editor)
+            }
+        },
         HelixCommandItem(
             "override",
             listOf("override-methods", "override_methods"),
             "Override superclass methods (space + m o)",
-        ) { editor -> HelixActionDelegate.executeAction("OverrideMethods", editor) },
+        ) { editor ->
+            if (HelixEditorEligibility.ensureWritable(editor)) {
+                HelixActionDelegate.executeAction("OverrideMethods", editor)
+            }
+        },
         HelixCommandItem(
             "implement",
             listOf("implement-methods", "implement_methods"),
             "Implement interface methods (space + m I)",
-        ) { editor -> HelixActionDelegate.executeAction("ImplementMethods", editor) },
+        ) { editor ->
+            if (HelixEditorEligibility.ensureWritable(editor)) {
+                HelixActionDelegate.executeAction("ImplementMethods", editor)
+            }
+        },
         HelixCommandItem(
             "surround-with",
             listOf("surround", "surround_with"),
             "Surround selection with template (space + m w)",
-        ) { editor -> HelixActionDelegate.executeAction("SurroundWith", editor) },
+        ) { editor ->
+            if (HelixEditorEligibility.ensureWritable(editor)) {
+                HelixActionDelegate.executeAction("SurroundWith", editor)
+            }
+        },
         HelixCommandItem(
             "safe-delete",
             listOf("safe_delete", "safedelete"),
             "Safely delete unused symbols with usage checking (space + m d)",
-        ) { editor -> HelixActionDelegate.executeAction("SafeDelete", editor) },
+        ) { editor ->
+            if (HelixEditorEligibility.ensureWritable(editor)) {
+                HelixActionDelegate.executeAction("SafeDelete", editor)
+            }
+        },
         HelixCommandItem(
             "pull-up",
             listOf("pull_up", "pullup", "members-pull-up"),
             "Pull members up to superclass or interface (space + m u)",
-        ) { editor -> HelixActionDelegate.executeAction("MembersPullUp", editor) },
+        ) { editor ->
+            if (HelixEditorEligibility.ensureWritable(editor)) {
+                HelixActionDelegate.executeAction("MembersPullUp", editor)
+            }
+        },
         HelixCommandItem(
             "push-down",
             listOf("push_down", "pushdown", "push-members-down"),
             "Push members down to subclasses (space + m D)",
-        ) { editor -> HelixActionDelegate.executeAction("PushMembersDown", editor) },
+        ) { editor ->
+            if (HelixEditorEligibility.ensureWritable(editor)) {
+                HelixActionDelegate.executeAction("PushMembersDown", editor)
+            }
+        },
         HelixCommandItem(
             "refactor-this",
             listOf("refactor"),
             "Open Refactor This popup menu (space + m ?)",
-        ) { editor -> HelixActionDelegate.executeAction("Refactorings.QuickListPopupAction", editor) },
+        ) { editor ->
+            if (HelixEditorEligibility.ensureWritable(editor)) {
+                HelixActionDelegate.executeAction("Refactorings.QuickListPopupAction", editor)
+            }
+        },
         HelixCommandItem(
             "goto-implementation",
             listOf("goto_implementation", "implementation"),
@@ -1138,7 +1230,9 @@ internal object HelixBuiltinCommands {
             listOf("gen", "generate-code", "generate_code"),
             "Generate constructors, getters, setters, etc. (Generate, space + m g)",
         ) { editor ->
-            HelixActionDelegate.executeAction("Generate", editor)
+            if (HelixEditorEligibility.ensureWritable(editor)) {
+                HelixActionDelegate.executeAction("Generate", editor)
+            }
         },
         HelixCommandItem(
             "replace-in-path",
