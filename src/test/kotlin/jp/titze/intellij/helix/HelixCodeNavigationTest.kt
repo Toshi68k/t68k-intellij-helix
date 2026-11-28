@@ -19,12 +19,14 @@ class HelixCodeNavigationTest : BasePlatformTestCase() {
         jp.titze.intellij.helix.register.HelixRegisterManager.clear()
         jp.titze.intellij.helix.motion.HelixMotionHistory.lastMotion = null
         jp.titze.intellij.helix.editor.HelixInsertTracker.reset()
+        jp.titze.intellij.helix.motion.HelixJumpMotions.changeRangesProvider = null
     }
 
     override fun tearDown() {
         jp.titze.intellij.helix.register.HelixRegisterManager.clear()
         jp.titze.intellij.helix.motion.HelixMotionHistory.lastMotion = null
         jp.titze.intellij.helix.editor.HelixInsertTracker.reset()
+        jp.titze.intellij.helix.motion.HelixJumpMotions.changeRangesProvider = null
         super.tearDown()
     }
 
@@ -796,5 +798,334 @@ class HelixCodeNavigationTest : BasePlatformTestCase() {
         HelixKeyHandler.handleKey('[', editor).shouldBeTrue()
         HelixKeyHandler.handleKey('x', editor).shouldBeTrue()
         caret.offset shouldBe text.indexOf("<item>One")
+    }
+
+    fun testChangeNavigationDispatchesDiffActionsInDiffEditor() {
+        myFixture.configureByText("Test.txt", "line 1\nline 2\n")
+        val regularEditor = myFixture.editor
+        val diffDoc = com.intellij.openapi.editor.EditorFactory.getInstance().createDocument("a\nb\nc\n")
+        val diffEditor = com.intellij.openapi.editor.EditorFactory.getInstance()
+            .createEditor(diffDoc, project, com.intellij.openapi.editor.EditorKind.DIFF)
+        val executedActions = mutableListOf<Pair<String, com.intellij.openapi.editor.Editor>>()
+        HelixActionDelegate.actionExecutor = { actionId, ed ->
+            executedActions.add(actionId to ed)
+            true
+        }
+        try {
+            // Regular editor continues using VCS gutter marker actions
+            HelixKeyHandler.handleKey(']', regularEditor).shouldBeTrue()
+            HelixKeyHandler.handleKey('g', regularEditor).shouldBeTrue()
+            HelixKeyHandler.handleKey('[', regularEditor).shouldBeTrue()
+            HelixKeyHandler.handleKey('g', regularEditor).shouldBeTrue()
+
+            // Diff editor routes ]g / [g / count / Alt+. to NextDiff / PreviousDiff
+            HelixKeyHandler.handleKey(']', diffEditor).shouldBeTrue()
+            HelixKeyHandler.handleKey('g', diffEditor).shouldBeTrue()
+            HelixKeyHandler.handleKey('[', diffEditor).shouldBeTrue()
+            HelixKeyHandler.handleKey('g', diffEditor).shouldBeTrue()
+            HelixKeyHandler.handleKey('2', diffEditor).shouldBeTrue()
+            HelixKeyHandler.handleKey(']', diffEditor).shouldBeTrue()
+            HelixKeyHandler.handleKey('g', diffEditor).shouldBeTrue()
+            HelixActions.repeatLastMotion(diffEditor, 1)
+
+            executedActions.map { it.first } shouldBe listOf(
+                "VcsShowNextChangeMarker",
+                "VcsShowPrevChangeMarker",
+                "NextDiff",
+                "PreviousDiff",
+                "NextDiff",
+                "NextDiff",
+                "NextDiff",
+            )
+            executedActions.drop(2).all { it.second === diffEditor }.shouldBeTrue()
+        } finally {
+            HelixActionDelegate.actionExecutor = null
+            com.intellij.openapi.editor.EditorFactory.getInstance().releaseEditor(diffEditor)
+        }
+    }
+
+    fun testChangeNavigationExecutesRegisteredComponentActionInDiffEditor() {
+        val diffDoc = com.intellij.openapi.editor.EditorFactory.getInstance().createDocument("a\nb\n")
+        val diffEditor = com.intellij.openapi.editor.EditorFactory.getInstance()
+            .createEditor(diffDoc, project, com.intellij.openapi.editor.EditorKind.DIFF)
+        val panel = javax.swing.JPanel(java.awt.BorderLayout())
+        panel.add(diffEditor.component, java.awt.BorderLayout.CENTER)
+
+        val invoked = mutableListOf<String>()
+        val nextAction = object : com.intellij.diff.actions.impl.NextDifferenceAction() {
+            override fun getActionUpdateThread() = com.intellij.openapi.actionSystem.ActionUpdateThread.EDT
+            override fun actionPerformed(e: com.intellij.openapi.actionSystem.AnActionEvent) {
+                invoked.add("next:${e.place}")
+            }
+        }
+        val prevAction = object : com.intellij.openapi.actionSystem.AnAction() {
+            init {
+                com.intellij.openapi.actionSystem.ex.ActionUtil.copyFrom(
+                    this,
+                    com.intellij.openapi.actionSystem.IdeActions.ACTION_PREVIOUS_DIFF,
+                )
+            }
+
+            override fun getActionUpdateThread() = com.intellij.openapi.actionSystem.ActionUpdateThread.EDT
+            override fun actionPerformed(e: com.intellij.openapi.actionSystem.AnActionEvent) {
+                invoked.add("prev:${e.place}")
+            }
+        }
+        nextAction.registerCustomShortcutSet(panel, null)
+        prevAction.registerCustomShortcutSet(panel, null)
+
+        try {
+            HelixKeyHandler.handleKey(']', diffEditor).shouldBeTrue()
+            HelixKeyHandler.handleKey('g', diffEditor).shouldBeTrue()
+            HelixKeyHandler.handleKey('[', diffEditor).shouldBeTrue()
+            HelixKeyHandler.handleKey('g', diffEditor).shouldBeTrue()
+
+            invoked shouldBe listOf(
+                "next:${com.intellij.openapi.actionSystem.ActionPlaces.KEYBOARD_SHORTCUT}",
+                "prev:${com.intellij.openapi.actionSystem.ActionPlaces.KEYBOARD_SHORTCUT}",
+            )
+        } finally {
+            com.intellij.openapi.editor.EditorFactory.getInstance().releaseEditor(diffEditor)
+        }
+    }
+
+    fun testChangeNavigationMovesCaretAcrossSimpleDiffViewerHunks() {
+        val leftText = "line 0\nline 1\nline 2\nline 3\nline 4\nline 5\nline 6\nline 7\nline 8\nline 9\n"
+        val rightText = "line 0\nchanged 1\nline 2\nline 3\nchanged 4\nline 5\nline 6\nline 7\nchanged 8\nline 9\n"
+        val factory = com.intellij.diff.DiffContentFactory.getInstance()
+        val request = com.intellij.diff.requests.SimpleDiffRequest(
+            "Diff",
+            factory.create(project, leftText),
+            factory.create(project, rightText),
+            "Left",
+            "Right",
+        )
+        val context = object : com.intellij.diff.DiffContext() {
+            override fun getProject() = this@HelixCodeNavigationTest.project
+            override fun isWindowFocused() = true
+            override fun isFocusedInWindow() = true
+            override fun requestFocusInWindow() { /* no-op */ }
+        }
+        val viewer = com.intellij.diff.tools.simple.SimpleDiffViewer(context, request)
+        com.intellij.ide.impl.HeadlessDataManager.fallbackToProductionDataManager(viewer)
+        try {
+            viewer.init()
+            viewer.setCurrentSide(com.intellij.diff.util.Side.RIGHT)
+            viewer.rediff(true)
+            val deadline = System.currentTimeMillis() + 5_000
+            while (viewer.hasPendingRediff() && System.currentTimeMillis() < deadline) {
+                com.intellij.util.ui.UIUtil.dispatchAllInvocationEvents()
+                Thread.sleep(10)
+            }
+            viewer.hasPendingRediff().shouldBeFalse()
+            val rightEditor = viewer.editor2
+            val caret = rightEditor.caretModel.primaryCaret
+            caret.moveToOffset(0)
+
+            // ]g jumps to first diff hunk (line 1), then second (line 4), then third (line 8)
+            HelixKeyHandler.handleKey(']', rightEditor).shouldBeTrue()
+            HelixKeyHandler.handleKey('g', rightEditor).shouldBeTrue()
+            caret.logicalPosition.line shouldBe 1
+
+            HelixKeyHandler.handleKey(']', rightEditor).shouldBeTrue()
+            HelixKeyHandler.handleKey('g', rightEditor).shouldBeTrue()
+            caret.logicalPosition.line shouldBe 4
+
+            HelixKeyHandler.handleKey(']', rightEditor).shouldBeTrue()
+            HelixKeyHandler.handleKey('g', rightEditor).shouldBeTrue()
+            caret.logicalPosition.line shouldBe 8
+
+            // [g jumps back to second diff hunk (line 4)
+            HelixKeyHandler.handleKey('[', rightEditor).shouldBeTrue()
+            HelixKeyHandler.handleKey('g', rightEditor).shouldBeTrue()
+            caret.logicalPosition.line shouldBe 4
+
+            // ]G jumps to last diff hunk (line 8), [G jumps to first diff hunk (line 1)
+            HelixKeyHandler.handleKey(']', rightEditor).shouldBeTrue()
+            HelixKeyHandler.handleKey('G', rightEditor).shouldBeTrue()
+            caret.logicalPosition.line shouldBe 8
+
+            HelixKeyHandler.handleKey('[', rightEditor).shouldBeTrue()
+            HelixKeyHandler.handleKey('G', rightEditor).shouldBeTrue()
+            caret.logicalPosition.line shouldBe 1
+        } finally {
+            com.intellij.openapi.util.Disposer.dispose(viewer)
+        }
+    }
+
+    fun testChangeNavigationInNormalEditorJumpsToHunkStart() {
+        val currentText = listOf(
+            "line 0",
+            "mod 1",
+            "mod 2",
+            "mod 3",
+            "line 4",
+            "line 5",
+            "mod 6",
+            "mod 7",
+            "mod 8",
+            "line 9",
+            "line 10",
+            "line 11",
+            "line 12",
+        ).joinToString("\n", postfix = "\n")
+
+        myFixture.configureByText("Changes.txt", currentText)
+        val editor = myFixture.editor
+        val caret = editor.caretModel.primaryCaret
+        val hunks = listOf(
+            jp.titze.intellij.helix.motion.HelixJumpMotions.ChangeLineRange(1, 4),
+            jp.titze.intellij.helix.motion.HelixJumpMotions.ChangeLineRange(6, 9),
+            jp.titze.intellij.helix.motion.HelixJumpMotions.ChangeLineRange(11, 11),
+        )
+        jp.titze.intellij.helix.motion.HelixJumpMotions.changeRangesProvider = { hunks }
+
+        try {
+            caret.moveToOffset(0)
+
+            // ]g jumps to start line (1) of multi-line hunk 1..3, not end line 3
+            HelixKeyHandler.handleKey(']', editor).shouldBeTrue()
+            HelixKeyHandler.handleKey('g', editor).shouldBeTrue()
+            caret.logicalPosition.line shouldBe 1
+            caret.hasSelection().shouldBeFalse()
+
+            // ]g from start of hunk 1..3 jumps to start line (6) of hunk 6..8
+            HelixKeyHandler.handleKey(']', editor).shouldBeTrue()
+            HelixKeyHandler.handleKey('g', editor).shouldBeTrue()
+            caret.logicalPosition.line shouldBe 6
+
+            // ]g jumps to pure deletion line (11)
+            HelixKeyHandler.handleKey(']', editor).shouldBeTrue()
+            HelixKeyHandler.handleKey('g', editor).shouldBeTrue()
+            caret.logicalPosition.line shouldBe 11
+
+            // [g from deletion jumps back to start line (6) of hunk 6..8
+            HelixKeyHandler.handleKey('[', editor).shouldBeTrue()
+            HelixKeyHandler.handleKey('g', editor).shouldBeTrue()
+            caret.logicalPosition.line shouldBe 6
+
+            // [g from inside multi-line hunk (line 7) jumps back to start of hunk 1..3 (line 1)
+            caret.moveToOffset(editor.document.getLineStartOffset(7))
+            HelixKeyHandler.handleKey('[', editor).shouldBeTrue()
+            HelixKeyHandler.handleKey('g', editor).shouldBeTrue()
+            caret.logicalPosition.line shouldBe 1
+
+            // 2]g from line 0 lands on hunk 6..8 (line 6), Alt+. advances to line 11
+            caret.moveToOffset(0)
+            HelixKeyHandler.handleKey('2', editor).shouldBeTrue()
+            HelixKeyHandler.handleKey(']', editor).shouldBeTrue()
+            HelixKeyHandler.handleKey('g', editor).shouldBeTrue()
+            caret.logicalPosition.line shouldBe 6
+            HelixActions.repeatLastMotion(editor, 1)
+            caret.logicalPosition.line shouldBe 11
+
+            // 2[g from line 11 returns to start of hunk 1..3 (line 1)
+            HelixKeyHandler.handleKey('2', editor).shouldBeTrue()
+            HelixKeyHandler.handleKey('[', editor).shouldBeTrue()
+            HelixKeyHandler.handleKey('g', editor).shouldBeTrue()
+            caret.logicalPosition.line shouldBe 1
+
+            // ]G and [G jump to last and first hunks at their start lines
+            HelixKeyHandler.handleKey(']', editor).shouldBeTrue()
+            HelixKeyHandler.handleKey('G', editor).shouldBeTrue()
+            caret.logicalPosition.line shouldBe 11
+
+            HelixKeyHandler.handleKey('[', editor).shouldBeTrue()
+            HelixKeyHandler.handleKey('G', editor).shouldBeTrue()
+            caret.logicalPosition.line shouldBe 1
+        } finally {
+            jp.titze.intellij.helix.motion.HelixJumpMotions.changeRangesProvider = null
+        }
+    }
+
+    fun testChangeNavigationInNormalEditorBoundaryHunksAndSelectMode() {
+        val currentText = "new 0\nnew 1\nsame 2\nsame 3\nnew 4\nnew 5"
+
+        myFixture.configureByText("BoundaryChanges.txt", currentText)
+        val editor = myFixture.editor
+        val caret = editor.caretModel.primaryCaret
+        val hunks = listOf(
+            jp.titze.intellij.helix.motion.HelixJumpMotions.ChangeLineRange(0, 2),
+            jp.titze.intellij.helix.motion.HelixJumpMotions.ChangeLineRange(4, 6),
+        )
+        jp.titze.intellij.helix.motion.HelixJumpMotions.changeRangesProvider = { hunks }
+
+        try {
+            // [G reaches hunk starting at line 0; ]G reaches hunk reaching EOF at its start line (4)
+            caret.moveToOffset(editor.document.getLineStartOffset(2))
+            HelixKeyHandler.handleKey('[', editor).shouldBeTrue()
+            HelixKeyHandler.handleKey('G', editor).shouldBeTrue()
+            caret.logicalPosition.line shouldBe 0
+
+            HelixKeyHandler.handleKey(']', editor).shouldBeTrue()
+            HelixKeyHandler.handleKey('G', editor).shouldBeTrue()
+            caret.logicalPosition.line shouldBe 4
+
+            // Select mode extends selection to start of next hunk
+            caret.moveToOffset(0)
+            HelixActions.toggleSelectMode(editor)
+            HelixKeyHandler.handleKey(']', editor).shouldBeTrue()
+            HelixKeyHandler.handleKey('g', editor).shouldBeTrue()
+            caret.logicalPosition.line shouldBe 4
+            caret.hasSelection().shouldBeTrue()
+            caret.selectionStart shouldBe 0
+        } finally {
+            jp.titze.intellij.helix.motion.HelixJumpMotions.changeRangesProvider = null
+        }
+    }
+
+    fun testChangeNavigationExtractsRangesFromTracker() {
+        val currentText = "line 0\nmod 1\nmod 2\nline 3\n"
+        val baseText = "line 0\norig 1\norig 2\nline 3\n"
+        val psiFile = myFixture.configureByText("TrackerReflect.txt", currentText)
+        val editor = myFixture.editor
+
+        data class FakeRange(val line1: Int, val line2: Int)
+        class FakeTracker(
+            private val valid: Boolean,
+            private val availableEditor: com.intellij.openapi.editor.Editor?,
+            private val rangeList: List<FakeRange>,
+        ) {
+            @Suppress("unused")
+            fun isValid(): Boolean = valid
+
+            @Suppress("unused")
+            fun isAvailableAt(ed: com.intellij.openapi.editor.Editor): Boolean = ed === availableEditor
+
+            @Suppress("unused")
+            fun getRanges(): List<FakeRange> = rangeList
+        }
+        val validTracker = FakeTracker(true, editor, listOf(FakeRange(1, 3), FakeRange(4, 4)))
+        val invalidTracker = FakeTracker(false, editor, listOf(FakeRange(0, 1)))
+
+        jp.titze.intellij.helix.motion.HelixJumpMotions.extractChangeRangesFromTracker(validTracker, editor) shouldBe
+            listOf(
+                jp.titze.intellij.helix.motion.HelixJumpMotions.ChangeLineRange(1, 3),
+                jp.titze.intellij.helix.motion.HelixJumpMotions.ChangeLineRange(4, 4),
+            )
+        jp.titze.intellij.helix.motion.HelixJumpMotions.extractChangeRangesFromTracker(invalidTracker, editor) shouldBe
+            null
+
+        // Verify real LineStatusTrackerManager lookup does not throw when no tracker is attached
+        jp.titze.intellij.helix.motion.HelixJumpMotions.readTrackerChangeRanges(project, editor) shouldBe null
+
+        // Verify reflective extraction against IntelliJ's real SimpleLocalLineStatusTracker
+        val trackerClass = Class.forName("com.intellij.openapi.vcs.ex.SimpleLocalLineStatusTracker")
+        val createMethod = trackerClass.getMethod(
+            "createTracker",
+            com.intellij.openapi.project.Project::class.java,
+            com.intellij.openapi.editor.Document::class.java,
+            com.intellij.openapi.vfs.VirtualFile::class.java,
+        )
+        val realTracker = createMethod.invoke(null, project, editor.document, psiFile.virtualFile)
+        realTracker.shouldNotBeNull()
+        try {
+            trackerClass.getMethod("setBaseRevision", CharSequence::class.java).invoke(realTracker, baseText)
+            val extracted = jp.titze.intellij.helix.motion.HelixJumpMotions
+                .extractChangeRangesFromTracker(realTracker, editor)
+            extracted shouldBe listOf(jp.titze.intellij.helix.motion.HelixJumpMotions.ChangeLineRange(1, 3))
+        } finally {
+            trackerClass.getMethod("release").invoke(realTracker)
+        }
     }
 }
