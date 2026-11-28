@@ -137,6 +137,7 @@ the need to reach for arrow keys once you open the Project explorer, VCS log, or
 | `s`       | Stage / Toggle  | Toggle checkbox in Changelist mode, or stage (`Git.Stage.Add`) / unstage (`Git.Stage.Reset`) in Git Staging mode |
 | `Space`   | Switcher / Stage | Opens the Tool Window Switcher by default; toggleable in settings to stage / toggle checkboxes instead          |
 | `d`       | Diff preview    | Open diff preview (`Diff.ShowDiff`) for the selected change (also active in `Version Control`)                   |
+| `e`       | Edit in editor  | Open the selected file in an editor and focus it (`EditSource`, like `Cmd+Down`/`F4`; also in `Version Control`) |
 | `c`       | Commit message  | Focus the commit message box cleanly for typing                                                                  |
 
 ### Safety Guards & Fail-Open Design

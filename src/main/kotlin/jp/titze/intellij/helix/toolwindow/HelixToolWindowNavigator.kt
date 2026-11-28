@@ -223,6 +223,10 @@ object HelixToolWindowNavigator {
             HelixCommitToolWindowActions.openDiffPreview(component, toolWindowId) || true
         }
 
+        !isShift && (keyCode == KeyEvent.VK_E || effectiveChar == 'e') -> {
+            HelixCommitToolWindowActions.openInEditor(component, toolWindowId) || true
+        }
+
         !isShift && (keyCode == KeyEvent.VK_C || effectiveChar == 'c') -> {
             HelixCommitToolWindowActions.focusCommitMessage(component, toolWindowId) || true
         }
